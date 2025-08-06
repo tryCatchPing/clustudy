@@ -1,0 +1,7 @@
+# AI Generated - AI 도구로 생성된 코드들
+# 
+# figma_exports/   - Figma MCP로 내보낸 원본 결과물들
+# raw_components/  - AI가 생성한 정제되지 않은 컴포넌트들
+# pages/           - AI가 생성한 전체 페이지 코드들
+#
+# 이 폴더의 파일들은 참고용으로 보관하며, 정제 후 components/ 폴더로 이동합니다.
