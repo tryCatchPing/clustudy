@@ -140,6 +140,33 @@ class AppColors {
   
   /// PDF 페이지 그림자
   static const Color pdfShadow = Color(0x1A000000);
+
+  // ================== Figma Design System Colors ==================
+  /// Figma 디자인에서 추출한 툴바 색상들
+  
+  /// 기본 컨테이너 배경 색상 (#E0E0E0)
+  static const Color toolbarBackground = Color(0xFFE0E0E0);
+  
+  /// 노트 배경 색상 (#FFFFFF)
+  static const Color noteBackground = Color(0xFFFFFFFF);
+  
+  /// 선택된 객체 색상 (#9E9E9E)
+  static const Color selectedItem = Color(0xFF9E9E9E);
+  
+  /// 펜 색상 - 빨강 (#C72C2C)
+  static const Color penRed = Color(0xFFC72C2C);
+  
+  /// 펜 색상 - 파랑 (#1A5DBA)
+  static const Color penBlue = Color(0xFF1A5DBA);
+  
+  /// 펜 색상 - 녹색 (#277A3E)
+  static const Color penGreen = Color(0xFF277A3E);
+  
+  /// 펜 색상 - 검정 (#1A1A1A)
+  static const Color penBlack = Color(0xFF1A1A1A);
+  
+  /// 툴바 테두리 색상
+  static const Color toolbarBorder = penBlack;
 }
 
 /// 🌙 다크 모드를 위한 색상 시스템 (향후 확장용)
