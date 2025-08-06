@@ -72,11 +72,16 @@ lib/features/[feature_name]/
 - Note browsing and PDF import functionality
 - Temporary fake data (will be replaced with Isar DB)
 
-#### 3. Shared Infrastructure (`lib/shared/`)
+#### 3. Design System (`lib/design_system/`)
+- **tokens/**: Color, typography, spacing, shadow systems
+- **components/**: Atoms, molecules, organisms (아토믹 디자인)
+- **ai_generated/**: AI 도구로 생성된 원본 코드 보관
+- **utils/**: Theme configuration, extensions
+- **Usage**: `features/` 폴더에서 import하여 사용
 
-- **Services**: File operations, PDF processing, note creation, storage management
-- **Routing**: GoRouter-based navigation with type-safe helpers
-- **Widgets**: Reusable UI components
+#### 4. Shared Infrastructure (`lib/shared/`)
+- **Services**: File operations, PDF processing, note creation
+- **Routing**: GoRouter-based navigation
 
 ### External Dependencies
 
@@ -105,7 +110,21 @@ lib/features/[feature_name]/
 1. Follow feature structure pattern under `lib/features/[feature_name]/`
 2. Create feature-specific routing files
 3. Register routes in main router
-4. Add shared components to `lib/shared/`
+4. Use `lib/design_system/components/` for UI, `lib/shared/` for services
+
+### Design System Usage
+
+```dart
+// Import design tokens
+import '../../design_system/tokens/app_colors.dart';
+import '../../design_system/tokens/app_typography.dart';
+
+// Use in features
+Container(
+  color: AppColors.primary,
+  child: Text('Title', style: AppTypography.headline1),
+)
+```
 
 ### PDF System Architecture
 
