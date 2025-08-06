@@ -74,6 +74,20 @@ class HomeScreen extends StatelessWidget {
                   },
                 ),
 
+                const SizedBox(height: 16),
+
+                // 디자인 시스템 데모 버튼
+                NavigationCard(
+                  icon: Icons.palette,
+                  title: '디자인 시스템 데모',
+                  subtitle: '컴포넌트 쇼케이스 및 Figma 디자인 재현',
+                  color: const Color(0xFF6366F1),
+                  onTap: () {
+                    debugPrint('🎨 디자인 시스템 데모로 이동 중...');
+                    context.go('/design-system/note-editor');
+                  },
+                ),
+
                 // 프로젝트 정보 (재사용 가능한 InfoCard 사용)
                 const InfoCard.warning(
                   message: '개발 상태: Canvas 기본 기능 + UI 와이어프레임 완성',
