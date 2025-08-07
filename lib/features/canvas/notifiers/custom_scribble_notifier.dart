@@ -1,12 +1,13 @@
-
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:scribble/scribble.dart';
 
 import '../../notes/models/note_page_model.dart' as page_model;
 import '../mixins/auto_save_mixin.dart';
 import '../mixins/tool_management_mixin.dart';
 import '../models/tool_mode.dart';
+import '../providers/note_editor_provider.dart';
 
 /// 캔버스에서 스케치 및 도구 관리를 담당하는 Notifier.
 /// [ScribbleNotifier], [AutoSaveMixin], [ToolManagementMixin]을 조합하여 사용합니다.
@@ -18,10 +19,8 @@ class CustomScribbleNotifier extends ScribbleNotifier
   /// [allowedPointersMode]는 허용되는 포인터 모드입니다.
   /// [maxHistoryLength]는 되돌리기/다시 실행 기록의 최대 길이입니다.
   /// [widths]는 사용 가능한 선 굵기 목록입니다.
-  /// [simulatePressure]는 필압 시뮬레이션 여부입니다.
   /// [simplifier]는 스케치 단순화에 사용되는 객체입니다.
   /// [simplificationTolerance]는 스케치 단순화 허용 오차입니다.
-  /// [canvasIndex]는 현재 캔버스의 인덱스입니다.
   /// [toolMode]는 현재 선택된 도구 모드입니다.
   /// [page]는 현재 노트 페이지 모델입니다.
   CustomScribbleNotifier({
@@ -29,20 +28,19 @@ class CustomScribbleNotifier extends ScribbleNotifier
     super.allowedPointersMode,
     super.maxHistoryLength,
     super.widths = const [1, 3, 5, 7],
-    required bool simulatePressure, // Add simulatePressure to constructor
     super.simplifier,
     super.simplificationTolerance,
-    required this.canvasIndex,
+    required Ref ref,
     required this.toolMode,
     this.page,
-  }) : super(
-          pressureCurve: simulatePressure
-              ? const _DefaultPressureCurve()
-              : const _ConstantPressureCurve(),
-        );
+  }) : ref = ref,
+       super(
+         pressureCurve: ref.read(simulatePressureProvider)
+             ? const _DefaultPressureCurve()
+             : const _ConstantPressureCurve(),
+       );
 
-  /// 현재 캔버스의 인덱스.
-  final int canvasIndex;
+  final Ref ref;
 
   /// 현재 선택된 도구 모드.
   @override
@@ -85,8 +83,8 @@ class CustomScribbleNotifier extends ScribbleNotifier
       s = value.map(
         drawing: (s) =>
             (s.activeLine != null && s.activeLine!.points.length > 2)
-                ? _finishLineForState(s)
-                : s.copyWith(activeLine: null),
+            ? _finishLineForState(s)
+            : s.copyWith(activeLine: null),
         erasing: (s) => s,
       );
     } else if (value is Drawing) {
@@ -155,7 +153,7 @@ class CustomScribbleNotifier extends ScribbleNotifier
     final distanceToLast = currentLine.points.isEmpty
         ? double.infinity
         : (_pointToOffset(currentLine.points.last) - event.localPosition)
-            .distance;
+              .distance;
 
     // 🔧 포인트 간격에는 실제 뷰어 스케일 적용 (필기감 개선)
     final threshold = kPrecisePointerPanSlop / _currentViewerScale;
@@ -224,7 +222,7 @@ class CustomScribbleNotifier extends ScribbleNotifier
     final p = event.pressureMin == event.pressureMax
         ? 0.5
         : (event.pressure - event.pressureMin) /
-            (event.pressureMax - event.pressureMin);
+              (event.pressureMax - event.pressureMin);
     return Point(
       event.localPosition.dx,
       event.localPosition.dy,
