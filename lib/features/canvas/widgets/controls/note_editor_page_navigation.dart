@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../notes/models/note_model.dart';
+import '../../providers/note_editor_provider.dart';
 
 /// 📄 페이지 네비게이션 컨트롤 위젯
 ///
@@ -6,70 +10,55 @@ import 'package:flutter/material.dart';
 /// - 이전/다음 페이지 이동 버튼
 /// - 현재 페이지 표시
 /// - 직접 페이지 점프 기능
-class NoteEditorPageNavigation extends StatelessWidget {
+/// 
+/// ✅ Provider를 사용하여 상태를 직접 읽어 포워딩 제거
+class NoteEditorPageNavigation extends ConsumerWidget {
   /// [NoteEditorPageNavigation]의 생성자.
   ///
-  /// [currentPageIndex]는 현재 페이지의 인덱스입니다 (0부터 시작).
-  /// [totalPages]는 전체 페이지 수입니다.
-  /// [pageController]는 페이지 뷰를 제어하는 컨트롤러입니다.
-  /// [onPageChanged]는 페이지 변경 시 호출되는 콜백 함수입니다.
+  /// [note]는 현재 편집중인 노트 모델입니다.
   const NoteEditorPageNavigation({
-    required this.currentPageIndex,
-    required this.totalPages,
-    required this.pageController,
-    this.onPageChanged,
+    required this.note,
     super.key,
   });
 
-  /// 현재 페이지의 인덱스 (0부터 시작).
-  final int currentPageIndex;
-
-  /// 전체 페이지 수.
-  final int totalPages;
-
-  /// 페이지 뷰를 제어하는 컨트롤러.
-  final PageController pageController;
-
-  /// 페이지 변경 시 호출되는 콜백 함수.
-  final ValueChanged<int>? onPageChanged;
+  /// 현재 편집중인 노트 모델
+  final NoteModel note;
 
   /// 이전 페이지로 이동
-  void _goToPreviousPage() {
+  void _goToPreviousPage(WidgetRef ref) {
+    final currentPageIndex = ref.read(currentPageIndexProvider);
+    
     if (currentPageIndex > 0) {
       final targetPage = currentPageIndex - 1;
-      pageController.animateToPage(
-        targetPage,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+      ref.read(currentPageIndexProvider.notifier).setPage(targetPage);
     }
   }
 
   /// 다음 페이지로 이동
-  void _goToNextPage() {
+  void _goToNextPage(WidgetRef ref) {
+    final currentPageIndex = ref.read(currentPageIndexProvider);
+    final totalPages = note.pages.length;
+    
     if (currentPageIndex < totalPages - 1) {
       final targetPage = currentPageIndex + 1;
-      pageController.animateToPage(
-        targetPage,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+      ref.read(currentPageIndexProvider.notifier).setPage(targetPage);
     }
   }
 
   /// 특정 페이지로 이동
-  void _goToPage(int pageIndex) {
+  void _goToPage(WidgetRef ref, int pageIndex) {
+    final totalPages = note.pages.length;
+    
     if (pageIndex >= 0 && pageIndex < totalPages) {
-      pageController.animateToPage(
-        pageIndex,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+      ref.read(currentPageIndexProvider.notifier).setPage(pageIndex);
     }
   }
 
   /// 페이지 선택 다이얼로그 표시
-  void _showPageSelector(BuildContext context) {
+  void _showPageSelector(BuildContext context, WidgetRef ref) {
+    final currentPageIndex = ref.read(currentPageIndexProvider);
+    final totalPages = note.pages.length;
+    
     showDialog<void>(
       context: context,
       builder: (BuildContext context) {
@@ -91,7 +80,7 @@ class NoteEditorPageNavigation extends StatelessWidget {
                 return InkWell(
                   onTap: () {
                     Navigator.of(context).pop();
-                    _goToPage(index);
+                    _goToPage(ref, index);
                   },
                   child: Container(
                     decoration: BoxDecoration(
@@ -132,7 +121,10 @@ class NoteEditorPageNavigation extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentPageIndex = ref.watch(currentPageIndexProvider);
+    final totalPages = note.pages.length;
+    
     final canGoPrevious = currentPageIndex > 0;
     final canGoNext = currentPageIndex < totalPages - 1;
 
@@ -155,7 +147,7 @@ class NoteEditorPageNavigation extends StatelessWidget {
         children: [
           // 이전 페이지 버튼
           IconButton(
-            onPressed: canGoPrevious ? _goToPreviousPage : null,
+            onPressed: canGoPrevious ? () => _goToPreviousPage(ref) : null,
             icon: const Icon(Icons.chevron_left),
             tooltip: '이전 페이지',
             iconSize: 16, // 20 -> 16으로 축소
@@ -175,7 +167,7 @@ class NoteEditorPageNavigation extends StatelessWidget {
 
           // 현재 페이지 표시 (탭하면 페이지 선택 다이얼로그)
           InkWell(
-            onTap: totalPages > 1 ? () => _showPageSelector(context) : null,
+            onTap: totalPages > 1 ? () => _showPageSelector(context, ref) : null,
             borderRadius: BorderRadius.circular(16),
             child: Container(
               padding: const EdgeInsets.symmetric(
@@ -227,7 +219,7 @@ class NoteEditorPageNavigation extends StatelessWidget {
 
           // 다음 페이지 버튼
           IconButton(
-            onPressed: canGoNext ? _goToNextPage : null,
+            onPressed: canGoNext ? () => _goToNextPage(ref) : null,
             icon: const Icon(Icons.chevron_right),
             tooltip: '다음 페이지',
             iconSize: 16, // 20 -> 16으로 축소
