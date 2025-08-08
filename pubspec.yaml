@@ -60,8 +60,9 @@ dev_dependencies:
   flutter_lints: ^5.0.0
   riverpod_generator: ^2.6.4
   build_runner: ^2.5.4
-  custom_lint: ^0.7.3
-  riverpod_lint: ^2.6.4
+  # Temporarily remove custom_lint/riverpod_lint to avoid analyzer_plugin/analyzer mismatch during build_runner
+  # custom_lint: ^0.7.3
+  # riverpod_lint: ^2.6.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -83,6 +84,8 @@ flutter:
 
   # For details regarding adding assets from package dependencies, see
   # https://flutter.dev/to/asset-from-package
+
+dependency_overrides:
 
   # To add custom fonts to your application, add a fonts section here,
   # in this "flutter" section. Each entry in this list should have a
