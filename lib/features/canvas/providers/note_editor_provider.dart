@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../notes/models/note_model.dart';
+import '../../notes/data/fake_notes.dart';
 import '../constants/note_editor_constant.dart';
 import '../models/tool_mode.dart';
 import '../notifiers/custom_scribble_notifier.dart';
@@ -12,11 +12,11 @@ part 'note_editor_provider.g.dart';
 // fvm dart run build_runner watch 명령어로 코드 변경 시 자동으로 빌드됨
 
 /// 현재 페이지 인덱스 관리
-/// NoteModel 파라미터로 받아 노트별로 독립적으로 관리 (family provider)
+/// noteId(String)로 노트별 독립 관리 (family provider)
 @riverpod
 class CurrentPageIndex extends _$CurrentPageIndex {
   @override
-  int build(NoteModel note) => 0; // 노트별로 독립적인 현재 페이지 인덱스
+  int build(String noteId) => 0; // 노트별로 독립적인 현재 페이지 인덱스
 
   void setPage(int newIndex) => state = newIndex;
 }
@@ -33,7 +33,7 @@ class SimulatePressure extends _$SimulatePressure {
 }
 
 /// 노트별 CustomScribbleNotifier 관리
-/// NoteModel 파라미터로 받아 노트별로 독립적으로 관리 (family provider)
+/// noteId(String)로 노트별로 독립적으로 관리 (family provider)
 /// SimulatePressure 상태가 변경되면 캐시 정리 후 새로 생성
 @riverpod
 class CustomScribbleNotifiers extends _$CustomScribbleNotifiers {
@@ -41,7 +41,7 @@ class CustomScribbleNotifiers extends _$CustomScribbleNotifiers {
   bool? _lastSimulatePressure;
 
   @override
-  Map<int, CustomScribbleNotifier> build(NoteModel note) {
+  Map<int, CustomScribbleNotifier> build(String noteId) {
     final simulatePressure = ref.watch(simulatePressureProvider);
 
     // 동일한 simulatePressure라면 캐시 재사용
@@ -56,6 +56,13 @@ class CustomScribbleNotifiers extends _$CustomScribbleNotifiers {
       }
       _cache = null;
     }
+
+    // noteId 로 NoteModel 조회 (임시: fakeNotes 사용)
+    // TODO(xodnd): 추후 repository/provider 로 변경
+    final note = fakeNotes.firstWhere(
+      (n) => n.noteId == noteId,
+      orElse: () => fakeNotes.first,
+    );
 
     final created = <int, CustomScribbleNotifier>{};
     for (var i = 0; i < note.pages.length; i++) {
@@ -94,10 +101,10 @@ class CustomScribbleNotifiers extends _$CustomScribbleNotifiers {
 @riverpod
 CustomScribbleNotifier currentNotifier(
   Ref ref,
-  NoteModel note,
+  String noteId,
 ) {
-  final currentIndex = ref.watch(currentPageIndexProvider(note));
-  final notifiers = ref.watch(customScribbleNotifiersProvider(note));
+  final currentIndex = ref.watch(currentPageIndexProvider(noteId));
+  final notifiers = ref.watch(customScribbleNotifiersProvider(noteId));
   return notifiers[currentIndex]!;
 }
 
@@ -107,7 +114,7 @@ CustomScribbleNotifier currentNotifier(
 @riverpod
 PageController pageController(
   Ref ref,
-  NoteModel note,
+  String noteId,
 ) {
   final controller = PageController(initialPage: 0);
 
@@ -117,7 +124,7 @@ PageController pageController(
   });
 
   // currentPageIndex가 변경되면 PageController도 동기화 (노트별)
-  ref.listen<int>(currentPageIndexProvider(note), (previous, next) {
+  ref.listen<int>(currentPageIndexProvider(noteId), (previous, next) {
     if (controller.hasClients && previous != next) {
       controller.animateToPage(
         next,

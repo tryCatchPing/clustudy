@@ -27,22 +27,26 @@ class NoteEditorPageNavigation extends ConsumerWidget {
 
   /// 이전 페이지로 이동
   void _goToPreviousPage(WidgetRef ref) {
-    final currentPageIndex = ref.read(currentPageIndexProvider(note));
+    final currentPageIndex = ref.read(currentPageIndexProvider(note.noteId));
 
     if (currentPageIndex > 0) {
       final targetPage = currentPageIndex - 1;
-      ref.read(currentPageIndexProvider(note).notifier).setPage(targetPage);
+      ref
+          .read(currentPageIndexProvider(note.noteId).notifier)
+          .setPage(targetPage);
     }
   }
 
   /// 다음 페이지로 이동
   void _goToNextPage(WidgetRef ref) {
-    final currentPageIndex = ref.read(currentPageIndexProvider(note));
+    final currentPageIndex = ref.read(currentPageIndexProvider(note.noteId));
     final totalPages = note.pages.length;
 
     if (currentPageIndex < totalPages - 1) {
       final targetPage = currentPageIndex + 1;
-      ref.read(currentPageIndexProvider(note).notifier).setPage(targetPage);
+      ref
+          .read(currentPageIndexProvider(note.noteId).notifier)
+          .setPage(targetPage);
     }
   }
 
@@ -51,13 +55,15 @@ class NoteEditorPageNavigation extends ConsumerWidget {
     final totalPages = note.pages.length;
 
     if (pageIndex >= 0 && pageIndex < totalPages) {
-      ref.read(currentPageIndexProvider(note).notifier).setPage(pageIndex);
+      ref
+          .read(currentPageIndexProvider(note.noteId).notifier)
+          .setPage(pageIndex);
     }
   }
 
   /// 페이지 선택 다이얼로그 표시
   void _showPageSelector(BuildContext context, WidgetRef ref) {
-    final currentPageIndex = ref.read(currentPageIndexProvider(note));
+    final currentPageIndex = ref.read(currentPageIndexProvider(note.noteId));
     final totalPages = note.pages.length;
 
     showDialog<void>(
@@ -123,7 +129,7 @@ class NoteEditorPageNavigation extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentPageIndex = ref.watch(currentPageIndexProvider(note));
+    final currentPageIndex = ref.watch(currentPageIndexProvider(note.noteId));
     final totalPages = note.pages.length;
 
     final canGoPrevious = currentPageIndex > 0;
