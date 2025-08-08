@@ -65,14 +65,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
     super.dispose();
   }
 
-  /// 페이지 변경 콜백
-  ///
-  /// [index]는 변경된 페이지의 인덱스입니다.
-  void _onPageChanged(int index) {
-    ref
-        .read(currentPageIndexProvider(widget.note.noteId).notifier)
-        .setPage(index);
-  }
+  // 페이지 변경 콜백은 Canvas 내부에서 provider로 처리하도록 정리됨
 
   /// 필압 시뮬레이션 토글 콜백
   ///
@@ -89,12 +82,6 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
     final currentNotifier = ref.watch(
       currentNotifierProvider(widget.note.noteId),
     );
-    final scribbleNotifiers = ref.watch(
-      customScribbleNotifiersProvider(widget.note.noteId),
-    );
-    final pageController = ref.watch(
-      pageControllerProvider(widget.note.noteId),
-    );
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -108,12 +95,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
       ),
       body: NoteEditorCanvas(
         note: widget.note,
-        totalPages: totalPages,
-        pageController: pageController,
-        scribbleNotifiers: scribbleNotifiers,
-        currentNotifier: currentNotifier,
         transformationController: transformationController,
-        onPageChanged: _onPageChanged,
         onPressureToggleChanged: _onPressureToggleChanged,
       ),
     );
