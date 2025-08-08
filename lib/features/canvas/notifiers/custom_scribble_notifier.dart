@@ -1,13 +1,11 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:scribble/scribble.dart';
 
 import '../../notes/models/note_page_model.dart' as page_model;
 import '../mixins/auto_save_mixin.dart';
 import '../mixins/tool_management_mixin.dart';
 import '../models/tool_mode.dart';
-import '../providers/note_editor_provider.dart';
 
 /// 캔버스에서 스케치 및 도구 관리를 담당하는 Notifier.
 /// [ScribbleNotifier], [AutoSaveMixin], [ToolManagementMixin]을 조합하여 사용합니다.
@@ -30,17 +28,14 @@ class CustomScribbleNotifier extends ScribbleNotifier
     super.widths = const [1, 3, 5, 7],
     super.simplifier,
     super.simplificationTolerance,
-    required Ref ref,
     required this.toolMode,
     this.page,
-  }) : ref = ref,
-       super(
-         pressureCurve: ref.read(simulatePressureProvider)
+    required bool simulatePressure,
+  }) : super(
+         pressureCurve: simulatePressure
              ? const _DefaultPressureCurve()
              : const _ConstantPressureCurve(),
        );
-
-  final Ref ref;
 
   /// 현재 선택된 도구 모드.
   @override
