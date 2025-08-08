@@ -29,7 +29,6 @@ class NoteEditorCanvas extends ConsumerWidget {
     super.key,
     required this.note,
     required this.transformationController,
-    required this.onPressureToggleChanged,
   });
 
   /// 현재 편집중인 노트 모델
@@ -37,9 +36,6 @@ class NoteEditorCanvas extends ConsumerWidget {
 
   /// 캔버스의 변환을 제어하는 컨트롤러.
   final TransformationController transformationController;
-
-  /// 필압 토글 변경 시 호출되는 콜백 함수.
-  final ValueChanged<bool> onPressureToggleChanged;
 
   // 캔버스 크기 상수
   static const double _canvasWidth = NoteEditorConstants.canvasWidth;
@@ -88,7 +84,6 @@ class NoteEditorCanvas extends ConsumerWidget {
             canvasHeight: _canvasHeight,
             transformationController: transformationController,
             simulatePressure: simulatePressure,
-            onPressureToggleChanged: onPressureToggleChanged,
           ),
         ],
       ),

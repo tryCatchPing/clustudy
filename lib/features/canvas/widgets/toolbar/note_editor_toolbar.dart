@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../notes/models/note_model.dart';
 import '../../notifiers/custom_scribble_notifier.dart';
+import '../../providers/note_editor_provider.dart';
 import '../controls/note_editor_page_navigation.dart';
 import '../controls/note_editor_pointer_mode.dart';
 import '../controls/note_editor_pressure_toggle.dart';
@@ -30,7 +31,6 @@ class NoteEditorToolbar extends ConsumerWidget {
     required this.canvasHeight,
     required this.transformationController,
     required this.simulatePressure,
-    required this.onPressureToggleChanged,
     super.key,
   });
 
@@ -51,9 +51,6 @@ class NoteEditorToolbar extends ConsumerWidget {
 
   /// 필압 시뮬레이션 여부.
   final bool simulatePressure;
-
-  /// 필압 토글 변경 시 호출되는 콜백 함수.
-  final void Function(bool) onPressureToggleChanged;
 
   // ✅ 페이지 네비게이션 관련 파라미터들은 제거됨 - Provider에서 직접 읽음
 
@@ -85,7 +82,9 @@ class NoteEditorToolbar extends ConsumerWidget {
                 // TODO(xodnd): simplify 0 으로 수정 필요
                 NoteEditorPressureToggle(
                   simulatePressure: simulatePressure,
-                  onChanged: onPressureToggleChanged,
+                  onChanged: (value) {
+                    ref.read(simulatePressureProvider.notifier).setValue(value);
+                  },
                 ),
                 // 📊 캔버스와 뷰포트 정보를 표시하는 위젯
                 NoteEditorViewportInfo(
