@@ -1,8 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../shared/services/file_storage_service.dart';
+import '../../../shared/routing/app_routes.dart';
 import '../../../shared/services/pdf_recovery_service.dart';
 import '../../notes/models/note_page_model.dart';
 import 'recovery_options_modal.dart';
@@ -233,13 +235,13 @@ class _CanvasBackgroundWidgetState extends State<CanvasBackgroundWidget> {
         noteTitle: noteTitle,
         onComplete: () {
           // 모달 닫기
-          Navigator.of(context).pop();
+          context.pop();
           // 위젯 새로고침
           _refreshWidget();
         },
         onError: () {
           // 모달 닫기
-          Navigator.of(context).pop();
+          context.pop();
           // 에러 메시지 표시
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -252,7 +254,7 @@ class _CanvasBackgroundWidgetState extends State<CanvasBackgroundWidget> {
         },
         onCancel: () {
           // 모달 닫기
-          Navigator.of(context).pop();
+          context.pop();
           // 취소 메시지 표시
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -318,7 +320,9 @@ class _CanvasBackgroundWidgetState extends State<CanvasBackgroundWidget> {
         );
 
         // 노트 목록으로 돌아가기
-        Navigator.of(context).popUntil((route) => route.isFirst);
+        if (mounted) {
+          context.goNamed(AppRoutes.noteListName);
+        }
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -351,11 +355,11 @@ class _CanvasBackgroundWidgetState extends State<CanvasBackgroundWidget> {
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
+              onPressed: () => context.pop(false),
                 child: const Text('취소'),
               ),
               ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(true),
+                onPressed: () => context.pop(true),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
                   foregroundColor: Colors.white,

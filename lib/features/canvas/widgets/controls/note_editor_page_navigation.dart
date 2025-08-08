@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../notes/models/note_model.dart';
 import '../../providers/note_editor_provider.dart';
@@ -79,7 +80,7 @@ class NoteEditorPageNavigation extends ConsumerWidget {
                 final isCurrentPage = index == currentPageIndex;
                 return InkWell(
                   onTap: () {
-                    Navigator.of(context).pop();
+                    context.pop();
                     _goToPage(ref, index);
                   },
                   child: Container(
@@ -111,7 +112,7 @@ class NoteEditorPageNavigation extends ConsumerWidget {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => context.pop(),
               child: const Text('취소'),
             ),
           ],
