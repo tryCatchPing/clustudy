@@ -38,8 +38,6 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
   /// - 변환 매트릭스
   late TransformationController transformationController;
 
-  // 다중 페이지 관리
-  late int totalPages;
   // ✅ _scribbleNotifiers는 이제 Provider에서 관리함 (customScribbleNotifiersProvider)
   // ✅ _pageController는 이제 Provider에서 관리함 (pageControllerProvider)
 
@@ -48,10 +46,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
     super.initState();
     transformationController = TransformationController();
 
-    // 다중 페이지 초기화
-    totalPages = widget.note.pages.length;
     // ✅ _pageController 초기화도 Provider에서 자동으로 됨
-
     // ✅ notifier 초기화는 Provider에서 자동으로 됨
   }
 
@@ -67,13 +62,6 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
 
   // 페이지 변경 콜백은 Canvas 내부에서 provider로 처리하도록 정리됨
 
-  /// 필압 시뮬레이션 토글 콜백
-  ///
-  /// [value] 필압 시뮬레이션 활성화 여부
-  void _onPressureToggleChanged(bool value) {
-    ref.read(simulatePressureProvider.notifier).setValue(value);
-  }
-
   @override
   Widget build(BuildContext context) {
     final currentIndex = ref.watch(
@@ -87,7 +75,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         title: Text(
-          '${widget.note.title} - Page ${currentIndex + 1}/$totalPages',
+          '${widget.note.title} - Page ${currentIndex + 1}/${widget.note.pages.length}',
         ),
         actions: [
           NoteEditorActionsBar(notifier: currentNotifier),
@@ -96,7 +84,6 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
       body: NoteEditorCanvas(
         note: widget.note,
         transformationController: transformationController,
-        onPressureToggleChanged: _onPressureToggleChanged,
       ),
     );
   }
