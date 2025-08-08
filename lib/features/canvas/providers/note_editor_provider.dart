@@ -23,7 +23,7 @@ class CurrentPageIndex extends _$CurrentPageIndex {
 
 /// 필압 시뮬레이션 상태 관리
 /// 파라미터 없으므로 싱글톤, 전역 상태 관리 (모든 노트 적용)
-@riverpod
+@Riverpod(keepAlive: true)
 class SimulatePressure extends _$SimulatePressure {
   @override
   bool build() => false;
