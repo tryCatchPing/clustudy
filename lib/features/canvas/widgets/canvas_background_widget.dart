@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../shared/services/file_storage_service.dart';
 import '../../../shared/routing/app_routes.dart';
+import '../../../shared/services/file_storage_service.dart';
 import '../../../shared/services/pdf_recovery_service.dart';
 import '../../notes/models/note_page_model.dart';
 import 'recovery_options_modal.dart';
@@ -355,7 +355,7 @@ class _CanvasBackgroundWidgetState extends State<CanvasBackgroundWidget> {
             ),
             actions: [
               TextButton(
-              onPressed: () => context.pop(false),
+                onPressed: () => context.pop(false),
                 child: const Text('취소'),
               ),
               ElevatedButton(

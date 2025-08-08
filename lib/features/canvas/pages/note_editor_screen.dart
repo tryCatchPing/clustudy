@@ -69,7 +69,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
   ///
   /// [index]는 변경된 페이지의 인덱스입니다.
   void _onPageChanged(int index) {
-    ref.read(currentPageIndexProvider.notifier).setPage(index);
+    ref.read(currentPageIndexProvider(widget.note).notifier).setPage(index);
   }
 
   /// 필압 시뮬레이션 토글 콜백
@@ -77,12 +77,11 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
   /// [value] 필압 시뮬레이션 활성화 여부
   void _onPressureToggleChanged(bool value) {
     ref.read(simulatePressureProvider.notifier).setValue(value);
-    // TODO: Provider가 simulatePressure 변경을 감지해서 notifier 재생성하도록 구현 필요?
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentIndex = ref.watch(currentPageIndexProvider);
+    final currentIndex = ref.watch(currentPageIndexProvider(widget.note));
     final currentNotifier = ref.watch(currentNotifierProvider(widget.note));
     final scribbleNotifiers = ref.watch(
       customScribbleNotifiersProvider(widget.note),

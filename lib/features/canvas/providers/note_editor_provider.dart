@@ -9,16 +9,20 @@ import '../notifiers/custom_scribble_notifier.dart';
 
 part 'note_editor_provider.g.dart';
 
-// 코드젠 기반 Provider들
+// fvm dart run build_runner watch 명령어로 코드 변경 시 자동으로 빌드됨
 
+/// 현재 페이지 인덱스 관리
+/// NoteModel 파라미터로 받아 노트별로 독립적으로 관리 (family provider)
 @riverpod
 class CurrentPageIndex extends _$CurrentPageIndex {
   @override
-  int build() => 0;
+  int build(NoteModel note) => 0; // 노트별로 독립적인 현재 페이지 인덱스
 
   void setPage(int newIndex) => state = newIndex;
 }
 
+/// 필압 시뮬레이션 상태 관리
+/// 파라미터 없으므로 싱글톤, 전역 상태 관리 (모든 노트 적용)
 @riverpod
 class SimulatePressure extends _$SimulatePressure {
   @override
@@ -28,6 +32,9 @@ class SimulatePressure extends _$SimulatePressure {
   void setValue(bool value) => state = value;
 }
 
+/// 노트별 CustomScribbleNotifier 관리
+/// NoteModel 파라미터로 받아 노트별로 독립적으로 관리 (family provider)
+/// SimulatePressure 상태가 변경되면 캐시 정리 후 새로 생성
 @riverpod
 class CustomScribbleNotifiers extends _$CustomScribbleNotifiers {
   Map<int, CustomScribbleNotifier>? _cache;
@@ -52,17 +59,18 @@ class CustomScribbleNotifiers extends _$CustomScribbleNotifiers {
 
     final created = <int, CustomScribbleNotifier>{};
     for (var i = 0; i < note.pages.length; i++) {
-      final notifier = CustomScribbleNotifier(
-        ref: ref,
-        toolMode: ToolMode.pen,
-        page: note.pages[i],
-        maxHistoryLength: NoteEditorConstants.maxHistoryLength,
-      )
-        ..setPen()
-        ..setSketch(
-          sketch: note.pages[i].toSketch(),
-          addToUndoHistory: false,
-        );
+      final notifier =
+          CustomScribbleNotifier(
+              ref: ref,
+              toolMode: ToolMode.pen,
+              page: note.pages[i],
+              maxHistoryLength: NoteEditorConstants.maxHistoryLength,
+            )
+            ..setPen()
+            ..setSketch(
+              sketch: note.pages[i].toSketch(),
+              addToUndoHistory: false,
+            );
       created[i] = notifier;
     }
 
@@ -81,18 +89,22 @@ class CustomScribbleNotifiers extends _$CustomScribbleNotifiers {
   }
 }
 
+/// 현재 페이지 인덱스에 해당하는 CustomScribbleNotifier 반환
+/// 단순한 함수로 구현 (노트별로 독립적인 관리 필요 없음)
 @riverpod
 CustomScribbleNotifier currentNotifier(
   Ref ref,
   NoteModel note,
 ) {
-  final currentIndex = ref.watch(currentPageIndexProvider);
+  final currentIndex = ref.watch(currentPageIndexProvider(note));
   final notifiers = ref.watch(customScribbleNotifiersProvider(note));
   return notifiers[currentIndex]!;
 }
 
-/// PageController Provider - 노트별로 독립적으로 관리
-@Riverpod(keepAlive: true)
+/// PageController
+/// 노트별로 독립적으로 관리 (family provider)
+/// 화면 이탈 시 해제되어 재입장 시 0페이지부터 시작
+@riverpod
 PageController pageController(
   Ref ref,
   NoteModel note,
@@ -104,8 +116,8 @@ PageController pageController(
     controller.dispose();
   });
 
-  // currentPageIndex가 변경되면 PageController도 동기화
-  ref.listen<int>(currentPageIndexProvider, (previous, next) {
+  // currentPageIndex가 변경되면 PageController도 동기화 (노트별)
+  ref.listen<int>(currentPageIndexProvider(note), (previous, next) {
     if (controller.hasClients && previous != next) {
       controller.animateToPage(
         next,

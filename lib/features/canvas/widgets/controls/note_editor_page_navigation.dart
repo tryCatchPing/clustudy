@@ -11,7 +11,7 @@ import '../../providers/note_editor_provider.dart';
 /// - 이전/다음 페이지 이동 버튼
 /// - 현재 페이지 표시
 /// - 직접 페이지 점프 기능
-/// 
+///
 /// ✅ Provider를 사용하여 상태를 직접 읽어 포워딩 제거
 class NoteEditorPageNavigation extends ConsumerWidget {
   /// [NoteEditorPageNavigation]의 생성자.
@@ -27,39 +27,39 @@ class NoteEditorPageNavigation extends ConsumerWidget {
 
   /// 이전 페이지로 이동
   void _goToPreviousPage(WidgetRef ref) {
-    final currentPageIndex = ref.read(currentPageIndexProvider);
-    
+    final currentPageIndex = ref.read(currentPageIndexProvider(note));
+
     if (currentPageIndex > 0) {
       final targetPage = currentPageIndex - 1;
-      ref.read(currentPageIndexProvider.notifier).setPage(targetPage);
+      ref.read(currentPageIndexProvider(note).notifier).setPage(targetPage);
     }
   }
 
   /// 다음 페이지로 이동
   void _goToNextPage(WidgetRef ref) {
-    final currentPageIndex = ref.read(currentPageIndexProvider);
+    final currentPageIndex = ref.read(currentPageIndexProvider(note));
     final totalPages = note.pages.length;
-    
+
     if (currentPageIndex < totalPages - 1) {
       final targetPage = currentPageIndex + 1;
-      ref.read(currentPageIndexProvider.notifier).setPage(targetPage);
+      ref.read(currentPageIndexProvider(note).notifier).setPage(targetPage);
     }
   }
 
   /// 특정 페이지로 이동
   void _goToPage(WidgetRef ref, int pageIndex) {
     final totalPages = note.pages.length;
-    
+
     if (pageIndex >= 0 && pageIndex < totalPages) {
-      ref.read(currentPageIndexProvider.notifier).setPage(pageIndex);
+      ref.read(currentPageIndexProvider(note).notifier).setPage(pageIndex);
     }
   }
 
   /// 페이지 선택 다이얼로그 표시
   void _showPageSelector(BuildContext context, WidgetRef ref) {
-    final currentPageIndex = ref.read(currentPageIndexProvider);
+    final currentPageIndex = ref.read(currentPageIndexProvider(note));
     final totalPages = note.pages.length;
-    
+
     showDialog<void>(
       context: context,
       builder: (BuildContext context) {
@@ -123,9 +123,9 @@ class NoteEditorPageNavigation extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentPageIndex = ref.watch(currentPageIndexProvider);
+    final currentPageIndex = ref.watch(currentPageIndexProvider(note));
     final totalPages = note.pages.length;
-    
+
     final canGoPrevious = currentPageIndex > 0;
     final canGoNext = currentPageIndex < totalPages - 1;
 
@@ -168,7 +168,9 @@ class NoteEditorPageNavigation extends ConsumerWidget {
 
           // 현재 페이지 표시 (탭하면 페이지 선택 다이얼로그)
           InkWell(
-            onTap: totalPages > 1 ? () => _showPageSelector(context, ref) : null,
+            onTap: totalPages > 1
+                ? () => _showPageSelector(context, ref)
+                : null,
             borderRadius: BorderRadius.circular(16),
             child: Container(
               padding: const EdgeInsets.symmetric(
