@@ -69,7 +69,9 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
   ///
   /// [index]는 변경된 페이지의 인덱스입니다.
   void _onPageChanged(int index) {
-    ref.read(currentPageIndexProvider(widget.note).notifier).setPage(index);
+    ref
+        .read(currentPageIndexProvider(widget.note.noteId).notifier)
+        .setPage(index);
   }
 
   /// 필압 시뮬레이션 토글 콜백
@@ -81,12 +83,18 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currentIndex = ref.watch(currentPageIndexProvider(widget.note));
-    final currentNotifier = ref.watch(currentNotifierProvider(widget.note));
-    final scribbleNotifiers = ref.watch(
-      customScribbleNotifiersProvider(widget.note),
+    final currentIndex = ref.watch(
+      currentPageIndexProvider(widget.note.noteId),
     );
-    final pageController = ref.watch(pageControllerProvider(widget.note));
+    final currentNotifier = ref.watch(
+      currentNotifierProvider(widget.note.noteId),
+    );
+    final scribbleNotifiers = ref.watch(
+      customScribbleNotifiersProvider(widget.note.noteId),
+    );
+    final pageController = ref.watch(
+      pageControllerProvider(widget.note.noteId),
+    );
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
