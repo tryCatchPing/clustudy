@@ -68,9 +68,9 @@ class CustomScribbleNotifiers extends _$CustomScribbleNotifiers {
     for (var i = 0; i < note.pages.length; i++) {
       final notifier =
           CustomScribbleNotifier(
-              ref: ref,
               toolMode: ToolMode.pen,
               page: note.pages[i],
+              simulatePressure: simulatePressure,
               maxHistoryLength: NoteEditorConstants.maxHistoryLength,
             )
             ..setPen()
