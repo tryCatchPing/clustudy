@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../shared/services/pdf_recovery_service.dart';
 
@@ -266,7 +267,7 @@ class RecoveryOptionsModal extends StatelessWidget {
     buttons.add(
       TextButton(
         onPressed: () {
-          Navigator.of(context).pop();
+          context.pop();
           onDelete();
         },
         style: TextButton.styleFrom(
@@ -284,7 +285,7 @@ class RecoveryOptionsModal extends StatelessWidget {
         buttons.addAll([
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              context.pop();
               onSketchOnly();
             },
             style: TextButton.styleFrom(
@@ -294,7 +295,7 @@ class RecoveryOptionsModal extends StatelessWidget {
           ),
           ElevatedButton.icon(
             onPressed: () {
-              Navigator.of(context).pop();
+              context.pop();
               onRerender();
             },
             icon: const Icon(Icons.refresh),
@@ -311,7 +312,7 @@ class RecoveryOptionsModal extends StatelessWidget {
         buttons.add(
           ElevatedButton.icon(
             onPressed: () {
-              Navigator.of(context).pop();
+             context.pop();
               onSketchOnly();
             },
             icon: const Icon(Icons.visibility_off),

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:scribble/scribble.dart';
 
 /// [ScribbleNotifier]에 대한 확장 메서드를 제공합니다.
@@ -28,7 +29,7 @@ extension ScribbleNotifierX on ScribbleNotifier {
         ),
         actions: [
           TextButton(
-            onPressed: Navigator.of(context).pop,
+            onPressed: context.pop,
             child: const Text('Close'),
           ),
         ],
@@ -52,7 +53,7 @@ extension ScribbleNotifierX on ScribbleNotifier {
         ),
         actions: [
           TextButton(
-            onPressed: Navigator.of(context).pop,
+            onPressed: context.pop,
             child: const Text('Close'),
           ),
         ],

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:scribble/scribble.dart';
 import '../constants/note_editor_constant.dart'; // NoteEditorConstants 정의 필요
 import '../notifiers/custom_scribble_notifier.dart'; // CustomScribbleNotifier 정의 필요
@@ -105,7 +106,7 @@ class _NotePageViewItemState extends State<NotePageViewItem> {
                 leading: const Icon(Icons.search),
                 title: const Text('링크 찾기'),
                 onTap: () {
-                  Navigator.pop(bc); // 바텀 시트 닫기
+                  context.pop(); // 바텀 시트 닫기
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('링크 찾기 선택됨')),
                   );
@@ -115,7 +116,7 @@ class _NotePageViewItemState extends State<NotePageViewItem> {
                 leading: const Icon(Icons.add_link),
                 title: const Text('링크 생성'),
                 onTap: () {
-                  Navigator.pop(bc); // 바텀 시트 닫기
+                  context.pop(); // 바텀 시트 닫기
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('링크 생성 선택됨')),
                   );

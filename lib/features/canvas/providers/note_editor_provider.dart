@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../notes/models/note_model.dart';
@@ -29,30 +30,60 @@ class SimulatePressure extends _$SimulatePressure {
 
 @riverpod
 class CustomScribbleNotifiers extends _$CustomScribbleNotifiers {
+  Map<int, CustomScribbleNotifier>? _cache;
+  bool? _lastSimulatePressure;
+
   @override
   Map<int, CustomScribbleNotifier> build(NoteModel note) {
-    final notifiers = <int, CustomScribbleNotifier>{};
+    final simulatePressure = ref.watch(simulatePressureProvider);
+
+    // 동일한 simulatePressure라면 캐시 재사용
+    if (_cache != null && _lastSimulatePressure == simulatePressure) {
+      return _cache!;
+    }
+
+    // 값이 바뀌었거나 캐시가 없다면 기존 인스턴스 정리
+    if (_cache != null) {
+      for (final notifier in _cache!.values) {
+        notifier.dispose();
+      }
+      _cache = null;
+    }
+
+    final created = <int, CustomScribbleNotifier>{};
     for (var i = 0; i < note.pages.length; i++) {
       final notifier = CustomScribbleNotifier(
         ref: ref,
         toolMode: ToolMode.pen,
         page: note.pages[i],
         maxHistoryLength: NoteEditorConstants.maxHistoryLength,
-      );
-      notifier.setPen();
-      notifier.setSketch(
-        sketch: note.pages[i].toSketch(),
-        addToUndoHistory: false,
-      );
-      notifiers[i] = notifier;
+      )
+        ..setPen()
+        ..setSketch(
+          sketch: note.pages[i].toSketch(),
+          addToUndoHistory: false,
+        );
+      created[i] = notifier;
     }
-    return notifiers;
+
+    _cache = created;
+    _lastSimulatePressure = simulatePressure;
+    ref.onDispose(() {
+      if (_cache != null) {
+        for (final notifier in _cache!.values) {
+          notifier.dispose();
+        }
+        _cache = null;
+      }
+    });
+
+    return created;
   }
 }
 
 @riverpod
 CustomScribbleNotifier currentNotifier(
-  CurrentNotifierRef ref,
+  Ref ref,
   NoteModel note,
 ) {
   final currentIndex = ref.watch(currentPageIndexProvider);
@@ -63,7 +94,7 @@ CustomScribbleNotifier currentNotifier(
 /// PageController Provider - 노트별로 독립적으로 관리
 @Riverpod(keepAlive: true)
 PageController pageController(
-  PageControllerRef ref,
+  Ref ref,
   NoteModel note,
 ) {
   final controller = PageController(initialPage: 0);
