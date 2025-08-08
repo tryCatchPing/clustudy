@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../notes/models/note_model.dart';
 import '../constants/note_editor_constant.dart';
-import '../notifiers/custom_scribble_notifier.dart';
 import '../providers/note_editor_provider.dart';
 import 'note_page_view_item.dart';
 import 'toolbar/note_editor_toolbar.dart';
@@ -24,45 +23,20 @@ class NoteEditorCanvas extends ConsumerWidget {
   /// [NoteEditorCanvas]의 생성자.
   ///
   /// [note]는 현재 편집중인 노트 모델입니다.
-  /// [totalPages]는 전체 페이지 수입니다.
-  /// [pageController]는 페이지 뷰를 제어하는 컨트롤러입니다.
-  /// [scribbleNotifiers]는 각 페이지의 스크리블 Notifier 맵입니다.
-  /// [currentNotifier]는 현재 활성화된 스크리블 Notifier입니다.
   /// [transformationController]는 캔버스의 변환을 제어하는 컨트롤러입니다.
-  /// [onPageChanged]는 페이지 변경 시 호출되는 콜백 함수입니다.
   /// [onPressureToggleChanged]는 필압 토글 변경 시 호출되는 콜백 함수입니다.
   const NoteEditorCanvas({
     super.key,
     required this.note,
-    required this.totalPages,
-    required this.pageController,
-    required this.scribbleNotifiers,
-    required this.currentNotifier,
     required this.transformationController,
-    required this.onPageChanged,
     required this.onPressureToggleChanged,
   });
 
   /// 현재 편집중인 노트 모델
   final NoteModel note;
 
-  /// 전체 페이지 수.
-  final int totalPages;
-
-  /// 페이지 뷰를 제어하는 컨트롤러.
-  final PageController pageController;
-
-  /// 각 페이지의 스크리블 Notifier 맵.
-  final Map<int, CustomScribbleNotifier> scribbleNotifiers;
-
-  /// 현재 활성화된 스크리블 Notifier.
-  final CustomScribbleNotifier currentNotifier;
-
   /// 캔버스의 변환을 제어하는 컨트롤러.
   final TransformationController transformationController;
-
-  /// 페이지 변경 시 호출되는 콜백 함수.
-  final ValueChanged<int> onPageChanged;
 
   /// 필압 토글 변경 시 호출되는 콜백 함수.
   final ValueChanged<bool> onPressureToggleChanged;
@@ -75,6 +49,11 @@ class NoteEditorCanvas extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Provider에서 상태 읽기
     final simulatePressure = ref.watch(simulatePressureProvider);
+    final pageController = ref.watch(pageControllerProvider(note.noteId));
+    final scribbleNotifiers = ref.watch(
+      customScribbleNotifiersProvider(note.noteId),
+    );
+    final currentNotifier = ref.watch(currentNotifierProvider(note.noteId));
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -83,12 +62,16 @@ class NoteEditorCanvas extends ConsumerWidget {
           Expanded(
             child: PageView.builder(
               controller: pageController,
-              itemCount: totalPages,
-              onPageChanged: onPageChanged,
+              itemCount: note.pages.length,
+              onPageChanged: (index) {
+                ref
+                    .read(
+                      currentPageIndexProvider(note.noteId).notifier,
+                    )
+                    .setPage(index);
+              },
               itemBuilder: (context, index) {
                 return NotePageViewItem(
-                  pageController: pageController,
-                  totalPages: totalPages,
                   notifier: scribbleNotifiers[index]!,
                   transformationController: transformationController,
                   simulatePressure: simulatePressure,

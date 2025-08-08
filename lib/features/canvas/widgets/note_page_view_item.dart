@@ -15,12 +15,6 @@ import 'linker_gesture_layer.dart';
 /// [simulatePressure]를 통해 페이지, 필기, 확대/축소, 필압 시뮬레이션 등을
 /// 제어합니다.
 class NotePageViewItem extends StatefulWidget {
-  /// 페이지 뷰를 제어하는 컨트롤러.
-  final PageController pageController;
-
-  /// 전체 페이지 수.
-  final int totalPages;
-
   /// 스케치 상태를 관리하는 Notifier.
   final CustomScribbleNotifier notifier;
 
@@ -32,15 +26,11 @@ class NotePageViewItem extends StatefulWidget {
 
   /// [NotePageViewItem]의 생성자.
   ///
-  /// [pageController]는 페이지 뷰를 제어하는 컨트롤러입니다.
-  /// [totalPages]는 전체 페이지 수입니다.
   /// [notifier]는 스케치 상태를 관리하는 Notifier입니다.
   /// [transformationController]는 확대/축소 상태를 관리하는 컨트롤러입니다.
   /// [simulatePressure]는 필압 시뮬레이션 여부입니다.
   const NotePageViewItem({
     super.key,
-    required this.pageController,
-    required this.totalPages,
     required this.notifier,
     required this.transformationController,
     required this.simulatePressure,
