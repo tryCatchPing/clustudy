@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:scribble/scribble.dart';
+
 import '../constants/note_editor_constant.dart'; // NoteEditorConstants 정의 필요
 import '../notifiers/custom_scribble_notifier.dart'; // CustomScribbleNotifier 정의 필요
 import 'canvas_background_widget.dart'; // CanvasBackgroundWidget 정의 필요
@@ -71,8 +72,8 @@ class _NotePageViewItemState extends State<NotePageViewItem> {
   /// 포인트 간격 조정을 위한 스케일 동기화.
   void _onScaleChanged() {
     // 스케일 변경 감지 및 디바운스 로직 (구현 생략)
-    final currentScale =
-        widget.transformationController.value.getMaxScaleOnAxis();
+    final currentScale = widget.transformationController.value
+        .getMaxScaleOnAxis();
     if ((currentScale - _lastScale).abs() < 0.01) {
       return;
     }
@@ -140,8 +141,7 @@ class _NotePageViewItemState extends State<NotePageViewItem> {
       debugPrint('렌더링: Scribble 위젯');
     }
     if (isLinkerMode) {
-      debugPrint(
-        '렌더링: LinkerGestureLayer (CustomPaint + GestureDetector)');
+      debugPrint('렌더링: LinkerGestureLayer (CustomPaint + GestureDetector)');
     }
 
     return Padding(
@@ -174,7 +174,9 @@ class _NotePageViewItemState extends State<NotePageViewItem> {
                   child: ValueListenableBuilder<ScribbleState>(
                     valueListenable: widget.notifier,
                     builder: (context, scribbleState, child) {
-                      final currentToolMode = widget.notifier.toolMode; // notifier에서 직접 toolMode 가져오기
+                      final currentToolMode = widget
+                          .notifier
+                          .toolMode; // notifier에서 직접 toolMode 가져오기
                       return Stack(
                         children: [
                           // 배경 레이어
@@ -211,7 +213,9 @@ class _NotePageViewItemState extends State<NotePageViewItem> {
                           Positioned.fill(
                             child: LinkerGestureLayer(
                               toolMode: currentToolMode,
-                              allowMouseForLinker: scribbleState.allowedPointersMode == ScribblePointerMode.all,
+                              allowMouseForLinker:
+                                  scribbleState.allowedPointersMode ==
+                                  ScribblePointerMode.all,
                               onLinkerRectanglesChanged: (rects) {
                                 setState(() {
                                   _currentLinkerRectangles = rects;
@@ -221,10 +225,13 @@ class _NotePageViewItemState extends State<NotePageViewItem> {
                                 _showLinkerOptions(context, tappedRect);
                               },
                               minLinkerRectangleSize: 16.0,
-                              linkerFillColor: Colors.pinkAccent.withAlpha((255 * 0.3).round()),
+                              linkerFillColor: Colors.pinkAccent.withAlpha(
+                                (255 * 0.3).round(),
+                              ),
                               linkerBorderColor: Colors.pinkAccent,
                               linkerBorderWidth: 2.0,
-                              currentLinkerFillColor: Colors.pinkAccent.withAlpha((255 * 0.15).round()),
+                              currentLinkerFillColor: Colors.pinkAccent
+                                  .withAlpha((255 * 0.15).round()),
                               currentLinkerBorderColor: Colors.pinkAccent,
                               currentLinkerBorderWidth: 1.5,
                             ),
