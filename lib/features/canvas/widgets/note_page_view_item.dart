@@ -70,7 +70,7 @@ class _NotePageViewItemState extends State<NotePageViewItem> {
   /// 포인트 간격 조정을 위한 스케일 동기화.
   void _onScaleChanged() {
     // 스케일 변경 감지 및 디바운스 로직 (구현 생략)
-    final currentScale = 
+    final currentScale =
         widget.transformationController.value.getMaxScaleOnAxis();
     if ((currentScale - _lastScale).abs() < 0.01) {
       return;
@@ -156,7 +156,8 @@ class _NotePageViewItemState extends State<NotePageViewItem> {
             minScale: 0.3,
             maxScale: 3.0,
             constrained: false,
-            panEnabled: !widget.notifier.toolMode.disablesInteractiveViewerPan,
+            // 패닝 활성화: 비-스타일러스 입력은 InteractiveViewer가 처리
+            panEnabled: true,
             scaleEnabled: true,
             onInteractionEnd: (details) {
               _debounceTimer?.cancel();
@@ -187,12 +188,11 @@ class _NotePageViewItemState extends State<NotePageViewItem> {
                               _currentLinkerRectangles,
                               fillColor: Colors.pinkAccent.withAlpha(
                                 (255 * 0.3).round(),
-                              ), // LinkerGestureLayer의 linkerFillColor와 동일하게
-                              borderColor: Colors.pinkAccent, // LinkerGestureLayer의 linkerBorderColor와 동일하게
-                              borderWidth: 2.0, // LinkerGestureLayer의 linkerBorderWidth와 동일하게
+                              ),
+                              borderColor: Colors.pinkAccent,
+                              borderWidth: 2.0,
                             ),
-                            child:
-                                Container(), // CustomPaint needs a child or size
+                            child: Container(),
                           ),
                           // 필기 레이어 (링커 모드가 아닐 때만 활성화)
                           IgnorePointer(
@@ -205,25 +205,27 @@ class _NotePageViewItemState extends State<NotePageViewItem> {
                               ),
                             ),
                           ),
+                          // 패닝은 InteractiveViewer가 처리
                           // 링커 제스처 및 그리기 레이어 (항상 존재하며, 내부적으로 toolMode에 따라 드래그/탭 처리)
                           Positioned.fill(
                             child: LinkerGestureLayer(
-                              toolMode: currentToolMode, // toolMode를 전달하여 내부적으로 제스처 처리 결정
+                              toolMode: currentToolMode,
+                              allowMouseForLinker: scribbleState.allowedPointersMode == ScribblePointerMode.all,
                               onLinkerRectanglesChanged: (rects) {
                                 setState(() {
                                   _currentLinkerRectangles = rects;
                                 });
                               },
-                              onLinkerTapped: (rect) {
-                                _showLinkerOptions(context, rect);
+                              onLinkerTapped: (tappedRect) {
+                                _showLinkerOptions(context, tappedRect);
                               },
-                              minLinkerRectangleSize: NoteEditorConstants.minLinkerRectangleSize,
-                              linkerFillColor: Colors.pinkAccent,
+                              minLinkerRectangleSize: 16.0,
+                              linkerFillColor: Colors.pinkAccent.withAlpha((255 * 0.3).round()),
                               linkerBorderColor: Colors.pinkAccent,
                               linkerBorderWidth: 2.0,
-                              currentLinkerFillColor: Colors.green,
-                              currentLinkerBorderColor: Colors.green,
-                              currentLinkerBorderWidth: 2.0,
+                              currentLinkerFillColor: Colors.pinkAccent.withAlpha((255 * 0.15).round()),
+                              currentLinkerBorderColor: Colors.pinkAccent,
+                              currentLinkerBorderWidth: 1.5,
                             ),
                           ),
                         ],

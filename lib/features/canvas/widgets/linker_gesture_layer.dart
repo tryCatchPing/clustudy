@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/tool_mode.dart'; // ToolMode 정의 필요
 import 'rectangle_linker_painter.dart';
+import 'dart:ui' as ui;
 
 /// 링커 생성 및 상호작용 제스처를 처리하고 링커 목록을 관리하는 위젯입니다.
 /// [toolMode]에 따라 드래그 제스처 활성화 여부를 결정하며, 탭 제스처는 항상 활성화됩니다.
@@ -35,6 +36,9 @@ class LinkerGestureLayer extends StatefulWidget {
   /// 현재 드래그 중인 링커의 테두리 두께.
   final double currentLinkerBorderWidth;
 
+  /// all 모드에서 마우스로도 링커 드래그를 허용할지 여부
+  final bool allowMouseForLinker;
+
   /// [LinkerGestureLayer]의 생성자.
   ///
   /// [toolMode]는 현재 도구 모드입니다.
@@ -55,6 +59,7 @@ class LinkerGestureLayer extends StatefulWidget {
     this.currentLinkerFillColor = Colors.green,
     this.currentLinkerBorderColor = Colors.green,
     this.currentLinkerBorderWidth = 2.0,
+    this.allowMouseForLinker = false,
   });
 
   @override
@@ -115,8 +120,18 @@ class _LinkerGestureLayerState extends State<LinkerGestureLayer> {
       return Container(); // 링커 모드가 아니면 아무것도 렌더링하지 않음
     }
 
+    final devices = <ui.PointerDeviceKind>{
+      ui.PointerDeviceKind.stylus,
+      ui.PointerDeviceKind.invertedStylus,
+    };
+    if (widget.allowMouseForLinker) {
+      devices.add(ui.PointerDeviceKind.mouse);
+    }
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
+      supportedDevices: devices,
+      onPanDown: (_) {}, // 제스처 선점 도움
       onPanStart: _onDragStart,
       onPanUpdate: _onDragUpdate,
       onPanEnd: _onDragEnd,
