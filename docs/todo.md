@@ -10,17 +10,18 @@
 
 1. Repository 인터페이스 정의 [최우선]
 
-- [ ] `NotesRepository` 설계: `watchNotes()`, `watchNoteById(id)`, `getNoteById(id)`, `upsert(note)`, `delete(id)`
+- [x] `NotesRepository` 설계: `watchNotes()`, `watchNoteById(id)`, `getNoteById(id)`, `upsert(note)`, `delete(id)`
 - [ ] 단위 테스트 초안(선택)
 
 2. 메모리 구현 + Provider 배선
 
-- [ ] `MemoryNotesRepository` 구현(임시 저장소)
-- [ ] `notesRepositoryProvider` (keepAlive)
-- [ ] 파생 Provider 구성
-  - [ ] `notesProvider`: `Stream<List<NoteModel>>`
-  - [ ] `noteProvider(noteId)`: `Stream<NoteModel?>`
-  - [ ] `noteOnceProvider(noteId)`: `Future<NoteModel?>` (선택)
+- [x] `MemoryNotesRepository` 구현(임시 저장소)
+- [x] `notesRepositoryProvider` (keepAlive)
+- [x] 파생 Provider 구성
+  - [x] `notesProvider`: `Stream<List<NoteModel>>`
+  - [x] `noteProvider(noteId)`: `Stream<NoteModel?>`
+  - [x] `noteOnceProvider(noteId)`: `Future<NoteModel?>` (선택)
+  - [ ] 기존 `fakeNotes` 참조 제거 작업 항목 추가 (아래 7번과 연결)
 
 3. 라우팅/화면을 noteId 중심으로 리팩토링
 
@@ -49,6 +50,9 @@
 7. Fake 데이터 완전 제거
 
 - [ ] `lib/features/notes/data/fake_notes.dart` 및 전 참조 제거
+  - [ ] `lib/features/notes/pages/note_list_screen.dart`의 `fakeNotes.add` → `notesRepositoryProvider.upsert`
+  - [ ] `lib/features/canvas/providers/note_editor_provider.dart`의 `fakeNotes` 접근 제거 → `noteProvider(noteId)` 사용
+  - [ ] `lib/shared/services/pdf_recovery_service.dart`의 `fakeNotes` 접근 제거 → 리포지토리 경유로 변경
 - [ ] 관련 문서의 예시 코드 업데이트
 
 8. 테스트/검증
