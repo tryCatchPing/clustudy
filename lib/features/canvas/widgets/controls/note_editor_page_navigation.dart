@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../notes/models/note_model.dart';
 import '../../providers/note_editor_provider.dart';
 
 /// 📄 페이지 네비게이션 컨트롤 위젯
@@ -18,53 +17,47 @@ class NoteEditorPageNavigation extends ConsumerWidget {
   ///
   /// [note]는 현재 편집중인 노트 모델입니다.
   const NoteEditorPageNavigation({
-    required this.note,
+    required this.noteId,
     super.key,
   });
 
   /// 현재 편집중인 노트 모델
-  final NoteModel note;
+  final String noteId;
 
   /// 이전 페이지로 이동
   void _goToPreviousPage(WidgetRef ref) {
-    final currentPageIndex = ref.read(currentPageIndexProvider(note.noteId));
+    final currentPageIndex = ref.read(currentPageIndexProvider(noteId));
 
     if (currentPageIndex > 0) {
       final targetPage = currentPageIndex - 1;
-      ref
-          .read(currentPageIndexProvider(note.noteId).notifier)
-          .setPage(targetPage);
+      ref.read(currentPageIndexProvider(noteId).notifier).setPage(targetPage);
     }
   }
 
   /// 다음 페이지로 이동
   void _goToNextPage(WidgetRef ref) {
-    final currentPageIndex = ref.read(currentPageIndexProvider(note.noteId));
-    final totalPages = note.pages.length;
+    final currentPageIndex = ref.read(currentPageIndexProvider(noteId));
+    final totalPages = ref.watch(notePagesCountProvider(noteId));
 
     if (currentPageIndex < totalPages - 1) {
       final targetPage = currentPageIndex + 1;
-      ref
-          .read(currentPageIndexProvider(note.noteId).notifier)
-          .setPage(targetPage);
+      ref.read(currentPageIndexProvider(noteId).notifier).setPage(targetPage);
     }
   }
 
   /// 특정 페이지로 이동
   void _goToPage(WidgetRef ref, int pageIndex) {
-    final totalPages = note.pages.length;
+    final totalPages = ref.watch(notePagesCountProvider(noteId));
 
     if (pageIndex >= 0 && pageIndex < totalPages) {
-      ref
-          .read(currentPageIndexProvider(note.noteId).notifier)
-          .setPage(pageIndex);
+      ref.read(currentPageIndexProvider(noteId).notifier).setPage(pageIndex);
     }
   }
 
   /// 페이지 선택 다이얼로그 표시
   void _showPageSelector(BuildContext context, WidgetRef ref) {
-    final currentPageIndex = ref.read(currentPageIndexProvider(note.noteId));
-    final totalPages = note.pages.length;
+    final currentPageIndex = ref.read(currentPageIndexProvider(noteId));
+    final totalPages = ref.watch(notePagesCountProvider(noteId));
 
     showDialog<void>(
       context: context,
@@ -129,8 +122,8 @@ class NoteEditorPageNavigation extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentPageIndex = ref.watch(currentPageIndexProvider(note.noteId));
-    final totalPages = note.pages.length;
+    final currentPageIndex = ref.watch(currentPageIndexProvider(noteId));
+    final totalPages = ref.watch(notePagesCountProvider(noteId));
 
     final canGoPrevious = currentPageIndex > 0;
     final canGoNext = currentPageIndex < totalPages - 1;

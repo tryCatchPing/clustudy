@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../shared/routing/app_routes.dart';
 import '../../../shared/services/note_service.dart';
 import '../../../shared/widgets/navigation_card.dart';
-import '../data/fake_notes.dart';
+import '../data/derived_note_providers.dart';
+import '../data/notes_repository_provider.dart';
 
 /// 노트 목록을 표시하고 새로운 노트를 생성하는 화면입니다.
 ///
@@ -12,33 +14,29 @@ import '../data/fake_notes.dart';
 /// MyApp
 /// ㄴ HomeScreen
 ///   ㄴ NavigationCard → 라우트 이동 (/notes) → (현 위젯)
-class NoteListScreen extends StatefulWidget {
+class NoteListScreen extends ConsumerStatefulWidget {
   /// [NoteListScreen]의 생성자.
   const NoteListScreen({super.key});
 
   @override
-  State<NoteListScreen> createState() => _NoteListScreenState();
+  ConsumerState<NoteListScreen> createState() => _NoteListScreenState();
 }
 
-class _NoteListScreenState extends State<NoteListScreen> {
+class _NoteListScreenState extends ConsumerState<NoteListScreen> {
   bool _isImporting = false;
 
   /// PDF 파일을 선택하고 노트로 가져옵니다.
   Future<void> _importPdfNote() async {
-    if (_isImporting) {
-      return;
-    }
+    if (_isImporting) return;
 
-    setState(() {
-      _isImporting = true;
-    });
+    setState(() => _isImporting = true);
 
     try {
       final pdfNote = await NoteService.instance.createPdfNote();
 
       if (pdfNote != null) {
-        // TODO(Jidou): 실제 구현에서는 DB에 저장하거나 상태 관리를 통해 노트 목록에 추가
-        fakeNotes.add(pdfNote);
+        final repo = ref.read(notesRepositoryProvider);
+        repo.upsert(pdfNote);
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -47,10 +45,6 @@ class _NoteListScreenState extends State<NoteListScreen> {
               backgroundColor: Colors.green,
             ),
           );
-
-          setState(() {
-            // UI 업데이트를 위한 setState
-          });
         }
       }
     } catch (e) {
@@ -64,9 +58,7 @@ class _NoteListScreenState extends State<NoteListScreen> {
       }
     } finally {
       if (mounted) {
-        setState(() {
-          _isImporting = false;
-        });
+        setState(() => _isImporting = false);
       }
     }
   }
@@ -74,10 +66,10 @@ class _NoteListScreenState extends State<NoteListScreen> {
   Future<void> _createBlankNote() async {
     try {
       final blankNote = await NoteService.instance.createBlankNote();
+      final repo = ref.read(notesRepositoryProvider);
 
       if (blankNote != null) {
-        // TODO(xodnd): 실제 구현에서는 DB에 저장하거나 상태 관리를 통해 노트 목록에 추가
-        fakeNotes.add(blankNote);
+        repo.upsert(blankNote);
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -86,10 +78,6 @@ class _NoteListScreenState extends State<NoteListScreen> {
               backgroundColor: Colors.green,
             ),
           );
-
-          setState(() {
-            // UI 업데이트를 위한 setState
-          });
         }
       }
     } catch (e) {
@@ -106,6 +94,7 @@ class _NoteListScreenState extends State<NoteListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final notesAsync = ref.watch(notesProvider);
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
@@ -151,26 +140,43 @@ class _NoteListScreenState extends State<NoteListScreen> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      // 저장된 노트로 이동하는 카드들
-                      for (var i = 0; i < fakeNotes.length; ++i) ...[
-                        NavigationCard(
-                          icon: Icons.brush,
-                          title: fakeNotes[i].title,
-                          subtitle: '${fakeNotes[i].pages.length} 페이지',
-                          color: const Color(0xFF6750A4),
-                          onTap: () {
-                            debugPrint('📝 노트 편집: ${fakeNotes[i].noteId}');
-                            // canvas_routers.dart - /notes/:noteId/edit 이동
-                            // 노트 편집 화면 NoteEditorScreen 으로 이동
-                            context.pushNamed(
-                              AppRoutes.noteEditName,
-                              pathParameters: {'noteId': fakeNotes[i].noteId},
-                            );
-                          },
+                      // 저장된 노트로 이동하는 카드들 (provider 기반)
+                      notesAsync.when(
+                        data: (notes) {
+                          if (notes.isEmpty) {
+                            return const Text('저장된 노트가 없습니다.');
+                          }
+                          return Column(
+                            children: [
+                              for (var i = 0; i < notes.length; i++) ...[
+                                NavigationCard(
+                                  icon: Icons.brush,
+                                  title: notes[i].title,
+                                  subtitle: '${notes[i].pages.length} 페이지',
+                                  color: const Color(0xFF6750A4),
+                                  onTap: () {
+                                    debugPrint('📝 노트 편집: ${notes[i].noteId}');
+                                    context.pushNamed(
+                                      AppRoutes.noteEditName,
+                                      pathParameters: {
+                                        'noteId': notes[i].noteId,
+                                      },
+                                    );
+                                  },
+                                ),
+                                if (i < notes.length - 1)
+                                  const SizedBox(height: 16),
+                              ],
+                            ],
+                          );
+                        },
+                        loading: () => const Center(
+                          child: CircularProgressIndicator(),
                         ),
-                        if (i < fakeNotes.length - 1)
-                          const SizedBox(height: 16),
-                      ],
+                        error: (error, stackTrace) => Center(
+                          child: Text('오류: $error'),
+                        ),
+                      ),
                     ],
                   ),
                 ),

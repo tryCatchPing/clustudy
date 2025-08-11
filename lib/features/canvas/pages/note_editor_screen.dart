@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../notes/models/note_model.dart';
 import '../providers/note_editor_provider.dart';
 import '../widgets/note_editor_canvas.dart';
 import '../widgets/toolbar/note_editor_actions_bar.dart';
@@ -19,11 +18,11 @@ class NoteEditorScreen extends ConsumerStatefulWidget {
   /// [note]는 편집할 노트 모델입니다.
   const NoteEditorScreen({
     super.key,
-    required this.note,
+    required this.noteId,
   });
 
-  /// 편집할 노트 모델.
-  final NoteModel note;
+  /// 편집할 노트 ID.
+  final String noteId;
 
   @override
   ConsumerState<NoteEditorScreen> createState() => _NoteEditorScreenState();
@@ -65,24 +64,25 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
   @override
   Widget build(BuildContext context) {
     final currentIndex = ref.watch(
-      currentPageIndexProvider(widget.note.noteId),
+      currentPageIndexProvider(widget.noteId),
     );
     final currentNotifier = ref.watch(
-      currentNotifierProvider(widget.note.noteId),
+      currentNotifierProvider(widget.noteId),
     );
+    final notePagesCount = ref.watch(notePagesCountProvider(widget.noteId));
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         title: Text(
-          '${widget.note.title} - Page ${currentIndex + 1}/${widget.note.pages.length}',
+          '${widget.noteId} - Page ${currentIndex + 1}/$notePagesCount',
         ),
         actions: [
           NoteEditorActionsBar(notifier: currentNotifier),
         ],
       ),
       body: NoteEditorCanvas(
-        note: widget.note,
+        noteId: widget.noteId,
         transformationController: transformationController,
       ),
     );

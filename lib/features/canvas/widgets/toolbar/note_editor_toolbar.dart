@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../notes/models/note_model.dart';
 import '../../notifiers/custom_scribble_notifier.dart';
 import '../../providers/note_editor_provider.dart';
 import '../controls/note_editor_page_navigation.dart';
@@ -25,7 +24,7 @@ class NoteEditorToolbar extends ConsumerWidget {
   /// [onPressureToggleChanged]는 필압 토글 변경 시 호출되는 콜백 함수입니다.
   /// ✅ 페이지 네비게이션 파라미터들은 제거됨 (Provider에서 직접 읽음)
   const NoteEditorToolbar({
-    required this.note,
+    required this.noteId,
     required this.notifier,
     required this.canvasWidth,
     required this.canvasHeight,
@@ -35,7 +34,7 @@ class NoteEditorToolbar extends ConsumerWidget {
   });
 
   /// 현재 편집중인 노트 모델
-  final NoteModel note;
+  final String noteId;
 
   /// 스케치 상태를 관리하는 Notifier.
   final CustomScribbleNotifier notifier;
@@ -56,7 +55,8 @@ class NoteEditorToolbar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final totalPages = note.pages.length;
+    final totalPages = ref.watch(notePagesCountProvider(noteId));
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Column(
@@ -75,7 +75,7 @@ class NoteEditorToolbar extends ConsumerWidget {
               children: [
                 if (totalPages > 1)
                   NoteEditorPageNavigation(
-                    note: note,
+                    noteId: noteId,
                   ),
                 // 필압 토글 컨트롤
                 // TODO(xodnd): notifier 에서 처리하는 것이 좋을 것 같음.
