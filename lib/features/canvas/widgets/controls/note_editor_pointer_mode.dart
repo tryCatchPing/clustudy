@@ -1,23 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:scribble/scribble.dart';
 
-import '../../notifiers/custom_scribble_notifier.dart';
+import '../../providers/note_editor_provider.dart';
 
 /// 포인터 모드 (모든 터치, 펜 전용)를 선택하는 위젯입니다.
-class NoteEditorPointerMode extends StatelessWidget {
+class NoteEditorPointerMode extends ConsumerWidget {
   /// [NoteEditorPointerMode]의 생성자.
   ///
-  /// [notifier]는 스케치 상태를 관리하는 Notifier입니다.
   const NoteEditorPointerMode({
-    required this.notifier,
+    required this.noteId,
     super.key,
   });
 
-  /// 스케치 상태를 관리하는 Notifier.
-  final CustomScribbleNotifier notifier;
+  final String noteId;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final notifier = ref.watch(currentNotifierProvider(noteId));
+
     return ValueListenableBuilder<ScribbleState>(
       valueListenable: notifier,
       builder: (context, state, child) {

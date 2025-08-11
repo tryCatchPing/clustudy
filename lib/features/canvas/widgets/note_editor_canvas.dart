@@ -43,12 +43,7 @@ class NoteEditorCanvas extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Provider에서 상태 읽기
-    final simulatePressure = ref.watch(simulatePressureProvider);
     final pageController = ref.watch(pageControllerProvider(noteId));
-    final scribbleNotifiers = ref.watch(
-      customScribbleNotifiersProvider(noteId),
-    );
-    final currentNotifier = ref.watch(currentNotifierProvider(noteId));
     final notePagesCount = ref.watch(notePagesCountProvider(noteId));
 
     return Padding(
@@ -69,9 +64,8 @@ class NoteEditorCanvas extends ConsumerWidget {
               },
               itemBuilder: (context, index) {
                 return NotePageViewItem(
-                  notifier: scribbleNotifiers[index]!,
+                  noteId: noteId,
                   transformationController: transformationController,
-                  simulatePressure: simulatePressure,
                 );
               },
             ),
@@ -80,11 +74,9 @@ class NoteEditorCanvas extends ConsumerWidget {
           // 툴바 (하단) - 페이지 네비게이션 포함
           NoteEditorToolbar(
             noteId: noteId,
-            notifier: currentNotifier,
             canvasWidth: _canvasWidth,
             canvasHeight: _canvasHeight,
             transformationController: transformationController,
-            simulatePressure: simulatePressure,
           ),
         ],
       ),

@@ -1,28 +1,23 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:scribble/scribble.dart';
 
 import '../constants/note_editor_constant.dart'; // NoteEditorConstants 정의 필요
-import '../notifiers/custom_scribble_notifier.dart'; // CustomScribbleNotifier 정의 필요
+import '../notifiers/custom_scribble_notifier.dart';
+import '../providers/note_editor_provider.dart';
 import 'canvas_background_widget.dart'; // CanvasBackgroundWidget 정의 필요
 import 'linker_gesture_layer.dart';
+
 // import 'rectangle_linker_painter.dart'; // RectangleLinkerPainter는 LinkerGestureLayer 내부에서 사용되므로 직접 import는 불필요할 수 있음
 
 /// Note 편집 화면의 단일 페이지 뷰 아이템입니다.
-/// [pageController], [totalPages], [notifier], [transformationController],
-/// [simulatePressure]를 통해 페이지, 필기, 확대/축소, 필압 시뮬레이션 등을
-/// 제어합니다.
-class NotePageViewItem extends StatefulWidget {
-  /// 스케치 상태를 관리하는 Notifier.
-  final CustomScribbleNotifier notifier;
-
-  /// 확대/축소 상태를 관리하는 컨트롤러.
+/// [transformationController]를 통해 페이지 필기, 확대/축소 등을 제어합니다.
+class NotePageViewItem extends ConsumerStatefulWidget {
+  final String noteId;
   final TransformationController transformationController;
-
-  /// 필압 시뮬레이션 여부.
-  final bool simulatePressure;
 
   /// [NotePageViewItem]의 생성자.
   ///
@@ -30,20 +25,23 @@ class NotePageViewItem extends StatefulWidget {
   /// [transformationController]는 확대/축소 상태를 관리하는 컨트롤러입니다.
   /// [simulatePressure]는 필압 시뮬레이션 여부입니다.
   const NotePageViewItem({
-    super.key,
-    required this.notifier,
+    required this.noteId,
     required this.transformationController,
-    required this.simulatePressure,
+    super.key,
   });
 
   @override
-  State<NotePageViewItem> createState() => _NotePageViewItemState();
+  ConsumerState<NotePageViewItem> createState() => _NotePageViewItemState();
 }
 
-class _NotePageViewItemState extends State<NotePageViewItem> {
+class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
   Timer? _debounceTimer;
   double _lastScale = 1.0;
   List<Rect> _currentLinkerRectangles = []; // LinkerGestureLayer로부터 받은 링커 목록
+
+  // 비-build 컨텍스트에서 현재 노트의 notifier 접근용
+  CustomScribbleNotifier get _currentNotifier =>
+      ref.read(currentNotifierProvider(widget.noteId));
 
   @override
   void initState() {
@@ -76,7 +74,7 @@ class _NotePageViewItemState extends State<NotePageViewItem> {
   /// 스케일을 업데이트합니다.
   void _updateScale() {
     // 실제 스케일 동기화 로직 (구현 생략)
-    widget.notifier.syncWithViewerScale(
+    _currentNotifier.syncWithViewerScale(
       widget.transformationController.value.getMaxScaleOnAxis(),
     );
   }
@@ -122,9 +120,11 @@ class _NotePageViewItemState extends State<NotePageViewItem> {
 
   @override
   Widget build(BuildContext context) {
-    final drawingWidth = widget.notifier.page!.drawingAreaWidth;
-    final drawingHeight = widget.notifier.page!.drawingAreaHeight;
-    final isLinkerMode = widget.notifier.toolMode.isLinker;
+    final notifier = ref.watch(currentNotifierProvider(widget.noteId));
+
+    final drawingWidth = notifier.page!.drawingAreaWidth;
+    final drawingHeight = notifier.page!.drawingAreaHeight;
+    final isLinkerMode = notifier.toolMode.isLinker;
 
     // -- NotePageViewItem의 build 메서드 내부--
     if (!isLinkerMode) {
@@ -162,16 +162,15 @@ class _NotePageViewItemState extends State<NotePageViewItem> {
                   width: drawingWidth,
                   height: drawingHeight,
                   child: ValueListenableBuilder<ScribbleState>(
-                    valueListenable: widget.notifier,
+                    valueListenable: notifier,
                     builder: (context, scribbleState, child) {
-                      final currentToolMode = widget
-                          .notifier
-                          .toolMode; // notifier에서 직접 toolMode 가져오기
+                      final currentToolMode =
+                          notifier.toolMode; // notifier에서 직접 toolMode 가져오기
                       return Stack(
                         children: [
                           // 배경 레이어
                           CanvasBackgroundWidget(
-                            page: widget.notifier.page!,
+                            page: notifier.page!,
                             width: drawingWidth,
                             height: drawingHeight,
                           ),
@@ -192,9 +191,11 @@ class _NotePageViewItemState extends State<NotePageViewItem> {
                             ignoring: currentToolMode.isLinker,
                             child: ClipRect(
                               child: Scribble(
-                                notifier: widget.notifier,
+                                notifier: notifier,
                                 drawPen: !currentToolMode.isLinker,
-                                simulatePressure: widget.simulatePressure,
+                                simulatePressure: ref.watch(
+                                  simulatePressureProvider,
+                                ),
                               ),
                             ),
                           ),
