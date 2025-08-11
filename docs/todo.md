@@ -25,14 +25,14 @@
 
 3. 라우팅/화면을 noteId 중심으로 리팩토링
 
-- [ ] `CanvasRoutes`: builder는 noteId만 받고, 화면 내부에서 provider로 Note 구독(가능하면 `extra`는 선택사항)
-- [ ] `NoteEditorScreen`: noteId만 입력 → `noteProvider(noteId)` watch로 로딩/에러 처리 포함
+- [x] `CanvasRoutes`: builder는 noteId만 받고, 화면 내부에서 provider로 Note 구독(가능하면 `extra`는 선택사항)
+- [x] `NoteEditorScreen`: noteId만 입력 → `noteProvider(noteId)` watch로 로딩/에러 처리 포함 (AppBar 타이틀 provider 적용)
 
 4. 캔버스 상태 리팩토링(Provider 완전 도입)
 
-- [ ] `CustomScribbleNotifiers`: `noteProvider(noteId)`(AsyncValue) 의존으로 페이지 변화 시 notifier 맵 재생성/정리
-- [ ] `NoteEditorCanvas`: 내부에서 필요한 provider 직접 watch(불필요 prop 제거)
-- [ ] `NotePageViewItem`: 현재 형태 유지(필요 시 최소한 변경)
+- [x] `CustomScribbleNotifiers`: `noteProvider(noteId)`(AsyncValue) 의존으로 페이지 변화 시 notifier 맵 재생성/정리
+- [x] `NoteEditorCanvas`: 내부에서 필요한 provider 직접 watch(불필요 prop 제거)
+- [x] `NotePageViewItem`: 현재 형태 유지(필요 시 최소한 변경) 및 provider 의존으로 self-contained 처리
 
 5. 컨트롤러/설정 Provider 도입
 
