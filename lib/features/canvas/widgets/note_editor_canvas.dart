@@ -21,20 +21,13 @@ import 'toolbar/note_editor_toolbar.dart';
 class NoteEditorCanvas extends ConsumerWidget {
   /// [NoteEditorCanvas]의 생성자.
   ///
-  /// [note]는 현재 편집중인 노트 모델입니다.
-  /// [transformationController]는 캔버스의 변환을 제어하는 컨트롤러입니다.
-  /// [onPressureToggleChanged]는 필압 토글 변경 시 호출되는 콜백 함수입니다.
   const NoteEditorCanvas({
     super.key,
     required this.noteId,
-    required this.transformationController,
   });
 
   /// 현재 편집중인 노트 모델
   final String noteId;
-
-  /// 캔버스의 변환을 제어하는 컨트롤러.
-  final TransformationController transformationController;
 
   // 캔버스 크기 상수
   static const double _canvasWidth = NoteEditorConstants.canvasWidth;
@@ -63,10 +56,11 @@ class NoteEditorCanvas extends ConsumerWidget {
                     .setPage(index);
               },
               itemBuilder: (context, index) {
-                return NotePageViewItem(
-                  noteId: noteId,
-                  transformationController: transformationController,
-                );
+                return NotePageViewItem(noteId: noteId);
+                // return NotePageViewItem(
+                //   noteId: noteId,
+                //   pageIndex: index,
+                // );
               },
             ),
           ),
@@ -76,7 +70,6 @@ class NoteEditorCanvas extends ConsumerWidget {
             noteId: noteId,
             canvasWidth: _canvasWidth,
             canvasHeight: _canvasHeight,
-            transformationController: transformationController,
           ),
         ],
       ),

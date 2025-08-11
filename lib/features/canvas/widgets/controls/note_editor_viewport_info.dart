@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../providers/transformation_controller_provider.dart';
 
 /// 캔버스와 뷰포트 정보를 표시하는 위젯
-class NoteEditorViewportInfo extends StatelessWidget {
+class NoteEditorViewportInfo extends ConsumerWidget {
   /// [NoteEditorViewportInfo]의 생성자.
   ///
   /// [canvasWidth]는 캔버스의 너비입니다.
   /// [canvasHeight]는 캔버스의 높이입니다.
-  /// [transformationController]는 캔버스의 변환을 제어하는 컨트롤러입니다.
   const NoteEditorViewportInfo({
     required this.canvasWidth,
     required this.canvasHeight,
-    required this.transformationController,
+    required this.noteId,
     super.key,
   });
 
@@ -20,11 +22,10 @@ class NoteEditorViewportInfo extends StatelessWidget {
   /// 캔버스의 높이.
   final double canvasHeight;
 
-  /// 캔버스의 변환을 제어하는 컨트롤러.
-  final TransformationController transformationController;
+  final String noteId;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -51,7 +52,9 @@ class NoteEditorViewportInfo extends StatelessWidget {
             const SizedBox(width: 16),
             // 🔍 확대 정보 (ValueListenableBuilder로 실시간 업데이트)
             ValueListenableBuilder<Matrix4>(
-              valueListenable: transformationController,
+              valueListenable: ref.watch(
+                transformationControllerProvider(noteId),
+              ),
               builder: (context, matrix, child) {
                 final scale = matrix.getMaxScaleOnAxis();
                 return Column(
