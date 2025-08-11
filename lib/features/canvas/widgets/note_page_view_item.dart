@@ -15,11 +15,13 @@ import 'linker_gesture_layer.dart';
 /// Note 편집 화면의 단일 페이지 뷰 아이템입니다.
 class NotePageViewItem extends ConsumerStatefulWidget {
   final String noteId;
+  final int pageIndex;
 
   /// [NotePageViewItem]의 생성자.
   ///
   const NotePageViewItem({
     required this.noteId,
+    required this.pageIndex,
     super.key,
   });
 
@@ -34,30 +36,34 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
 
   // 비-build 컨텍스트에서 현재 노트의 notifier 접근용
   CustomScribbleNotifier get _currentNotifier =>
-      ref.read(currentNotifierProvider(widget.noteId));
+      ref.read(pageNotifierProvider(widget.noteId, widget.pageIndex));
 
-  // 비-build 컨텍스트에서 현재 노트의 transformationController 접근용
-  TransformationController get _transformationController =>
-      ref.read(transformationControllerProvider(widget.noteId));
+  // dispose에서 ref.read 사용을 피하기 위해 캐시
+  late final TransformationController _tc;
 
   @override
   void initState() {
     super.initState();
-    _transformationController.addListener(_onScaleChanged);
+    _tc = ref.read(transformationControllerProvider(widget.noteId));
+    _tc.addListener(_onScaleChanged);
     _updateScale(); // 초기 스케일 설정
   }
 
   @override
   void dispose() {
-    _transformationController.removeListener(_onScaleChanged);
+    _tc.removeListener(_onScaleChanged);
     _debounceTimer?.cancel();
     super.dispose();
   }
 
   /// 포인트 간격 조정을 위한 스케일 동기화.
   void _onScaleChanged() {
+    if (!mounted) {
+      return;
+    }
+
     // 스케일 변경 감지 및 디바운스 로직 (구현 생략)
-    final currentScale = _transformationController.value.getMaxScaleOnAxis();
+    final currentScale = _tc.value.getMaxScaleOnAxis();
     if ((currentScale - _lastScale).abs() < 0.01) {
       return;
     }
@@ -69,9 +75,12 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
 
   /// 스케일을 업데이트합니다.
   void _updateScale() {
+    if (!mounted) {
+      return;
+    }
     // 실제 스케일 동기화 로직 (구현 생략)
     _currentNotifier.syncWithViewerScale(
-      _transformationController.value.getMaxScaleOnAxis(),
+      _tc.value.getMaxScaleOnAxis(),
     );
   }
 
@@ -116,7 +125,9 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
 
   @override
   Widget build(BuildContext context) {
-    final notifier = ref.watch(currentNotifierProvider(widget.noteId));
+    final notifier = ref.watch(
+      pageNotifierProvider(widget.noteId, widget.pageIndex),
+    );
 
     final drawingWidth = notifier.page!.drawingAreaWidth;
     final drawingHeight = notifier.page!.drawingAreaHeight;

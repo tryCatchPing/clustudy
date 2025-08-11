@@ -56,11 +56,10 @@ class NoteEditorCanvas extends ConsumerWidget {
                     .setPage(index);
               },
               itemBuilder: (context, index) {
-                return NotePageViewItem(noteId: noteId);
-                // return NotePageViewItem(
-                //   noteId: noteId,
-                //   pageIndex: index,
-                // );
+                return NotePageViewItem(
+                  noteId: noteId,
+                  pageIndex: index,
+                );
               },
             ),
           ),

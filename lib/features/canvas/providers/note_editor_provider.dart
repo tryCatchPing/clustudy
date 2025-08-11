@@ -116,6 +116,16 @@ CustomScribbleNotifier currentNotifier(
   return notifiers[currentIndex]!;
 }
 
+@riverpod
+CustomScribbleNotifier pageNotifier(
+  Ref ref,
+  String noteId,
+  int pageIndex,
+) {
+  final notifiers = ref.watch(customScribbleNotifiersProvider(noteId));
+  return notifiers[pageIndex]!;
+}
+
 /// PageController
 /// 노트별로 독립적으로 관리 (family provider)
 /// 화면 이탈 시 해제되어 재입장 시 0페이지부터 시작
