@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../notes/models/note_model.dart';
 import '../constants/note_editor_constant.dart';
 import '../providers/note_editor_provider.dart';
 import 'note_page_view_item.dart';
@@ -27,12 +26,12 @@ class NoteEditorCanvas extends ConsumerWidget {
   /// [onPressureToggleChanged]는 필압 토글 변경 시 호출되는 콜백 함수입니다.
   const NoteEditorCanvas({
     super.key,
-    required this.note,
+    required this.noteId,
     required this.transformationController,
   });
 
   /// 현재 편집중인 노트 모델
-  final NoteModel note;
+  final String noteId;
 
   /// 캔버스의 변환을 제어하는 컨트롤러.
   final TransformationController transformationController;
@@ -45,11 +44,13 @@ class NoteEditorCanvas extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Provider에서 상태 읽기
     final simulatePressure = ref.watch(simulatePressureProvider);
-    final pageController = ref.watch(pageControllerProvider(note.noteId));
+    final pageController = ref.watch(pageControllerProvider(noteId));
     final scribbleNotifiers = ref.watch(
-      customScribbleNotifiersProvider(note.noteId),
+      customScribbleNotifiersProvider(noteId),
     );
-    final currentNotifier = ref.watch(currentNotifierProvider(note.noteId));
+    final currentNotifier = ref.watch(currentNotifierProvider(noteId));
+    final notePagesCount = ref.watch(notePagesCountProvider(noteId));
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -58,11 +59,11 @@ class NoteEditorCanvas extends ConsumerWidget {
           Expanded(
             child: PageView.builder(
               controller: pageController,
-              itemCount: note.pages.length,
+              itemCount: notePagesCount,
               onPageChanged: (index) {
                 ref
                     .read(
-                      currentPageIndexProvider(note.noteId).notifier,
+                      currentPageIndexProvider(noteId).notifier,
                     )
                     .setPage(index);
               },
@@ -78,7 +79,7 @@ class NoteEditorCanvas extends ConsumerWidget {
 
           // 툴바 (하단) - 페이지 네비게이션 포함
           NoteEditorToolbar(
-            note: note,
+            noteId: noteId,
             notifier: currentNotifier,
             canvasWidth: _canvasWidth,
             canvasHeight: _canvasHeight,

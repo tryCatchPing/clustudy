@@ -24,17 +24,23 @@ class MemoryNotesRepository implements NotesRepository {
   }
 
   @override
-  Stream<List<NoteModel>> watchNotes() {
-    // 새 구독자에게도 현재 스냅샷을 보장하기 위해 호출 시점에 1회 발행
-    _emit();
-    return _controller.stream;
+  Stream<List<NoteModel>> watchNotes() async* {
+    // 각 구독자에게 최초 스냅샷을 즉시 전달
+    yield List<NoteModel>.from(_notes);
+
+    // 이후 변경 사항을 계속 전달
+    yield* _controller.stream;
   }
 
   @override
-  Stream<NoteModel?> watchNoteById(String noteId) {
-    // 전체 스트림에서 map하여 단일 노트로 변환
-    _emit();
-    return _controller.stream.map((notes) {
+  Stream<NoteModel?> watchNoteById(String noteId) async* {
+    // 1. 최초 스냅샷 즉시 전달
+    final index = _notes.indexWhere((n) => n.noteId == noteId);
+    // `_notes` 리스트 전체에서 요청한 ID의 노트를 즉시 전달
+    yield index >= 0 ? _notes[index] : null;
+
+    // 2. 이후 _controller.stream 에서 변경사항이 올 때 마다 단일 노트만 걸러서 보내줌
+    yield* _controller.stream.map((notes) {
       final index = notes.indexWhere((n) => n.noteId == noteId);
       return index >= 0 ? notes[index] : null;
     });

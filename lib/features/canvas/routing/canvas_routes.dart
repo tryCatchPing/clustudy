@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../features/notes/data/fake_notes.dart';
 import '../../../shared/routing/app_routes.dart';
 import '../pages/note_editor_screen.dart';
 
@@ -18,15 +17,7 @@ class CanvasRoutes {
       builder: (context, state) {
         final noteId = state.pathParameters['noteId']!;
         debugPrint('📝 노트 편집 페이지: noteId = $noteId');
-
-        // noteId로 실제 노트 찾기
-        final note = fakeNotes.firstWhere(
-          (note) => note.noteId == noteId,
-          orElse: () => fakeNotes.first, // 찾지 못하면 기본 노트 반환
-        );
-
-        debugPrint('🔍 찾은 노트: ${note.title} (${note.pages.length} 페이지)');
-        return NoteEditorScreen(note: note);
+        return NoteEditorScreen(noteId: noteId);
       },
     ),
   ];

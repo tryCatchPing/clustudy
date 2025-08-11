@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../notes/data/fake_notes.dart';
+import '../../notes/data/derived_note_providers.dart';
 import '../constants/note_editor_constant.dart';
 import '../models/tool_mode.dart';
 import '../notifiers/custom_scribble_notifier.dart';
@@ -43,56 +43,64 @@ class CustomScribbleNotifiers extends _$CustomScribbleNotifiers {
   @override
   Map<int, CustomScribbleNotifier> build(String noteId) {
     final simulatePressure = ref.watch(simulatePressureProvider);
+    final noteAsync = ref.watch(noteProvider(noteId));
 
-    // 동일한 simulatePressure라면 캐시 재사용
-    if (_cache != null && _lastSimulatePressure == simulatePressure) {
-      return _cache!;
-    }
-
-    // 값이 바뀌었거나 캐시가 없다면 기존 인스턴스 정리
-    if (_cache != null) {
-      for (final notifier in _cache!.values) {
-        notifier.dispose();
-      }
-      _cache = null;
-    }
-
-    // noteId 로 NoteModel 조회 (임시: fakeNotes 사용)
-    // TODO(xodnd): 추후 repository/provider 로 변경
-    final note = fakeNotes.firstWhere(
-      (n) => n.noteId == noteId,
-      orElse: () => fakeNotes.first,
-    );
-
-    final created = <int, CustomScribbleNotifier>{};
-    for (var i = 0; i < note.pages.length; i++) {
-      final notifier =
-          CustomScribbleNotifier(
-              toolMode: ToolMode.pen,
-              page: note.pages[i],
-              simulatePressure: simulatePressure,
-              maxHistoryLength: NoteEditorConstants.maxHistoryLength,
-            )
-            ..setPen()
-            ..setSketch(
-              sketch: note.pages[i].toSketch(),
-              addToUndoHistory: false,
-            );
-      created[i] = notifier;
-    }
-
-    _cache = created;
-    _lastSimulatePressure = simulatePressure;
-    ref.onDispose(() {
-      if (_cache != null) {
-        for (final notifier in _cache!.values) {
-          notifier.dispose();
+    return noteAsync.when(
+      data: (note) {
+        if (note == null) {
+          // 노트를 찾지 못한 경우: 기존 캐시가 있으면 유지, 없으면 빈 맵
+          return _cache ?? <int, CustomScribbleNotifier>{};
         }
-        _cache = null;
-      }
-    });
 
-    return created;
+        // 캐시 재사용 조건: simulatePressure 동일 + 페이지 수 동일
+        if (_cache != null &&
+            _lastSimulatePressure == simulatePressure &&
+            _cache!.length == note.pages.length) {
+          return _cache!;
+        }
+
+        // 기존 캐시 정리
+        if (_cache != null) {
+          for (final notifier in _cache!.values) {
+            notifier.dispose();
+          }
+          _cache = null;
+        }
+
+        // 새로 생성
+        final created = <int, CustomScribbleNotifier>{};
+        for (var i = 0; i < note.pages.length; i++) {
+          final notifier =
+              CustomScribbleNotifier(
+                  toolMode: ToolMode.pen,
+                  page: note.pages[i],
+                  simulatePressure: simulatePressure,
+                  maxHistoryLength: NoteEditorConstants.maxHistoryLength,
+                )
+                ..setPen()
+                ..setSketch(
+                  sketch: note.pages[i].toSketch(),
+                  addToUndoHistory: false,
+                );
+          created[i] = notifier;
+        }
+
+        _cache = created;
+        _lastSimulatePressure = simulatePressure;
+        ref.onDispose(() {
+          if (_cache != null) {
+            for (final notifier in _cache!.values) {
+              notifier.dispose();
+            }
+            _cache = null;
+          }
+        });
+
+        return created;
+      },
+      loading: () => _cache ?? <int, CustomScribbleNotifier>{},
+      error: (_, __) => _cache ?? <int, CustomScribbleNotifier>{},
+    );
   }
 }
 
@@ -135,4 +143,18 @@ PageController pageController(
   });
 
   return controller;
+}
+
+/// 노트 페이지 수를 반환하는 파생 provider
+@riverpod
+int notePagesCount(
+  Ref ref,
+  String noteId,
+) {
+  final noteAsync = ref.watch(noteProvider(noteId));
+  return noteAsync.when(
+    data: (note) => note?.pages.length ?? 0,
+    error: (_, __) => 0,
+    loading: () => 0,
+  );
 }
