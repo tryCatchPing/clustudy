@@ -8,25 +8,18 @@ import 'package:scribble/scribble.dart';
 import '../constants/note_editor_constant.dart'; // NoteEditorConstants 정의 필요
 import '../notifiers/custom_scribble_notifier.dart';
 import '../providers/note_editor_provider.dart';
+import '../providers/transformation_controller_provider.dart';
 import 'canvas_background_widget.dart'; // CanvasBackgroundWidget 정의 필요
 import 'linker_gesture_layer.dart';
 
-// import 'rectangle_linker_painter.dart'; // RectangleLinkerPainter는 LinkerGestureLayer 내부에서 사용되므로 직접 import는 불필요할 수 있음
-
 /// Note 편집 화면의 단일 페이지 뷰 아이템입니다.
-/// [transformationController]를 통해 페이지 필기, 확대/축소 등을 제어합니다.
 class NotePageViewItem extends ConsumerStatefulWidget {
   final String noteId;
-  final TransformationController transformationController;
 
   /// [NotePageViewItem]의 생성자.
   ///
-  /// [notifier]는 스케치 상태를 관리하는 Notifier입니다.
-  /// [transformationController]는 확대/축소 상태를 관리하는 컨트롤러입니다.
-  /// [simulatePressure]는 필압 시뮬레이션 여부입니다.
   const NotePageViewItem({
     required this.noteId,
-    required this.transformationController,
     super.key,
   });
 
@@ -43,16 +36,20 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
   CustomScribbleNotifier get _currentNotifier =>
       ref.read(currentNotifierProvider(widget.noteId));
 
+  // 비-build 컨텍스트에서 현재 노트의 transformationController 접근용
+  TransformationController get _transformationController =>
+      ref.read(transformationControllerProvider(widget.noteId));
+
   @override
   void initState() {
     super.initState();
-    widget.transformationController.addListener(_onScaleChanged);
+    _transformationController.addListener(_onScaleChanged);
     _updateScale(); // 초기 스케일 설정
   }
 
   @override
   void dispose() {
-    widget.transformationController.removeListener(_onScaleChanged);
+    _transformationController.removeListener(_onScaleChanged);
     _debounceTimer?.cancel();
     super.dispose();
   }
@@ -60,8 +57,7 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
   /// 포인트 간격 조정을 위한 스케일 동기화.
   void _onScaleChanged() {
     // 스케일 변경 감지 및 디바운스 로직 (구현 생략)
-    final currentScale = widget.transformationController.value
-        .getMaxScaleOnAxis();
+    final currentScale = _transformationController.value.getMaxScaleOnAxis();
     if ((currentScale - _lastScale).abs() < 0.01) {
       return;
     }
@@ -75,7 +71,7 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
   void _updateScale() {
     // 실제 스케일 동기화 로직 (구현 생략)
     _currentNotifier.syncWithViewerScale(
-      widget.transformationController.value.getMaxScaleOnAxis(),
+      _transformationController.value.getMaxScaleOnAxis(),
     );
   }
 
@@ -143,7 +139,9 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(6),
           child: InteractiveViewer(
-            transformationController: widget.transformationController,
+            transformationController: ref.watch(
+              transformationControllerProvider(widget.noteId),
+            ),
             minScale: 0.3,
             maxScale: 3.0,
             constrained: false,

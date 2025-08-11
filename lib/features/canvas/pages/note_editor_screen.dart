@@ -30,38 +30,6 @@ class NoteEditorScreen extends ConsumerStatefulWidget {
 }
 
 class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
-  /// TransformationController: 확대/축소 상태를 관리하는 컨트롤러
-  ///
-  /// InteractiveViewer와 함께 사용하여 다음을 관리합니다:
-  /// - 확대/축소 비율
-  /// - 패닝(이동) 상태
-  /// - 변환 매트릭스
-  late TransformationController transformationController;
-
-  // ✅ _scribbleNotifiers는 이제 Provider에서 관리함 (customScribbleNotifiersProvider)
-  // ✅ _pageController는 이제 Provider에서 관리함 (pageControllerProvider)
-
-  @override
-  void initState() {
-    super.initState();
-    transformationController = TransformationController();
-
-    // ✅ _pageController 초기화도 Provider에서 자동으로 됨
-    // ✅ notifier 초기화는 Provider에서 자동으로 됨
-  }
-
-  // ✅ _initializeNotifiers 삭제됨 - Provider에서 자동으로 초기화
-
-  @override
-  void dispose() {
-    // ✅ notifier dispose는 Provider에서 자동으로 관리됨
-    // ✅ _pageController dispose도 Provider에서 자동으로 관리됨
-    transformationController.dispose();
-    super.dispose();
-  }
-
-  // 페이지 변경 콜백은 Canvas 내부에서 provider로 처리하도록 정리됨
-
   @override
   Widget build(BuildContext context) {
     final currentIndex = ref.watch(currentPageIndexProvider(widget.noteId));
@@ -80,10 +48,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
         ),
         actions: [NoteEditorActionsBar(noteId: widget.noteId)],
       ),
-      body: NoteEditorCanvas(
-        noteId: widget.noteId,
-        transformationController: transformationController,
-      ),
+      body: NoteEditorCanvas(noteId: widget.noteId),
     );
   }
 }

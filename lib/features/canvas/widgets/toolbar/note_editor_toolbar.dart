@@ -17,13 +17,11 @@ class NoteEditorToolbar extends ConsumerWidget {
   /// [noteId]는 현재 편집중인 노트 ID입니다.
   /// [canvasWidth]는 캔버스의 너비입니다.
   /// [canvasHeight]는 캔버스의 높이입니다.
-  /// [transformationController]는 캔버스의 변환을 제어하는 컨트롤러입니다.
   /// ✅ 페이지 네비게이션 파라미터들은 제거됨 (Provider에서 직접 읽음)
   const NoteEditorToolbar({
     required this.noteId,
     required this.canvasWidth,
     required this.canvasHeight,
-    required this.transformationController,
     super.key,
   });
 
@@ -35,9 +33,6 @@ class NoteEditorToolbar extends ConsumerWidget {
 
   /// 캔버스의 높이.
   final double canvasHeight;
-
-  /// 캔버스의 변환을 제어하는 컨트롤러.
-  final TransformationController transformationController;
 
   // ✅ 페이지 네비게이션 관련 파라미터들은 제거됨 - Provider에서 직접 읽음
 
@@ -69,7 +64,7 @@ class NoteEditorToolbar extends ConsumerWidget {
                 NoteEditorViewportInfo(
                   canvasWidth: canvasWidth,
                   canvasHeight: canvasHeight,
-                  transformationController: transformationController,
+                  noteId: noteId,
                 ),
                 NoteEditorPointerMode(noteId: noteId),
               ],
