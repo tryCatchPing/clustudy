@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../notes/data/derived_note_providers.dart';
 import '../providers/note_editor_provider.dart';
 import '../widgets/note_editor_canvas.dart';
 import '../widgets/toolbar/note_editor_actions_bar.dart';
@@ -63,23 +64,21 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currentIndex = ref.watch(
-      currentPageIndexProvider(widget.noteId),
-    );
-    final currentNotifier = ref.watch(
-      currentNotifierProvider(widget.noteId),
-    );
+    final currentIndex = ref.watch(currentPageIndexProvider(widget.noteId));
     final notePagesCount = ref.watch(notePagesCountProvider(widget.noteId));
+    final noteAsync = ref.watch(noteProvider(widget.noteId));
+    final noteTitle = noteAsync.maybeWhen(
+      data: (note) => note?.title ?? widget.noteId,
+      orElse: () => widget.noteId,
+    );
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         title: Text(
-          '${widget.noteId} - Page ${currentIndex + 1}/$notePagesCount',
+          '$noteTitle - Page ${currentIndex + 1}/$notePagesCount',
         ),
-        actions: [
-          NoteEditorActionsBar(notifier: currentNotifier),
-        ],
+        actions: [NoteEditorActionsBar(noteId: widget.noteId)],
       ),
       body: NoteEditorCanvas(
         noteId: widget.noteId,
