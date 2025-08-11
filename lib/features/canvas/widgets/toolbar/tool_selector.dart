@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:scribble/scribble.dart';
 
@@ -92,7 +91,8 @@ class NoteEditorToolSelector extends StatelessWidget {
               }
               // 🎯 추가된 로그: 버튼 클릭 후 notifier의 toolMode 확인
               debugPrint(
-                'After click, notifier.toolMode: ${notifier.toolMode}');
+                'After click, notifier.toolMode: ${notifier.toolMode}',
+              );
             },
             child: Text(tooltip),
           ),

@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../models/tool_mode.dart';
 import '../../providers/note_editor_provider.dart';
-import 'note_editor_color_selector.dart';
-import 'note_editor_stroke_selector.dart';
-import 'note_editor_tool_selector.dart';
+import 'style_selector.dart';
+import 'tool_selector.dart';
 
 /// 그리기 도구 모음을 표시하는 툴바 위젯입니다.
 ///
@@ -31,24 +29,8 @@ class NoteEditorDrawingToolbar extends ConsumerWidget {
           child: NoteEditorToolSelector(notifier: notifier),
         ), // 🎯 Flexible 추가
         const VerticalDivider(width: 12),
-        Flexible(
-          child: NoteEditorColorSelector(
-            notifier: notifier,
-            toolMode: ToolMode.pen,
-          ),
-        ), // 🎯 Flexible 추가
         const VerticalDivider(width: 12),
-        Flexible(
-          // 🎯 Flexible 추가
-          child: NoteEditorColorSelector(
-            notifier: notifier,
-            toolMode: ToolMode.highlighter,
-          ),
-        ),
-        const VerticalDivider(width: 12),
-        Flexible(
-          child: NoteEditorStrokeSelector(notifier: notifier),
-        ), // 🎯 Flexible 추가
+        Flexible(child: NoteEditorStyleSelector(notifier: notifier)),
       ],
     );
   }

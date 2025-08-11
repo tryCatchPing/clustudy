@@ -3,9 +3,9 @@ import 'package:flutter/widgets.dart';
 import 'package:scribble/scribble.dart';
 
 import '../../notes/models/note_page_model.dart' as page_model;
-import '../mixins/auto_save_mixin.dart';
-import '../mixins/tool_management_mixin.dart';
 import '../models/tool_mode.dart';
+import 'auto_save_mixin.dart';
+import 'tool_management_mixin.dart';
 
 /// 캔버스에서 스케치 및 도구 관리를 담당하는 Notifier.
 /// [ScribbleNotifier], [AutoSaveMixin], [ToolManagementMixin]을 조합하여 사용합니다.
