@@ -6,7 +6,7 @@ import '../controls/note_editor_page_navigation.dart';
 import '../controls/note_editor_pointer_mode.dart';
 import '../controls/note_editor_pressure_toggle.dart';
 import '../controls/note_editor_viewport_info.dart';
-import 'note_editor_drawing_toolbar.dart';
+import 'drawing_toolbar.dart';
 
 /// 노트 편집기 하단에 표시되는 툴바 위젯입니다.
 ///

@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../constants/note_editor_constant.dart';
 import '../providers/note_editor_provider.dart';
 import 'note_page_view_item.dart';
-import 'toolbar/note_editor_toolbar.dart';
+import 'toolbar/toolbar.dart';
 
 /// 📱 캔버스 영역을 담당하는 위젯
 ///
