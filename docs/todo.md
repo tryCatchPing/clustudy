@@ -33,14 +33,41 @@
 - [x] `CustomScribbleNotifiers`: `noteProvider(noteId)`(AsyncValue) 의존으로 페이지 변화 시 notifier 맵 재생성/정리
 - [x] `NoteEditorCanvas`: 내부에서 필요한 provider 직접 watch(불필요 prop 제거)
 - [x] `NotePageViewItem`: 현재 형태 유지(필요 시 최소한 변경) 및 provider 의존으로 self-contained 처리
+  - [x] per-page 위젯은 `pageNotifierProvider(noteId, pageIndex)` 사용, 상위(툴바 등)는 `currentNotifierProvider(noteId)` 사용
+  - [x] dispose 단계에서 `ref.read` 호출 금지 → `TransformationController`를 `initState`에서 캐싱하여 리스너 등록/해제 처리
+- [ ] `totalPages == 0`인 경우 캔버스/툴바 렌더링 차단하여 null 접근/범위 초과 방지
 
 5. 컨트롤러/설정 Provider 도입
 
-- [ ] `transformationControllerProvider(noteId)` family로 수명/해제 관리(`ref.onDispose`로 dispose)
-- [ ] `simulatePressure` 정책 결정 및 반영
-  - [ ] 전역 유지가 필요하면 `@Riverpod(keepAlive: true)`
-  - [ ] 노트별이면 `simulatePressurePerNote(noteId)` family
-  - [ ] `NoteEditorToolbar`는 값/세터를 provider로 직접 연결( prop 제거 )
+- [x] `transformationControllerProvider(noteId)` family로 수명/해제 관리(`ref.onDispose`로 dispose)
+- [x] `simulatePressure` 정책 결정 및 반영
+  - [x] 전역 유지가 필요하면 `@Riverpod(keepAlive: true)`
+  - [x] 노트별이면 `simulatePressurePerNote(noteId)` family
+  - [x] `NoteEditorToolbar`는 값/세터를 provider로 직접 연결( prop 제거 )
+
+### 10. 툴바 전역 상태 및 링커 관리 설계
+
+- [ ] 툴바 전역 상태 공유 설계/구현
+
+  - [ ] `ToolSettings` 모델 정의: `selectedTool`(펜/지우개/링커…), `selectedColor`, `selectedWidth`, `eraserWidth`, `pointerMode`
+  - [ ] Provider 선택: 전역 공유(`@Riverpod(keepAlive: true) toolSettingsProvider`) 또는 노트별 공유(`toolSettingsProvider(noteId)`) 정책 결정
+  - [ ] Toolbar ←→ Provider 양방향 연결: UI에서 변경 시 Provider 업데이트, Provider 변경 시 `CustomScribbleNotifier`들에 반영
+  - [ ] `CustomScribbleNotifiers`와의 동기화 전략: 현재/모든 페이지에 일괄 반영 여부 정의(성능 고려)
+  - [ ] 앱 재진입 시 상태 복원 필요 여부 결정 및 영속화 방안(선택: Repository/Prefs)
+
+- [ ] 링커 데이터 관리 및 영속화 방안
+
+  - [ ] `LinkerRect` 모델 정의: `id`, `noteId`, `pageIndex`, `rectNormalized`(left/top/width/height; 캔버스 크기 대비 정규화), `style`
+  - [ ] 편집 상태 Provider: `linkerRectsProvider(noteId, pageIndex)`에서 추가/수정/삭제 및 선택 상태 관리
+  - [ ] 저장 지점 결정: 페이지 이탈/주기적 자동 저장/명시적 저장 트리거 등
+  - [ ] 영속화 위치: `NotePageModel.linkers` 추가 또는 별도 `LinkRepository`로 분리(양자 택일; 마이그레이션 영향 검토)
+  - [ ] 탭 시 동작: 링크 탐색/링크 생성/삭제/속성 편집 등 바텀시트 옵션 연결(현 `LinkerGestureLayer` 이벤트 연계)
+  - [ ] 표시 옵션: 링커 레이어 on/off 토글(툴바에 스위치 배치)
+  - [ ] 좌표 정규화/복원 유닛테스트 추가(확대/축소/패닝과 무관하게 동일 구역 유지 확인)
+
+- [ ] 성능/안정성
+  - [ ] 링커 사각형 변경 시 디바운스/스로틀 적용(불필요 리빌드/저장 방지)
+  - [ ] 대량 링커 시 페인팅/히트테스트 비용 점검 및 최적화(예: 간단한 R-Tree/그리드 파티셔닝)
 
 6. 서비스 계층 연동 정리
 
