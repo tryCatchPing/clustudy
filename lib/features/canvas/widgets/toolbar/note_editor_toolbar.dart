@@ -39,6 +39,9 @@ class NoteEditorToolbar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final totalPages = ref.watch(notePagesCountProvider(noteId));
+    if (totalPages == 0) {
+      return const SizedBox.shrink();
+    }
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
