@@ -50,7 +50,7 @@ class CustomScribbleNotifiers extends _$CustomScribbleNotifiers {
     switch (settings.toolMode) {
       case ToolMode.pen:
         notifier
-          ..setColor(settings.pencolor)
+          ..setColor(settings.penColor)
           ..setStrokeWidth(settings.penWidth);
         break;
       case ToolMode.highlighter:
@@ -140,7 +140,7 @@ class CustomScribbleNotifiers extends _$CustomScribbleNotifiers {
                 switch (next.toolMode) {
                   case ToolMode.pen:
                     notifier
-                      ..setColor(next.pencolor)
+                      ..setColor(next.penColor)
                       ..setStrokeWidth(next.penWidth);
                     break;
                   case ToolMode.highlighter:
