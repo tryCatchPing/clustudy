@@ -35,7 +35,7 @@
 - [x] `NotePageViewItem`: 현재 형태 유지(필요 시 최소한 변경) 및 provider 의존으로 self-contained 처리
   - [x] per-page 위젯은 `pageNotifierProvider(noteId, pageIndex)` 사용, 상위(툴바 등)는 `currentNotifierProvider(noteId)` 사용
   - [x] dispose 단계에서 `ref.read` 호출 금지 → `TransformationController`를 `initState`에서 캐싱하여 리스너 등록/해제 처리
-- [ ] `totalPages == 0`인 경우 캔버스/툴바 렌더링 차단하여 null 접근/범위 초과 방지
+- [x] `totalPages == 0`인 경우 캔버스/툴바 렌더링 차단하여 null 접근/범위 초과 방지 (툴바는 숨김 처리, 캔버스는 0 아이템 안전)
 
 5. 컨트롤러/설정 Provider 도입
 
@@ -44,15 +44,16 @@
   - [x] 전역 유지가 필요하면 `@Riverpod(keepAlive: true)`
   - [x] 노트별이면 `simulatePressurePerNote(noteId)` family
   - [x] `NoteEditorToolbar`는 값/세터를 provider로 직접 연결( prop 제거 )
+  - [x] 재생성 없이 반영: `ref.listen(simulatePressureProvider)`로 기존 CSN에 런타임 주입(`setSimulatePressureEnabled`)하여 히스토리 보존
 
 ### 10. 툴바 전역 상태 및 링커 관리 설계
 
-- [ ] 툴바 전역 상태 공유 설계/구현
+- [x] 툴바 전역 상태 공유 설계/구현 (노트별 공유)
 
-  - [ ] `ToolSettings` 모델 정의: `selectedTool`(펜/지우개/링커…), `selectedColor`, `selectedWidth`, `eraserWidth`, `pointerMode`
-  - [ ] Provider 선택: 전역 공유(`@Riverpod(keepAlive: true) toolSettingsProvider`) 또는 노트별 공유(`toolSettingsProvider(noteId)`) 정책 결정
-  - [ ] Toolbar ←→ Provider 양방향 연결: UI에서 변경 시 Provider 업데이트, Provider 변경 시 `CustomScribbleNotifier`들에 반영
-  - [ ] `CustomScribbleNotifiers`와의 동기화 전략: 현재/모든 페이지에 일괄 반영 여부 정의(성능 고려)
+  - [x] `ToolSettings` 모델 정의: `selectedTool`(펜/지우개/링커), `penColor/penWidth`, `highlighterColor/highlighterWidth`, `eraserWidth`, `linkerColor` (pointerMode는 ScribbleState로 유지)
+  - [x] Provider 선택: 노트별 공유(`toolSettingsNotifierProvider(noteId)`)
+  - [x] Toolbar ←→ Provider 양방향 연결: UI에서 변경 시 Provider 업데이트, Provider 변경 시 모든 페이지 `CustomScribbleNotifier`에 반영
+  - [x] 동기화 전략: `ref.listen(toolSettingsNotifierProvider(noteId))`로 모든 페이지 CSN에 일괄 주입 (재생성 금지, 히스토리 보존)
   - [ ] 앱 재진입 시 상태 복원 필요 여부 결정 및 영속화 방안(선택: Repository/Prefs)
 
 - [ ] 링커 데이터 관리 및 영속화 방안
@@ -102,7 +103,7 @@
   - [ ] 연산 단위 트랜잭션 처리(메모리/DB 공통 정책) 및 변경 이벤트 스트림 발행
 - [ ] 상태/컨트롤러
   - [ ] 페이지 컨트롤러는 리포지토리 변화에 동기화(페이지 수/순서 변경 시 애니메이션 반영)
-  - [ ] 페이지별 그리기 상태 캐시/노티파이어 재구성 및 안전한 dispose 처리
+  - [x] 페이지별 그리기 상태 캐시/노티파이어 재구성 및 안전한 dispose 처리 (pageId 기반 캐시, 증분 동기화)
   - [ ] 작업 중 UI 잠금/로딩 표기(대량 재정렬/일괄 삭제 대비)
 - [ ] UI/동작
   - [ ] 추가: 현재 페이지 기준 위치에 빈 페이지 삽입(배경 기본값/초기 스타일 적용), 완료 후 해당 페이지로 포커스 이동
