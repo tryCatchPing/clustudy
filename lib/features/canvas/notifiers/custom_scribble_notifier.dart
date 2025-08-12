@@ -58,6 +58,15 @@ class CustomScribbleNotifier extends ScribbleNotifier
 
   double _currentViewerScale = 1.0;
 
+  /// 런타임에서 필압 사용 여부를 토글할 수 있도록 내부 플래그를 유지합니다.
+  /// 생성 시 초기값은 [simulatePressure] 파라미터로부터 전달됩니다.
+  bool _simulatePressureEnabled = false;
+
+  /// 필압 사용 여부를 런타임에서 변경합니다. 재생성 없이 즉시 적용됩니다.
+  void setSimulatePressureEnabled(bool enabled) {
+    _simulatePressureEnabled = enabled;
+  }
+
   /// 포인터 다운 이벤트를 처리합니다.
   /// 링커 모드일 때는 아무것도 하지 않습니다.
   @override
@@ -214,14 +223,19 @@ class CustomScribbleNotifier extends ScribbleNotifier
   /// 📋 Original: ScribbleNotifier._getPointFromEvent()
   /// 🔧 Modification: None - copied as-is from original implementation
   Point _getPointFromEvent(PointerEvent event) {
-    final p = event.pressureMin == event.pressureMax
+    // 필압 센서가 없으면 0.5로 고정
+    final normalized = event.pressureMin == event.pressureMax
         ? 0.5
         : (event.pressure - event.pressureMin) /
               (event.pressureMax - event.pressureMin);
+
+    // 런타임 토글: 비활성화 시 0.5 고정, 활성화 시 센서 값 사용
+    final pressureValue = _simulatePressureEnabled ? normalized : 0.5;
+
     return Point(
       event.localPosition.dx,
       event.localPosition.dy,
-      pressure: pressureCurve.transform(p),
+      pressure: pressureValue,
     );
   }
 
