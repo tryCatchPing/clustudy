@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../providers/note_editor_provider.dart';
 import 'style_selector.dart';
 import 'tool_selector.dart';
 
@@ -20,17 +19,15 @@ class NoteEditorDrawingToolbar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final notifier = ref.watch(currentNotifierProvider(noteId));
-
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Flexible(
-          child: NoteEditorToolSelector(notifier: notifier),
+          child: NoteEditorToolSelector(noteId: noteId),
         ), // 🎯 Flexible 추가
         const VerticalDivider(width: 12),
         const VerticalDivider(width: 12),
-        Flexible(child: NoteEditorStyleSelector(notifier: notifier)),
+        Flexible(child: NoteEditorStyleSelector(noteId: noteId)),
       ],
     );
   }
