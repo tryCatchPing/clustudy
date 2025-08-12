@@ -78,8 +78,8 @@
 7. Fake 데이터 완전 제거
 
 - [ ] `lib/features/notes/data/fake_notes.dart` 및 전 참조 제거
-  - [ ] `lib/features/notes/pages/note_list_screen.dart`의 `fakeNotes.add` → `notesRepositoryProvider.upsert`
-  - [ ] `lib/features/canvas/providers/note_editor_provider.dart`의 `fakeNotes` 접근 제거 → `noteProvider(noteId)` 사용
+  - [x] `lib/features/notes/pages/note_list_screen.dart`의 `fakeNotes.add` → `notesRepositoryProvider.upsert`
+  - [x] `lib/features/canvas/providers/note_editor_provider.dart`의 `fakeNotes` 접근 제거 → `noteProvider(noteId)` 사용
   - [ ] `lib/shared/services/pdf_recovery_service.dart`의 `fakeNotes` 접근 제거 → 리포지토리 경유로 변경
 - [ ] 관련 문서의 예시 코드 업데이트
 
