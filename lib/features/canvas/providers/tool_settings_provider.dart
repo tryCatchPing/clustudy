@@ -8,7 +8,7 @@ part 'tool_settings_provider.g.dart';
 class ToolSettings {
   final ToolMode toolMode;
 
-  final Color pencolor;
+  final Color penColor;
   final double penWidth;
 
   final Color highlighterColor;
@@ -20,7 +20,7 @@ class ToolSettings {
 
   const ToolSettings({
     required this.toolMode,
-    required this.pencolor,
+    required this.penColor,
     required this.penWidth,
     required this.highlighterColor,
     required this.highlighterWidth,
@@ -30,7 +30,7 @@ class ToolSettings {
 
   ToolSettings copyWith({
     ToolMode? toolMode,
-    Color? pencolor,
+    Color? penColor,
     double? penWidth,
     Color? highlighterColor,
     double? highlighterWidth,
@@ -38,7 +38,7 @@ class ToolSettings {
     Color? linkerColor,
   }) => ToolSettings(
     toolMode: toolMode ?? this.toolMode,
-    pencolor: pencolor ?? this.pencolor,
+    penColor: penColor ?? this.penColor,
     penWidth: penWidth ?? this.penWidth,
     highlighterColor: highlighterColor ?? this.highlighterColor,
     highlighterWidth: highlighterWidth ?? this.highlighterWidth,
@@ -49,7 +49,7 @@ class ToolSettings {
   Color get currentColor {
     switch (toolMode) {
       case ToolMode.pen:
-        return pencolor;
+        return penColor;
       case ToolMode.highlighter:
         return highlighterColor;
       case ToolMode.eraser:
@@ -80,7 +80,7 @@ class ToolSettingsNotifier extends _$ToolSettingsNotifier {
   @override
   ToolSettings build(String noteId) => ToolSettings(
     toolMode: ToolMode.pen,
-    pencolor: ToolMode.pen.defaultColor,
+    penColor: ToolMode.pen.defaultColor,
     penWidth: ToolMode.pen.defaultWidth,
     highlighterColor: ToolMode.highlighter.defaultColor,
     highlighterWidth: ToolMode.highlighter.defaultWidth,
@@ -91,7 +91,7 @@ class ToolSettingsNotifier extends _$ToolSettingsNotifier {
   void setToolMode(ToolMode toolMode) =>
       state = state.copyWith(toolMode: toolMode);
   void setPenColor(Color penColor) =>
-      state = state.copyWith(pencolor: penColor);
+      state = state.copyWith(penColor: penColor);
   void setPenWidth(double penWidth) =>
       state = state.copyWith(penWidth: penWidth);
   void setHighlighterColor(Color highlighterColor) =>
