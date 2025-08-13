@@ -32,13 +32,18 @@ class NoteEditorScreen extends ConsumerStatefulWidget {
 class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
   @override
   Widget build(BuildContext context) {
-    final currentIndex = ref.watch(currentPageIndexProvider(widget.noteId));
-    final notePagesCount = ref.watch(notePagesCountProvider(widget.noteId));
     final noteAsync = ref.watch(noteProvider(widget.noteId));
-    final noteTitle = noteAsync.maybeWhen(
-      data: (note) => note?.title ?? widget.noteId,
-      orElse: () => widget.noteId,
-    );
+    final note = noteAsync.value;
+    final noteTitle = note?.title ?? widget.noteId;
+    final notePagesCount = ref.watch(notePagesCountProvider(widget.noteId));
+    final currentIndex = ref.watch(currentPageIndexProvider(widget.noteId));
+
+    // 노트가 사라진 경우(삭제 직후 등) 즉시 빈 화면 처리하여 BadState 방지
+    if (note == null || notePagesCount == 0) {
+      return const Scaffold(
+        body: SizedBox.shrink(),
+      );
+    }
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:scribble/scribble.dart';
 
+import '../../notes/data/derived_note_providers.dart';
 import '../constants/note_editor_constant.dart'; // NoteEditorConstants 정의 필요
 import '../notifiers/custom_scribble_notifier.dart';
 import '../providers/note_editor_provider.dart';
@@ -78,10 +79,18 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
     if (!mounted) {
       return;
     }
-    // 실제 스케일 동기화 로직 (구현 생략)
-    _currentNotifier.syncWithViewerScale(
-      _tc.value.getMaxScaleOnAxis(),
-    );
+    // Provider 준비 상태를 확인 후 안전하게 동기화
+    final note = ref.read(noteProvider(widget.noteId)).value;
+    if (note == null || note.pages.length <= widget.pageIndex) {
+      return;
+    }
+    try {
+      _currentNotifier.syncWithViewerScale(
+        _tc.value.getMaxScaleOnAxis(),
+      );
+    } catch (_) {
+      // 초기 프레임에서 Notifier가 아직 생성되지 않은 경우가 있어 무시
+    }
   }
 
   /// 링커 옵션 다이얼로그를 표시합니다.
@@ -125,6 +134,12 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
 
   @override
   Widget build(BuildContext context) {
+    // 노트/페이지가 유효하지 않으면 즉시 비표시 처리하여 삭제 직후 레이스를 방지
+    final note = ref.watch(noteProvider(widget.noteId)).value;
+    if (note == null || note.pages.length <= widget.pageIndex) {
+      return const SizedBox.shrink();
+    }
+
     final notifier = ref.watch(
       pageNotifierProvider(widget.noteId, widget.pageIndex),
     );

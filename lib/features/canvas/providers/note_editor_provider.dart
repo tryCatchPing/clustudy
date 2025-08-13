@@ -185,13 +185,29 @@ CustomScribbleNotifier currentNotifier(
   String noteId,
 ) {
   final currentIndex = ref.watch(currentPageIndexProvider(noteId));
-  final notifiers = ref.watch(customScribbleNotifiersProvider(noteId));
   final note = ref.watch(noteProvider(noteId)).value;
+  final toolSettings = ref.watch(toolSettingsNotifierProvider(noteId));
+  final simulatePressure = ref.read(simulatePressureProvider);
+
   if (note == null || note.pages.isEmpty) {
-    throw StateError('No pages for noteId=$noteId');
+    // 노트가 없거나 페이지가 없는 경우에는 no-op Notifier를 반환하여 예외를 방지합니다.
+    return CustomScribbleNotifier(
+      toolMode: toolSettings.toolMode,
+      page: null,
+      simulatePressure: simulatePressure,
+      maxHistoryLength: NoteEditorConstants.maxHistoryLength,
+    );
   }
-  final pageId = note.pages[currentIndex].pageId;
-  return notifiers[pageId]!;
+
+  final page = note.pages[currentIndex];
+  final notifiers = ref.watch(customScribbleNotifiersProvider(noteId));
+  return notifiers[page.pageId] ??
+      CustomScribbleNotifier(
+        toolMode: toolSettings.toolMode,
+        page: null,
+        simulatePressure: simulatePressure,
+        maxHistoryLength: NoteEditorConstants.maxHistoryLength,
+      );
 }
 
 @riverpod
@@ -200,13 +216,29 @@ CustomScribbleNotifier pageNotifier(
   String noteId,
   int pageIndex,
 ) {
-  final notifiers = ref.watch(customScribbleNotifiersProvider(noteId));
   final note = ref.watch(noteProvider(noteId)).value;
+  final toolSettings = ref.watch(toolSettingsNotifierProvider(noteId));
+  final simulatePressure = ref.read(simulatePressureProvider);
+
   if (note == null || note.pages.length <= pageIndex) {
-    throw StateError('Invalid pageIndex=$pageIndex for noteId=$noteId');
+    // 유효하지 않은 페이지 접근에도 no-op Notifier 반환
+    return CustomScribbleNotifier(
+      toolMode: toolSettings.toolMode,
+      page: null,
+      simulatePressure: simulatePressure,
+      maxHistoryLength: NoteEditorConstants.maxHistoryLength,
+    );
   }
-  final pageId = note.pages[pageIndex].pageId;
-  return notifiers[pageId]!;
+
+  final page = note.pages[pageIndex];
+  final notifiers = ref.watch(customScribbleNotifiersProvider(noteId));
+  return notifiers[page.pageId] ??
+      CustomScribbleNotifier(
+        toolMode: toolSettings.toolMode,
+        page: null,
+        simulatePressure: simulatePressure,
+        maxHistoryLength: NoteEditorConstants.maxHistoryLength,
+      );
 }
 
 /// PageController
