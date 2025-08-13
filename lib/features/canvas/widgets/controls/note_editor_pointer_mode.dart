@@ -17,6 +17,10 @@ class NoteEditorPointerMode extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final totalPages = ref.watch(notePagesCountProvider(noteId));
+    if (totalPages == 0) {
+      return const SizedBox.shrink();
+    }
     final notifier = ref.watch(currentNotifierProvider(noteId));
 
     return ValueListenableBuilder<ScribbleState>(

@@ -72,11 +72,6 @@ class CustomScribbleNotifier extends ScribbleNotifier
   @override
   void onPointerDown(PointerDownEvent event) {
     if (toolMode.isLinker) return; // 링커 모드일 때는 아무것도 하지 않음
-    debugPrint(
-      'CustomScribbleNotifier: onPointerDown called. '
-      'ToolMode: $toolMode, PointerKind: ${event.kind}, '
-      'SupportedPointers: ${value.supportedPointerKinds}',
-    ); // DEBUG
     if (!value.supportedPointerKinds.contains(event.kind)) {
       return;
     }
@@ -112,10 +107,6 @@ class CustomScribbleNotifier extends ScribbleNotifier
   @override
   void onPointerUpdate(PointerMoveEvent event) {
     if (toolMode.isLinker) return; // 링커 모드일 때는 아무것도 하지 않음
-    debugPrint(
-      'CustomScribbleNotifier: onPointerUpdate called. '
-      'ToolMode: $toolMode, PointerKind: ${event.kind}',
-    ); // DEBUG
     if (!value.supportedPointerKinds.contains(event.kind)) {
       return;
     }

@@ -37,7 +37,7 @@ class NoteEditorPageNavigation extends ConsumerWidget {
   /// 다음 페이지로 이동
   void _goToNextPage(WidgetRef ref) {
     final currentPageIndex = ref.read(currentPageIndexProvider(noteId));
-    final totalPages = ref.watch(notePagesCountProvider(noteId));
+    final totalPages = ref.read(notePagesCountProvider(noteId));
 
     if (currentPageIndex < totalPages - 1) {
       final targetPage = currentPageIndex + 1;
@@ -47,7 +47,7 @@ class NoteEditorPageNavigation extends ConsumerWidget {
 
   /// 특정 페이지로 이동
   void _goToPage(WidgetRef ref, int pageIndex) {
-    final totalPages = ref.watch(notePagesCountProvider(noteId));
+    final totalPages = ref.read(notePagesCountProvider(noteId));
 
     if (pageIndex >= 0 && pageIndex < totalPages) {
       ref.read(currentPageIndexProvider(noteId).notifier).setPage(pageIndex);
@@ -57,7 +57,7 @@ class NoteEditorPageNavigation extends ConsumerWidget {
   /// 페이지 선택 다이얼로그 표시
   void _showPageSelector(BuildContext context, WidgetRef ref) {
     final currentPageIndex = ref.read(currentPageIndexProvider(noteId));
-    final totalPages = ref.watch(notePagesCountProvider(noteId));
+    final totalPages = ref.read(notePagesCountProvider(noteId));
 
     showDialog<void>(
       context: context,
@@ -122,8 +122,11 @@ class NoteEditorPageNavigation extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentPageIndex = ref.watch(currentPageIndexProvider(noteId));
     final totalPages = ref.watch(notePagesCountProvider(noteId));
+    if (totalPages == 0) {
+      return const SizedBox.shrink();
+    }
+    final currentPageIndex = ref.watch(currentPageIndexProvider(noteId));
 
     final canGoPrevious = currentPageIndex > 0;
     final canGoNext = currentPageIndex < totalPages - 1;
