@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../shared/routing/app_routes.dart';
+import '../../../shared/services/note_deletion_service.dart';
 import '../../../shared/services/note_service.dart';
 import '../../../shared/widgets/navigation_card.dart';
 import '../data/derived_note_providers.dart';
@@ -24,6 +25,71 @@ class NoteListScreen extends ConsumerStatefulWidget {
 
 class _NoteListScreenState extends ConsumerState<NoteListScreen> {
   bool _isImporting = false;
+
+  Future<void> _confirmAndDeleteNote({
+    required String noteId,
+    required String noteTitle,
+  }) async {
+    final shouldDelete =
+        await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('노트 삭제 확인'),
+            content: Text(
+              '정말로 "$noteTitle" 노트를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('취소'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('삭제'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (!shouldDelete) return;
+
+    try {
+      final repo = ref.read(notesRepositoryProvider);
+      final success = await NoteDeletionService.deleteNoteCompletely(
+        noteId,
+        repo: repo,
+      );
+      if (!mounted) return;
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('"$noteTitle" 노트를 삭제했습니다.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('노트 삭제에 실패했습니다.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('노트 삭제 실패: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   /// PDF 파일을 선택하고 노트로 가져옵니다.
   Future<void> _importPdfNote() async {
@@ -149,20 +215,42 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                           return Column(
                             children: [
                               for (var i = 0; i < notes.length; i++) ...[
-                                NavigationCard(
-                                  icon: Icons.brush,
-                                  title: notes[i].title,
-                                  subtitle: '${notes[i].pages.length} 페이지',
-                                  color: const Color(0xFF6750A4),
-                                  onTap: () {
-                                    debugPrint('📝 노트 편집: ${notes[i].noteId}');
-                                    context.pushNamed(
-                                      AppRoutes.noteEditName,
-                                      pathParameters: {
-                                        'noteId': notes[i].noteId,
-                                      },
-                                    );
-                                  },
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: NavigationCard(
+                                        icon: Icons.brush,
+                                        title: notes[i].title,
+                                        subtitle:
+                                            '${notes[i].pages.length} 페이지',
+                                        color: const Color(0xFF6750A4),
+                                        onTap: () {
+                                          debugPrint(
+                                            '📝 노트 편집: ${notes[i].noteId}',
+                                          );
+                                          context.pushNamed(
+                                            AppRoutes.noteEditName,
+                                            pathParameters: {
+                                              'noteId': notes[i].noteId,
+                                            },
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    IconButton(
+                                      tooltip: '노트 삭제',
+                                      onPressed: () => _confirmAndDeleteNote(
+                                        noteId: notes[i].noteId,
+                                        noteTitle: notes[i].title,
+                                      ),
+                                      icon: Icon(
+                                        Icons.delete_outline,
+                                        color: Colors.red[700],
+                                      ),
+                                    ),
+                                  ],
                                 ),
                                 if (i < notes.length - 1)
                                   const SizedBox(height: 16),

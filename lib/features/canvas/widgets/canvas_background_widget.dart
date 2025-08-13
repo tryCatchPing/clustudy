@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../features/notes/data/notes_repository_provider.dart';
 import '../../../shared/routing/app_routes.dart';
 import '../../../shared/services/file_storage_service.dart';
+import '../../../shared/services/note_deletion_service.dart';
 import '../../../shared/services/pdf_recovery_service.dart';
 import '../../notes/models/note_page_model.dart';
 import 'recovery_options_modal.dart';
@@ -255,6 +256,8 @@ class _CanvasBackgroundWidgetState
               ),
             );
           }
+          // 복구 실패 시 노트 삭제 유도
+          _promptDeleteAfterRecoveryFailure(noteTitle);
         },
         onCancel: () {
           // 모달 닫기
@@ -271,6 +274,71 @@ class _CanvasBackgroundWidgetState
         },
       ),
     );
+  }
+
+  /// 복구 실패 시 삭제 여부를 확인하고 삭제합니다.
+  Future<void> _promptDeleteAfterRecoveryFailure(String noteTitle) async {
+    if (!mounted) return;
+    final shouldDelete =
+        await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('복구 실패'),
+            content: Text('"$noteTitle" 노트를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.'),
+            actions: [
+              TextButton(
+                onPressed: () => context.pop(false),
+                child: const Text('취소'),
+              ),
+              ElevatedButton(
+                onPressed: () => context.pop(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('삭제'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (!shouldDelete || !mounted) return;
+
+    try {
+      final repo = ref.read(notesRepositoryProvider);
+      final success = await NoteDeletionService.deleteNoteCompletely(
+        widget.page.noteId,
+        repo: repo,
+      );
+
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('노트가 삭제되었습니다.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        context.goNamed(AppRoutes.noteListName);
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('노트 삭제에 실패했습니다.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ 복구 실패 후 노트 삭제 실패: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('노트 삭제 실패: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   /// 필기만 보기 모드를 활성화합니다.
@@ -315,7 +383,7 @@ class _CanvasBackgroundWidgetState
 
     try {
       final repo = ref.read(notesRepositoryProvider);
-      final success = await PdfRecoveryService.deleteNoteCompletely(
+      final success = await NoteDeletionService.deleteNoteCompletely(
         widget.page.noteId,
         repo: repo,
       );
