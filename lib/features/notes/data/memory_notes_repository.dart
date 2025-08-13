@@ -1,19 +1,19 @@
 import 'dart:async';
 
 import '../models/note_model.dart';
-import 'fake_notes.dart';
 import 'notes_repository.dart';
 
 /// 간단한 인메모리 구현.
 ///
 /// - 앱 기동 중 메모리에만 저장되며 종료 시 데이터는 사라집니다.
-/// - 초기 데이터로 `fakeNotes`를 사용합니다(점진적 제거 예정).
+/// - 초기 데이터는 없습니다. UI에서 생성/가져오기 흐름으로 채워집니다.
+/// - fakeNotes 사용 중단. 더 이상 사용되지 않습니다.
 class MemoryNotesRepository implements NotesRepository {
   final StreamController<List<NoteModel>> _controller;
 
   /// 내부 저장소. deep copy 없이 모델 참조를 사용하므로
   /// 외부에서 변경하지 않도록 주의해야 합니다(실무에선 immutable 권장).
-  final List<NoteModel> _notes = List<NoteModel>.from(fakeNotes);
+  final List<NoteModel> _notes = <NoteModel>[];
 
   MemoryNotesRepository()
     : _controller = StreamController<List<NoteModel>>.broadcast();
