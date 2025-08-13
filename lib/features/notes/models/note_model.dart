@@ -21,7 +21,7 @@ class NoteModel {
 
   /// 노트에 포함된 페이지 목록.
   /// 일단은 변경 가능하게.. 추후 수정 필요
-  List<NotePageModel> pages;
+  final List<NotePageModel> pages;
 
   /// 노트의 출처 타입 (빈 노트 또는 PDF 기반).
   final NoteSourceType sourceType;
@@ -65,4 +65,27 @@ class NoteModel {
 
   /// 빈 노트인지 여부를 반환합니다.
   bool get isBlank => sourceType == NoteSourceType.blank;
+
+  /// 새 값으로 일부 필드를 교체한 복제본을 반환합니다.
+  NoteModel copyWith({
+    String? noteId,
+    String? title,
+    List<NotePageModel>? pages,
+    NoteSourceType? sourceType,
+    String? sourcePdfPath,
+    int? totalPdfPages,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return NoteModel(
+      noteId: noteId ?? this.noteId,
+      title: title ?? this.title,
+      pages: pages ?? this.pages,
+      sourceType: sourceType ?? this.sourceType,
+      sourcePdfPath: sourcePdfPath ?? this.sourcePdfPath,
+      totalPdfPages: totalPdfPages ?? this.totalPdfPages,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 }
