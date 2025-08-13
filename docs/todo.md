@@ -1,12 +1,6 @@
 ## 해야 할 일
 
-### 목표 개요
-
-- noteId 기반 단방향 데이터 흐름 확립(화면/라우팅은 noteId만 전달)
-- Repository 도입으로 데이터 접근 추상화 (메모리 → Isar 교체 용이)
-- Riverpod 완전 도입(노트/컨트롤러/설정값 등 상태 공급자화)
-
-### 우선순위/의존성 정리(위에서부터 순차 진행 권장)
+### 목표
 
 1. Repository 인터페이스 정의 [최우선]
 
@@ -46,7 +40,7 @@
   - [x] `NoteEditorToolbar`는 값/세터를 provider로 직접 연결( prop 제거 )
   - [x] 재생성 없이 반영: `ref.listen(simulatePressureProvider)`로 기존 CSN에 런타임 주입(`setSimulatePressureEnabled`)하여 히스토리 보존
 
-### 10. 툴바 전역 상태 및 링커 관리 설계
+10. 툴바 전역 상태 및 링커 관리 설계
 
 - [x] 툴바 전역 상태 공유 설계/구현 (노트별 공유)
 
@@ -72,21 +66,21 @@
 
 6. 서비스 계층 연동 정리
 
-- [ ] `PdfRecoveryService`: 호출부에서 provider로 Note를 조회한 뒤 전달(또는 추후 Repository 기반 업데이트로 리팩토링)
-- [ ] 삭제 흐름: 파일 정리 후 `repository.delete(noteId)` 호출(트랜잭션 고려는 DB 도입 시)
+- [x] `PdfRecoveryService`: 호출부에서 provider로 Note를 조회한 뒤 전달(또는 추후 Repository 기반 업데이트로 리팩토링)
+- [x] 삭제 흐름: 파일 정리 후 `repository.delete(noteId)` 호출(트랜잭션 고려는 DB 도입 시)
 
 7. Fake 데이터 완전 제거
 
-- [ ] `lib/features/notes/data/fake_notes.dart` 및 전 참조 제거
+- [x] `lib/features/notes/data/fake_notes.dart` 및 전 참조 제거
   - [x] `lib/features/notes/pages/note_list_screen.dart`의 `fakeNotes.add` → `notesRepositoryProvider.upsert`
   - [x] `lib/features/canvas/providers/note_editor_provider.dart`의 `fakeNotes` 접근 제거 → `noteProvider(noteId)` 사용
-  - [ ] `lib/shared/services/pdf_recovery_service.dart`의 `fakeNotes` 접근 제거 → 리포지토리 경유로 변경
-- [ ] 관련 문서의 예시 코드 업데이트
+  - [x] `lib/shared/services/pdf_recovery_service.dart`의 `fakeNotes` 접근 제거 → 리포지토리 경유로 변경
 
 8. 테스트/검증
 
 - [ ] `dart analyze` 무오류 확인
 - [ ] 수동 회귀 검증: 페이지 네비게이션/필기/링커/PDF 복구 흐름
+- [ ] pdf 배경 에러 테스트 용 파일 제작 후 확인
 
 9. Isar DB 도입(별도 담당 개발자)
 
@@ -147,6 +141,12 @@
 - [ ] 성능/품질
   - [ ] 긴 문서 처리 시간 최적화(병렬/시리얼 균형), 이미지 압축/해상도 튜닝
   - [ ] 시각 품질 리그레션 체크(썸네일과 PDF 렌더 간 시각 일치성)
+
+15. text, image 임포트
+
+16. 노트 탭 제공으로 열린 노트 간 이동
+
+17. 그래프 뷰 - 링크 모델 관련해서 함께 고민 필요
 
 ### 후속 개선 아이디어
 
