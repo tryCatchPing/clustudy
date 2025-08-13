@@ -115,7 +115,6 @@ class FileStorageService {
       final noteDir = await _getNoteDirectoryPath(noteId);
       final directory = Directory(noteDir);
 
-      if (directory.existsSync()) {
       if (await directory.exists()) {
         await directory.delete(recursive: true);
         debugPrint('✅ 노트 파일 삭제 완료: $noteId');
