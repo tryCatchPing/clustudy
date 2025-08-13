@@ -8,6 +8,7 @@ import 'package:pdfx/pdfx.dart';
 import '../../features/notes/data/notes_repository.dart';
 import '../../features/notes/models/note_page_model.dart';
 import 'file_storage_service.dart';
+import 'note_deletion_service.dart';
 
 /// PDF 파일 손상 유형을 정의합니다.
 enum CorruptionType {
@@ -212,30 +213,12 @@ class PdfRecoveryService {
     }
   }
 
-  /// 노트를 완전히 삭제합니다.
-  ///
-  /// [noteId]: 삭제할 노트의 고유 ID
-  ///
-  /// Returns: 삭제 성공 여부
+  /// 노트를 완전히 삭제합니다. (NoteDeletionService로 위임)
   static Future<bool> deleteNoteCompletely(
     String noteId, {
     required NotesRepository repo,
   }) async {
-    try {
-      debugPrint('🗑️ 노트 완전 삭제 시작: $noteId');
-
-      // 1. 파일 시스템 정리
-      await FileStorageService.deleteNoteFiles(noteId);
-
-      // 2. DB에서 제거
-      await repo.delete(noteId);
-
-      debugPrint('✅ 노트 완전 삭제 완료: $noteId');
-      return true;
-    } catch (e) {
-      debugPrint('❌ 노트 삭제 실패: $e');
-      return false;
-    }
+    return NoteDeletionService.deleteNoteCompletely(noteId, repo: repo);
   }
 
   /// PDF 페이지들을 재렌더링합니다.
