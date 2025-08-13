@@ -424,9 +424,13 @@ class PdfRecoveryService {
       );
       final newPages = [...note.pages];
       newPages[idx] = updated;
-      note.pages = newPages;
 
-      await repo.upsert(note);
+      final newNote = note.copyWith(
+        pages: newPages,
+        updatedAt: DateTime.now(),
+      );
+
+      await repo.upsert(newNote);
     } catch (e) {
       debugPrint('⚠️ 페이지 이미지 경로 업데이트 실패: $e');
     }
