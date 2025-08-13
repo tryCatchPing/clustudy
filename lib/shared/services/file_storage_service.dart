@@ -116,7 +116,8 @@ class FileStorageService {
       final directory = Directory(noteDir);
 
       if (directory.existsSync()) {
-        directory.deleteSync(recursive: true);
+      if (await directory.exists()) {
+        await directory.delete(recursive: true);
         debugPrint('✅ 노트 파일 삭제 완료: $noteId');
       } else {
         debugPrint('ℹ️ 삭제할 노트 디렉토리가 존재하지 않음: $noteId');
