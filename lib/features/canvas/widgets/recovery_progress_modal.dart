@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../features/notes/data/notes_repository_provider.dart';
 import '../../../shared/services/pdf_recovery_service.dart';
 
 /// 재렌더링 진행 상황을 표시하는 모달
 ///
 /// PDF 페이지들을 재렌더링하는 동안 실시간 진행률을 표시하고,
 /// 사용자가 작업을 취소할 수 있는 옵션을 제공합니다.
-class RecoveryProgressModal extends StatefulWidget {
+class RecoveryProgressModal extends ConsumerStatefulWidget {
   /// [RecoveryProgressModal]의 생성자.
   ///
   /// [noteId]는 복구할 노트의 고유 ID입니다.
@@ -39,10 +41,11 @@ class RecoveryProgressModal extends StatefulWidget {
   final VoidCallback onCancel;
 
   @override
-  State<RecoveryProgressModal> createState() => _RecoveryProgressModalState();
+  ConsumerState<RecoveryProgressModal> createState() =>
+      _RecoveryProgressModalState();
 }
 
-class _RecoveryProgressModalState extends State<RecoveryProgressModal> {
+class _RecoveryProgressModalState extends ConsumerState<RecoveryProgressModal> {
   double _progress = 0.0;
   int _currentPage = 0;
   int _totalPages = 0;
@@ -64,8 +67,11 @@ class _RecoveryProgressModalState extends State<RecoveryProgressModal> {
         _statusMessage = 'PDF 페이지를 다시 렌더링하고 있습니다...';
       });
 
+      final repo = ref.watch(notesRepositoryProvider);
+
       final success = await PdfRecoveryService.rerenderNotePages(
         widget.noteId,
+        repo: repo,
         onProgress: (progress, current, total) {
           if (mounted && !_isCancelled && !_isCompleted) {
             setState(() {

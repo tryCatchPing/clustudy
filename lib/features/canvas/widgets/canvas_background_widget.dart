@@ -1,8 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../features/notes/data/notes_repository_provider.dart';
 import '../../../shared/routing/app_routes.dart';
 import '../../../shared/services/file_storage_service.dart';
 import '../../../shared/services/pdf_recovery_service.dart';
@@ -26,7 +28,7 @@ import 'recovery_progress_modal.dart';
 ///       ㄴ NoteEditorCanvas
 ///         ㄴ NotePageViewItem
 ///           ㄴ (현 위젯) / Scribble
-class CanvasBackgroundWidget extends StatefulWidget {
+class CanvasBackgroundWidget extends ConsumerStatefulWidget {
   /// [CanvasBackgroundWidget]의 생성자.
   ///
   /// [page]는 현재 노트 페이지 모델입니다.
@@ -51,10 +53,12 @@ class CanvasBackgroundWidget extends StatefulWidget {
   final double height;
 
   @override
-  State<CanvasBackgroundWidget> createState() => _CanvasBackgroundWidgetState();
+  ConsumerState<CanvasBackgroundWidget> createState() =>
+      _CanvasBackgroundWidgetState();
 }
 
-class _CanvasBackgroundWidgetState extends State<CanvasBackgroundWidget> {
+class _CanvasBackgroundWidgetState
+    extends ConsumerState<CanvasBackgroundWidget> {
   bool _isLoading = false;
   String? _errorMessage;
   File? _preRenderedImageFile;
@@ -272,7 +276,10 @@ class _CanvasBackgroundWidgetState extends State<CanvasBackgroundWidget> {
   /// 필기만 보기 모드를 활성화합니다.
   Future<void> _handleSketchOnlyMode() async {
     try {
-      await PdfRecoveryService.enableSketchOnlyMode(widget.page.noteId);
+      await PdfRecoveryService.enableSketchOnlyMode(
+        widget.page.noteId,
+        repo: ref.read(notesRepositoryProvider),
+      );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -307,8 +314,10 @@ class _CanvasBackgroundWidgetState extends State<CanvasBackgroundWidget> {
     }
 
     try {
+      final repo = ref.read(notesRepositoryProvider);
       final success = await PdfRecoveryService.deleteNoteCompletely(
         widget.page.noteId,
+        repo: repo,
       );
 
       if (success && mounted) {

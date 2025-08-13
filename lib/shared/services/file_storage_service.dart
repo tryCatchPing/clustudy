@@ -104,6 +104,7 @@ class FileStorageService {
       rethrow;
     }
   }
+
   /// 특정 노트의 모든 파일을 삭제합니다
   ///
   /// [noteId]: 삭제할 노트의 고유 ID
@@ -114,8 +115,8 @@ class FileStorageService {
       final noteDir = await _getNoteDirectoryPath(noteId);
       final directory = Directory(noteDir);
 
-      if (await directory.exists()) {
-        await directory.delete(recursive: true);
+      if (directory.existsSync()) {
+        directory.deleteSync(recursive: true);
         debugPrint('✅ 노트 파일 삭제 완료: $noteId');
       } else {
         debugPrint('ℹ️ 삭제할 노트 디렉토리가 존재하지 않음: $noteId');

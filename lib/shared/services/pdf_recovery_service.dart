@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
 import 'package:pdfx/pdfx.dart';
 
-import '../../features/notes/data/fake_notes.dart';
+import '../../features/notes/data/notes_repository.dart';
 import '../../features/notes/models/note_page_model.dart';
 import 'file_storage_service.dart';
 
@@ -121,28 +121,32 @@ class PdfRecoveryService {
   ///
   /// [noteId]: 노트 고유 ID
   ///
-  /// Returns: 페이지 번호를 키로 하는 필기 데이터 맵
-  static Future<Map<int, String>> backupSketchData(String noteId) async {
+  /// Returns: pageId를 키로 하는 필기 데이터 맵
+  static Future<Map<String, String>> backupSketchData(
+    String noteId, {
+    required NotesRepository repo,
+  }) async {
     try {
       debugPrint('💾 필기 데이터 백업 시작: $noteId');
 
-      final backupData = <int, String>{};
+      // pageId가 키
+      final backupData = <String, String>{};
 
-      // TODO(xodnd): 실제 DB 연동 시 수정 필요
-      final note = fakeNotes.firstWhere(
-        (note) => note.noteId == noteId,
-        orElse: () => throw Exception('노트를 찾을 수 없습니다: $noteId'),
-      );
+      final note = await repo.getNoteById(noteId);
+      if (note == null) {
+        throw Exception('노트를 찾을 수 없습니다: $noteId');
+      }
 
+      // pageId로?
       for (final page in note.pages) {
-        backupData[page.pageNumber] = page.jsonData;
+        backupData[page.pageId] = page.jsonData;
       }
 
       debugPrint('✅ 필기 데이터 백업 완료: ${backupData.length}개 페이지');
       return backupData;
     } catch (e) {
       debugPrint('❌ 필기 데이터 백업 실패: $e');
-      return <int, String>{};
+      return <String, String>{};
     }
   }
 
@@ -152,24 +156,24 @@ class PdfRecoveryService {
   /// [backupData]: 백업된 필기 데이터
   static Future<void> restoreSketchData(
     String noteId,
-    Map<int, String> backupData,
-  ) async {
+    Map<String, String> backupData, {
+    required NotesRepository repo,
+  }) async {
     try {
       debugPrint('🔄 필기 데이터 복원 시작: $noteId');
 
-      // TODO(xodnd): 실제 DB 연동 시 수정 필요
-      final noteIndex = fakeNotes.indexWhere((note) => note.noteId == noteId);
-      if (noteIndex == -1) {
+      final note = await repo.getNoteById(noteId);
+      if (note == null) {
         throw Exception('노트를 찾을 수 없습니다: $noteId');
       }
 
-      final note = fakeNotes[noteIndex];
-
       for (final page in note.pages) {
-        if (backupData.containsKey(page.pageNumber)) {
-          page.jsonData = backupData[page.pageNumber]!;
+        if (backupData.containsKey(page.pageId)) {
+          page.jsonData = backupData[page.pageId]!;
         }
       }
+
+      await repo.upsert(note);
 
       debugPrint('✅ 필기 데이터 복원 완료');
     } catch (e) {
@@ -181,17 +185,17 @@ class PdfRecoveryService {
   /// 필기만 보기 모드를 활성화합니다.
   ///
   /// [noteId]: 노트 고유 ID
-  static Future<void> enableSketchOnlyMode(String noteId) async {
+  static Future<void> enableSketchOnlyMode(
+    String noteId, {
+    required NotesRepository repo,
+  }) async {
     try {
       debugPrint('👁️ 필기만 보기 모드 활성화: $noteId');
 
-      // TODO(xodnd): 실제 DB 연동 시 수정 필요
-      final noteIndex = fakeNotes.indexWhere((note) => note.noteId == noteId);
-      if (noteIndex == -1) {
+      final note = await repo.getNoteById(noteId);
+      if (note == null) {
         throw Exception('노트를 찾을 수 없습니다: $noteId');
       }
-
-      final note = fakeNotes[noteIndex];
 
       for (final page in note.pages) {
         if (page.backgroundType == PageBackgroundType.pdf) {
@@ -199,7 +203,7 @@ class PdfRecoveryService {
         }
       }
 
-      // TODO(xodnd): DB 업데이트
+      await repo.upsert(note);
 
       debugPrint('✅ 필기만 보기 모드 활성화 완료');
     } catch (e) {
@@ -213,17 +217,18 @@ class PdfRecoveryService {
   /// [noteId]: 삭제할 노트의 고유 ID
   ///
   /// Returns: 삭제 성공 여부
-  static Future<bool> deleteNoteCompletely(String noteId) async {
+  static Future<bool> deleteNoteCompletely(
+    String noteId, {
+    required NotesRepository repo,
+  }) async {
     try {
       debugPrint('🗑️ 노트 완전 삭제 시작: $noteId');
 
       // 1. 파일 시스템 정리
       await FileStorageService.deleteNoteFiles(noteId);
 
-      // 2. 메모리에서 제거 (현재는 fakeNotes, 향후 DB 연동)
-      fakeNotes.removeWhere((note) => note.noteId == noteId);
-
-      // TODO(xodnd): 실제 DB에서도 제거
+      // 2. DB에서 제거
+      await repo.delete(noteId);
 
       debugPrint('✅ 노트 완전 삭제 완료: $noteId');
       return true;
@@ -241,6 +246,7 @@ class PdfRecoveryService {
   /// Returns: 재렌더링 성공 여부
   static Future<bool> rerenderNotePages(
     String noteId, {
+    required NotesRepository repo,
     void Function(double progress, int currentPage, int totalPages)? onProgress,
   }) async {
     try {
@@ -248,7 +254,10 @@ class PdfRecoveryService {
       _shouldCancel = false;
 
       // 1. 필기 데이터 백업
-      final sketchBackup = await backupSketchData(noteId);
+      final sketchBackup = await backupSketchData(
+        noteId,
+        repo: repo,
+      );
 
       // 2. 원본 PDF 경로 확인
       final pdfPath = await FileStorageService.getNotesPdfPath(noteId);
@@ -265,7 +274,16 @@ class PdfRecoveryService {
 
       debugPrint('📄 재렌더링할 총 페이지 수: $totalPages');
 
-      for (int pageNum = 1; pageNum <= totalPages; pageNum++) {
+      final note = await repo.getNoteById(noteId);
+      if (note == null) {
+        throw Exception('노트를 찾을 수 없습니다: $noteId');
+      }
+
+      // pageNumber 오름차순으로 순회 보장
+      final pages = [...note.pages]
+        ..sort((a, b) => a.pageNumber.compareTo(b.pageNumber));
+
+      for (final page in pages) {
         // 취소 체크
         if (_shouldCancel) {
           debugPrint('⏹️ 재렌더링 취소됨');
@@ -274,13 +292,19 @@ class PdfRecoveryService {
         }
 
         // 페이지 렌더링
-        await _renderSinglePage(document, noteId, pageNum);
+        await _renderSinglePage(
+          document,
+          noteId,
+          pageNumber: page.pageNumber,
+          pageId: page.pageId,
+          repo: repo,
+        );
 
         // 진행률 업데이트
-        final progress = pageNum / totalPages;
-        onProgress?.call(progress, pageNum, totalPages);
+        final progress = page.pageNumber / totalPages;
+        onProgress?.call(progress, page.pageNumber, totalPages);
 
-        debugPrint('✅ 페이지 $pageNum/$totalPages 렌더링 완료');
+        debugPrint('✅ 페이지 ${page.pageNumber}/$totalPages 렌더링 완료');
 
         // UI 블로킹 방지
         await Future<void>.delayed(const Duration(milliseconds: 10));
@@ -289,10 +313,17 @@ class PdfRecoveryService {
       await document.close();
 
       // 5. 필기 데이터 복원
-      await restoreSketchData(noteId, sketchBackup);
+      await restoreSketchData(
+        noteId,
+        sketchBackup,
+        repo: repo,
+      );
 
       // 6. 배경 이미지 표시 복원
-      await _restoreBackgroundVisibility(noteId);
+      await _restoreBackgroundVisibility(
+        noteId,
+        repo: repo,
+      );
 
       debugPrint('✅ PDF 재렌더링 완료: $noteId');
       return true;
@@ -332,9 +363,12 @@ class PdfRecoveryService {
   /// 단일 페이지를 렌더링합니다.
   static Future<void> _renderSinglePage(
     PdfDocument document,
-    String noteId,
-    int pageNumber,
-  ) async {
+    String noteId, {
+    required int pageNumber,
+    required String pageId,
+    required NotesRepository repo,
+  }) async {
+    // pdfx
     final pdfPage = await document.getPage(pageNumber);
 
     // 정규화된 크기 계산 (PdfProcessor와 동일한 로직)
@@ -361,7 +395,12 @@ class PdfRecoveryService {
       await imageFile.writeAsBytes(pageImage!.bytes);
 
       // 노트 페이지 모델의 이미지 경로 업데이트
-      await _updatePageImagePath(noteId, pageNumber, imagePath);
+      await _updatePageImagePath(
+        noteId,
+        pageId,
+        imagePath,
+        repo: repo,
+      );
     }
 
     await pdfPage.close();
@@ -382,44 +421,56 @@ class PdfRecoveryService {
   /// 페이지의 이미지 경로를 업데이트합니다.
   static Future<void> _updatePageImagePath(
     String noteId,
-    int pageNumber,
-    String imagePath,
-  ) async {
+    String pageId,
+    String imagePath, {
+    required NotesRepository repo,
+  }) async {
     try {
-      // TODO(xodnd): 실제 DB 연동 시 수정 필요
-      final noteIndex = fakeNotes.indexWhere((note) => note.noteId == noteId);
-      if (noteIndex != -1) {
-        final note = fakeNotes[noteIndex];
-        final pageIndex = note.pages.indexWhere(
-          (page) => page.pageNumber == pageNumber,
-        );
-        if (pageIndex != -1) {
-          // preRenderedImagePath 업데이트는 NotePageModel이 immutable하므로
-          // 새로운 페이지 객체 생성이 필요할 수 있음
-          // 현재는 mutable 필드로 되어 있어 직접 수정 가능
-          // note.pages[pageIndex].preRenderedImagePath = imagePath;
-        }
+      final note = await repo.getNoteById(noteId);
+      if (note == null) {
+        throw Exception('노트를 찾을 수 없습니다: $noteId');
       }
+
+      final idx = note.pages.indexWhere((p) => p.pageId == pageId);
+      if (idx == -1) {
+        return;
+      }
+
+      final updated = note.pages[idx].copyWith(
+        preRenderedImagePath: imagePath,
+      );
+      final newPages = [...note.pages];
+      newPages[idx] = updated;
+      note.pages = newPages;
+
+      await repo.upsert(note);
     } catch (e) {
       debugPrint('⚠️ 페이지 이미지 경로 업데이트 실패: $e');
     }
   }
 
   /// 배경 이미지 표시를 복원합니다.
-  static Future<void> _restoreBackgroundVisibility(String noteId) async {
+  static Future<void> _restoreBackgroundVisibility(
+    String noteId, {
+    required NotesRepository repo,
+  }) async {
     try {
       debugPrint('👁️ 배경 이미지 표시 복원: $noteId');
 
-      final noteIndex = fakeNotes.indexWhere((note) => note.noteId == noteId);
-      if (noteIndex != -1) {
-        final note = fakeNotes[noteIndex];
+      final note = await repo.getNoteById(noteId);
+      if (note == null) {
+        throw Exception('노트를 찾을 수 없습니다: $noteId');
+      }
 
-        for (final page in note.pages) {
-          if (page.backgroundType == PageBackgroundType.pdf) {
-            page.showBackgroundImage = true;
-          }
+      for (final page in note.pages) {
+        if (page.backgroundType == PageBackgroundType.pdf) {
+          page.showBackgroundImage = true;
         }
       }
+
+      await repo.upsert(note);
+
+      debugPrint('✅ 배경 이미지 표시 복원 완료');
     } catch (e) {
       debugPrint('⚠️ 배경 이미지 표시 복원 실패: $e');
     }

@@ -20,6 +20,7 @@ class NoteModel {
   final String title;
 
   /// 노트에 포함된 페이지 목록.
+  /// 일단은 변경 가능하게.. 추후 수정 필요
   List<NotePageModel> pages;
 
   /// 노트의 출처 타입 (빈 노트 또는 PDF 기반).

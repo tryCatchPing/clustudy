@@ -88,7 +88,7 @@ class NotePageModel {
   }
 
   /// PDF 배경이 있는지 여부를 반환합니다.
-  bool get hasPdfBackground => 
+  bool get hasPdfBackground =>
       backgroundType == PageBackgroundType.pdf && showBackgroundImage;
 
   /// 사전 렌더링된 이미지가 있는지 여부를 반환합니다.
@@ -108,5 +108,32 @@ class NotePageModel {
       return backgroundHeight!;
     }
     return NoteEditorConstants.canvasHeight;
+  }
+
+  /// 새 값으로 일부 필드를 교체한 복제본을 반환합니다.
+  NotePageModel copyWith({
+    String? jsonData,
+    PageBackgroundType? backgroundType,
+    String? backgroundPdfPath,
+    int? backgroundPdfPageNumber,
+    double? backgroundWidth,
+    double? backgroundHeight,
+    String? preRenderedImagePath,
+    bool? showBackgroundImage,
+  }) {
+    return NotePageModel(
+      noteId: noteId,
+      pageId: pageId,
+      pageNumber: pageNumber,
+      jsonData: jsonData ?? this.jsonData,
+      backgroundType: backgroundType ?? this.backgroundType,
+      backgroundPdfPath: backgroundPdfPath ?? this.backgroundPdfPath,
+      backgroundPdfPageNumber:
+          backgroundPdfPageNumber ?? this.backgroundPdfPageNumber,
+      backgroundWidth: backgroundWidth ?? this.backgroundWidth,
+      backgroundHeight: backgroundHeight ?? this.backgroundHeight,
+      preRenderedImagePath: preRenderedImagePath ?? this.preRenderedImagePath,
+      showBackgroundImage: showBackgroundImage ?? this.showBackgroundImage,
+    );
   }
 }
