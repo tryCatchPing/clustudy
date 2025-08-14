@@ -9,6 +9,10 @@ class Vault {
   @Index(unique: true, caseSensitive: false)
   late String name;
 
+  // lower-normalized unique key for A↔B contract (B queries against lower field)
+  @Index(unique: true, caseSensitive: false)
+  late String nameLowerUnique;
+
   @Index()
   late DateTime createdAt;
 
@@ -220,6 +224,8 @@ class SettingsEntity {
   late int backupRetentionDays;
   late int recycleRetentionDays;
   String? keychainAlias;
+  @Index()
+  DateTime? lastBackupAt;
 }
 
 

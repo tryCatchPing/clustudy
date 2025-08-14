@@ -217,12 +217,34 @@ class NoteDbService {
     final now = DateTime.now();
     final vault = Vault()
       ..name = name
+      ..nameLowerUnique = name.toLowerCase()
       ..createdAt = now
       ..updatedAt = now;
     await isar.writeTxn(() async {
       await isar.vaults.put(vault);
     });
     return vault;
+  }
+
+  Future<void> renameVault({
+    required int vaultId,
+    required String newName,
+  }) async {
+    final isar = await IsarDb.instance.open();
+    await isar.writeTxn(() async {
+      final v = await isar.vaults.get(vaultId);
+      if (v == null) return;
+      v
+        ..name = newName
+        ..nameLowerUnique = newName.toLowerCase()
+        ..updatedAt = DateTime.now();
+      await isar.vaults.put(v);
+    });
+  }
+
+  Future<Vault?> findVaultByLowerName(String lowerName) async {
+    final isar = await IsarDb.instance.open();
+    return isar.vaults.filter().nameLowerUniqueEqualTo(lowerName).findFirst();
   }
 
   Future<void> renameNote({
