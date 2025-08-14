@@ -200,6 +200,9 @@ class PdfCacheMeta {
   late String cachePath;
   late int dpi;
   late DateTime renderedAt;
+  int? sizeBytes;
+  @Index()
+  DateTime? lastAccessAt;
 }
 
 @collection
