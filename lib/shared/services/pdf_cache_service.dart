@@ -30,12 +30,14 @@ class PdfCacheService {
     if (!await dir.exists()) return;
     if (pageIndex == null) {
       await dir.delete(recursive: true);
+      await _deleteMeta(noteId: noteId);
       return;
     }
     final file = File(p.join(dir.path, '$pageIndex.png'));
     if (await file.exists()) {
       await file.delete();
     }
+    await _deleteMeta(noteId: noteId, pageIndex: pageIndex);
   }
 
   // Render and write PNG cache at 144DPI * scale
@@ -55,6 +57,7 @@ class PdfCacheService {
         final pageImage = await page.render(width: page.width * scale, height: page.height * scale);
         final file = File(target);
         await file.writeAsBytes(pageImage!.bytes);
+        await _upsertMeta(noteId: noteId, pageIndex: pageIndex, path: target, dpi: dpi, sizeBytes: pageImage.bytes.length);
         await _enforceGlobalSizeLimit();
         return file;
       } finally {
@@ -63,6 +66,28 @@ class PdfCacheService {
     } finally {
       await doc.close();
     }
+  }
+
+  Future<void> _deleteMeta({required int noteId, int? pageIndex}) async {
+    final isar = await IsarDb.instance.open();
+    await isar.writeTxn(() async {
+      if (pageIndex == null) {
+        final metas = await isar.pdfCacheMetas.filter().noteIdEqualTo(noteId).findAll();
+        if (metas.isNotEmpty) {
+          await isar.pdfCacheMetas.deleteAll(metas.map((e) => e.id).toList());
+        }
+        return;
+      }
+      final metas = await isar.pdfCacheMetas
+          .filter()
+          .noteIdEqualTo(noteId)
+          .and()
+          .pageIndexEqualTo(pageIndex)
+          .findAll();
+      if (metas.isNotEmpty) {
+        await isar.pdfCacheMetas.deleteAll(metas.map((e) => e.id).toList());
+      }
+    });
   }
 
   Future<void> _enforceGlobalSizeLimit() async {
@@ -106,6 +131,38 @@ class PdfCacheService {
         // ignore individual delete failures
       }
     }
+  }
+
+  Future<void> _upsertMeta({
+    required int noteId,
+    required int pageIndex,
+    required String path,
+    required int dpi,
+    required int sizeBytes,
+  }) async {
+    final isar = await IsarDb.instance.open();
+    final now = DateTime.now();
+    await isar.writeTxn(() async {
+      final existing = await isar.pdfCacheMetas
+          .filter()
+          .noteIdEqualTo(noteId)
+          .and()
+          .pageIndexEqualTo(pageIndex)
+          .findFirst();
+      final meta = existing ?? PdfCacheMeta();
+      if (existing == null) {
+        meta
+          ..noteId = noteId
+          ..pageIndex = pageIndex;
+      }
+      meta
+        ..cachePath = path
+        ..dpi = dpi
+        ..renderedAt = now
+        ..sizeBytes = sizeBytes
+        ..lastAccessAt = now;
+      await isar.pdfCacheMetas.put(meta);
+    });
   }
 }
 
