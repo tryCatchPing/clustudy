@@ -1,3 +1,4 @@
+/// 정규화 사각형 (0..1 범위, x0 < x1, y0 < y1)
 class RectNorm {
   final double x0;
   final double y0;
