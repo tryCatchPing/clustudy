@@ -50,6 +50,8 @@ dependencies:
   isar: ^3.1.0+1
   isar_flutter_libs: ^3.1.0+1
   flutter_secure_storage: ^9.2.2
+  archive: ^3.6.1
+  encrypt: ^5.0.1
 
 dev_dependencies:
   flutter_test:
