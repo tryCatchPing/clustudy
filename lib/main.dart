@@ -4,13 +4,20 @@ import 'package:go_router/go_router.dart';
 
 import 'features/canvas/routing/canvas_routes.dart';
 import 'features/db/isar_db.dart';
+import 'shared/services/backup_service.dart';
+import 'shared/services/maintenance_jobs.dart';
+import 'shared/services/crypto_key_service.dart';
 import 'features/home/routing/home_routes.dart';
 import 'features/notes/routing/notes_routes.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Open Isar database early at app startup (encryption key can be wired later)
-  await IsarDb.instance.open();
+  // Load encryption key if available; don't block app on failure
+  List<int>? key;
+  try {
+    key = await CryptoKeyService.instance.loadKey();
+  } catch (_) {}
+  await IsarDb.instance.open(encryptionKey: key);
   runApp(const ProviderScope(child: MyApp()));
 }
 
@@ -66,6 +73,11 @@ class _DBLifecycleState extends State<DBLifecycle> with WidgetsBindingObserver {
     if (state == AppLifecycleState.detached) {
       // Close DB when app is detached to avoid file descriptor leaks
       IsarDb.instance.close();
+    } else if (state == AppLifecycleState.resumed) {
+      // Run due backup and maintenance when app comes to foreground
+      BackupService.instance.runIfDue();
+      MaintenanceJobs.instance.purgeRecycleBin();
+      MaintenanceJobs.instance.trimSnapshots();
     }
   }
 

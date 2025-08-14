@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:isar/isar.dart';
+import '../../../shared/models/rect_norm.dart';
 
 import '../isar_db.dart';
 import '../models/vault_models.dart';
@@ -70,25 +71,8 @@ class NoteDbService {
     required String pageOrientation,
     int initialPageIndex = 0,
   }) async {
-    // Normalize and validate link rectangle in 0..1 and x0<x1, y0<y1
-    double nx0 = x0, ny0 = y0, nx1 = x1, ny1 = y1;
-    // clamp
-    nx0 = nx0.clamp(0.0, 1.0);
-    ny0 = ny0.clamp(0.0, 1.0);
-    nx1 = nx1.clamp(0.0, 1.0);
-    ny1 = ny1.clamp(0.0, 1.0);
-    // order
-    if (nx0 > nx1) {
-      final t = nx0; nx0 = nx1; nx1 = t;
-    }
-    if (ny0 > ny1) {
-      final t = ny0; ny0 = ny1; ny1 = t;
-    }
-    // minimal size check (avoid zero-area)
-    if (nx0 == nx1 || ny0 == ny1) {
-      throw IsarError('Invalid link rect: zero area');
-    }
-
+    final rect = RectNorm(x0: x0, y0: y0, x1: x1, y1: y1).normalized();
+    rect.assertValid();
     final isar = await IsarDb.instance.open();
     late final Note newNote;
     late final LinkEntity link;
@@ -104,10 +88,10 @@ class NoteDbService {
         ..vaultId = vaultId
         ..sourceNoteId = sourceNoteId
         ..sourcePageId = sourcePageId
-        ..x0 = nx0
-        ..y0 = ny0
-        ..x1 = nx1
-        ..y1 = ny1
+        ..x0 = rect.x0
+        ..y0 = rect.y0
+        ..x1 = rect.x1
+        ..y1 = rect.y1
         ..targetNoteId = newNote.id
         ..label = label
         ..dangling = false
