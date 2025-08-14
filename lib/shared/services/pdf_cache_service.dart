@@ -43,6 +43,7 @@ class PdfCacheService {
     required int pageIndex,
     int scale = 1,
   }) async {
+    // TODO: enforce LRU/size limit from Settings.pdfCacheMaxMB
     final target = await path(noteId: noteId, pageIndex: pageIndex, scale: scale);
     final doc = await PdfDocument.openFile(pdfPath);
     try {

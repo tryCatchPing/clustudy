@@ -228,6 +228,10 @@ class SettingsEntity {
   DateTime? lastBackupAt;
   // Data schema/migration versioning (nullable for backward-compat)
   int? dataVersion;
+  // Policy flags
+  bool? backupRequireWifi; // default false
+  bool? backupOnlyWhenCharging; // default false (placeholder without battery plugin)
+  int? pdfCacheMaxMB; // default 512MB
 }
 
 

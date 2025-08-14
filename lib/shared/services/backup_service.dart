@@ -42,6 +42,9 @@ class BackupService {
     if (settings == null) return;
     final due = await _isDueDaily(settings.backupDailyAt, settings.lastBackupAt);
     if (!due) return;
+    // Guards: wifi/charging placeholder (can be extended with connectivity/battery plugins)
+    // if (settings.backupRequireWifi == true) { ... }
+    // if (settings.backupOnlyWhenCharging == true) { ... }
     if (_isRunningBackup) return;
     _isRunningBackup = true;
     try {
