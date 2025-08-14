@@ -36,6 +36,14 @@ class IsarDb {
     );
     return _isar!;
   }
+
+  Future<void> close() async {
+    final isar = _isar;
+    if (isar != null && !isar.isClosed) {
+      await isar.close();
+      _isar = null;
+    }
+  }
 }
 
 
