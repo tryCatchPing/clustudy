@@ -7,6 +7,8 @@ import 'features/db/isar_db.dart';
 import 'shared/services/backup_service.dart';
 import 'shared/services/maintenance_jobs.dart';
 import 'shared/services/crypto_key_service.dart';
+import 'features/db/migrations/migration_runner.dart';
+import 'features/db/seed/seed_runner.dart';
 import 'features/home/routing/home_routes.dart';
 import 'features/notes/routing/notes_routes.dart';
 
@@ -18,6 +20,8 @@ Future<void> main() async {
     key = await CryptoKeyService.instance.loadKey();
   } catch (_) {}
   await IsarDb.instance.open(encryptionKey: key);
+  await MigrationRunner.instance.runMigrationsIfNeeded();
+  await SeedRunner.instance.ensureInitialSeed();
   runApp(const ProviderScope(child: MyApp()));
 }
 

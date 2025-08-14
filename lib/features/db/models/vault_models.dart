@@ -130,13 +130,13 @@ class CanvasData {
 class PageSnapshot {
   Id id = Isar.autoIncrement;
 
-  @Index()
+  // Composite index for retention/query: (pageId, createdAt)
+  @Index(composite: [CompositeIndex('createdAt')])
   late int pageId;
 
   late String schemaVersion;
   late String json;
 
-  @Index()
   late DateTime createdAt;
 }
 
