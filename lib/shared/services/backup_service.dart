@@ -11,6 +11,9 @@ class BackupService {
   BackupService._();
   static final BackupService instance = BackupService._();
 
+  bool _isRunningBackup = false;
+  Timer? _timer;
+
   Future<String> _backupDir() async {
     final docs = await getApplicationDocumentsDirectory();
     final dir = Directory(p.join(docs.path, 'backups'));
@@ -39,12 +42,31 @@ class BackupService {
     if (settings == null) return;
     final due = await _isDueDaily(settings.backupDailyAt, settings.lastBackupAt);
     if (!due) return;
-    await performBackup(retentionDays: settings.backupRetentionDays);
+    if (_isRunningBackup) return;
+    _isRunningBackup = true;
+    try {
+      await performBackup(retentionDays: settings.backupRetentionDays);
+    } finally {
+      _isRunningBackup = false;
+    }
     await isar.writeTxn(() async {
       settings.lastBackupAt = DateTime.now();
       settings.dataVersion ??= 1;
       await isar.settingsEntitys.put(settings);
     });
+  }
+
+  void startScheduler({Duration interval = const Duration(minutes: 15)}) {
+    _timer?.cancel();
+    _timer = Timer.periodic(interval, (_) {
+      // Fire and forget; internal guard prevents overlap
+      runIfDue();
+    });
+  }
+
+  void stopScheduler() {
+    _timer?.cancel();
+    _timer = null;
   }
 
   Future<void> performBackup({required int retentionDays}) async {

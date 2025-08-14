@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
+import 'package:pdfx/pdfx.dart';
 import 'package:path_provider/path_provider.dart';
 
 class PdfCacheService {
@@ -32,6 +33,31 @@ class PdfCacheService {
     final file = File(p.join(dir.path, '$pageIndex.png'));
     if (await file.exists()) {
       await file.delete();
+    }
+  }
+
+  // Render and write PNG cache at 144DPI * scale
+  Future<File> renderAndCache({
+    required String pdfPath,
+    required int noteId,
+    required int pageIndex,
+    int scale = 1,
+  }) async {
+    final target = await path(noteId: noteId, pageIndex: pageIndex, scale: scale);
+    final doc = await PdfDocument.openFile(pdfPath);
+    try {
+      final page = await doc.getPage(pageIndex + 1); // pdfx 1-based
+      try {
+        final dpi = 144 * scale;
+        final pageImage = await page.render(width: page.width * scale, height: page.height * scale);
+        final file = File(target);
+        await file.writeAsBytes(pageImage!.bytes);
+        return file;
+      } finally {
+        await page.close();
+      }
+    } finally {
+      await doc.close();
     }
   }
 }
