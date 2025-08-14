@@ -47,6 +47,8 @@ dependencies:
   uuid: ^4.5.1
   flutter_riverpod: ^2.6.1
   riverpod_annotation: ^2.6.1
+  isar: ^3.1.0+1
+  isar_flutter_libs: ^3.1.0+1
 
 dev_dependencies:
   flutter_test:
@@ -58,8 +60,9 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
-  riverpod_generator: ^2.6.4
-  build_runner: ^2.5.4
+  riverpod_generator: 2.4.0
+  build_runner: ^2.4.13
+  isar_generator: ^3.1.0+1
   # Temporarily remove custom_lint/riverpod_lint to avoid analyzer_plugin/analyzer mismatch during build_runner
   # custom_lint: ^0.7.3
   # riverpod_lint: ^2.6.4
