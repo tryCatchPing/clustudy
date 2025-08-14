@@ -13,7 +13,7 @@ class IsarDb {
 
   Isar? _isar;
 
-  Future<Isar> open() async {
+  Future<Isar> open({List<int>? encryptionKey}) async {
     if (_isar != null) {
       return _isar!;
     }
@@ -33,6 +33,8 @@ class IsarDb {
         SettingsEntitySchema,
       ],
       directory: dir.path,
+      inspector: false,
+      encryptionKey: encryptionKey,
     );
     return _isar!;
   }

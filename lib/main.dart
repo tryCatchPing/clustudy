@@ -10,7 +10,7 @@ import 'design_system/routing/design_system_routes.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Open Isar database early at app startup
+  // Open Isar database early at app startup (encryption key can be wired later)
   await IsarDb.instance.open();
   runApp(const ProviderScope(child: MyApp()));
 }
