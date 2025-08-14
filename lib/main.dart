@@ -60,11 +60,14 @@ class _DBLifecycleState extends State<DBLifecycle> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Start periodic backup scheduler
+    BackupService.instance.startScheduler();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    BackupService.instance.stopScheduler();
     super.dispose();
   }
 
