@@ -30,6 +30,12 @@ class MaintenanceJobs {
         await isar.pages.deleteAll(pages.map((e) => e.id).toList());
         deleted += pages.length;
       }
+      // also trim dangling links older than threshold
+      final links = await isar.linkEntitys.filter().danglingEqualTo(true).and().updatedAtLessThan(threshold).findAll();
+      if (links.isNotEmpty) {
+        await isar.linkEntitys.deleteAll(links.map((e) => e.id).toList());
+        deleted += links.length;
+      }
     });
     return deleted;
   }

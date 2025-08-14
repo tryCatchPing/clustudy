@@ -226,6 +226,8 @@ class SettingsEntity {
   String? keychainAlias;
   @Index()
   DateTime? lastBackupAt;
+  // Data schema/migration versioning (nullable for backward-compat)
+  int? dataVersion;
 }
 
 
