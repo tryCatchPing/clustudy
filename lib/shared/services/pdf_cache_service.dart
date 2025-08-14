@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:pdfx/pdfx.dart';
 import 'package:path_provider/path_provider.dart';
+import '../../features/db/isar_db.dart';
+import '../../features/db/models/vault_models.dart';
 
 class PdfCacheService {
   PdfCacheService._();
@@ -53,12 +55,56 @@ class PdfCacheService {
         final pageImage = await page.render(width: page.width * scale, height: page.height * scale);
         final file = File(target);
         await file.writeAsBytes(pageImage!.bytes);
+        await _enforceGlobalSizeLimit();
         return file;
       } finally {
         await page.close();
       }
     } finally {
       await doc.close();
+    }
+  }
+
+  Future<void> _enforceGlobalSizeLimit() async {
+    final base = await _baseDir();
+    final notesDir = Directory(base);
+    if (!await notesDir.exists()) return;
+    final isar = await IsarDb.instance.open();
+    final settings = await isar.settingsEntitys.where().findFirst();
+    final maxMB = settings?.pdfCacheMaxMB ?? 512;
+    if (maxMB <= 0) return;
+    final maxBytes = maxMB * 1024 * 1024;
+
+    // Collect all cache files under notes/*/pdf_cache/*.png
+    final files = <File>[];
+    await for (final entity in notesDir.list(recursive: true, followLinks: false)) {
+      if (entity is File && entity.path.contains('${Platform.pathSeparator}pdf_cache${Platform.pathSeparator}') && entity.path.endsWith('.png')) {
+        files.add(entity);
+      }
+    }
+    int total = 0;
+    final sizes = <File, int>{};
+    for (final f in files) {
+      final s = await f.length();
+      sizes[f] = s;
+      total += s;
+    }
+    if (total <= maxBytes) return;
+    // Sort by last modified ascending (oldest first)
+    files.sort((a, b) {
+      final ma = a.statSync().modified;
+      final mb = b.statSync().modified;
+      return ma.compareTo(mb);
+    });
+    for (final f in files) {
+      try {
+        final s = sizes[f] ?? await f.length();
+        await f.delete();
+        total -= s;
+        if (total <= maxBytes) break;
+      } catch (_) {
+        // ignore individual delete failures
+      }
     }
   }
 }
