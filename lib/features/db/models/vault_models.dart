@@ -45,7 +45,7 @@ class Folder {
   DateTime? deletedAt;
 
   // Unique within vault: (vaultId, lower(name))
-  @Index(composite: [CompositeIndex('vaultId'), CompositeIndex('nameLowerForVaultUnique')], unique: true, caseSensitive: false)
+  @Index(composite: [CompositeIndex('vaultId')], unique: true, caseSensitive: false)
   late String nameLowerForVaultUnique;
 }
 
@@ -76,7 +76,7 @@ class Note {
   late String pageOrientation; // portrait, landscape
 
   // Unique within (vaultId, folderId): lower(name)
-  @Index(composite: [CompositeIndex('vaultId'), CompositeIndex('folderId'), CompositeIndex('nameLowerForParentUnique')], unique: true, caseSensitive: false)
+  @Index(composite: [CompositeIndex('vaultId'), CompositeIndex('folderId')], unique: true, caseSensitive: false)
   late String nameLowerForParentUnique;
 
   // Performance optimization: composite index for folder listing queries (vaultId, folderId, sortIndex)

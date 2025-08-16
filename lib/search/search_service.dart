@@ -4,7 +4,7 @@ import '../features/db/isar_db.dart';
 import '../features/db/models/vault_models.dart';
 
 /// 통합 검색 서비스
-/// 
+///
 /// 모든 검색 관련 기능을 통합 관리하며, 성능 최적화된 쿼리를 제공합니다.
 /// - 노트, 폴더, 볼트 검색
 /// - startsWith, contains 검색 지원
@@ -16,7 +16,7 @@ class SearchService {
 
   /// 검색 결과 타입 정의
   static const String typeVault = 'vaults';
-  static const String typeFolder = 'folders'; 
+  static const String typeFolder = 'folders';
   static const String typeNote = 'notes';
 
   /// 빠른 노트 검색 (기본: startsWith)
@@ -27,22 +27,22 @@ class SearchService {
     int limit = 10,
   }) async {
     if (query.trim().isEmpty) return [];
-    
+
     final isar = await IsarDb.instance.open();
     final q = query.toLowerCase().trim();
-    
+
     var builder = isar.notes
         .filter()
         .vaultIdEqualTo(vaultId)
         .and()
         .deletedAtIsNull();
-        
+
     if (folderId == null) {
       builder = builder.and().folderIdIsNull();
     } else {
       builder = builder.and().folderIdEqualTo(folderId);
     }
-    
+
     return builder
         .and()
         .nameLowerForSearchStartsWith(q)
@@ -58,22 +58,22 @@ class SearchService {
     int limit = 50,
   }) async {
     if (query.trim().isEmpty) return [];
-    
+
     final isar = await IsarDb.instance.open();
     final q = query.toLowerCase().trim();
-    
+
     var builder = isar.notes
         .filter()
         .vaultIdEqualTo(vaultId)
         .and()
         .deletedAtIsNull();
-        
+
     if (folderId == null) {
       builder = builder.and().folderIdIsNull();
     } else {
       builder = builder.and().folderIdEqualTo(folderId);
     }
-    
+
     return builder
         .and()
         .nameLowerForSearchContains(q)
@@ -88,10 +88,10 @@ class SearchService {
     int limit = 100,
   }) async {
     if (query.trim().isEmpty) return [];
-    
+
     final isar = await IsarDb.instance.open();
     final q = query.toLowerCase().trim();
-    
+
     if (useContains) {
       return isar.notes
           .filter()
@@ -120,28 +120,28 @@ class SearchService {
     int limit = 30,
   }) async {
     if (query.trim().isEmpty) return [];
-    
+
     final isar = await IsarDb.instance.open();
     final q = query.toLowerCase().trim();
-    
+
     var builder = isar.notes
         .filter()
         .vaultIdEqualTo(vaultId)
         .and()
         .deletedAtIsNull();
-        
+
     if (folderId == null) {
       builder = builder.and().folderIdIsNull();
     } else {
       builder = builder.and().folderIdEqualTo(folderId);
     }
-    
+
     if (useContains) {
       builder = builder.and().nameLowerForSearchContains(q);
     } else {
       builder = builder.and().nameLowerForSearchStartsWith(q);
     }
-    
+
     return builder
         .sortByUpdatedAtDesc()
         .limit(limit)
@@ -161,19 +161,19 @@ class SearchService {
     int limit = 50,
   }) async {
     final isar = await IsarDb.instance.open();
-    
+
     var builder = isar.notes
         .filter()
         .vaultIdEqualTo(vaultId)
         .and()
         .deletedAtIsNull();
-        
+
     if (folderId == null) {
       builder = builder.and().folderIdIsNull();
     } else {
       builder = builder.and().folderIdEqualTo(folderId);
     }
-    
+
     // 날짜 필터
     if (createdAfter != null) {
       builder = builder.and().createdAtGreaterThan(createdAfter);
@@ -187,7 +187,7 @@ class SearchService {
     if (updatedBefore != null) {
       builder = builder.and().updatedAtLessThan(updatedBefore);
     }
-    
+
     // 텍스트 검색
     if (query != null && query.trim().isNotEmpty) {
       final q = query.toLowerCase().trim();
@@ -197,7 +197,7 @@ class SearchService {
         builder = builder.and().nameLowerForSearchStartsWith(q);
       }
     }
-    
+
     return builder
         .sortByUpdatedAtDesc()
         .limit(limit)
@@ -212,10 +212,10 @@ class SearchService {
     int limit = 30,
   }) async {
     if (query.trim().isEmpty) return [];
-    
+
     final isar = await IsarDb.instance.open();
     final q = query.toLowerCase().trim();
-    
+
     if (useContains) {
       return isar.folders
           .filter()
@@ -248,10 +248,10 @@ class SearchService {
     int limit = 20,
   }) async {
     if (query.trim().isEmpty) return [];
-    
+
     final isar = await IsarDb.instance.open();
     final q = query.toLowerCase().trim();
-    
+
     if (useContains) {
       return isar.vaults
           .filter()
@@ -354,14 +354,14 @@ class SearchService {
     int limit = 5,
   }) async {
     if (query.trim().isEmpty) return [];
-    
+
     final notes = await quickSearchNotes(
       vaultId: vaultId,
       folderId: folderId,
       query: query,
       limit: limit,
     );
-    
+
     return notes.map((note) => note.name).toList();
   }
 }

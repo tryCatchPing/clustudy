@@ -82,7 +82,7 @@ void main() {
       // Verify link was created
       final links = await isar.linkEntitys.where().findAll();
       expect(links.length, 1);
-      
+
       final link = links.first;
       expect(link.vaultId, vault.id);
       expect(link.sourceNoteId, sourceNote.id);
@@ -98,7 +98,7 @@ void main() {
       // Verify graph edge was created
       final edges = await isar.graphEdges.where().findAll();
       expect(edges.length, 1);
-      
+
       final edge = edges.first;
       expect(edge.vaultId, vault.id);
       expect(edge.fromNoteId, sourceNote.id);
@@ -191,7 +191,7 @@ void main() {
       // Verify link was created with normalized coordinates
       final links = await isar.linkEntitys.where().findAll();
       expect(links.length, 1);
-      
+
       final link = links.first;
       // Should be normalized: x0 < x1, y0 < y1
       expect(link.x0, 0.2);

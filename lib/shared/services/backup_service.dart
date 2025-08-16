@@ -3,7 +3,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:isar/isar.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -258,9 +258,7 @@ class BackupService {
 
     // 2. 암호화
     final password = customPassword ?? await _getBackupEncryptionKey();
-    final key = Key.fromSecureRandom(32);
     final iv = IV.fromSecureRandom(16);
-    final encrypter = Encrypter(AES(key));
 
     // 패스워드로부터 키 생성 (PBKDF2 사용)
     final actualKey = _deriveKeyFromPassword(password);

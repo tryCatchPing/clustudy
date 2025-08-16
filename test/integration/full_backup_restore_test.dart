@@ -11,7 +11,7 @@ import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/vault_models.dart';
 import 'package:it_contest/features/db/services/note_db_service.dart';
 import 'package:it_contest/shared/services/backup_service.dart';
-import 'package:it_contest/shared/services/crypto_key_service.dart';
+// import 'package:it_contest/shared/services/crypto_key_service.dart';
 import 'package:it_contest/services/link/link_service.dart';
 import 'package:it_contest/shared/models/rect_norm.dart';
 
@@ -81,7 +81,7 @@ void main() {
       final isar = await IsarDb.instance.open();
 
       // Create comprehensive test data structure
-      
+
       // 1. Create vaults
       final vault1 = await NoteDbService.instance.createVault(name: 'PersonalVault');
       final vault2 = await NoteDbService.instance.createVault(name: 'WorkVault');
@@ -107,7 +107,7 @@ void main() {
         pageOrientation: 'portrait',
         sortIndex: 1000,
       );
-      
+
       final personalNote2 = await NoteDbService.instance.createNote(
         vaultId: vault1.id,
         folderId: personalFolder.id,
@@ -142,7 +142,7 @@ void main() {
         widthPx: 2480,
         heightPx: 3508,
       );
-      
+
       final page2 = await NoteDbService.instance.createPage(
         noteId: personalNote1.id,
         index: 1,
@@ -164,7 +164,7 @@ void main() {
           ..json = '{"elements": [{"type": "stroke", "points": [[100, 100], [200, 200]]}]}'
           ..createdAt = DateTime.now()
           ..updatedAt = DateTime.now();
-        
+
         final canvasData2 = CanvasData()
           ..noteId = personalNote1.id
           ..pageId = page2.id
@@ -183,7 +183,7 @@ void main() {
           ..schemaVersion = '1.0'
           ..json = '{"snapshot": "data1"}'
           ..createdAt = DateTime.now();
-        
+
         final snapshot2 = PageSnapshot()
           ..pageId = page2.id
           ..schemaVersion = '1.0'
@@ -234,7 +234,7 @@ void main() {
           ..userId = 'local'
           ..noteIdsJson = '[${personalNote1.id}, ${workNote.id}, ${linkedNote.id}]'
           ..updatedAt = DateTime.now();
-        
+
         await isar.recentTabss.put(recentTabs);
       });
 
@@ -247,14 +247,14 @@ void main() {
           ..recycleRetentionDays = 30
           ..dataVersion = 1
           ..pdfCacheMaxMB = 256;
-        
+
         await isar.settingsEntitys.put(settings);
       });
 
       // 11. Create fake PDF files for integrated backup
       final notesDir = Directory('${tempRoot!.path}/notes');
       await notesDir.create(recursive: true);
-      
+
       final pdfFile1 = File('${notesDir.path}/${personalNote1.id}/document.pdf');
       await pdfFile1.parent.create(recursive: true);
       await pdfFile1.writeAsBytes(List.generate(1000, (i) => i % 256)); // Fake PDF content
@@ -274,7 +274,7 @@ void main() {
         'links': await isar.linkEntitys.count(),
         'graphEdges': await isar.graphEdges.count(),
         'pdfCacheMetas': await isar.pdfCacheMetas.count(),
-        'recentTabs': await isar.recentTabss.count(),
+        'recentTabs': await isar.recentTabs.count(),
         'settings': await isar.settingsEntitys.count(),
       };
 
@@ -311,7 +311,7 @@ void main() {
       expect(restoreResult.pdfFilesRestored, greaterThan(0));
 
       // 15. Verify all data was restored correctly
-      
+
       // Verify counts match
       final restoredCounts = {
         'vaults': await isar.vaults.count(),
@@ -323,7 +323,7 @@ void main() {
         'links': await isar.linkEntitys.count(),
         'graphEdges': await isar.graphEdges.count(),
         'pdfCacheMetas': await isar.pdfCacheMetas.count(),
-        'recentTabs': await isar.recentTabss.count(),
+        'recentTabs': await isar.recentTabs.count(),
         'settings': await isar.settingsEntitys.count(),
       };
 
@@ -341,7 +341,7 @@ void main() {
           .sortByName()
           .findAll();
       expect(restoredPersonalNotes.length, 3); // 2 folder notes + 1 root note + 1 linked note
-      expect(restoredPersonalNotes.map((n) => n.name).toList(), 
+      expect(restoredPersonalNotes.map((n) => n.name).toList(),
         containsAll(['Personal Note 1', 'Personal Note 2', 'Root Note', 'Linked Note']));
 
       // Verify relationships are preserved
@@ -363,7 +363,7 @@ void main() {
       // Verify PDF files were restored
       final restoredNotesDir = Directory('${tempRoot!.path}/notes');
       expect(await restoredNotesDir.exists(), isTrue);
-      
+
       final restoredPdfFiles = await restoredNotesDir
           .list(recursive: true)
           .where((e) => e is File && e.path.endsWith('.pdf'))
@@ -379,7 +379,7 @@ void main() {
       expect(restoredSettings.pdfCacheMaxMB, 256);
 
       // Verify RecentTabs
-      final restoredTabs = await isar.recentTabss.where().findFirst();
+      final restoredTabs = await isar.recentTabs.where().findFirst();
       expect(restoredTabs, isNotNull);
       expect(restoredTabs!.userId, 'local');
       expect(restoredTabs.noteIdsJson, isNotEmpty);
@@ -467,7 +467,7 @@ void main() {
         vaultId: vault.id,
         name: 'TestFolder',
       );
-      
+
       for (int i = 0; i < 5; i++) {
         await NoteDbService.instance.createNote(
           vaultId: vault.id,

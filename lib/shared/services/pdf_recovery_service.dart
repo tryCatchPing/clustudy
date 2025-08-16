@@ -66,7 +66,7 @@ class PdfRecoveryService {
           'pdfOriginalPath': page.pdfOriginalPath,
           'corruptionType': CorruptionType.sourcePdfMissing,
         }).toList();
-        
+
         debugPrint('✅ 손상 감지 완료 (최적화됨): ${result.length}개 페이지 손상');
         return result;
       }
@@ -389,7 +389,7 @@ class PdfRecoveryService {
         if (note == null) {
           throw Exception('노트를 찾을 수 없습니다: $noteId');
         }
-        
+
         pagesInfo = note.pages
             .where((page) => page.backgroundType == PageBackgroundType.pdf)
             .map((page) => {
@@ -399,7 +399,7 @@ class PdfRecoveryService {
               'height': page.backgroundHeight,
             })
             .toList();
-        
+
         // pageNumber 오름차순 정렬
         pagesInfo.sort((a, b) => (a['pageNumber'] as int).compareTo(b['pageNumber'] as int));
       }
@@ -550,7 +550,7 @@ class PdfRecoveryService {
     try {
       final intNoteId = int.tryParse(noteId);
       final intPageId = int.tryParse(pageId);
-      
+
       if (intNoteId == null || intPageId == null) {
         throw Exception('유효하지 않은 ID: noteId=$noteId, pageId=$pageId');
       }

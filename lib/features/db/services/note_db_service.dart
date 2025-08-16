@@ -486,7 +486,7 @@ class NoteDbService {
         limit: limit,
       );
     }
-    
+
     return SearchService.instance.searchNotesByDateRange(
       vaultId: vaultId,
       folderId: folderId,
@@ -586,7 +586,7 @@ class NoteDbService {
       useContains: useContains,
       limitPerType: limitPerType,
     );
-    
+
     return searchResults.toMap();
   }
 }
