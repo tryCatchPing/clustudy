@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:isar/isar.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -46,10 +47,10 @@ class BackupService {
     final isar = await IsarDb.instance.open();
     final settings = await isar.settingsEntitys.where().findFirst();
     if (settings == null) return;
-    
+
     final due = await _isDueDaily(settings.backupDailyAt, settings.lastBackupAt);
     if (!due) return;
-    
+
     // Guards: wifi/charging placeholder (can be extended with connectivity/battery plugins)
     // if (settings.backupRequireWifi == true) { ... }
     // if (settings.backupOnlyWhenCharging == true) { ... }
@@ -85,7 +86,18 @@ class BackupService {
     _timer?.cancel();
     _timer = Timer.periodic(interval, (_) {
       // Fire and forget; internal guard prevents overlap
-      runIfDue();
+      () async {
+        try {
+          await runIfDue();
+        } catch (e, stack) {
+          // Log backup scheduler errors but don't stop the timer
+          print('BackupService scheduler error: $e');
+          // Optionally log stack trace for debugging
+          if (kDebugMode) {
+            print('Stack trace: $stack');
+          }
+        }
+      }();
     });
   }
 
@@ -569,11 +581,11 @@ class BackupService {
     final isar = await IsarDb.instance.open();
     final settings = await isar.settingsEntitys.where().findFirst();
     final backups = await getAvailableBackups();
-    
+
     return BackupStatus(
       isRunning: _isRunningBackup,
       lastBackupAt: settings?.lastBackupAt,
-      nextBackupDue: settings != null 
+      nextBackupDue: settings != null
           ? await _getNextBackupTime(settings.backupDailyAt, settings.lastBackupAt)
           : null,
       availableBackupsCount: backups.length,
@@ -588,31 +600,31 @@ class BackupService {
     final parts = dailyAt.split(':');
     final hh = int.parse(parts[0]);
     final mm = int.parse(parts[1]);
-    
+
     var nextBackup = DateTime(now.year, now.month, now.day, hh, mm);
-    
+
     // 오늘 시간이 지났으면 내일로
     if (nextBackup.isBefore(now)) {
       nextBackup = nextBackup.add(const Duration(days: 1));
     }
-    
+
     // 이미 오늘 백업했으면 내일로
     if (lastBackupAt != null) {
       final lastBackupDay = DateTime(lastBackupAt.year, lastBackupAt.month, lastBackupAt.day);
       final today = DateTime(now.year, now.month, now.day);
-      
+
       if (!lastBackupDay.isBefore(today)) {
         nextBackup = nextBackup.add(const Duration(days: 1));
       }
     }
-    
+
     return nextBackup;
   }
 
   /// 백업 테스트 (암호화/복원 검증)
   Future<TestResult> testBackupRestore() async {
     final result = TestResult();
-    
+
     try {
       // 1. 테스트 백업 생성
       final testBackupPath = await performIntegratedBackup(
@@ -620,13 +632,13 @@ class BackupService {
         includeEncryption: true,
       );
       result.backupCreated = true;
-      
+
       // 2. 백업 파일 존재 확인
       if (!await File(testBackupPath).exists()) {
         throw Exception('백업 파일이 생성되지 않았습니다');
       }
       result.backupFileExists = true;
-      
+
       // 3. 복원 테스트 (실제로는 복원하지 않고 파일만 검증)
       final tempDir = Directory.systemTemp.createTempSync('backup_test_');
       try {
@@ -636,34 +648,34 @@ class BackupService {
         } else {
           await _extractZipBackup(testBackupPath, tempDir.path);
         }
-        
+
         // 메타데이터 파일 확인
         final metadataFile = File(p.join(tempDir.path, 'backup_metadata.json'));
         if (await metadataFile.exists()) {
           final metadata = jsonDecode(await metadataFile.readAsString());
           result.metadataValid = metadata['version'] != null;
         }
-        
+
         // DB 파일 확인
         final dbFile = File(p.join(tempDir.path, 'database.isar'));
         result.databaseExtractable = await dbFile.exists();
-        
+
       } finally {
         await tempDir.delete(recursive: true);
       }
-      
+
       // 4. 테스트 백업 삭제
       await deleteBackup(testBackupPath);
-      
+
       result.success = true;
       result.message = '백업/복원 테스트가 성공적으로 완료되었습니다';
-      
+
     } catch (e) {
       result.success = false;
       result.message = '테스트 실패: $e';
       result.error = e.toString();
     }
-    
+
     return result;
   }
 }
