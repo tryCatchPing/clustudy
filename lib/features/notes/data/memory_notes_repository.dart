@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import '../models/note_model.dart';
+import '../models/note_page_model.dart';
+import '../models/thumbnail_metadata.dart';
 import 'notes_repository.dart';
 
 /// 간단한 인메모리 구현.
@@ -15,6 +17,12 @@ class MemoryNotesRepository implements NotesRepository {
   /// 외부에서 변경하지 않도록 주의해야 합니다(실무에선 immutable 권장).
   final List<NoteModel> _notes = <NoteModel>[];
 
+  /// 썸네일 메타데이터 저장소 (메모리 기반).
+  /// 향후 Isar DB 도입 시 별도 컬렉션으로 관리됩니다.
+  final Map<String, ThumbnailMetadata> _thumbnailMetadata =
+      <String, ThumbnailMetadata>{};
+
+  /// 생성자.
   MemoryNotesRepository()
     : _controller = StreamController<List<NoteModel>>.broadcast();
 
@@ -67,6 +75,92 @@ class MemoryNotesRepository implements NotesRepository {
   Future<void> delete(String noteId) async {
     _notes.removeWhere((n) => n.noteId == noteId);
     _emit();
+  }
+
+  @override
+  Future<void> reorderPages(
+    String noteId,
+    List<NotePageModel> reorderedPages,
+  ) async {
+    final noteIndex = _notes.indexWhere((n) => n.noteId == noteId);
+    if (noteIndex >= 0) {
+      final note = _notes[noteIndex];
+      final updatedNote = note.copyWith(pages: reorderedPages);
+      _notes[noteIndex] = updatedNote;
+      _emit();
+    }
+  }
+
+  @override
+  Future<void> addPage(
+    String noteId,
+    NotePageModel newPage, {
+    int? insertIndex,
+  }) async {
+    final noteIndex = _notes.indexWhere((n) => n.noteId == noteId);
+    if (noteIndex >= 0) {
+      final note = _notes[noteIndex];
+      final pages = List<NotePageModel>.from(note.pages);
+
+      if (insertIndex != null &&
+          insertIndex >= 0 &&
+          insertIndex <= pages.length) {
+        pages.insert(insertIndex, newPage);
+      } else {
+        pages.add(newPage);
+      }
+
+      final updatedNote = note.copyWith(pages: pages);
+      _notes[noteIndex] = updatedNote;
+      _emit();
+    }
+  }
+
+  @override
+  Future<void> deletePage(String noteId, String pageId) async {
+    final noteIndex = _notes.indexWhere((n) => n.noteId == noteId);
+    if (noteIndex >= 0) {
+      final note = _notes[noteIndex];
+      final pages = List<NotePageModel>.from(note.pages);
+
+      // 마지막 페이지 삭제 방지
+      if (pages.length <= 1) {
+        throw Exception('Cannot delete the last page of a note');
+      }
+
+      pages.removeWhere((p) => p.pageId == pageId);
+
+      final updatedNote = note.copyWith(pages: pages);
+      _notes[noteIndex] = updatedNote;
+      _emit();
+    }
+  }
+
+  @override
+  Future<void> batchUpdatePages(
+    String noteId,
+    List<NotePageModel> pages,
+  ) async {
+    final noteIndex = _notes.indexWhere((n) => n.noteId == noteId);
+    if (noteIndex >= 0) {
+      final note = _notes[noteIndex];
+      final updatedNote = note.copyWith(pages: pages);
+      _notes[noteIndex] = updatedNote;
+      _emit();
+    }
+  }
+
+  @override
+  Future<void> updateThumbnailMetadata(
+    String pageId,
+    ThumbnailMetadata metadata,
+  ) async {
+    _thumbnailMetadata[pageId] = metadata;
+  }
+
+  @override
+  Future<ThumbnailMetadata?> getThumbnailMetadata(String pageId) async {
+    return _thumbnailMetadata[pageId];
   }
 
   @override
