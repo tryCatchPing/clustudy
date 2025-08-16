@@ -77,9 +77,8 @@ fvm flutter run -d ios     # iOS Simulator
 
 ```bash
 
-# not yet.....
-# # Run tests
-# fvm flutter test
+# Run tests
+fvm flutter test
 
 # Static analysis
 fvm flutter analyze

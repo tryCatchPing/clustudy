@@ -30,7 +30,7 @@
   - 순서 변경 유효성 검사 구현
   - _Requirements: 2.4, 2.5, 2.6_
 
-- [ ] 5. PageManagementService 구현 - 페이지 추가/삭제 관리
+- [x] 5. PageManagementService 구현 - 페이지 추가/삭제 관리
 
   - 페이지 생성 로직 구현 (NoteService 활용)
   - Repository를 통한 페이지 추가/삭제 구현
