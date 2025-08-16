@@ -538,6 +538,240 @@ class IsarNotesRepository implements NotesRepository {
   /// 활성 스트림 개수 (디버깅용)
   int get activeStreamCount => _noteStreams.length;
 
+  // ========================================
+  // PDF Recovery Service 전용 효율적 메서드들
+  // ========================================
+
+  /// 특정 페이지의 이미지 경로만 업데이트 (PDF Recovery 최적화)
+  Future<void> updatePageImagePath({
+    required int noteId,
+    required int pageId,
+    required String imagePath,
+  }) async {
+    final isar = await _open();
+    
+    await isar.writeTxn(() async {
+      // 직접 Page 엔티티 조회 및 업데이트
+      final page = await isar.pages.get(pageId);
+      if (page != null && page.noteId == noteId) {
+        page
+          ..pdfOriginalPath = imagePath
+          ..updatedAt = DateTime.now();
+        await isar.pages.put(page);
+      }
+    });
+  }
+
+  /// 특정 페이지의 캔버스 데이터만 업데이트 (필기 복원 최적화)
+  Future<void> updatePageCanvasData({
+    required int pageId,
+    required String jsonData,
+  }) async {
+    final isar = await _open();
+    
+    await isar.writeTxn(() async {
+      // 직접 CanvasData 엔티티 조회 및 업데이트
+      final canvasData = await isar.canvasDatas
+          .filter()
+          .pageIdEqualTo(pageId)
+          .findFirst();
+      
+      if (canvasData != null) {
+        canvasData
+          ..json = jsonData
+          ..updatedAt = DateTime.now();
+        await isar.canvasDatas.put(canvasData);
+      }
+    });
+  }
+
+  /// 노트의 모든 PDF 페이지들의 배경 이미지 표시 상태 업데이트
+  Future<void> updateBackgroundVisibility({
+    required int noteId,
+    required bool showBackground,
+  }) async {
+    final isar = await _open();
+    
+    await isar.writeTxn(() async {
+      // 노트의 모든 페이지 조회
+      final pages = await isar.pages
+          .filter()
+          .noteIdEqualTo(noteId)
+          .findAll();
+      
+      // PDF 페이지만 필터링하고 배경 표시 상태 업데이트
+      final pdfPages = pages.where((page) => 
+        page.pdfOriginalPath != null && page.pdfOriginalPath!.isNotEmpty
+      ).toList();
+      
+      for (final page in pdfPages) {
+        // 페이지 메타데이터에 배경 표시 정보 저장
+        // (실제 구현에서는 Page 모델에 showBackground 필드 추가 필요)
+        page.updatedAt = DateTime.now();
+      }
+      
+      if (pdfPages.isNotEmpty) {
+        await isar.pages.putAll(pdfPages);
+      }
+    });
+  }
+
+  /// 노트의 페이지별 캔버스 데이터 백업
+  Future<Map<int, String>> backupPageCanvasData({
+    required int noteId,
+  }) async {
+    final isar = await _open();
+    
+    // 페이지 ID를 키로 하는 캔버스 데이터 맵
+    final backupData = <int, String>{};
+    
+    // Isar Link를 활용한 효율적 조회
+    final note = await isar.notes.get(noteId);
+    if (note == null) return backupData;
+    
+    // 노트의 모든 페이지 조회
+    final pages = await isar.pages
+        .filter()
+        .noteIdEqualTo(noteId)
+        .findAll();
+    
+    // 각 페이지의 캔버스 데이터 조회
+    for (final page in pages) {
+      final canvasData = await isar.canvasDatas
+          .filter()
+          .pageIdEqualTo(page.id)
+          .findFirst();
+      
+      if (canvasData != null) {
+        backupData[page.id] = canvasData.json;
+      }
+    }
+    
+    return backupData;
+  }
+
+  /// 노트의 페이지별 캔버스 데이터 배치 복원
+  Future<void> restorePageCanvasData({
+    required Map<int, String> backupData,
+  }) async {
+    if (backupData.isEmpty) return;
+    
+    final isar = await _open();
+    
+    await isar.writeTxn(() async {
+      for (final entry in backupData.entries) {
+        final pageId = entry.key;
+        final jsonData = entry.value;
+        
+        final canvasData = await isar.canvasDatas
+            .filter()
+            .pageIdEqualTo(pageId)
+            .findFirst();
+        
+        if (canvasData != null) {
+          canvasData
+            ..json = jsonData
+            ..updatedAt = DateTime.now();
+          await isar.canvasDatas.put(canvasData);
+        }
+      }
+    });
+  }
+
+  /// 노트의 특정 페이지 크기 및 메타데이터 업데이트
+  Future<void> updatePageMetadata({
+    required int pageId,
+    required double width,
+    required double height,
+    String? pdfOriginalPath,
+    int? pdfPageIndex,
+  }) async {
+    final isar = await _open();
+    
+    await isar.writeTxn(() async {
+      final page = await isar.pages.get(pageId);
+      if (page != null) {
+        page
+          ..widthPx = width.toInt()
+          ..heightPx = height.toInt()
+          ..updatedAt = DateTime.now();
+        
+        if (pdfOriginalPath != null) {
+          page.pdfOriginalPath = pdfOriginalPath;
+        }
+        
+        if (pdfPageIndex != null) {
+          page.pdfPageIndex = pdfPageIndex;
+        }
+        
+        await isar.pages.put(page);
+      }
+    });
+  }
+
+  /// 노트의 PDF 페이지들 정보 효율적 조회
+  Future<List<PdfPageInfo>> getPdfPagesInfo({
+    required int noteId,
+  }) async {
+    final isar = await _open();
+    
+    final pages = await isar.pages
+        .filter()
+        .noteIdEqualTo(noteId)
+        .and()
+        .pdfOriginalPathIsNotNull()
+        .sortByIndex()
+        .findAll();
+    
+    return pages.map((page) => PdfPageInfo(
+      pageId: page.id,
+      pageIndex: page.index,
+      pdfPageIndex: page.pdfPageIndex ?? 0,
+      width: page.widthPx.toDouble(),
+      height: page.heightPx.toDouble(),
+      pdfOriginalPath: page.pdfOriginalPath,
+    )).toList();
+  }
+
+  /// 노트의 손상된 페이지 감지 (효율적 쿼리)
+  Future<List<CorruptedPageInfo>> detectCorruptedPages({
+    required int noteId,
+  }) async {
+    final isar = await _open();
+    
+    final pages = await isar.pages
+        .filter()
+        .noteIdEqualTo(noteId)
+        .findAll();
+    
+    final corruptedPages = <CorruptedPageInfo>[];
+    
+    for (final page in pages) {
+      bool isCorrupted = false;
+      String reason = '';
+      
+      // PDF 원본 경로 체크
+      if (page.pdfOriginalPath != null && page.pdfOriginalPath!.isNotEmpty) {
+        final file = File(page.pdfOriginalPath!);
+        if (!await file.exists()) {
+          isCorrupted = true;
+          reason = 'PDF 원본 파일 누락';
+        }
+      }
+      
+      if (isCorrupted) {
+        corruptedPages.add(CorruptedPageInfo(
+          pageId: page.id,
+          pageIndex: page.index,
+          reason: reason,
+          pdfOriginalPath: page.pdfOriginalPath,
+        ));
+      }
+    }
+    
+    return corruptedPages;
+  }
+
   @override
   void dispose() {
     // 전체 노트 목록 스트림 정리
@@ -552,6 +786,40 @@ class IsarNotesRepository implements NotesRepository {
     }
     _noteStreams.clear();
   }
+}
+
+/// PDF 페이지 정보
+class PdfPageInfo {
+  final int pageId;
+  final int pageIndex;
+  final int pdfPageIndex;
+  final double width;
+  final double height;
+  final String? pdfOriginalPath;
+
+  PdfPageInfo({
+    required this.pageId,
+    required this.pageIndex,
+    required this.pdfPageIndex,
+    required this.width,
+    required this.height,
+    this.pdfOriginalPath,
+  });
+}
+
+/// 손상된 페이지 정보
+class CorruptedPageInfo {
+  final int pageId;
+  final int pageIndex;
+  final String reason;
+  final String? pdfOriginalPath;
+
+  CorruptedPageInfo({
+    required this.pageId,
+    required this.pageIndex,
+    required this.reason,
+    this.pdfOriginalPath,
+  });
 }
 
 

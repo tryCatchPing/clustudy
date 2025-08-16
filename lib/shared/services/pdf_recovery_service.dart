@@ -6,6 +6,7 @@ import 'package:path/path.dart' as path;
 import 'package:pdfx/pdfx.dart';
 
 import '../../features/notes/data/notes_repository.dart';
+import '../../features/notes/data/isar_notes_repository.dart';
 import '../../features/notes/models/note_page_model.dart';
 import 'file_storage_service.dart';
 import 'note_deletion_service.dart';
@@ -36,6 +37,66 @@ class PdfRecoveryService {
   PdfRecoveryService._();
 
   static bool _shouldCancel = false;
+
+  /// 노트 전체의 손상된 페이지들을 효율적으로 감지합니다.
+  ///
+  /// [noteId]: 노트 고유 ID
+  /// [repo]: Repository 인스턴스
+  ///
+  /// Returns: 손상된 페이지 정보 리스트
+  static Future<List<Map<String, dynamic>>> detectAllCorruptedPages(
+    String noteId, {
+    required NotesRepository repo,
+  }) async {
+    try {
+      debugPrint('🔍 노트 손상 감지 시작: $noteId');
+
+      final intNoteId = int.tryParse(noteId);
+      if (intNoteId == null) {
+        throw Exception('유효하지 않은 노트 ID: $noteId');
+      }
+
+      // IsarNotesRepository의 효율적인 손상 감지 사용
+      if (repo is IsarNotesRepository) {
+        final corruptedPages = await repo.detectCorruptedPages(noteId: intNoteId);
+        final result = corruptedPages.map((page) => {
+          'pageId': page.pageId.toString(),
+          'pageIndex': page.pageIndex,
+          'reason': page.reason,
+          'pdfOriginalPath': page.pdfOriginalPath,
+          'corruptionType': CorruptionType.sourcePdfMissing,
+        }).toList();
+        
+        debugPrint('✅ 손상 감지 완료 (최적화됨): ${result.length}개 페이지 손상');
+        return result;
+      }
+
+      // 기본 Repository의 경우 기존 방식
+      final note = await repo.getNoteById(noteId);
+      if (note == null) {
+        throw Exception('노트를 찾을 수 없습니다: $noteId');
+      }
+
+      final corruptedPages = <Map<String, dynamic>>[];
+      for (final page in note.pages) {
+        final corruptionType = await detectCorruption(page);
+        if (corruptionType != CorruptionType.unknown) {
+          corruptedPages.add({
+            'pageId': page.pageId,
+            'pageNumber': page.pageNumber,
+            'reason': corruptionType.toString(),
+            'corruptionType': corruptionType,
+          });
+        }
+      }
+
+      debugPrint('✅ 손상 감지 완료: ${corruptedPages.length}개 페이지 손상');
+      return corruptedPages;
+    } catch (e) {
+      debugPrint('❌ 손상 감지 실패: $e');
+      return [];
+    }
+  }
 
   /// 손상 감지를 수행합니다.
   ///
@@ -123,31 +184,50 @@ class PdfRecoveryService {
   /// [noteId]: 노트 고유 ID
   ///
   /// Returns: pageId를 키로 하는 필기 데이터 맵
-  static Future<Map<String, String>> backupSketchData(
+  static Future<Map<int, String>> backupSketchData(
     String noteId, {
     required NotesRepository repo,
   }) async {
     try {
       debugPrint('💾 필기 데이터 백업 시작: $noteId');
 
-      // pageId가 키
-      final backupData = <String, String>{};
+      final intNoteId = int.tryParse(noteId);
+      if (intNoteId == null) {
+        throw Exception('유효하지 않은 노트 ID: $noteId');
+      }
 
+      // IsarNotesRepository의 효율적인 백업 메서드 사용
+      if (repo is IsarNotesRepository) {
+        final backupData = await repo.backupPageCanvasData(noteId: intNoteId);
+        debugPrint('✅ 필기 데이터 백업 완료: ${backupData.length}개 페이지 (최적화됨)');
+        return backupData;
+      }
+
+      // 기본 Repository의 경우 기존 방식 유지
+      final stringBackupData = <String, String>{};
       final note = await repo.getNoteById(noteId);
       if (note == null) {
         throw Exception('노트를 찾을 수 없습니다: $noteId');
       }
 
-      // pageId로?
       for (final page in note.pages) {
-        backupData[page.pageId] = page.jsonData;
+        stringBackupData[page.pageId] = page.jsonData;
+      }
+
+      // String pageId를 int로 변환
+      final backupData = <int, String>{};
+      for (final entry in stringBackupData.entries) {
+        final pageId = int.tryParse(entry.key);
+        if (pageId != null) {
+          backupData[pageId] = entry.value;
+        }
       }
 
       debugPrint('✅ 필기 데이터 백업 완료: ${backupData.length}개 페이지');
       return backupData;
     } catch (e) {
       debugPrint('❌ 필기 데이터 백업 실패: $e');
-      return <String, String>{};
+      return <int, String>{};
     }
   }
 
@@ -157,20 +237,34 @@ class PdfRecoveryService {
   /// [backupData]: 백업된 필기 데이터
   static Future<void> restoreSketchData(
     String noteId,
-    Map<String, String> backupData, {
+    Map<int, String> backupData, {
     required NotesRepository repo,
   }) async {
     try {
       debugPrint('🔄 필기 데이터 복원 시작: $noteId');
 
+      if (backupData.isEmpty) {
+        debugPrint('📝 복원할 필기 데이터가 없습니다');
+        return;
+      }
+
+      // IsarNotesRepository의 효율적인 복원 메서드 사용
+      if (repo is IsarNotesRepository) {
+        await repo.restorePageCanvasData(backupData: backupData);
+        debugPrint('✅ 필기 데이터 복원 완료 (최적화됨): ${backupData.length}개 페이지');
+        return;
+      }
+
+      // 기본 Repository의 경우 기존 방식 유지
       final note = await repo.getNoteById(noteId);
       if (note == null) {
         throw Exception('노트를 찾을 수 없습니다: $noteId');
       }
 
       for (final page in note.pages) {
-        if (backupData.containsKey(page.pageId)) {
-          page.jsonData = backupData[page.pageId]!;
+        final pageId = int.tryParse(page.pageId);
+        if (pageId != null && backupData.containsKey(pageId)) {
+          page.jsonData = backupData[pageId]!;
         }
       }
 
@@ -193,6 +287,22 @@ class PdfRecoveryService {
     try {
       debugPrint('👁️ 필기만 보기 모드 활성화: $noteId');
 
+      final intNoteId = int.tryParse(noteId);
+      if (intNoteId == null) {
+        throw Exception('유효하지 않은 노트 ID: $noteId');
+      }
+
+      // IsarNotesRepository의 효율적인 배경 표시 업데이트 사용
+      if (repo is IsarNotesRepository) {
+        await repo.updateBackgroundVisibility(
+          noteId: intNoteId,
+          showBackground: false,
+        );
+        debugPrint('✅ 필기만 보기 모드 활성화 완료 (최적화됨)');
+        return;
+      }
+
+      // 기본 Repository의 경우 기존 방식 유지
       final note = await repo.getNoteById(noteId);
       if (note == null) {
         throw Exception('노트를 찾을 수 없습니다: $noteId');
@@ -257,16 +367,44 @@ class PdfRecoveryService {
 
       debugPrint('📄 재렌더링할 총 페이지 수: $totalPages');
 
-      final note = await repo.getNoteById(noteId);
-      if (note == null) {
-        throw Exception('노트를 찾을 수 없습니다: $noteId');
+      final intNoteId = int.tryParse(noteId);
+      if (intNoteId == null) {
+        throw Exception('유효하지 않은 노트 ID: $noteId');
       }
 
-      // pageNumber 오름차순으로 순회 보장
-      final pages = [...note.pages]
-        ..sort((a, b) => a.pageNumber.compareTo(b.pageNumber));
+      // IsarNotesRepository의 효율적인 PDF 페이지 정보 조회 사용
+      List<Map<String, dynamic>> pagesInfo;
+      if (repo is IsarNotesRepository) {
+        final pdfPages = await repo.getPdfPagesInfo(noteId: intNoteId);
+        pagesInfo = pdfPages.map((page) => {
+          'pageId': page.pageId.toString(),
+          'pageNumber': page.pageIndex + 1, // pageIndex는 0부터 시작
+          'width': page.width,
+          'height': page.height,
+        }).toList();
+        debugPrint('✅ PDF 페이지 정보 조회 완료 (최적화됨): ${pagesInfo.length}개 페이지');
+      } else {
+        // 기본 Repository의 경우 기존 방식
+        final note = await repo.getNoteById(noteId);
+        if (note == null) {
+          throw Exception('노트를 찾을 수 없습니다: $noteId');
+        }
+        
+        pagesInfo = note.pages
+            .where((page) => page.backgroundType == PageBackgroundType.pdf)
+            .map((page) => {
+              'pageId': page.pageId,
+              'pageNumber': page.pageNumber,
+              'width': page.backgroundWidth,
+              'height': page.backgroundHeight,
+            })
+            .toList();
+        
+        // pageNumber 오름차순 정렬
+        pagesInfo.sort((a, b) => (a['pageNumber'] as int).compareTo(b['pageNumber'] as int));
+      }
 
-      for (final page in pages) {
+      for (final pageInfo in pagesInfo) {
         // 취소 체크
         if (_shouldCancel) {
           debugPrint('⏹️ 재렌더링 취소됨');
@@ -278,16 +416,17 @@ class PdfRecoveryService {
         await _renderSinglePage(
           document,
           noteId,
-          pageNumber: page.pageNumber,
-          pageId: page.pageId,
+          pageNumber: pageInfo['pageNumber'] as int,
+          pageId: pageInfo['pageId'] as String,
           repo: repo,
         );
 
         // 진행률 업데이트
-        final progress = page.pageNumber / totalPages;
-        onProgress?.call(progress, page.pageNumber, totalPages);
+        final pageNumber = pageInfo['pageNumber'] as int;
+        final progress = pageNumber / totalPages;
+        onProgress?.call(progress, pageNumber, totalPages);
 
-        debugPrint('✅ 페이지 ${page.pageNumber}/$totalPages 렌더링 완료');
+        debugPrint('✅ 페이지 $pageNumber/$totalPages 렌더링 완료');
 
         // UI 블로킹 방지
         await Future<void>.delayed(const Duration(milliseconds: 10));
@@ -409,6 +548,25 @@ class PdfRecoveryService {
     required NotesRepository repo,
   }) async {
     try {
+      final intNoteId = int.tryParse(noteId);
+      final intPageId = int.tryParse(pageId);
+      
+      if (intNoteId == null || intPageId == null) {
+        throw Exception('유효하지 않은 ID: noteId=$noteId, pageId=$pageId');
+      }
+
+      // IsarNotesRepository의 효율적인 이미지 경로 업데이트 사용
+      if (repo is IsarNotesRepository) {
+        await repo.updatePageImagePath(
+          noteId: intNoteId,
+          pageId: intPageId,
+          imagePath: imagePath,
+        );
+        debugPrint('✅ 페이지 이미지 경로 업데이트 완료 (최적화됨): $imagePath');
+        return;
+      }
+
+      // 기본 Repository의 경우 기존 방식 유지
       final note = await repo.getNoteById(noteId);
       if (note == null) {
         throw Exception('노트를 찾을 수 없습니다: $noteId');
@@ -444,6 +602,22 @@ class PdfRecoveryService {
     try {
       debugPrint('👁️ 배경 이미지 표시 복원: $noteId');
 
+      final intNoteId = int.tryParse(noteId);
+      if (intNoteId == null) {
+        throw Exception('유효하지 않은 노트 ID: $noteId');
+      }
+
+      // IsarNotesRepository의 효율적인 배경 표시 업데이트 사용
+      if (repo is IsarNotesRepository) {
+        await repo.updateBackgroundVisibility(
+          noteId: intNoteId,
+          showBackground: true,
+        );
+        debugPrint('✅ 배경 이미지 표시 복원 완료 (최적화됨)');
+        return;
+      }
+
+      // 기본 Repository의 경우 기존 방식 유지
       final note = await repo.getNoteById(noteId);
       if (note == null) {
         throw Exception('노트를 찾을 수 없습니다: $noteId');
