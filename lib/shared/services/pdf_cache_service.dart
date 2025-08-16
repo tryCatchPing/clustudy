@@ -161,6 +161,7 @@ class PdfCacheService {
         ..renderedAt = now
         ..sizeBytes = sizeBytes
         ..lastAccessAt = now;
+      meta.setUniqueKey(); // Set unique constraint key
       await isar.pdfCacheMetas.put(meta);
     });
   }

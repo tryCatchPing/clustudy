@@ -78,6 +78,14 @@ class Note {
   // Unique within (vaultId, folderId): lower(name)
   @Index(composite: [CompositeIndex('vaultId'), CompositeIndex('folderId')], unique: true, caseSensitive: false)
   late String nameLowerForParentUnique;
+
+  // Performance optimization: composite index for folder listing queries (vaultId, folderId, sortIndex)
+  @Index(composite: [CompositeIndex('folderId'), CompositeIndex('sortIndex')])
+  late int vaultIdForSort;
+
+  // Performance optimization: composite index for name search with deletion status
+  @Index(composite: [CompositeIndex('deletedAt')], caseSensitive: false)
+  late String nameLowerForSearch;
 }
 
 @collection
@@ -147,7 +155,11 @@ class LinkEntity {
   @Index()
   late int vaultId;
 
+  // Link lookup optimization: index for source queries
+  @Index()
   late int sourceNoteId;
+
+  @Index()
   late int sourcePageId;
 
   // normalized rect [0..1]
@@ -185,6 +197,15 @@ class GraphEdge {
 
   @Index()
   late DateTime createdAt;
+
+  // Unique constraint to prevent duplicate edges: (vaultId, fromNoteId, toNoteId)
+  @Index(composite: [CompositeIndex('fromNoteId'), CompositeIndex('toNoteId')], unique: true)
+  late String _uniqueEdgeKey;
+
+  // Helper to set the unique key based on vaultId, fromNoteId, toNoteId
+  void setUniqueKey() {
+    _uniqueEdgeKey = '${vaultId}_${fromNoteId}_$toNoteId';
+  }
 }
 
 @collection
@@ -203,12 +224,23 @@ class PdfCacheMeta {
   int? sizeBytes;
   @Index()
   DateTime? lastAccessAt;
+
+  // Unique constraint to prevent duplicate cache entries: (noteId, pageIndex)
+  @Index(composite: [CompositeIndex('pageIndex')], unique: true)
+  late String _uniqueCacheKey;
+
+  // Helper to set the unique key based on noteId, pageIndex
+  void setUniqueKey() {
+    _uniqueCacheKey = '${noteId}_$pageIndex';
+  }
 }
 
 @collection
 class RecentTabs {
   Id id = Isar.autoIncrement;
 
+  // Unique constraint to ensure single record per user
+  @Index(unique: true)
   late String userId; // 'local'
 
   // Store as CSV or JSON array string for simplicity
