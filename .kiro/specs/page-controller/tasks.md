@@ -37,7 +37,7 @@
   - 페이지 삭제 유효성 검사 구현 (마지막 페이지 보호)
   - _Requirements: 3.2, 3.6, 4.2, 4.3, 4.4_
 
-- [ ] 6. 기존 NoteEditorProvider 확장 - 페이지 컨트롤러 상태 관리
+- [x] 6. 기존 NoteEditorProvider 확장 - 페이지 컨트롤러 상태 관리
 
   - 기존 note_editor_provider에 페이지 컨트롤러 관련 상태 추가
   - 썸네일 로딩 상태 관리 구현
