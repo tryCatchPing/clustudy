@@ -1,16 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:uuid/uuid.dart';
-
-import '../../../lib/features/notes/data/memory_notes_repository.dart';
-import '../../../lib/features/notes/models/note_model.dart';
-import '../../../lib/features/notes/models/note_page_model.dart';
-import '../../../lib/shared/services/page_order_service.dart';
+import 'package:it_contest/features/notes/data/memory_notes_repository.dart';
+import 'package:it_contest/features/notes/models/note_model.dart';
+import 'package:it_contest/features/notes/models/note_page_model.dart';
+import 'package:it_contest/shared/services/page_order_service.dart';
 
 void main() {
   group('PageOrderService Integration Tests', () {
     late MemoryNotesRepository repository;
     late NoteModel testNote;
-    const uuid = Uuid();
+    // const uuid = Uuid();
 
     setUp(() async {
       repository = MemoryNotesRepository();
