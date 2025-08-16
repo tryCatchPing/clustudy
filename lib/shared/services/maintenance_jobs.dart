@@ -4,10 +4,13 @@ import 'package:isar/isar.dart';
 
 import '../../features/db/isar_db.dart';
 import '../../features/db/models/vault_models.dart';
+import '../../services/recent_tabs/recent_tabs_service.dart';
 
 class MaintenanceJobs {
   MaintenanceJobs._();
   static final MaintenanceJobs instance = MaintenanceJobs._();
+
+  Timer? _maintenanceTimer;
 
   // 휴지통 청소: 30일 경과 일괄 삭제
   Future<int> purgeRecycleBin({int olderThanDays = 30}) async {
@@ -69,6 +72,64 @@ class MaintenanceJobs {
       }
     });
     return deleted;
+  }
+
+  /// RecentTabs 정리: 깨진 noteId 제거, LRU 10 유지, 중복 제거
+  Future<int> cleanupRecentTabs() async {
+    final isar = await IsarDb.instance.open();
+    int cleaned = 0;
+
+    await isar.writeTxn(() async {
+      // 기존 RecentTabsService의 정리 로직 활용
+      await RecentTabsService.instance.recentTabsFixBrokenIds();
+      cleaned = 1; // 정리 작업 수행됨을 표시
+    });
+
+    return cleaned;
+  }
+
+  /// 주기적 유지보수 작업 스케줄링
+  Future<void> schedulePeriodicMaintenance({
+    Duration interval = const Duration(hours: 6), // 6시간마다
+  }) async {
+    _maintenanceTimer?.cancel();
+    _maintenanceTimer = Timer.periodic(interval, (_) async {
+      try {
+        await cleanupRecentTabs();
+        print('MaintenanceJobs: Periodic RecentTabs cleanup completed');
+      } catch (e) {
+        print('MaintenanceJobs: Error during periodic cleanup: $e');
+      }
+    });
+  }
+
+  /// 일일 유지보수: 휴지통 + 스냅샷 + RecentTabs 통합 정리
+  Future<Map<String, int>> runDailyMaintenance() async {
+    final results = <String, int>{};
+
+    try {
+      // 1. RecentTabs 정리
+      results['recentTabs'] = await cleanupRecentTabs();
+
+      // 2. 휴지통 정리 (30일 경과)
+      results['recycleBin'] = await purgeRecycleBin(olderThanDays: 30);
+
+      // 3. 스냅샷 정리 (50개 또는 7일 초과)
+      results['snapshots'] = await trimSnapshots(maxCount: 50, maxDays: 7);
+
+      print('MaintenanceJobs: Daily maintenance completed - $results');
+    } catch (e) {
+      print('MaintenanceJobs: Error during daily maintenance: $e');
+      rethrow;
+    }
+
+    return results;
+  }
+
+  /// 스케줄러 중지
+  void stopPeriodicMaintenance() {
+    _maintenanceTimer?.cancel();
+    _maintenanceTimer = null;
   }
 }
 

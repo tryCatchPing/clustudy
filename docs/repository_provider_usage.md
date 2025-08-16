@@ -60,7 +60,7 @@ void main() {
         // 개발 환경에서는 Memory Repository 사용
         if (kDebugMode)
           notesRepositoryProvider.overrideWith((ref) => MemoryNotesRepository()),
-        
+
         // 기본 볼트 ID 설정
         defaultVaultIdProvider.overrideWith((ref) => 1),
       ],
@@ -77,7 +77,7 @@ class NotesListScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notesAsync = ref.watch(notesProvider);
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('내 노트'),
@@ -104,7 +104,7 @@ class NotesListScreen extends ConsumerWidget {
               child: Text('노트가 없습니다\n새 노트를 만들어보세요!'),
             );
           }
-          
+
           return ListView.builder(
             itemCount: notes.length,
             itemBuilder: (context, index) {
@@ -137,10 +137,10 @@ class NotesListScreen extends ConsumerWidget {
       ),
     );
   }
-  
+
   Future<void> _createNewNote(WidgetRef ref) async {
     final repository = ref.read(notesRepositoryProvider);
-    
+
     final newNote = NoteModel(
       noteId: '', // 새 노트는 빈 ID
       title: '새로운 노트',
@@ -156,7 +156,7 @@ class NotesListScreen extends ConsumerWidget {
         ),
       ],
     );
-    
+
     try {
       await repository.upsert(newNote);
       // 성공 시 자동으로 UI 업데이트됨 (스트림 연결)
@@ -175,13 +175,13 @@ class NotesListScreen extends ConsumerWidget {
 ```dart
 class NoteEditorScreen extends ConsumerWidget {
   final String noteId;
-  
+
   const NoteEditorScreen({required this.noteId});
-  
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final noteAsync = ref.watch(noteProvider(noteId));
-    
+
     return noteAsync.when(
       data: (note) {
         if (note == null) {
@@ -192,7 +192,7 @@ class NoteEditorScreen extends ConsumerWidget {
             ),
           );
         }
-        
+
         return Scaffold(
           appBar: AppBar(
             title: Text(note.title),
@@ -222,10 +222,10 @@ class NoteEditorScreen extends ConsumerWidget {
       ),
     );
   }
-  
+
   Future<void> _saveNote(WidgetRef ref, NoteModel note) async {
     final repository = ref.read(notesRepositoryProvider);
-    
+
     try {
       await repository.upsert(note);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -237,7 +237,7 @@ class NoteEditorScreen extends ConsumerWidget {
       );
     }
   }
-  
+
   Future<void> _deleteNote(WidgetRef ref, String noteId) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -256,10 +256,10 @@ class NoteEditorScreen extends ConsumerWidget {
         ],
       ),
     );
-    
+
     if (confirmed == true) {
       final repository = ref.read(notesRepositoryProvider);
-      
+
       try {
         await repository.delete(noteId);
         Navigator.pop(context); // 편집 화면 닫기
@@ -270,10 +270,10 @@ class NoteEditorScreen extends ConsumerWidget {
       }
     }
   }
-  
+
   // 자동 저장 (디바운싱)
   Timer? _autoSaveTimer;
-  
+
   void _autoSave(WidgetRef ref, NoteModel note) {
     _autoSaveTimer?.cancel();
     _autoSaveTimer = Timer(const Duration(seconds: 2), () {
@@ -295,13 +295,13 @@ class SearchNotesScreen extends ConsumerStatefulWidget {
 class _SearchNotesScreenState extends ConsumerState<SearchNotesScreen> {
   final _searchController = TextEditingController();
   String _query = '';
-  
+
   @override
   Widget build(BuildContext context) {
-    final searchResultsAsync = _query.isEmpty 
+    final searchResultsAsync = _query.isEmpty
         ? const AsyncValue.data(<NoteModel>[])
         : ref.watch(searchNotesProvider(_query));
-    
+
     return Scaffold(
       appBar: AppBar(
         title: TextField(
@@ -327,7 +327,7 @@ class _SearchNotesScreenState extends ConsumerState<SearchNotesScreen> {
               Tab(text: '최근'),
             ],
           ),
-          
+
           // 검색 결과
           Expanded(
             child: searchResultsAsync.when(
@@ -337,13 +337,13 @@ class _SearchNotesScreenState extends ConsumerState<SearchNotesScreen> {
                     child: Text('검색어를 입력하세요'),
                   );
                 }
-                
+
                 if (notes.isEmpty) {
                   return Center(
                     child: Text('\'$_query\'에 대한 검색 결과가 없습니다'),
                   );
                 }
-                
+
                 return ListView.builder(
                   itemCount: notes.length,
                   itemBuilder: (context, index) {
@@ -382,7 +382,7 @@ class DashboardWidget extends ConsumerWidget {
         Consumer(
           builder: (context, ref, child) {
             final statsAsync = ref.watch(notesStatisticsProvider);
-            
+
             return statsAsync.when(
               data: (stats) => Row(
                 children: [
@@ -414,15 +414,15 @@ class DashboardWidget extends ConsumerWidget {
             );
           },
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         // 최근 노트 목록
         Expanded(
           child: Consumer(
             builder: (context, ref, child) {
               final recentNotesAsync = ref.watch(recentNotesProvider(5));
-              
+
               return recentNotesAsync.when(
                 data: (notes) => Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -468,7 +468,7 @@ ProviderScope(
   child: MyApp(),
 )
 
-// 테스트 환경 설정  
+// 테스트 환경 설정
 ProviderScope(
   overrides: [
     notesRepositoryProvider.overrideWith((ref) => MockNotesRepository()),
@@ -496,7 +496,7 @@ class VaultSwitcher extends ConsumerWidget {
           ref.read(defaultVaultIdProvider.notifier).state = vaultId;
         }
       },
-      items: [1, 2, 3].map((vaultId) => 
+      items: [1, 2, 3].map((vaultId) =>
         DropdownMenuItem(
           value: vaultId,
           child: Text('볼트 $vaultId'),
@@ -508,13 +508,13 @@ class VaultSwitcher extends ConsumerWidget {
 
 class VaultSpecificNotesScreen extends ConsumerWidget {
   final int vaultId;
-  
+
   const VaultSpecificNotesScreen({required this.vaultId});
-  
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notesAsync = ref.watch(notesForVaultProvider(vaultId));
-    
+
     return notesAsync.when(
       data: (notes) => NotesListView(notes: notes),
       loading: () => const LoadingView(),
@@ -543,16 +543,16 @@ class BulkOperationsWidget extends ConsumerWidget {
       ],
     );
   }
-  
+
   Future<void> _performBulkUpdate(WidgetRef ref) async {
     final repository = ref.read(notesRepositoryProvider);
     final notes = await ref.read(notesProvider.future);
-    
+
     // 모든 노트 제목에 접두사 추가
-    final updatedNotes = notes.map((note) => 
+    final updatedNotes = notes.map((note) =>
       note.copyWith(title: '[업데이트됨] ${note.title}')
     ).toList();
-    
+
     if (repository is IsarNotesRepository) {
       // 배치 업데이트 사용
       await repository.upsertBatch(updatedNotes);
@@ -563,13 +563,13 @@ class BulkOperationsWidget extends ConsumerWidget {
       }
     }
   }
-  
+
   Future<void> _performBulkDelete(WidgetRef ref) async {
     final repository = ref.read(notesRepositoryProvider);
     final notes = await ref.read(notesProvider.future);
-    
+
     final noteIds = notes.map((note) => note.noteId).toList();
-    
+
     if (repository is IsarNotesRepository) {
       // 배치 삭제 사용
       await repository.deleteBatch(noteIds);
@@ -595,7 +595,7 @@ void main() {
         title: '테스트 노트',
         pages: [],
       ));
-      
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -606,9 +606,9 @@ void main() {
           ),
         ),
       );
-      
+
       await tester.pumpAndSettle();
-      
+
       expect(find.text('테스트 노트'), findsOneWidget);
     });
   });

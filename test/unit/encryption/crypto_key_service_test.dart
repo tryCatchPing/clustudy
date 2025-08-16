@@ -81,7 +81,7 @@ void main() {
 
       // Create new key
       final key = await CryptoKeyService.instance.getOrCreateKey();
-      
+
       expect(key, isNotNull);
       expect(key.length, 32); // 256-bit key
       expect(mockStorage.containsKey('isar_encryption_key_v1'), isTrue);
@@ -94,10 +94,10 @@ void main() {
     test('loadKey returns existing key when available', () async {
       // Create a key first
       final originalKey = await CryptoKeyService.instance.getOrCreateKey();
-      
+
       // Load the key
       final loadedKey = await CryptoKeyService.instance.loadKey();
-      
+
       expect(loadedKey, isNotNull);
       expect(loadedKey, equals(originalKey));
     });
@@ -105,10 +105,10 @@ void main() {
     test('rotateKey creates new key and backs up old one', () async {
       // Create initial key
       final oldKey = await CryptoKeyService.instance.getOrCreateKey();
-      
+
       // Rotate key
       final newKey = await CryptoKeyService.instance.rotateKey();
-      
+
       expect(newKey, isNotNull);
       expect(newKey.length, 32);
       expect(newKey, isNot(equals(oldKey)));
@@ -134,7 +134,7 @@ void main() {
       // Test invalid key lengths
       final shortKey = List<int>.filled(16, 1);
       final longKey = List<int>.filled(64, 1);
-      
+
       expect(await CryptoKeyService.instance.validateKey(shortKey), isFalse);
       expect(await CryptoKeyService.instance.validateKey(longKey), isFalse);
     });
@@ -142,10 +142,10 @@ void main() {
     test('backupKey stores key with custom alias', () async {
       final key = await CryptoKeyService.instance.getOrCreateKey();
       const customAlias = 'my_backup_key';
-      
+
       // Backup key with custom alias
       await CryptoKeyService.instance.backupKey(key, customAlias);
-      
+
       // Verify backup exists
       final aliases = await CryptoKeyService.instance.getBackupKeyAliases();
       expect(aliases, contains(customAlias));
@@ -158,24 +158,24 @@ void main() {
     test('deleteOldKey removes specific backup key', () async {
       final key = await CryptoKeyService.instance.getOrCreateKey();
       const alias = 'test_backup';
-      
+
       // Create backup
       await CryptoKeyService.instance.backupKey(key, alias);
       expect(await CryptoKeyService.instance.getBackupKeyAliases(), contains(alias));
 
       // Delete backup
       await CryptoKeyService.instance.deleteOldKey('isar_backup_key_$alias');
-      
+
       // Verify backup is gone
       expect(await CryptoKeyService.instance.getBackupKeyAliases(), isNot(contains(alias)));
-      
+
       final deletedKey = await CryptoKeyService.instance.loadBackupKey(alias);
       expect(deletedKey, isNull);
     });
 
     test('cleanupOldBackups keeps only specified number of recent backups', () async {
       final key = await CryptoKeyService.instance.getOrCreateKey();
-      
+
       // Create multiple backups with timestamp-like aliases
       final timestamps = ['1000000000000', '2000000000000', '3000000000000', '4000000000000'];
       for (final timestamp in timestamps) {
@@ -290,7 +290,7 @@ void main() {
 
       // Create test data
       final vault = await NoteDbService.instance.createVault(name: 'EncryptedVault');
-      
+
       // Close and reopen - should work with same key
       await IsarDb.instance.close();
       final reopenedIsar = await IsarDb.instance.open(enableEncryption: true);
@@ -310,7 +310,7 @@ void main() {
 
       // Create test data
       final vault = await NoteDbService.instance.createVault(name: 'CustomKeyVault');
-      
+
       // Close and reopen with same key
       await IsarDb.instance.close();
       final reopenedIsar = await IsarDb.instance.open(encryptionKey: customKey);
@@ -323,7 +323,7 @@ void main() {
       // Try opening with wrong key should fail
       await IsarDb.instance.close();
       final wrongKey = List<int>.generate(32, (i) => (i + 1) % 256);
-      
+
       await expectLater(
         () => IsarDb.instance.open(encryptionKey: wrongKey),
         throwsA(isA<IsarError>()),

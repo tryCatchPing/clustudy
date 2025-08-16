@@ -10,7 +10,7 @@ import '../models/note_page_model.dart';
 import 'notes_repository.dart';
 
 /// Isar 데이터베이스를 사용한 NotesRepository 구현체
-/// 
+///
 /// Repository 패턴의 핵심 장점:
 /// 1. 데이터 접근 로직 캡슐화
 /// 2. UI 레이어와 데이터 레이어 분리
@@ -23,7 +23,7 @@ class IsarNotesRepository implements NotesRepository {
 
   final int _defaultVaultId;
   Isar? _isar;
-  
+
   // 브로드캐스트 스트림으로 여러 구독자 지원
   final StreamController<List<NoteModel>> _notesController =
       StreamController<List<NoteModel>>.broadcast();
@@ -32,7 +32,7 @@ class IsarNotesRepository implements NotesRepository {
   StreamSubscription<void>? _notesWatch;
   StreamSubscription<void>? _pagesWatch;
   StreamSubscription<void>? _canvasWatch;
-  
+
   // 개별 노트 스트림 캐싱 (메모리 효율성)
   final Map<String, StreamController<NoteModel?>> _noteStreams = {};
 
@@ -49,16 +49,16 @@ class IsarNotesRepository implements NotesRepository {
 
   /// 특정 볼트의 노트들만 관찰
   Stream<List<NoteModel>> watchNotesByVault(int vaultId) {
-    return watchNotes().map((notes) => 
+    return watchNotes().map((notes) =>
       notes.where((note) => _getVaultIdFromNote(note) == vaultId).toList()
     );
   }
 
   /// 특정 폴더의 노트들만 관찰
   Stream<List<NoteModel>> watchNotesByFolder(int vaultId, int? folderId) {
-    return watchNotes().map((notes) => 
-      notes.where((note) => 
-        _getVaultIdFromNote(note) == vaultId && 
+    return watchNotes().map((notes) =>
+      notes.where((note) =>
+        _getVaultIdFromNote(note) == vaultId &&
         _getFolderIdFromNote(note) == folderId
       ).toList()
     );
@@ -66,8 +66,8 @@ class IsarNotesRepository implements NotesRepository {
 
   /// 제목으로 노트 검색
   Stream<List<NoteModel>> searchNotesByTitle(String query) {
-    return watchNotes().map((notes) => 
-      notes.where((note) => 
+    return watchNotes().map((notes) =>
+      notes.where((note) =>
         note.title.toLowerCase().contains(query.toLowerCase())
       ).toList()
     );
@@ -75,7 +75,7 @@ class IsarNotesRepository implements NotesRepository {
 
   /// PDF 기반 노트들만 필터링
   Stream<List<NoteModel>> watchPdfNotes() {
-    return watchNotes().map((notes) => 
+    return watchNotes().map((notes) =>
       notes.where((note) => note.isPdfBased).toList()
     );
   }
@@ -155,7 +155,7 @@ class IsarNotesRepository implements NotesRepository {
   Future<void> _initializeNoteWatch(String noteId, StreamController<NoteModel?> controller) async {
     final isar = await _open();
     final intId = int.tryParse(noteId);
-    
+
     if (intId == null) {
       // UUID 등 숫자가 아니면 매칭 불가
       controller.add(null);
@@ -204,7 +204,7 @@ class IsarNotesRepository implements NotesRepository {
   @override
   Future<void> upsert(NoteModel note) async {
     final intId = int.tryParse(note.noteId);
-    
+
     if (intId != null) {
       // 기존 노트 업데이트
       await _updateExistingNote(intId, note);
@@ -238,21 +238,21 @@ class IsarNotesRepository implements NotesRepository {
 
     // 페이지 데이터 설정
     await _updateNotePages(note.id, noteModel.pages);
-    
+
     return note;
   }
 
   /// 노트의 페이지들 업데이트
   Future<void> _updateNotePages(int noteId, List<NotePageModel> pages) async {
     final isar = await _open();
-    
+
     await isar.writeTxn(() async {
       // 기존 페이지들 조회
       final existingPages = await isar.pages
           .filter()
           .noteIdEqualTo(noteId)
           .findAll();
-      
+
       final existingPageMap = <int, Page>{
         for (final page in existingPages) page.index: page
       };
@@ -260,7 +260,7 @@ class IsarNotesRepository implements NotesRepository {
       // 새 페이지들 처리
       for (final pageModel in pages) {
         final pageIndex = pageModel.pageNumber - 1;
-        
+
         Page page;
         if (existingPageMap.containsKey(pageIndex)) {
           // 기존 페이지 업데이트
@@ -268,7 +268,7 @@ class IsarNotesRepository implements NotesRepository {
             ..widthPx = pageModel.backgroundWidth.toInt()
             ..heightPx = pageModel.backgroundHeight.toInt()
             ..updatedAt = DateTime.now();
-          
+
           // PDF 배경 정보 업데이트
           if (pageModel.backgroundType == PageBackgroundType.pdf) {
             page
@@ -285,19 +285,19 @@ class IsarNotesRepository implements NotesRepository {
             ..rotationDeg = 0
             ..createdAt = DateTime.now()
             ..updatedAt = DateTime.now();
-          
+
           if (pageModel.backgroundType == PageBackgroundType.pdf) {
             page
               ..pdfOriginalPath = pageModel.backgroundPdfPath
               ..pdfPageIndex = pageModel.backgroundPdfPageNumber;
           }
         }
-        
+
         final pageId = await isar.pages.put(page);
-        
+
         // 캔버스 데이터 업데이트
         await _updateCanvasData(noteId, pageId, pageModel.jsonData);
-        
+
         existingPageMap.remove(pageIndex);
       }
 
@@ -305,7 +305,7 @@ class IsarNotesRepository implements NotesRepository {
       final pagesToDelete = existingPageMap.values.map((p) => p.id).toList();
       if (pagesToDelete.isNotEmpty) {
         await isar.pages.deleteAll(pagesToDelete);
-        
+
         // 관련 캔버스 데이터도 삭제
         for (final pageId in pagesToDelete) {
           final canvasData = await isar.canvasDatas
@@ -321,7 +321,7 @@ class IsarNotesRepository implements NotesRepository {
   /// 캔버스 데이터 업데이트
   Future<void> _updateCanvasData(int noteId, int pageId, String jsonData) async {
     final isar = await _open();
-    
+
     final existingCanvas = await isar.canvasDatas
         .filter()
         .pageIdEqualTo(pageId)
@@ -350,7 +350,7 @@ class IsarNotesRepository implements NotesRepository {
   Future<void> delete(String noteId) async {
     final intId = int.tryParse(noteId);
     if (intId == null) return;
-    
+
     // NoteDbService를 사용하여 일관된 소프트 삭제 처리
     try {
       final isar = await _open();
@@ -416,11 +416,11 @@ class IsarNotesRepository implements NotesRepository {
   /// 여러 노트를 배치로 업데이트 (성능 최적화)
   Future<void> upsertBatch(List<NoteModel> notes) async {
     final isar = await _open();
-    
+
     await isar.writeTxn(() async {
       for (final note in notes) {
         final intId = int.tryParse(note.noteId);
-        
+
         if (intId != null) {
           // 기존 노트 업데이트
           final existingNote = await isar.notes.get(intId);
@@ -431,7 +431,7 @@ class IsarNotesRepository implements NotesRepository {
               ..nameLowerForSearch = note.title.toLowerCase()
               ..updatedAt = DateTime.now();
             await isar.notes.put(existingNote);
-            
+
             // 페이지 데이터 업데이트는 트랜잭션 외부에서 처리
             await _updateNotePages(intId, note.pages);
           }
@@ -451,13 +451,13 @@ class IsarNotesRepository implements NotesRepository {
         .where((id) => id != null)
         .cast<int>()
         .toList();
-    
+
     if (validIds.isEmpty) return;
-    
+
     await isar.writeTxn(() async {
       final notes = await isar.notes.getAll(validIds);
       final now = DateTime.now();
-      
+
       for (final note in notes) {
         if (note != null) {
           note
@@ -465,7 +465,7 @@ class IsarNotesRepository implements NotesRepository {
             ..updatedAt = now;
         }
       }
-      
+
       await isar.notes.putAll(notes.whereType<Note>().toList());
     });
   }
@@ -473,7 +473,7 @@ class IsarNotesRepository implements NotesRepository {
   /// 통계 정보 조회
   Future<Map<String, int>> getStatistics() async {
     final isar = await _open();
-    
+
     final totalCount = await isar.notes.filter().deletedAtIsNull().count();
     final pdfCount = await isar.notes
         .filter()
@@ -481,7 +481,7 @@ class IsarNotesRepository implements NotesRepository {
         .and()
         .anyOf(_getPdfNoteFilters(), (q, filter) => filter(q))
         .count();
-    
+
     final today = DateTime.now();
     final weekAgo = today.subtract(const Duration(days: 7));
     final recentCount = await isar.notes
@@ -490,7 +490,7 @@ class IsarNotesRepository implements NotesRepository {
         .and()
         .updatedAtBetween(weekAgo, today)
         .count();
-    
+
     return {
       'total': totalCount,
       'pdf_based': pdfCount,
@@ -513,12 +513,12 @@ class IsarNotesRepository implements NotesRepository {
     final isar = await _open();
     final notes = await _loadAllNotes(isar);
     _notesController.add(notes);
-    
+
     // 개별 노트 스트림들도 무효화
     for (final entry in _noteStreams.entries) {
       final noteId = entry.key;
       final controller = entry.value;
-      
+
       final intId = int.tryParse(noteId);
       if (intId != null) {
         final note = await isar.notes.get(intId);
@@ -534,7 +534,7 @@ class IsarNotesRepository implements NotesRepository {
 
   /// Repository 상태 확인
   bool get isInitialized => _isar != null;
-  
+
   /// 활성 스트림 개수 (디버깅용)
   int get activeStreamCount => _noteStreams.length;
 
@@ -549,7 +549,7 @@ class IsarNotesRepository implements NotesRepository {
     required String imagePath,
   }) async {
     final isar = await _open();
-    
+
     await isar.writeTxn(() async {
       // 직접 Page 엔티티 조회 및 업데이트
       final page = await isar.pages.get(pageId);
@@ -568,14 +568,14 @@ class IsarNotesRepository implements NotesRepository {
     required String jsonData,
   }) async {
     final isar = await _open();
-    
+
     await isar.writeTxn(() async {
       // 직접 CanvasData 엔티티 조회 및 업데이트
       final canvasData = await isar.canvasDatas
           .filter()
           .pageIdEqualTo(pageId)
           .findFirst();
-      
+
       if (canvasData != null) {
         canvasData
           ..json = jsonData
@@ -591,25 +591,25 @@ class IsarNotesRepository implements NotesRepository {
     required bool showBackground,
   }) async {
     final isar = await _open();
-    
+
     await isar.writeTxn(() async {
       // 노트의 모든 페이지 조회
       final pages = await isar.pages
           .filter()
           .noteIdEqualTo(noteId)
           .findAll();
-      
+
       // PDF 페이지만 필터링하고 배경 표시 상태 업데이트
-      final pdfPages = pages.where((page) => 
+      final pdfPages = pages.where((page) =>
         page.pdfOriginalPath != null && page.pdfOriginalPath!.isNotEmpty
       ).toList();
-      
+
       for (final page in pdfPages) {
         // 페이지 메타데이터에 배경 표시 정보 저장
         // (실제 구현에서는 Page 모델에 showBackground 필드 추가 필요)
         page.updatedAt = DateTime.now();
       }
-      
+
       if (pdfPages.isNotEmpty) {
         await isar.pages.putAll(pdfPages);
       }
@@ -621,32 +621,32 @@ class IsarNotesRepository implements NotesRepository {
     required int noteId,
   }) async {
     final isar = await _open();
-    
+
     // 페이지 ID를 키로 하는 캔버스 데이터 맵
     final backupData = <int, String>{};
-    
+
     // Isar Link를 활용한 효율적 조회
     final note = await isar.notes.get(noteId);
     if (note == null) return backupData;
-    
+
     // 노트의 모든 페이지 조회
     final pages = await isar.pages
         .filter()
         .noteIdEqualTo(noteId)
         .findAll();
-    
+
     // 각 페이지의 캔버스 데이터 조회
     for (final page in pages) {
       final canvasData = await isar.canvasDatas
           .filter()
           .pageIdEqualTo(page.id)
           .findFirst();
-      
+
       if (canvasData != null) {
         backupData[page.id] = canvasData.json;
       }
     }
-    
+
     return backupData;
   }
 
@@ -655,19 +655,19 @@ class IsarNotesRepository implements NotesRepository {
     required Map<int, String> backupData,
   }) async {
     if (backupData.isEmpty) return;
-    
+
     final isar = await _open();
-    
+
     await isar.writeTxn(() async {
       for (final entry in backupData.entries) {
         final pageId = entry.key;
         final jsonData = entry.value;
-        
+
         final canvasData = await isar.canvasDatas
             .filter()
             .pageIdEqualTo(pageId)
             .findFirst();
-        
+
         if (canvasData != null) {
           canvasData
             ..json = jsonData
@@ -687,7 +687,7 @@ class IsarNotesRepository implements NotesRepository {
     int? pdfPageIndex,
   }) async {
     final isar = await _open();
-    
+
     await isar.writeTxn(() async {
       final page = await isar.pages.get(pageId);
       if (page != null) {
@@ -695,15 +695,15 @@ class IsarNotesRepository implements NotesRepository {
           ..widthPx = width.toInt()
           ..heightPx = height.toInt()
           ..updatedAt = DateTime.now();
-        
+
         if (pdfOriginalPath != null) {
           page.pdfOriginalPath = pdfOriginalPath;
         }
-        
+
         if (pdfPageIndex != null) {
           page.pdfPageIndex = pdfPageIndex;
         }
-        
+
         await isar.pages.put(page);
       }
     });
@@ -714,7 +714,7 @@ class IsarNotesRepository implements NotesRepository {
     required int noteId,
   }) async {
     final isar = await _open();
-    
+
     final pages = await isar.pages
         .filter()
         .noteIdEqualTo(noteId)
@@ -722,7 +722,7 @@ class IsarNotesRepository implements NotesRepository {
         .pdfOriginalPathIsNotNull()
         .sortByIndex()
         .findAll();
-    
+
     return pages.map((page) => PdfPageInfo(
       pageId: page.id,
       pageIndex: page.index,
@@ -738,18 +738,18 @@ class IsarNotesRepository implements NotesRepository {
     required int noteId,
   }) async {
     final isar = await _open();
-    
+
     final pages = await isar.pages
         .filter()
         .noteIdEqualTo(noteId)
         .findAll();
-    
+
     final corruptedPages = <CorruptedPageInfo>[];
-    
+
     for (final page in pages) {
       bool isCorrupted = false;
       String reason = '';
-      
+
       // PDF 원본 경로 체크
       if (page.pdfOriginalPath != null && page.pdfOriginalPath!.isNotEmpty) {
         final file = File(page.pdfOriginalPath!);
@@ -758,7 +758,7 @@ class IsarNotesRepository implements NotesRepository {
           reason = 'PDF 원본 파일 누락';
         }
       }
-      
+
       if (isCorrupted) {
         corruptedPages.add(CorruptedPageInfo(
           pageId: page.id,
@@ -768,7 +768,7 @@ class IsarNotesRepository implements NotesRepository {
         ));
       }
     }
-    
+
     return corruptedPages;
   }
 
@@ -779,7 +779,7 @@ class IsarNotesRepository implements NotesRepository {
     _pagesWatch?.cancel();
     _canvasWatch?.cancel();
     _notesController.close();
-    
+
     // 개별 노트 스트림들 정리
     for (final controller in _noteStreams.values) {
       controller.close();

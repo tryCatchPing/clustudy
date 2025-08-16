@@ -307,7 +307,7 @@ void main() {
         ..updatedAt = DateTime.now();
 
       await isar.writeTxn(() async {
-        await isar.recentTabss.put(tabs1);
+        await isar.recentTabs.put(tabs1);
       });
 
       // Try to create duplicate userId
@@ -318,7 +318,7 @@ void main() {
 
       await expectLater(
         () => isar.writeTxn(() async {
-          await isar.recentTabss.put(tabs2);
+          await isar.recentTabs.put(tabs2);
         }),
         throwsA(isA<IsarError>()),
       );
@@ -330,11 +330,11 @@ void main() {
         ..updatedAt = DateTime.now();
 
       await isar.writeTxn(() async {
-        await isar.recentTabss.put(tabs3);
+        await isar.recentTabs.put(tabs3);
       });
 
       // Verify correct records exist
-      final allTabs = await isar.recentTabss.where().findAll();
+      final allTabs = await isar.recentTabs.where().findAll();
       expect(allTabs.length, 2);
       expect(allTabs.map((t) => t.userId).toSet(), {'local', 'user2'});
     }, skip: 'Requires native Isar runtime; run as integration test on device/desktop.');

@@ -8,6 +8,7 @@ import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../features/db/isar_db.dart';
+import '../../features/db/models/vault_models.dart';
 
 class CryptoKeyService {
   CryptoKeyService._();
@@ -177,7 +178,7 @@ class CryptoKeyService {
     backup['linkEntities'] = await isar.linkEntitys.where().exportJson();
     backup['graphEdges'] = await isar.graphEdges.where().exportJson();
     backup['pdfCacheMetas'] = await isar.pdfCacheMetas.where().exportJson();
-    backup['recentTabs'] = await isar.recentTabss.where().exportJson();
+    backup['recentTabs'] = await isar.recentTabs.where().exportJson();
     backup['settings'] = await isar.settingsEntitys.where().exportJson();
 
     return backup;
@@ -218,7 +219,7 @@ class CryptoKeyService {
         await isar.pdfCacheMetas.importJson(backupData['pdfCacheMetas']);
       }
       if (backupData['recentTabs'] != null) {
-        await isar.recentTabss.importJson(backupData['recentTabs']);
+        await isar.recentTabs.importJson(backupData['recentTabs']);
       }
       if (backupData['settings'] != null) {
         await isar.settingsEntitys.importJson(backupData['settings']);

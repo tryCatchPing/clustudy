@@ -176,11 +176,11 @@ class OptimizedPdfRecoveryService {
     if (repo is IsarNotesRepository) {
       final intNoteId = int.parse(noteId);
       final pdfPages = await repo.getPdfPagesInfo(noteId: intNoteId);
-      
+
       for (final pageInfo in pdfPages) {
         // 3. 개별 페이지 렌더링 + 효율적 업데이트
         await _renderAndUpdatePage(pageInfo, repo);
-        
+
         // 진행률 업데이트
         final progress = pageInfo.pageIndex / pdfPages.length;
         onProgress?.call(progress, pageInfo.pageIndex + 1, pdfPages.length);
@@ -203,7 +203,7 @@ class OptimizedPdfRecoveryService {
   ) async {
     // PDF 렌더링 로직...
     final renderedImagePath = await _renderPdfPage(pageInfo);
-    
+
     // 효율적인 이미지 경로 업데이트
     await repo.updatePageImagePath(
       noteId: pageInfo.pageId,
@@ -228,7 +228,7 @@ class OptimizedCorruptionDetection {
       // 최적화된 손상 감지
       final intNoteId = int.parse(noteId);
       final corruptedPages = await repo.detectCorruptedPages(noteId: intNoteId);
-      
+
       for (final page in corruptedPages) {
         reports.add(CorruptionReport(
           pageId: page.pageId,
@@ -244,7 +244,7 @@ class OptimizedCorruptionDetection {
         noteId,
         repo: repo,
       );
-      
+
       // 변환...
     }
 
@@ -279,7 +279,7 @@ class BatchRecoveryOptimizer {
     IsarNotesRepository repo,
   ) async {
     final intNoteId = int.parse(noteId);
-    
+
     // 1. 손상된 페이지 효율적 감지
     final corrupted = await repo.detectCorruptedPages(noteId: intNoteId);
     if (corrupted.isEmpty) return;
@@ -328,7 +328,7 @@ final note = await repo.getNoteById(noteId);
 note.pages[0].preRenderedImagePath = newPath;
 await repo.upsert(note);
 
-// After  
+// After
 if (repo is IsarNotesRepository) {
   await repo.updatePageImagePath(
     noteId: int.parse(noteId),
@@ -354,20 +354,20 @@ if (repo is IsarNotesRepository) {
 ```dart
 test('페이지 업데이트 성능 비교', () async {
   final stopwatch = Stopwatch();
-  
+
   // 기존 방식
   stopwatch.start();
   await legacyUpdateMethod();
   stopwatch.stop();
   final legacyTime = stopwatch.elapsedMilliseconds;
-  
+
   // 최적화 방식
   stopwatch.reset();
   stopwatch.start();
   await optimizedUpdateMethod();
   stopwatch.stop();
   final optimizedTime = stopwatch.elapsedMilliseconds;
-  
+
   expect(optimizedTime, lessThan(legacyTime * 0.5)); // 50% 이상 개선
 });
 ```
@@ -378,9 +378,9 @@ test('Repository 타입별 동작 검증', () async {
   // IsarNotesRepository 최적화 경로
   when(mockIsarRepo.updatePageImagePath(any, any, any))
       .thenAnswer((_) async => {});
-  
+
   await PdfRecoveryService.updatePageImagePath(noteId, pageId, path, repo: mockIsarRepo);
-  
+
   verify(mockIsarRepo.updatePageImagePath(any, any, any)).called(1);
   verifyNever(mockIsarRepo.upsert(any)); // 전체 업데이트 호출 안 됨
 });
@@ -392,7 +392,7 @@ test('Repository 타입별 동작 검증', () async {
 
 ### **성능 개선 효과**
 - **페이지 업데이트**: ~95% 성능 향상 (200ms → 10ms)
-- **필기 백업**: ~90% 성능 향상 (500ms → 50ms)  
+- **필기 백업**: ~90% 성능 향상 (500ms → 50ms)
 - **손상 감지**: ~85% 성능 향상 (2000ms → 300ms)
 - **메모리 사용량**: ~70% 절약 (전체 노트 → 필요 데이터만)
 
