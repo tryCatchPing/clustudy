@@ -45,7 +45,7 @@ class Folder {
   DateTime? deletedAt;
 
   // Unique within vault: (vaultId, lower(name))
-  @Index(composite: [CompositeIndex('vaultId')], unique: true, caseSensitive: false)
+  @Index(composite: [CompositeIndex('vaultId'), CompositeIndex('nameLowerForVaultUnique')], unique: true, caseSensitive: false)
   late String nameLowerForVaultUnique;
 }
 
@@ -76,7 +76,7 @@ class Note {
   late String pageOrientation; // portrait, landscape
 
   // Unique within (vaultId, folderId): lower(name)
-  @Index(composite: [CompositeIndex('vaultId'), CompositeIndex('folderId')], unique: true, caseSensitive: false)
+  @Index(composite: [CompositeIndex('vaultId'), CompositeIndex('folderId'), CompositeIndex('nameLowerForParentUnique')], unique: true, caseSensitive: false)
   late String nameLowerForParentUnique;
 
   // Performance optimization: composite index for folder listing queries (vaultId, folderId, sortIndex)
@@ -195,6 +195,10 @@ class GraphEdge {
   @Index()
   late int toNoteId;
 
+  // Composite unique index to prevent duplicate edges between the same notes in a vault
+  @Index(composite: [CompositeIndex('vaultId'), CompositeIndex('fromNoteId'), CompositeIndex('toNoteId')], unique: true)
+  String get _uniqueEdgeKey => '${vaultId}_${fromNoteId}_$toNoteId';
+
   @Index()
   late DateTime createdAt;
 
@@ -226,7 +230,7 @@ class PdfCacheMeta {
   DateTime? lastAccessAt;
 
   // Unique constraint to prevent duplicate cache entries: (noteId, pageIndex)
-  @Index(composite: [CompositeIndex('pageIndex')], unique: true)
+  @Index(composite: [CompositeIndex('noteId'), CompositeIndex('pageIndex')], unique: true)
   late String _uniqueCacheKey;
 
   // Helper to set the unique key based on noteId, pageIndex
