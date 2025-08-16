@@ -1,5 +1,4 @@
 import '../../features/notes/data/notes_repository.dart';
-import '../../features/notes/models/note_model.dart';
 import '../../features/notes/models/note_page_model.dart';
 
 /// 페이지 순서 변경 작업 정보를 담는 클래스입니다.

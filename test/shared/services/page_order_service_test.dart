@@ -1,13 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:uuid/uuid.dart';
-
-import '../../../lib/features/notes/models/note_page_model.dart';
-import '../../../lib/shared/services/page_order_service.dart';
+import 'package:it_contest/features/notes/models/note_page_model.dart';
+import 'package:it_contest/shared/services/page_order_service.dart';
 
 void main() {
   group('PageOrderService', () {
     late List<NotePageModel> testPages;
-    const uuid = Uuid();
+    // const uuid = Uuid();
 
     setUp(() {
       // 테스트용 페이지 목록 생성

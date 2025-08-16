@@ -45,7 +45,7 @@
   - 오류 상태 및 로딩 상태 관리 구현
   - _Requirements: 7.1, 7.2, 7.4_
 
-- [ ] 7. DraggablePageThumbnail 위젯 구현
+- [x] 7. DraggablePageThumbnail 위젯 구현
 
   - 드래그 가능한 썸네일 위젯 기본 구조 구현
   - 길게 누르기로 드래그 모드 활성화 구현
