@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:isar/isar.dart';
 import '../../../shared/models/rect_norm.dart';
+import '../../../search/search_service.dart';
 
 import '../isar_db.dart';
 import '../models/vault_models.dart';
@@ -413,30 +414,90 @@ class NoteDbService {
     });
   }
 
+  /// 노트 검색 (SearchService 위임)
   Future<List<Note>> searchNotesByName({
     required int vaultId,
     int? folderId,
     required String query,
     int limit = 50,
+    bool useContains = false,
   }) async {
-    final isar = await IsarDb.instance.open();
-    final q = query.toLowerCase();
-    var builder = isar.notes
-        .filter()
-        .vaultIdEqualTo(vaultId)
-        .and()
-        .deletedAtIsNull();
-    if (folderId == null) {
-      builder = builder.and().folderIdIsNull();
+    if (useContains) {
+      return SearchService.instance.fullTextSearchNotes(
+        vaultId: vaultId,
+        folderId: folderId,
+        query: query,
+        limit: limit,
+      );
     } else {
-      builder = builder.and().folderIdEqualTo(folderId);
+      return SearchService.instance.quickSearchNotes(
+        vaultId: vaultId,
+        folderId: folderId,
+        query: query,
+        limit: limit,
+      );
     }
-    final results = await builder
-        .and()
-        .nameLowerForParentUniqueStartsWith(q)
-        .limit(limit)
-        .findAll();
-    return results;
+  }
+
+  /// Contains 부분 검색 전용 메서드 (SearchService 위임)
+  Future<List<Note>> searchNotesByNameContains({
+    required int vaultId,
+    int? folderId,
+    required String query,
+    int limit = 50,
+  }) async {
+    return SearchService.instance.fullTextSearchNotes(
+      vaultId: vaultId,
+      folderId: folderId,
+      query: query,
+      limit: limit,
+    );
+  }
+
+  /// 전역 검색 (SearchService 위임)
+  Future<List<Note>> searchNotesGlobally({
+    required String query,
+    int limit = 100,
+    bool useContains = true,
+  }) async {
+    return SearchService.instance.globalSearchNotes(
+      query: query,
+      useContains: useContains,
+      limit: limit,
+    );
+  }
+
+  /// 고급 검색 (SearchService 위임)
+  Future<List<Note>> searchNotesAdvanced({
+    int? vaultId,
+    int? folderId,
+    required String query,
+    DateTime? createdAfter,
+    DateTime? createdBefore,
+    DateTime? updatedAfter,
+    DateTime? updatedBefore,
+    bool useContains = true,
+    int limit = 50,
+  }) async {
+    if (vaultId == null) {
+      return SearchService.instance.globalSearchNotes(
+        query: query,
+        useContains: useContains,
+        limit: limit,
+      );
+    }
+    
+    return SearchService.instance.searchNotesByDateRange(
+      vaultId: vaultId,
+      folderId: folderId,
+      query: query.isEmpty ? null : query,
+      createdAfter: createdAfter,
+      createdBefore: createdBefore,
+      updatedAfter: updatedAfter,
+      updatedBefore: updatedBefore,
+      useContains: useContains,
+      limit: limit,
+    );
   }
 
   Future<void> softDeleteNote(int noteId) async {
@@ -482,6 +543,51 @@ class NoteDbService {
       }
       await isar.linkEntitys.putAll(links);
     });
+  }
+
+  /// 폴더 검색 (SearchService 위임)
+  Future<List<Folder>> searchFoldersByName({
+    required int vaultId,
+    required String query,
+    bool useContains = true,
+    int limit = 50,
+  }) async {
+    return SearchService.instance.searchFolders(
+      vaultId: vaultId,
+      query: query,
+      useContains: useContains,
+      limit: limit,
+    );
+  }
+
+  /// 볼트 검색 (SearchService 위임)
+  Future<List<Vault>> searchVaultsByName({
+    required String query,
+    bool useContains = true,
+    int limit = 20,
+  }) async {
+    return SearchService.instance.searchVaults(
+      query: query,
+      useContains: useContains,
+      limit: limit,
+    );
+  }
+
+  /// 통합 검색 (SearchService 위임)
+  Future<Map<String, List<dynamic>>> searchAllEntities({
+    int? vaultId,
+    required String query,
+    bool useContains = true,
+    int limitPerType = 20,
+  }) async {
+    final searchResults = await SearchService.instance.searchAll(
+      vaultId: vaultId,
+      query: query,
+      useContains: useContains,
+      limitPerType: limitPerType,
+    );
+    
+    return searchResults.toMap();
   }
 }
 
