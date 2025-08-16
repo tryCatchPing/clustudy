@@ -29,7 +29,9 @@ class NoteDbService {
       ..pageOrientation = pageOrientation
       ..sortIndex = sortIndex
       ..createdAt = DateTime.now()
-      ..updatedAt = DateTime.now();
+      ..updatedAt = DateTime.now()
+      ..vaultIdForSort = vaultId  // Set composite index field
+      ..nameLowerForSearch = name.toLowerCase();  // Set search optimization field
     await isar.writeTxn(() async {
       await isar.notes.put(note);
     });
@@ -77,12 +79,19 @@ class NoteDbService {
     late final Note newNote;
     late final LinkEntity link;
     await isar.writeTxn(() async {
-      newNote = await createNote(
-        vaultId: vaultId,
-        name: label,
-        pageSize: pageSize,
-        pageOrientation: pageOrientation,
-      );
+      // Create note directly in transaction to set all fields
+      newNote = Note()
+        ..vaultId = vaultId
+        ..name = label
+        ..nameLowerForParentUnique = label.toLowerCase()
+        ..pageSize = pageSize
+        ..pageOrientation = pageOrientation
+        ..sortIndex = 1000
+        ..createdAt = DateTime.now()
+        ..updatedAt = DateTime.now()
+        ..vaultIdForSort = vaultId
+        ..nameLowerForSearch = label.toLowerCase();
+      await isar.notes.put(newNote);
       await createPage(noteId: newNote.id, index: initialPageIndex);
       link = LinkEntity()
         ..vaultId = vaultId
@@ -103,6 +112,7 @@ class NoteDbService {
         ..fromNoteId = sourceNoteId
         ..toNoteId = newNote.id
         ..createdAt = DateTime.now();
+      edge.setUniqueKey(); // Set unique constraint key
       await isar.graphEdges.put(edge);
       await _pushRecentLinkedNote(isar: isar, noteId: newNote.id);
     });
@@ -242,6 +252,7 @@ class NoteDbService {
       note
         ..name = newName
         ..nameLowerForParentUnique = newName.toLowerCase()
+        ..nameLowerForSearch = newName.toLowerCase()  // Update search field
         ..updatedAt = DateTime.now();
       await isar.notes.put(note);
     });
@@ -285,6 +296,10 @@ class NoteDbService {
         if (n.sortIndex != current) {
           n.sortIndex = current;
           n.updatedAt = DateTime.now();
+        }
+        // Ensure vaultIdForSort is consistent
+        if (n.vaultIdForSort != n.vaultId) {
+          n.vaultIdForSort = n.vaultId;
         }
         current += step;
       }
