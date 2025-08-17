@@ -27,10 +27,10 @@ class MoveService {
     int? vaultId;
 
     await isar.writeTxn(() async {
-      final note = await isar.notes.get(noteId);
+      final note = await isar.collection<Note>().get(noteId);
       if (note == null) return;
 
-      final targetFolder = await isar.folders.get(targetFolderId);
+      final targetFolder = await isar.collection<Folder>().get(targetFolderId);
       if (targetFolder == null) {
         throw IsarError('Target folder not found');
       }
@@ -45,7 +45,7 @@ class MoveService {
       note.folderId = targetFolderId;
 
       // 대상 폴더 내 정렬 재배치
-      final notesInTarget = await isar.notes
+      final notesInTarget = await isar.collection<Note>()
           .filter()
           .vaultIdEqualTo(note.vaultId)
           .and()
@@ -63,7 +63,7 @@ class MoveService {
 
       note.sortIndex = newIndex;
       note.updatedAt = DateTime.now();
-      await isar.notes.put(note);
+      await isar.collection<Note>().put(note);
     });
 
     // 트랜잭션 외부에서 컴팩션 수행 (필요 시)
@@ -100,13 +100,13 @@ class MoveService {
     int vaultId;
 
     await isar.writeTxn(() async {
-      final folder = await isar.folders.get(folderId);
+      final folder = await isar.collection<Folder>().get(folderId);
       if (folder == null) return;
       vaultId = folder.vaultId;
 
       // beforeFolderId가 주어지면 동일 볼트 검증
       if (beforeFolderId != null) {
-        final beforeFolder = await isar.folders.get(beforeFolderId);
+        final beforeFolder = await isar.collection<Folder>().get(beforeFolderId);
         if (beforeFolder == null) {
           // 대상이 없으면 append 취급
         } else if (beforeFolder.vaultId != vaultId) {
@@ -115,7 +115,7 @@ class MoveService {
       }
 
       // 볼트 내 폴더 목록(루트 레벨)
-      final foldersInVault = await isar.folders
+      final foldersInVault = await isar.collection<Folder>()
           .filter()
           .vaultIdEqualTo(vaultId)
           .and()
@@ -131,7 +131,7 @@ class MoveService {
 
       folder.sortIndex = newIndex;
       folder.updatedAt = DateTime.now();
-      await isar.folders.put(folder);
+      await isar.collection<Folder>().put(folder);
     });
 
     // 루트 레벨 폴더 정렬 컴팩션
@@ -151,7 +151,7 @@ class MoveService {
 
   Future<Folder?> _getFolder(int id) async {
     final isar = await IsarDb.instance.open();
-    return isar.folders.get(id);
+    return isar.collection<Folder>().get(id);
   }
 
   /// 정렬 인덱스 계산: [beforeId] 앞 위치에 들어가도록 인덱스 산출.

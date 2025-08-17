@@ -4,6 +4,7 @@ import 'dart:developer' as developer;
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/vault_models.dart';
 import 'package:it_contest/services/recent_tabs/recent_tabs_service.dart';
+import 'package:isar/isar.dart';
 
 class MaintenanceJobs {
   MaintenanceJobs._();
@@ -36,7 +37,6 @@ class MaintenanceJobs {
       final links = await isar.linkEntitys
           .filter()
           .danglingEqualTo(true)
-          .and()
           .updatedAtLessThan(threshold)
           .findAll();
       if (links.isNotEmpty) {

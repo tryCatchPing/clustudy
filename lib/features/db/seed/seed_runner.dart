@@ -1,5 +1,6 @@
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/vault_models.dart';
+import 'package:isar/isar.dart';
 
 class SeedRunner {
   SeedRunner._();

@@ -8,6 +8,7 @@ import 'package:archive/archive.dart';
 import 'package:encrypt/encrypt.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:it_contest/features/db/isar_db.dart';
+import 'package:it_contest/features/db/models/vault_models.dart';
 import 'package:it_contest/shared/services/crypto_key_service.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -43,7 +44,7 @@ class BackupService {
 
   Future<void> runIfDue() async {
     final isar = await IsarDb.instance.open();
-    final settings = await isar.settingsEntitys.where().findFirst();
+    final settings = await isar.collection<SettingsEntity>().where().findFirst();
     if (settings == null) return;
 
     final due = await _isDueDaily(settings.backupDailyAt, settings.lastBackupAt);
@@ -76,7 +77,7 @@ class BackupService {
     await isar.writeTxn(() async {
       settings.lastBackupAt = DateTime.now();
       settings.dataVersion ??= 1;
-      await isar.settingsEntitys.put(settings);
+      await isar.collection<SettingsEntity>().put(settings);
     });
   }
 
@@ -205,11 +206,11 @@ class BackupService {
       'app_version': '1.0.0', // TODO: 실제 앱 버전으로 교체
       'database_schema_version': 1,
       'statistics': {
-        'vault_count': await isar.vaults.where().count(),
-        'folder_count': await isar.folders.where().count(),
-        'note_count': await isar.notes.where().count(),
-        'page_count': await isar.pages.where().count(),
-        'link_count': await isar.linkEntitys.where().count(),
+        'vault_count': await isar.collection<Vault>().where().count(),
+        'folder_count': await isar.collection<Folder>().where().count(),
+        'note_count': await isar.collection<Note>().where().count(),
+        'page_count': await isar.collection<Page>().where().count(),
+        'link_count': await isar.collection<LinkEntity>().where().count(),
       },
       'backup_type': 'integrated',
       'includes_pdf_files': true,
@@ -582,7 +583,7 @@ class BackupService {
   /// 백업 상태 조회
   Future<BackupStatus> getBackupStatus() async {
     final isar = await IsarDb.instance.open();
-    final settings = await isar.settingsEntitys.where().findFirst();
+    final settings = await isar.collection<SettingsEntity>().where().findFirst();
     final backups = await getAvailableBackups();
 
     return BackupStatus(

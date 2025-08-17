@@ -121,7 +121,7 @@ class IsarPdfCacheRepository implements PdfCacheRepository {
 
     final metas = await isar.pdfCacheMetas.where().findAll();
 
-    return metas.fold<int>(0, (total, meta) => total + meta.sizeBytes);
+    return metas.fold<int>(0, (total, meta) => total + (meta.sizeBytes ?? 0));
   }
 
   @override
@@ -162,9 +162,9 @@ class IsarPdfCacheRepository implements PdfCacheRepository {
       pageIndex: meta.pageIndex,
       cachePath: meta.cachePath,
       dpi: meta.dpi,
-      sizeBytes: meta.sizeBytes,
+      sizeBytes: meta.sizeBytes ?? 0,
       renderedAt: meta.renderedAt,
-      lastAccessAt: meta.lastAccessAt,
+      lastAccessAt: meta.lastAccessAt ?? meta.renderedAt,
     );
   }
 
@@ -212,7 +212,7 @@ class IsarPdfCacheRepository implements PdfCacheRepository {
     final sizeMap = <int, int>{};
 
     for (final meta in metas) {
-      sizeMap[meta.noteId] = (sizeMap[meta.noteId] ?? 0) + meta.sizeBytes;
+      sizeMap[meta.noteId] = (sizeMap[meta.noteId] ?? 0) + (meta.sizeBytes ?? 0);
     }
 
     return sizeMap;

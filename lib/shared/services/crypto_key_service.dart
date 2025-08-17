@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:isar/isar.dart';
 import 'package:it_contest/features/db/isar_db.dart';
+import 'package:it_contest/features/db/models/vault_models.dart';
 import 'package:path_provider/path_provider.dart';
 
 class CryptoKeyService {
@@ -166,17 +167,17 @@ class CryptoKeyService {
     final backup = <String, dynamic>{};
 
     // 각 컬렉션별로 데이터 백업
-    backup['vaults'] = await isar.vaults.where().exportJson();
-    backup['folders'] = await isar.folders.where().exportJson();
-    backup['notes'] = await isar.notes.where().exportJson();
-    backup['pages'] = await isar.pages.where().exportJson();
-    backup['canvasData'] = await isar.canvasDatas.where().exportJson();
-    backup['pageSnapshots'] = await isar.pageSnapshots.where().exportJson();
-    backup['linkEntities'] = await isar.linkEntitys.where().exportJson();
-    backup['graphEdges'] = await isar.graphEdges.where().exportJson();
-    backup['pdfCacheMetas'] = await isar.pdfCacheMetas.where().exportJson();
-    backup['recentTabs'] = await isar.recentTabs.where().exportJson();
-    backup['settings'] = await isar.settingsEntitys.where().exportJson();
+    backup['vaults'] = await isar.collection<Vault>().where().exportJson();
+    backup['folders'] = await isar.collection<Folder>().where().exportJson();
+    backup['notes'] = await isar.collection<Note>().where().exportJson();
+    backup['pages'] = await isar.collection<Page>().where().exportJson();
+    backup['canvasData'] = await isar.collection<CanvasData>().where().exportJson();
+    backup['pageSnapshots'] = await isar.collection<PageSnapshot>().where().exportJson();
+    backup['linkEntities'] = await isar.collection<LinkEntity>().where().exportJson();
+    backup['graphEdges'] = await isar.collection<GraphEdge>().where().exportJson();
+    backup['pdfCacheMetas'] = await isar.collection<PdfCacheMeta>().where().exportJson();
+    backup['recentTabs'] = await isar.collection<RecentTabs>().where().exportJson();
+    backup['settings'] = await isar.collection<SettingsEntity>().where().exportJson();
 
     return backup;
   }
@@ -189,37 +190,37 @@ class CryptoKeyService {
 
       // 각 컬렉션별로 데이터 복원
       if (backupData['vaults'] != null) {
-        await isar.vaults.importJson(backupData['vaults']);
+        await isar.collection<Vault>().importJson(backupData['vaults']);
       }
       if (backupData['folders'] != null) {
-        await isar.folders.importJson(backupData['folders']);
+        await isar.collection<Folder>().importJson(backupData['folders']);
       }
       if (backupData['notes'] != null) {
-        await isar.notes.importJson(backupData['notes']);
+        await isar.collection<Note>().importJson(backupData['notes']);
       }
       if (backupData['pages'] != null) {
-        await isar.pages.importJson(backupData['pages']);
+        await isar.collection<Page>().importJson(backupData['pages']);
       }
       if (backupData['canvasData'] != null) {
-        await isar.canvasDatas.importJson(backupData['canvasData']);
+        await isar.collection<CanvasData>().importJson(backupData['canvasData']);
       }
       if (backupData['pageSnapshots'] != null) {
-        await isar.pageSnapshots.importJson(backupData['pageSnapshots']);
+        await isar.collection<PageSnapshot>().importJson(backupData['pageSnapshots']);
       }
       if (backupData['linkEntities'] != null) {
-        await isar.linkEntitys.importJson(backupData['linkEntities']);
+        await isar.collection<LinkEntity>().importJson(backupData['linkEntities']);
       }
       if (backupData['graphEdges'] != null) {
-        await isar.graphEdges.importJson(backupData['graphEdges']);
+        await isar.collection<GraphEdge>().importJson(backupData['graphEdges']);
       }
       if (backupData['pdfCacheMetas'] != null) {
-        await isar.pdfCacheMetas.importJson(backupData['pdfCacheMetas']);
+        await isar.collection<PdfCacheMeta>().importJson(backupData['pdfCacheMetas']);
       }
       if (backupData['recentTabs'] != null) {
-        await isar.recentTabs.importJson(backupData['recentTabs']);
+        await isar.collection<RecentTabs>().importJson(backupData['recentTabs']);
       }
       if (backupData['settings'] != null) {
-        await isar.settingsEntitys.importJson(backupData['settings']);
+        await isar.collection<SettingsEntity>().importJson(backupData['settings']);
       }
     });
   }

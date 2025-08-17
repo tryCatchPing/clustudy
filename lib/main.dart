@@ -61,19 +61,54 @@ class DatabaseInitializer extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Isar Provider를 watch하여 DB 인스턴스 초기화
-    final isarAsync = ref.watch(isarProvider);
+    // Isar Provider를 watch하여 DB 인스턴스 초기화 (Future)
+    final isarFuture = ref.watch(isarProvider);
 
-    return isarAsync.when(
-      data: (isar) {
-        // DB가 성공적으로 초기화된 경우
+    return FutureBuilder(
+      future: isarFuture,
+      builder: (context, isarSnapshot) {
+        if (isarSnapshot.connectionState == ConnectionState.waiting) {
+          return const MaterialApp(
+            home: Scaffold(
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text('데이터베이스 연결 중...'),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        if (isarSnapshot.hasError) {
+          final error = isarSnapshot.error;
+          return MaterialApp(
+            home: Scaffold(
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error, color: Colors.red, size: 48),
+                    const SizedBox(height: 16),
+                    Text('데이터베이스 초기화 실패: $error'),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        // DB가 성공적으로 초기화된 경우 추가 초기 설정 수행
         return FutureBuilder<void>(
           future: _runInitialSetup(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.done) {
               return child ?? const SizedBox.shrink();
             }
-            // 초기화 중 로딩 화면
             return const MaterialApp(
               home: Scaffold(
                 body: Center(
@@ -91,34 +126,6 @@ class DatabaseInitializer extends ConsumerWidget {
           },
         );
       },
-      loading: () => const MaterialApp(
-        home: Scaffold(
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('데이터베이스 연결 중...'),
-              ],
-            ),
-          ),
-        ),
-      ),
-      error: (error, stack) => MaterialApp(
-        home: Scaffold(
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error, color: Colors.red, size: 48),
-                const SizedBox(height: 16),
-                Text('데이터베이스 초기화 실패: $error'),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 
