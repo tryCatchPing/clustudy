@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../notes/pages/page_controller_screen.dart';
 import '../../notifiers/scribble_notifier_x.dart';
 import '../../providers/note_editor_provider.dart';
 
@@ -61,6 +62,11 @@ class NoteEditorActionsBar extends ConsumerWidget {
           icon: const Icon(Icons.save),
           tooltip: 'Save',
           onPressed: () => notifier.saveSketch(),
+        ),
+        IconButton(
+          icon: const Icon(Icons.view_agenda),
+          tooltip: '페이지 설정',
+          onPressed: () => PageControllerScreen.show(context, noteId),
         ),
       ],
     );

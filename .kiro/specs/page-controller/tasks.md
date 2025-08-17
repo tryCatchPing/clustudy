@@ -61,7 +61,7 @@
   - 드롭 가능한 위치 시각적 표시 구현
   - _Requirements: 2.1, 2.2, 2.3, 5.5_
 
-- [ ] 9. PageControllerScreen 모달 화면 구현
+- [x] 9. PageControllerScreen 모달 화면 구현
 
   - 모달 다이얼로그 기본 구조 구현
   - PageThumbnailGrid 통합 및 상태 연결
