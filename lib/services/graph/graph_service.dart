@@ -1,5 +1,6 @@
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/vault_models.dart';
+import 'package:isar/isar.dart';
 
 class GraphService {
   GraphService._();
@@ -15,9 +16,7 @@ class GraphService {
       final edges = await isar.collection<GraphEdge>()
           .filter()
           .vaultIdEqualTo(vaultId)
-          .and()
           .fromNoteIdEqualTo(fromNoteId)
-          .and()
           .toNoteIdEqualTo(toNoteId)
           .findAll();
       if (edges.isEmpty) return;
