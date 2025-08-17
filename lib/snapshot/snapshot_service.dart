@@ -63,7 +63,7 @@ class SnapshotService {
       ..json = payload.json
       ..createdAt = now;
     await isar.writeTxn(() async {
-      await isar.pageSnapshots.put(snapshot);
+      await isar.collection<PageSnapshot>().put(snapshot);
     });
   }
 
@@ -74,23 +74,23 @@ class SnapshotService {
 
     await isar.writeTxn(() async {
       // 1) Delete by age.
-      final oldByAge = await isar.pageSnapshots
+      final oldByAge = await isar.collection<PageSnapshot>()
           .filter()
           .pageIdEqualTo(pageId)
           .createdAtLessThan(cutoff)
           .findAll();
       if (oldByAge.isNotEmpty) {
-        await isar.pageSnapshots.deleteAll(oldByAge.map((e) => e.id).toList());
+        await isar.collection<PageSnapshot>().deleteAll(oldByAge.map((e) => e.id).toList());
       }
 
       // 2) Enforce count limit.
-      final allRecent = await isar.pageSnapshots.filter().pageIdEqualTo(pageId).findAll();
+      final allRecent = await isar.collection<PageSnapshot>().filter().pageIdEqualTo(pageId).findAll();
       if (allRecent.length > _retentionCount) {
         // Sort ascending by createdAt; delete oldest beyond the keep window.
         allRecent.sort((a, b) => a.createdAt.compareTo(b.createdAt));
         final toDelete = allRecent.take(allRecent.length - _retentionCount).toList();
         if (toDelete.isNotEmpty) {
-          await isar.pageSnapshots.deleteAll(toDelete.map((e) => e.id).toList());
+          await isar.collection<PageSnapshot>().deleteAll(toDelete.map((e) => e.id).toList());
         }
       }
     });

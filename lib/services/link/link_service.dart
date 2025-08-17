@@ -46,7 +46,7 @@ class LinkService {
       initialPageIndex: 0,
     );
 
-    final created = await isar.notes.get(link.targetNoteId!);
+    final created = await isar.collection<Note>().get(link.targetNoteId!);
     if (created == null) {
       throw IsarError('Linked note not found after creation');
     }
@@ -57,7 +57,7 @@ class LinkService {
   Future<void> deleteLink(int linkId) async {
     final isar = await IsarDb.instance.open();
     await isar.writeTxn(() async {
-      final link = await isar.linkEntitys.get(linkId);
+      final link = await isar.collection<LinkEntity>().get(linkId);
       if (link == null) return;
 
       final int? toNoteId = link.targetNoteId;
@@ -69,7 +69,7 @@ class LinkService {
         );
       }
 
-      await isar.linkEntitys.delete(linkId);
+      await isar.collection<LinkEntity>().delete(linkId);
     });
   }
 
@@ -81,7 +81,7 @@ class LinkService {
     required String desired,
   }) async {
     // 동일 sourceNoteId+sourcePageId 내 라벨 유니크 보장
-    final existing = await isar.linkEntitys
+    final existing = await isar.collection<LinkEntity>()
         .filter()
         .vaultIdEqualTo(vaultId)
         .and()

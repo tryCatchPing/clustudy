@@ -423,7 +423,7 @@ void main() {
             ..backupDailyAt = '02:00'
             ..backupRetentionDays = 7
             ..recycleRetentionDays = 30;
-          await isar.settingsEntitys.put(settings);
+          await isar.collection<SettingsEntity>().put(settings);
         });
 
         // Store original data for comparison
@@ -454,11 +454,11 @@ void main() {
         expect(restoreResult.success, isTrue);
 
         // Verify data was restored correctly
-        final restoredVaults = await isar.vaults.where().findAll();
+        final restoredVaults = await isar.collection<Vault>().where().findAll();
         expect(restoredVaults.length, 1);
         expect(restoredVaults.first.name, originalVaultName);
 
-        final restoredNotes = await isar.notes.where().findAll();
+        final restoredNotes = await isar.collection<Note>().where().findAll();
         expect(restoredNotes.length, 1);
         expect(restoredNotes.first.name, 'Secret Note');
 

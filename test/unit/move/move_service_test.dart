@@ -240,7 +240,7 @@ void main() {
         // Move C before B
         await move_api.moveFolder(folderId: c.id, targetParentFolderId: 0, beforeFolderId: b.id);
 
-        final folders = await isar.folders
+        final folders = await isar.collection<Folder>()
             .filter()
             .vaultIdEqualTo(v.id)
             .deletedAtIsNull()
