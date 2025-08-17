@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:scribble/scribble.dart';
 
 import '../models/tool_mode.dart';
@@ -47,4 +48,20 @@ mixin ToolManagementMixin on ScribbleNotifier {
   /// 지우개 모드로 설정합니다.
   @override
   void setEraser() => setTool(ToolMode.eraser);
+
+  /// 색상을 변경합니다 (히스토리에 추가하지 않음)
+  @override
+  void setColor(Color color) {
+    if (value is Drawing) {
+      temporaryValue = (value as Drawing).copyWith(
+        selectedColor: color.value,
+      );
+    }
+  }
+
+  /// 선 굵기를 변경합니다 (히스토리에 추가하지 않음)
+  @override
+  void setStrokeWidth(double width) {
+    temporaryValue = value.copyWith(selectedWidth: width);
+  }
 }
