@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:it_contest/features/canvas/models/tool_mode.dart';
+import 'package:it_contest/features/canvas/providers/tool_settings_provider.dart';
 
 /// 그리기 모드 툴바
 ///
@@ -18,7 +19,7 @@ class NoteEditorToolSelector extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final toolSettings = ref.watch(toolSettingsNotifierProvider(noteId));
+    final toolSettings = ref.watch<ToolSettings>(toolSettingsNotifierProvider(noteId));
 
     return Row(
       children: [

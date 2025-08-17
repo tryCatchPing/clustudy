@@ -6,6 +6,7 @@ import 'package:it_contest/features/canvas/widgets/controls/note_editor_pointer_
 import 'package:it_contest/features/canvas/widgets/controls/note_editor_pressure_toggle.dart';
 import 'package:it_contest/features/canvas/widgets/controls/note_editor_viewport_info.dart';
 import 'package:it_contest/features/canvas/widgets/toolbar/drawing_toolbar.dart';
+import 'package:it_contest/features/canvas/providers/note_editor_providers.dart';
 
 /// 노트 편집기 하단에 표시되는 툴바 위젯입니다.
 ///
@@ -37,7 +38,7 @@ class NoteEditorToolbar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final totalPages = ref.watch(notePagesCountProvider(noteId));
+    final totalPages = ref.watch<int>(notePagesCountProvider(noteId));
     if (totalPages == 0) {
       return const SizedBox.shrink();
     }

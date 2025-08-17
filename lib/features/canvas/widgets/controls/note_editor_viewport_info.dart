@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:it_contest/features/canvas/providers/note_editor_providers.dart';
 
 /// 캔버스와 뷰포트 정보를 표시하는 위젯
 class NoteEditorViewportInfo extends ConsumerWidget {
@@ -24,7 +25,7 @@ class NoteEditorViewportInfo extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final totalPages = ref.watch(notePagesCountProvider(noteId));
+    final totalPages = ref.watch<int>(notePagesCountProvider(noteId));
     if (totalPages == 0) {
       return const SizedBox.shrink();
     }
@@ -54,7 +55,7 @@ class NoteEditorViewportInfo extends ConsumerWidget {
             const SizedBox(width: 16),
             // 🔍 확대 정보 (ValueListenableBuilder로 실시간 업데이트)
             ValueListenableBuilder<Matrix4>(
-              valueListenable: ref.watch(
+              valueListenable: ref.watch<TransformationController>(
                 transformationControllerProvider(noteId),
               ),
               builder: (context, matrix, child) {

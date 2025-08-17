@@ -5,8 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:it_contest/features/canvas/constants/note_editor_constant.dart'; // NoteEditorConstants 정의 필요
 import 'package:it_contest/features/canvas/notifiers/custom_scribble_notifier.dart';
-import 'package:it_contest/features/canvas/providers/note_editor_provider.dart';
-import 'package:it_contest/features/canvas/providers/transformation_controller_provider.dart';
+import 'package:it_contest/features/canvas/providers/note_editor_providers.dart';
 import 'package:it_contest/features/canvas/widgets/canvas_background_widget.dart'; // CanvasBackgroundWidget 정의 필요
 import 'package:it_contest/features/canvas/widgets/linker_gesture_layer.dart';
 import 'package:it_contest/features/notes/data/derived_note_providers.dart';
@@ -44,7 +43,7 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
   @override
   void initState() {
     super.initState();
-    _tc = ref.read(transformationControllerProvider(widget.noteId));
+    _tc = ref.read<TransformationController>(transformationControllerProvider(widget.noteId));
     _tc.addListener(_onScaleChanged);
     _updateScale(); // 초기 스케일 설정
   }
@@ -139,7 +138,7 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
       return const SizedBox.shrink();
     }
 
-    final notifier = ref.watch(
+    final notifier = ref.watch<CustomScribbleNotifier>(
       pageNotifierProvider(widget.noteId, widget.pageIndex),
     );
 
@@ -164,7 +163,7 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(6),
           child: InteractiveViewer(
-            transformationController: ref.watch(
+            transformationController: ref.watch<TransformationController>(
               transformationControllerProvider(widget.noteId),
             ),
             minScale: 0.3,

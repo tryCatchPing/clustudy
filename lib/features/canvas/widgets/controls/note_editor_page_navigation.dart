@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:it_contest/features/canvas/providers/note_editor_providers.dart';
 import 'package:go_router/go_router.dart';
 
 /// 📄 페이지 네비게이션 컨트롤 위젯
@@ -24,7 +25,7 @@ class NoteEditorPageNavigation extends ConsumerWidget {
 
   /// 이전 페이지로 이동
   void _goToPreviousPage(WidgetRef ref) {
-    final currentPageIndex = ref.read(currentPageIndexProvider(noteId));
+    final currentPageIndex = ref.read<int>(currentPageIndexProvider(noteId));
 
     if (currentPageIndex > 0) {
       final targetPage = currentPageIndex - 1;
@@ -34,8 +35,8 @@ class NoteEditorPageNavigation extends ConsumerWidget {
 
   /// 다음 페이지로 이동
   void _goToNextPage(WidgetRef ref) {
-    final currentPageIndex = ref.read(currentPageIndexProvider(noteId));
-    final totalPages = ref.read(notePagesCountProvider(noteId));
+    final currentPageIndex = ref.read<int>(currentPageIndexProvider(noteId));
+    final totalPages = ref.read<int>(notePagesCountProvider(noteId));
 
     if (currentPageIndex < totalPages - 1) {
       final targetPage = currentPageIndex + 1;
@@ -45,7 +46,7 @@ class NoteEditorPageNavigation extends ConsumerWidget {
 
   /// 특정 페이지로 이동
   void _goToPage(WidgetRef ref, int pageIndex) {
-    final totalPages = ref.read(notePagesCountProvider(noteId));
+    final totalPages = ref.read<int>(notePagesCountProvider(noteId));
 
     if (pageIndex >= 0 && pageIndex < totalPages) {
       ref.read(currentPageIndexProvider(noteId).notifier).setPage(pageIndex);
@@ -54,8 +55,8 @@ class NoteEditorPageNavigation extends ConsumerWidget {
 
   /// 페이지 선택 다이얼로그 표시
   void _showPageSelector(BuildContext context, WidgetRef ref) {
-    final currentPageIndex = ref.read(currentPageIndexProvider(noteId));
-    final totalPages = ref.read(notePagesCountProvider(noteId));
+    final currentPageIndex = ref.read<int>(currentPageIndexProvider(noteId));
+    final totalPages = ref.read<int>(notePagesCountProvider(noteId));
 
     showDialog<void>(
       context: context,
@@ -116,11 +117,11 @@ class NoteEditorPageNavigation extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final totalPages = ref.watch(notePagesCountProvider(noteId));
+    final totalPages = ref.watch<int>(notePagesCountProvider(noteId));
     if (totalPages == 0) {
       return const SizedBox.shrink();
     }
-    final currentPageIndex = ref.watch(currentPageIndexProvider(noteId));
+    final currentPageIndex = ref.watch<int>(currentPageIndexProvider(noteId));
 
     final canGoPrevious = currentPageIndex > 0;
     final canGoNext = currentPageIndex < totalPages - 1;
