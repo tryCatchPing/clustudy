@@ -116,11 +116,11 @@ class PdfRecoveryService {
       // 1. 사전 렌더링된 이미지 파일 확인
       if (page.preRenderedImagePath != null) {
         final imageFile = File(page.preRenderedImagePath!);
-        imageExists = await imageFile.exists();
+        imageExists = imageFile.existsSync();
 
         if (imageExists) {
           // 파일 크기도 확인 (0바이트 파일은 손상으로 간주)
-          final stat = await imageFile.stat();
+          final stat = imageFile.statSync();
           if (stat.size == 0) {
             debugPrint('⚠️ 이미지 파일 크기가 0바이트: ${page.preRenderedImagePath}');
             imageExists = false;
@@ -136,10 +136,10 @@ class PdfRecoveryService {
         );
         if (imagePath != null) {
           final imageFile = File(imagePath);
-          imageExists = await imageFile.exists();
+          imageExists = imageFile.existsSync();
 
           if (imageExists) {
-            final stat = await imageFile.stat();
+            final stat = imageFile.statSync();
             if (stat.size == 0) {
               imageExists = false;
             }
@@ -151,11 +151,11 @@ class PdfRecoveryService {
       final pdfPath = await FileStorageService.getNotesPdfPath(page.noteId);
       if (pdfPath != null) {
         final pdfFile = File(pdfPath);
-        sourcePdfExists = await pdfFile.exists();
+        sourcePdfExists = pdfFile.existsSync();
 
         if (sourcePdfExists) {
           // PDF 파일 크기 확인
-          final stat = await pdfFile.stat();
+          final stat = pdfFile.statSync();
           if (stat.size == 0) {
             sourcePdfExists = false;
           }
@@ -478,7 +478,7 @@ class PdfRecoveryService {
       );
       final directory = Directory(pageImagesDir);
 
-      if (await directory.exists()) {
+      if (directory.existsSync()) {
         await for (final entity in directory.list()) {
           if (entity is File && entity.path.endsWith('.jpg')) {
             await entity.delete();

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/vault_models.dart';
@@ -99,9 +100,9 @@ class MaintenanceJobs {
     _maintenanceTimer = Timer.periodic(interval, (_) async {
       try {
         await cleanupRecentTabs();
-        print('MaintenanceJobs: Periodic RecentTabs cleanup completed');
-      } catch (e) {
-        print('MaintenanceJobs: Error during periodic cleanup: $e');
+        developer.log('Periodic RecentTabs cleanup completed', name: 'MaintenanceJobs');
+      } on Exception catch (e) {
+        developer.log('Error during periodic cleanup', name: 'MaintenanceJobs', error: e);
       }
     });
   }
@@ -120,9 +121,9 @@ class MaintenanceJobs {
       // 3. 스냅샷 정리 (50개 또는 7일 초과)
       results['snapshots'] = await trimSnapshots(maxCount: 50, maxDays: 7);
 
-      print('MaintenanceJobs: Daily maintenance completed - $results');
-    } catch (e) {
-      print('MaintenanceJobs: Error during daily maintenance: $e');
+      developer.log('Daily maintenance completed - $results', name: 'MaintenanceJobs');
+    } on Exception catch (e) {
+      developer.log('Error during daily maintenance', name: 'MaintenanceJobs', error: e);
       rethrow;
     }
 

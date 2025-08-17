@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:ui';
+import 'dart:developer' as developer;
 
 import 'package:it_contest/shared/services/file_picker_service.dart';
 import 'package:it_contest/shared/services/file_storage_service.dart';
@@ -40,11 +41,11 @@ class PdfProcessor {
       // 1. PDF 파일 선택
       final sourcePdfPath = await FilePickerService.pickPdfFile();
       if (sourcePdfPath == null) {
-        print('ℹ️ PDF 파일 선택 취소');
+        developer.log('ℹ️ PDF 파일 선택 취소', name: 'PdfProcessor');
         return null;
       }
 
-      print('📁 선택된 PDF: $sourcePdfPath');
+      developer.log('📁 선택된 PDF: $sourcePdfPath', name: 'PdfProcessor');
 
       // 2. 고유 ID 생성
       final noteId = _uuid.v4();
@@ -54,8 +55,8 @@ class PdfProcessor {
         sourcePdfPath: sourcePdfPath,
         noteId: noteId,
       );
-    } catch (e) {
-      print('❌ PDF 처리 실패: $e');
+    } on Exception catch (e, stack) {
+      developer.log('❌ PDF 처리 실패', name: 'PdfProcessor', error: e, stackTrace: stack);
       return null;
     }
   }
@@ -69,7 +70,7 @@ class PdfProcessor {
     final document = await PdfDocument.openFile(sourcePdfPath);
     final totalPages = document.pagesCount;
 
-    print('📄 PDF 총 페이지 수: $totalPages');
+    developer.log('📄 PDF 총 페이지 수: $totalPages', name: 'PdfProcessor');
 
     if (totalPages == 0) {
       await document.close();
@@ -89,7 +90,7 @@ class PdfProcessor {
     final pages = <PdfPageData>[];
 
     for (int pageNumber = 1; pageNumber <= totalPages; pageNumber++) {
-      print('🎨 페이지 $pageNumber 처리 중...');
+      developer.log('🎨 페이지 $pageNumber 처리 중...', name: 'PdfProcessor');
 
       final pdfPage = await document.getPage(pageNumber);
 
@@ -98,8 +99,9 @@ class PdfProcessor {
       final originalHeight = pdfPage.height;
       final normalizedSize = _normalizePageSize(originalWidth, originalHeight);
 
-      print(
+      developer.log(
         '📏 페이지 $pageNumber: 원본 ${originalWidth.toInt()}x${originalHeight.toInt()} → 정규화 ${normalizedSize.width.toInt()}x${normalizedSize.height.toInt()}',
+        name: 'PdfProcessor',
       );
 
       // 2. 이미지 렌더링 (정규화된 크기로)
@@ -120,12 +122,12 @@ class PdfProcessor {
           await imageFile.writeAsBytes(pageImage!.bytes);
           preRenderedImagePath = imagePath;
 
-          print('✅ 페이지 $pageNumber 렌더링 완료');
+          developer.log('✅ 페이지 $pageNumber 렌더링 완료', name: 'PdfProcessor');
         } else {
-          print('⚠️ 페이지 $pageNumber 렌더링 실패');
+          developer.log('⚠️ 페이지 $pageNumber 렌더링 실패', name: 'PdfProcessor');
         }
-      } catch (e) {
-        print('❌ 페이지 $pageNumber 렌더링 오류: $e');
+      } on Exception catch (e, stack) {
+        developer.log('❌ 페이지 $pageNumber 렌더링 오류', name: 'PdfProcessor', error: e, stackTrace: stack);
       }
 
       // 4. 페이지 데이터 생성 (정규화된 크기 사용)
@@ -150,7 +152,7 @@ class PdfProcessor {
       noteId: noteId,
     );
 
-    print('✅ PDF 처리 완료: $extractedTitle (${pages.length}페이지)');
+    developer.log('✅ PDF 처리 완료: $extractedTitle (${pages.length}페이지)', name: 'PdfProcessor');
 
     return PdfProcessedData(
       noteId: noteId,

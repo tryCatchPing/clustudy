@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:it_contest/features/notes/models/note_model.dart';
 import 'package:it_contest/features/notes/models/note_page_model.dart';
 import 'package:it_contest/shared/services/pdf_processed_data.dart';
@@ -35,8 +36,8 @@ class NoteService {
       // 노트 제목 생성
       final noteTitle = title ?? '새 노트 ${DateTime.now().toString().substring(0, 16)}';
 
-      print('🆔 노트 ID 생성: $noteId');
-      print('📝 노트 제목: $noteTitle');
+      developer.log('🆔 노트 ID 생성: $noteId', name: 'NoteService');
+      developer.log('📝 노트 제목: $noteTitle', name: 'NoteService');
 
       // 초기 빈 페이지 생성
       final pages = <NotePageModel>[];
@@ -45,7 +46,7 @@ class NoteService {
           noteId: noteId,
           pageNumber: i,
         );
-        // TODO(xodnd): 페이지 생성 실패 시 처리
+        // TODO(jidam): 페이지 생성 실패 시 처리
         if (page != null) {
           pages.add(page);
         }
@@ -59,10 +60,10 @@ class NoteService {
         sourceType: NoteSourceType.blank,
       );
 
-      print('✅ 빈 노트 생성 완료: $noteTitle (${pages.length}페이지)');
+      developer.log('✅ 빈 노트 생성 완료: $noteTitle (${pages.length}페이지)', name: 'NoteService');
       return note;
-    } catch (e) {
-      print('❌ 빈 노트 생성 실패: $e');
+    } on Exception catch (e, stack) {
+      developer.log('❌ 빈 노트 생성 실패', name: 'NoteService', error: e, stackTrace: stack);
       return null;
     }
   }
@@ -88,15 +89,15 @@ class NoteService {
       // 1. PDF 처리 (PdfProcessor에 위임)
       final pdfData = await PdfProcessor.processFromSelection();
       if (pdfData == null) {
-        print('ℹ️ PDF 노트 생성 취소');
+        developer.log('ℹ️ PDF 노트 생성 취소', name: 'NoteService');
         return null;
       }
 
       // 2. 노트 제목 결정
       final noteTitle = title ?? pdfData.extractedTitle;
 
-      print('🆔 노트 ID: ${pdfData.noteId}');
-      print('📝 노트 제목: $noteTitle');
+      developer.log('🆔 노트 ID: ${pdfData.noteId}', name: 'NoteService');
+      developer.log('📝 노트 제목: $noteTitle', name: 'NoteService');
 
       // 3. PDF 페이지들을 NotePageModel로 변환
       final pages = _createPagesFromPdfData(pdfData);
@@ -111,10 +112,10 @@ class NoteService {
         totalPdfPages: pdfData.totalPages,
       );
 
-      print('✅ PDF 노트 생성 완료: $noteTitle (${pages.length}페이지)');
+      developer.log('✅ PDF 노트 생성 완료: $noteTitle (${pages.length}페이지)', name: 'NoteService');
       return note;
-    } catch (e) {
-      print('❌ PDF 노트 생성 실패: $e');
+    } on Exception catch (e, stack) {
+      developer.log('❌ PDF 노트 생성 실패', name: 'NoteService', error: e, stackTrace: stack);
       return null;
     }
   }
@@ -182,10 +183,10 @@ class NoteService {
         preRenderedImagePath: preRenderedImagePath,
       );
 
-      print('✅ PDF 페이지 생성 완료: $pageId (PDF 페이지: $backgroundPdfPageNumber)');
+      developer.log('✅ PDF 페이지 생성 완료: $pageId (PDF 페이지: $backgroundPdfPageNumber)', name: 'NoteService');
       return page;
-    } catch (e) {
-      print('❌ PDF 페이지 생성 실패: $e');
+    } on Exception catch (e, stack) {
+      developer.log('❌ PDF 페이지 생성 실패', name: 'NoteService', error: e, stackTrace: stack);
       return null;
     }
   }
@@ -213,10 +214,10 @@ class NoteService {
         backgroundType: PageBackgroundType.blank,
       );
 
-      print('✅ 빈 노트 페이지 생성 완료: $pageId');
+      developer.log('✅ 빈 노트 페이지 생성 완료: $pageId', name: 'NoteService');
       return page;
-    } catch (e) {
-      print('❌ 빈 노트 페이지 생성 실패: $e');
+    } on Exception catch (e, stack) {
+      developer.log('❌ 빈 노트 페이지 생성 실패', name: 'NoteService', error: e, stackTrace: stack);
       return null;
     }
   }

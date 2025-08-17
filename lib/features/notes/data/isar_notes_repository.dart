@@ -723,7 +723,7 @@ class IsarNotesRepository implements NotesRepository {
       // PDF 원본 경로 체크
       if (page.pdfOriginalPath != null && page.pdfOriginalPath!.isNotEmpty) {
         final file = File(page.pdfOriginalPath!);
-        if (!await file.exists()) {
+        if (!file.existsSync()) {
           isCorrupted = true;
           reason = 'PDF 원본 파일 누락';
         }

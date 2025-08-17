@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:developer' as developer;
 
 import 'package:flutter/foundation.dart';
 import 'package:it_contest/features/db/isar_db.dart';
@@ -51,7 +52,7 @@ class PdfCacheService {
   Future<void> invalidate({required int noteId, int? pageIndex}) async {
     final base = await _baseDir();
     final dir = Directory(p.join(base, '$noteId', 'pdf_cache'));
-    if (!await dir.exists()) return;
+    if (!dir.existsSync()) return;
 
     if (pageIndex == null) {
       // 전체 노트 캐시 삭제
@@ -62,7 +63,7 @@ class PdfCacheService {
 
     // 특정 페이지 캐시 삭제
     final file = File(p.join(dir.path, '$pageIndex.png'));
-    if (await file.exists()) {
+    if (file.existsSync()) {
       await file.delete();
     }
     await _repository.deleteCacheMeta(noteId: noteId, pageIndex: pageIndex);
@@ -93,7 +94,7 @@ class PdfCacheService {
       }
 
       resolvedPdfPath = page.pdfOriginalPath;
-      if (!await File(resolvedPdfPath).exists()) {
+      if (!File(resolvedPdfPath).existsSync()) {
         throw StateError('Original PDF not available for rendering');
       }
 
@@ -183,7 +184,7 @@ class PdfCacheService {
       for (final filePath in filesToDelete) {
         try {
           final file = File(filePath);
-          if (await file.exists()) {
+          if (file.existsSync()) {
             await file.delete();
           }
         } catch (_) {
@@ -195,10 +196,10 @@ class PdfCacheService {
       if (_repository is IsarPdfCacheRepository && metaIdsToDelete.isNotEmpty) {
         await (_repository).deleteCacheMetasBatch(metaIdsToDelete);
       }
-    } catch (e) {
+    } on Exception catch (e) {
       // 캐시 정리 실패는 로그만 남기고 계속 진행
       if (kDebugMode) {
-        print('Cache cleanup failed: $e');
+        developer.log('Cache cleanup failed', name: 'PdfCacheService', error: e);
       }
     }
   }
@@ -218,7 +219,7 @@ class PdfCacheService {
     final cachePath = await absolutePath(noteId: noteId, pageIndex: pageIndex, dpi: dpi);
     final file = File(cachePath);
 
-    if (!await file.exists()) return false;
+    if (!file.existsSync()) return false;
 
     // 메타데이터도 확인
     final meta = await _repository.getCacheMeta(noteId: noteId, pageIndex: pageIndex);
@@ -274,7 +275,7 @@ class PdfCacheService {
       for (final meta in oldMetas) {
         try {
           final file = File(meta.cachePath);
-          if (await file.exists()) {
+          if (file.existsSync()) {
             await file.delete();
           }
         } catch (_) {

@@ -59,7 +59,7 @@ class FullBackupService {
     // 2) include notes directory excluding pdf_cache
     if (includeFiles) {
       final notes = Directory(await _notesDir());
-      if (await notes.exists()) {
+      if (notes.existsSync()) {
         await for (final entity in notes.list(recursive: true, followLinks: false)) {
           if (entity is File) {
             final relative = p.relative(entity.path, from: notes.path);
@@ -98,13 +98,13 @@ class FullBackupService {
     final dir = await _backupDir();
     final d = Directory(dir);
     final threshold = DateTime.now().subtract(Duration(days: retentionDays));
-    if (!await d.exists()) return;
+    if (!d.existsSync()) return;
     final entries = await d.list().toList();
     for (final e in entries) {
       if (e is! File) continue;
       if (!(e.path.endsWith('.zip') || e.path.endsWith('.zip.enc') || e.path.endsWith('.isar')))
         continue;
-      final stat = await e.stat();
+      final stat = e.statSync();
       if (stat.modified.isBefore(threshold)) {
         try {
           await e.delete();

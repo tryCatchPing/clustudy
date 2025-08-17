@@ -68,7 +68,7 @@ class ToolSettings {
       case ToolMode.eraser:
         return eraserWidth;
       case ToolMode.linker:
-        // TODO(xodnd): 링커 모드 굵기 존재?
+        // TODO(jidam): 링커 모드 굵기 존재?
         return 0;
     }
   }

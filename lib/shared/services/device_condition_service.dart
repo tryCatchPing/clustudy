@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 
 import 'package:battery_plus/battery_plus.dart';
 import 'package:it_contest/shared/services/connectivity_service.dart';
@@ -18,8 +19,8 @@ class DeviceConditionService {
     try {
       final batteryState = await _battery.batteryState;
       return batteryState == BatteryState.charging;
-    } catch (e) {
-      print('DeviceConditionService: Error checking charging state: $e');
+    } on Exception catch (e) {
+      developer.log('Error checking charging state', name: 'DeviceConditionService', error: e);
       return false;
     }
   }
@@ -28,8 +29,8 @@ class DeviceConditionService {
   Future<int> getBatteryLevel() async {
     try {
       return await _battery.batteryLevel;
-    } catch (e) {
-      print('DeviceConditionService: Error getting battery level: $e');
+    } on Exception catch (e) {
+      developer.log('Error getting battery level', name: 'DeviceConditionService', error: e);
       return 0;
     }
   }
@@ -40,8 +41,8 @@ class DeviceConditionService {
       final batteryLevel = await getBatteryLevel();
       // 배터리 20% 이하일 때 절전 모드로 간주
       return batteryLevel <= 20;
-    } catch (e) {
-      print('DeviceConditionService: Error checking low power mode: $e');
+    } on Exception catch (e) {
+      developer.log('Error checking low power mode', name: 'DeviceConditionService', error: e);
       return false;
     }
   }
@@ -57,7 +58,7 @@ class DeviceConditionService {
       if (requireWifi) {
         final isWifiConnected = await ConnectivityService.instance.isWifiConnected();
         if (!isWifiConnected) {
-          print('DeviceConditionService: WiFi not connected, backup condition not met');
+          developer.log('WiFi not connected, backup condition not met', name: 'DeviceConditionService');
           return false;
         }
       }
@@ -66,7 +67,7 @@ class DeviceConditionService {
       if (requireCharging) {
         final isCurrentlyCharging = await isCharging();
         if (!isCurrentlyCharging) {
-          print('DeviceConditionService: Device not charging, backup condition not met');
+          developer.log('Device not charging, backup condition not met', name: 'DeviceConditionService');
           return false;
         }
       }
@@ -74,18 +75,20 @@ class DeviceConditionService {
       // 3. 배터리 잔량 조건 체크
       final batteryLevel = await getBatteryLevel();
       if (batteryLevel < minBatteryLevel) {
-        print(
-          'DeviceConditionService: Battery level ($batteryLevel%) below minimum ($minBatteryLevel%), backup condition not met',
+        developer.log(
+          'Battery level ($batteryLevel%) below minimum ($minBatteryLevel%), backup condition not met',
+          name: 'DeviceConditionService',
         );
         return false;
       }
 
-      print(
-        'DeviceConditionService: All backup conditions met - WiFi: ${requireWifi ? 'required & connected' : 'not required'}, Charging: ${requireCharging ? 'required & charging' : 'not required'}, Battery: $batteryLevel%',
+      developer.log(
+        'All backup conditions met - WiFi: ${requireWifi ? 'required & connected' : 'not required'}, Charging: ${requireCharging ? 'required & charging' : 'not required'}, Battery: $batteryLevel%',
+        name: 'DeviceConditionService',
       );
       return true;
-    } catch (e) {
-      print('DeviceConditionService: Error checking backup conditions: $e');
+    } on Exception catch (e) {
+      developer.log('Error checking backup conditions', name: 'DeviceConditionService', error: e);
       return false;
     }
   }
@@ -99,10 +102,10 @@ class DeviceConditionService {
     _batteryStateSubscription = _battery.onBatteryStateChanged.listen(
       (BatteryState state) {
         _batteryStateController.add(state);
-        print('DeviceConditionService: Battery state changed to $state');
+        developer.log('Battery state changed to $state', name: 'DeviceConditionService');
       },
-      onError: (e) {
-        print('DeviceConditionService: Error monitoring battery state: $e');
+      onError: (Object e) {
+        developer.log('Error monitoring battery state', name: 'DeviceConditionService', error: e);
       },
     );
   }

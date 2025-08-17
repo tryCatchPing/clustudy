@@ -86,7 +86,7 @@ class FileStorageService {
 
       // 원본 파일 확인
       final sourceFile = File(sourcePdfPath);
-      if (!await sourceFile.exists()) {
+      if (!sourceFile.existsSync()) {
         throw Exception('원본 PDF 파일을 찾을 수 없습니다: $sourcePdfPath');
       }
 
@@ -115,7 +115,7 @@ class FileStorageService {
       final noteDir = await _getNoteDirectoryPath(noteId);
       final directory = Directory(noteDir);
 
-      if (await directory.exists()) {
+      if (directory.existsSync()) {
         await directory.delete(recursive: true);
         debugPrint('✅ 노트 파일 삭제 완료: $noteId');
       } else {
@@ -143,7 +143,7 @@ class FileStorageService {
       final imagePath = path.join(pageImagesDir, imageFileName);
       final imageFile = File(imagePath);
 
-      if (await imageFile.exists()) {
+      if (imageFile.existsSync()) {
         return imagePath;
       } else {
         return null;
@@ -165,7 +165,7 @@ class FileStorageService {
       final pdfPath = path.join(noteDir, _sourcePdfFileName);
       final pdfFile = File(pdfPath);
 
-      if (await pdfFile.exists()) {
+      if (pdfFile.existsSync()) {
         return pdfPath;
       } else {
         return null;
@@ -181,7 +181,7 @@ class FileStorageService {
     try {
       final notesRootDir = Directory(await _notesRootPath);
 
-      if (!await notesRootDir.exists()) {
+      if (!notesRootDir.existsSync()) {
         return const StorageInfo(
           totalNotes: 0,
           totalSizeBytes: 0,
@@ -197,7 +197,7 @@ class FileStorageService {
 
       await for (final entity in notesRootDir.list(recursive: true)) {
         if (entity is File) {
-          final stat = await entity.stat();
+          final stat = entity.statSync();
           final fileSize = stat.size;
           totalSizeBytes += fileSize;
 
@@ -240,7 +240,7 @@ class FileStorageService {
 
       final notesRootDir = Directory(await _notesRootPath);
 
-      if (await notesRootDir.exists()) {
+      if (notesRootDir.existsSync()) {
         await notesRootDir.delete(recursive: true);
         debugPrint('✅ 전체 노트 저장소 정리 완료');
       } else {

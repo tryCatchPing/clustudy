@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:developer' as developer;
 
 import 'package:archive/archive.dart';
 import 'package:encrypt/encrypt.dart';
@@ -60,14 +61,14 @@ class BackupService {
         retentionDays: settings.backupRetentionDays,
         includeEncryption: settings.encryptionEnabled,
       );
-      print('BackupService: 통합 백업 완료 (DB + PDF 파일들)');
-    } catch (e) {
-      print('BackupService: 통합 백업 실패, 기본 백업으로 폴백: $e');
+      developer.log('통합 백업 완료 (DB + PDF 파일들)', name: 'BackupService');
+    } on Exception catch (e) {
+      developer.log('통합 백업 실패, 기본 백업으로 폴백', name: 'BackupService', error: e);
       try {
         await performBackup(retentionDays: settings.backupRetentionDays);
-        print('BackupService: 기본 백업 완료');
-      } catch (e2) {
-        print('BackupService: 기본 백업도 실패: $e2');
+        developer.log('기본 백업 완료', name: 'BackupService');
+      } on Exception catch (e2) {
+        developer.log('기본 백업도 실패', name: 'BackupService', error: e2);
       }
     } finally {
       _isRunningBackup = false;
@@ -86,12 +87,12 @@ class BackupService {
       () async {
         try {
           await runIfDue();
-        } catch (e, stack) {
+        } on Object catch (e, stack) {
           // Log backup scheduler errors but don't stop the timer
-          print('BackupService scheduler error: $e');
+          developer.log('BackupService scheduler error', name: 'BackupService', error: e, stackTrace: stack);
           // Optionally log stack trace for debugging
           if (kDebugMode) {
-            print('Stack trace: $stack');
+            developer.log('Stack trace', name: 'BackupService', stackTrace: stack);
           }
         }
       }();
@@ -161,7 +162,7 @@ class BackupService {
       return zipPath;
     } finally {
       // 임시 디렉토리 정리
-      if (await tempDir.exists()) {
+      if (tempDir.existsSync()) {
         await tempDir.delete(recursive: true);
       }
     }
@@ -173,7 +174,7 @@ class BackupService {
       final docs = await getApplicationDocumentsDirectory();
       final notesDir = Directory(p.join(docs.path, 'notes'));
 
-      if (!await notesDir.exists()) return;
+      if (!notesDir.existsSync()) return;
 
       await for (final entity in notesDir.list(recursive: true)) {
         if (entity is File) {
@@ -188,8 +189,8 @@ class BackupService {
           await entity.copy(targetPath);
         }
       }
-    } catch (e) {
-      print('PDF 파일 수집 중 오류: $e');
+    } on Exception catch (e) {
+      developer.log('PDF 파일 수집 중 오류', name: 'BackupService', error: e);
       // PDF 파일 수집 실패해도 백업은 계속 진행
     }
   }
@@ -310,7 +311,7 @@ class BackupService {
     final threshold = DateTime.now().subtract(Duration(days: retentionDays));
 
     for (final f in files) {
-      final stat = await f.stat();
+      final stat = f.statSync();
       if (stat.modified.isBefore(threshold)) {
         await f.delete();
       }
@@ -327,7 +328,7 @@ class BackupService {
         .toList();
     final threshold = DateTime.now().subtract(Duration(days: retentionDays));
     for (final f in files) {
-      final stat = await f.stat();
+      final stat = f.statSync();
       if (stat.modified.isBefore(threshold)) {
         await f.delete();
       }
@@ -359,7 +360,7 @@ class BackupService {
 
       // 2. 메타데이터 검증
       final metadataFile = File(p.join(tempDir.path, 'backup_metadata.json'));
-      if (await metadataFile.exists()) {
+      if (metadataFile.existsSync()) {
         final metadata = jsonDecode(await metadataFile.readAsString());
         result.metadata = Map<String, dynamic>.from(metadata);
 
@@ -376,27 +377,27 @@ class BackupService {
 
       // 4. 데이터베이스 복원
       final dbFile = File(p.join(tempDir.path, 'database.isar'));
-      if (await dbFile.exists()) {
+      if (dbFile.existsSync()) {
         await _restoreDatabase(dbFile.path, overwriteExisting);
         result.databaseRestored = true;
       }
 
       // 5. PDF 파일들 복원
       final pdfDir = Directory(p.join(tempDir.path, 'pdf_files'));
-      if (await pdfDir.exists()) {
+      if (pdfDir.existsSync()) {
         final restoredCount = await _restorePdfFiles(pdfDir.path, overwriteExisting);
         result.pdfFilesRestored = restoredCount;
       }
 
       result.success = true;
       result.message = '백업이 성공적으로 복원되었습니다';
-    } catch (e) {
+    } on Exception catch (e) {
       result.success = false;
       result.message = '복원 실패: $e';
       result.error = e.toString();
     } finally {
       // 임시 디렉토리 정리
-      if (await tempDir.exists()) {
+      if (tempDir.existsSync()) {
         await tempDir.delete(recursive: true);
       }
     }
@@ -481,7 +482,7 @@ class BackupService {
     final docs = await getApplicationDocumentsDirectory();
     final targetDbPath = p.join(docs.path, 'default.isar');
 
-    if (overwrite || !await File(targetDbPath).exists()) {
+    if (overwrite || !File(targetDbPath).existsSync()) {
       await File(dbPath).copy(targetDbPath);
     }
 
@@ -505,15 +506,15 @@ class BackupService {
           final targetPath = p.join(targetNotesDir.path, relativePath);
           final targetFile = File(targetPath);
 
-          if (overwrite || !await targetFile.exists()) {
+          if (overwrite || !targetFile.existsSync()) {
             await targetFile.parent.create(recursive: true);
             await entity.copy(targetPath);
             restoredCount++;
           }
         }
       }
-    } catch (e) {
-      print('PDF 파일 복원 중 오류: $e');
+    } on Exception catch (e) {
+      developer.log('PDF 파일 복원 중 오류', name: 'BackupService', error: e);
     }
 
     return restoredCount;
@@ -528,7 +529,7 @@ class BackupService {
     await for (final entity in d.list()) {
       if (entity is File) {
         final fileName = p.basename(entity.path);
-        final stat = await entity.stat();
+        final stat = entity.statSync();
 
         BackupType type;
         bool isEncrypted = false;
@@ -567,13 +568,13 @@ class BackupService {
   Future<bool> deleteBackup(String backupPath) async {
     try {
       final file = File(backupPath);
-      if (await file.exists()) {
+      if (file.existsSync()) {
         await file.delete();
         return true;
       }
       return false;
-    } catch (e) {
-      print('백업 삭제 실패: $e');
+    } on Exception catch (e) {
+      developer.log('백업 삭제 실패', name: 'BackupService', error: e);
       return false;
     }
   }
@@ -636,7 +637,7 @@ class BackupService {
       result.backupCreated = true;
 
       // 2. 백업 파일 존재 확인
-      if (!await File(testBackupPath).exists()) {
+      if (!File(testBackupPath).existsSync()) {
         throw Exception('백업 파일이 생성되지 않았습니다');
       }
       result.backupFileExists = true;
@@ -653,14 +654,14 @@ class BackupService {
 
         // 메타데이터 파일 확인
         final metadataFile = File(p.join(tempDir.path, 'backup_metadata.json'));
-        if (await metadataFile.exists()) {
+        if (metadataFile.existsSync()) {
           final metadata = jsonDecode(await metadataFile.readAsString());
           result.metadataValid = metadata['version'] != null;
         }
 
         // DB 파일 확인
         final dbFile = File(p.join(tempDir.path, 'database.isar'));
-        result.databaseExtractable = await dbFile.exists();
+        result.databaseExtractable = dbFile.existsSync();
       } finally {
         await tempDir.delete(recursive: true);
       }
@@ -670,7 +671,7 @@ class BackupService {
 
       result.success = true;
       result.message = '백업/복원 테스트가 성공적으로 완료되었습니다';
-    } catch (e) {
+    } on Exception catch (e) {
       result.success = false;
       result.message = '테스트 실패: $e';
       result.error = e.toString();

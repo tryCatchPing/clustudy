@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'dart:developer' as developer;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -21,12 +22,9 @@ class CryptoKeyService {
       final base64 = await _storage.read(key: _keyAlias);
       if (base64 == null) return null;
       return _decode(base64);
-    } catch (e, stack) {
+    } on Exception catch (e, stack) {
       // Log storage access failures for debugging
-      print('CryptoKeyService: Failed to load encryption key: $e');
-      if (kDebugMode) {
-        print('Stack trace: $stack');
-      }
+      developer.log('Failed to load encryption key', name: 'CryptoKeyService', error: e, stackTrace: stack);
       return null;
     }
   }
@@ -241,7 +239,7 @@ class CryptoKeyService {
     final dbFiles = ['default.isar', 'default.isar.lock'];
     for (final fileName in dbFiles) {
       final file = File('$directoryPath/$fileName');
-      if (await file.exists()) {
+      if (file.existsSync()) {
         await file.delete();
       }
     }
