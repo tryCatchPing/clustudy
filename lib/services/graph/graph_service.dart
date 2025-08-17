@@ -1,4 +1,5 @@
 import 'package:it_contest/features/db/isar_db.dart';
+import 'package:it_contest/features/db/models/vault_models.dart';
 
 class GraphService {
   GraphService._();
@@ -11,7 +12,7 @@ class GraphService {
   }) async {
     final isar = await IsarDb.instance.open();
     await isar.writeTxn(() async {
-      final edges = await isar.graphEdges
+      final edges = await isar.collection<GraphEdge>()
           .filter()
           .vaultIdEqualTo(vaultId)
           .and()
@@ -20,7 +21,7 @@ class GraphService {
           .toNoteIdEqualTo(toNoteId)
           .findAll();
       if (edges.isEmpty) return;
-      await isar.graphEdges.deleteAll(edges.map((e) => e.id).toList());
+      await isar.collection<GraphEdge>().deleteAll(edges.map((e) => e.id).toList());
     });
   }
 }

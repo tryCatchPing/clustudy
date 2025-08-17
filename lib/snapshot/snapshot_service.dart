@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/vault_models.dart';
+import 'package:isar/isar.dart';
 
 /// Snapshot service responsible for debounced PageSnapshot writes and retention.
 class SnapshotService {
@@ -76,7 +77,6 @@ class SnapshotService {
       final oldByAge = await isar.pageSnapshots
           .filter()
           .pageIdEqualTo(pageId)
-          .and()
           .createdAtLessThan(cutoff)
           .findAll();
       if (oldByAge.isNotEmpty) {

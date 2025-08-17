@@ -184,7 +184,7 @@ void main() {
             ..createdAt = DateTime.now()
             ..updatedAt = DateTime.now();
 
-          await isar.canvasDatas.putAll([canvasData1, canvasData2]);
+          await isar.collection<CanvasData>().putAll([canvasData1, canvasData2]);
         });
 
         // 6. Create page snapshots
@@ -201,7 +201,7 @@ void main() {
             ..json = '{"snapshot": "data2"}'
             ..createdAt = DateTime.now();
 
-          await isar.pageSnapshots.putAll([snapshot1, snapshot2]);
+          await isar.collection<PageSnapshot>().putAll([snapshot1, snapshot2]);
         });
 
         // 7. Create links and graph edges using LinkService
@@ -236,7 +236,7 @@ void main() {
             ..lastAccessAt = DateTime.now();
           cache2.setUniqueKey();
 
-          await isar.pdfCacheMetas.putAll([cache1, cache2]);
+          await isar.collection<PdfCacheMeta>().putAll([cache1, cache2]);
         });
 
         // 9. Create RecentTabs
@@ -246,7 +246,7 @@ void main() {
             ..noteIdsJson = '[${personalNote1.id}, ${workNote.id}, ${linkedNote.id}]'
             ..updatedAt = DateTime.now();
 
-          await isar.recentTabs.put(recentTabs);
+          await isar.collection<RecentTabs>().put(recentTabs);
         });
 
         // 10. Create settings
@@ -259,7 +259,7 @@ void main() {
             ..dataVersion = 1
             ..pdfCacheMaxMB = 256;
 
-          await isar.settingsEntitys.put(settings);
+          await isar.collection<SettingsEntity>().put(settings);
         });
 
         // 11. Create fake PDF files for integrated backup
@@ -278,17 +278,17 @@ void main() {
 
         // Store counts for verification
         final originalCounts = {
-          'vaults': await isar.vaults.count(),
-          'folders': await isar.folders.count(),
-          'notes': await isar.notes.count(),
-          'pages': await isar.pages.count(),
-          'canvasData': await isar.canvasDatas.count(),
-          'pageSnapshots': await isar.pageSnapshots.count(),
-          'links': await isar.linkEntitys.count(),
-          'graphEdges': await isar.graphEdges.count(),
-          'pdfCacheMetas': await isar.pdfCacheMetas.count(),
-          'recentTabs': await isar.recentTabs.count(),
-          'settings': await isar.settingsEntitys.count(),
+          'vaults': await isar.collection<Vault>().count(),
+          'folders': await isar.collection<Folder>().count(),
+          'notes': await isar.collection<Note>().count(),
+          'pages': await isar.collection<Page>().count(),
+          'canvasData': await isar.collection<CanvasData>().count(),
+          'pageSnapshots': await isar.collection<PageSnapshot>().count(),
+          'links': await isar.collection<LinkEntity>().count(),
+          'graphEdges': await isar.collection<GraphEdge>().count(),
+          'pdfCacheMetas': await isar.collection<PdfCacheMeta>().count(),
+          'recentTabs': await isar.collection<RecentTabs>().count(),
+          'settings': await isar.collection<SettingsEntity>().count(),
         };
 
         // 12. Perform integrated backup
@@ -310,8 +310,8 @@ void main() {
         }
 
         // Verify data is gone
-        expect(await isar.vaults.count(), 0);
-        expect(await isar.notes.count(), 0);
+        expect(await isar.collection<Vault>().count(), 0);
+        expect(await isar.collection<Note>().count(), 0);
 
         // 14. Restore from backup
         final restoreResult = await BackupService.instance.restoreIntegratedBackup(
@@ -327,28 +327,28 @@ void main() {
 
         // Verify counts match
         final restoredCounts = {
-          'vaults': await isar.vaults.count(),
-          'folders': await isar.folders.count(),
-          'notes': await isar.notes.count(),
-          'pages': await isar.pages.count(),
-          'canvasData': await isar.canvasDatas.count(),
-          'pageSnapshots': await isar.pageSnapshots.count(),
-          'links': await isar.linkEntitys.count(),
-          'graphEdges': await isar.graphEdges.count(),
-          'pdfCacheMetas': await isar.pdfCacheMetas.count(),
-          'recentTabs': await isar.recentTabs.count(),
-          'settings': await isar.settingsEntitys.count(),
+          'vaults': await isar.collection<Vault>().count(),
+          'folders': await isar.collection<Folder>().count(),
+          'notes': await isar.collection<Note>().count(),
+          'pages': await isar.collection<Page>().count(),
+          'canvasData': await isar.collection<CanvasData>().count(),
+          'pageSnapshots': await isar.collection<PageSnapshot>().count(),
+          'links': await isar.collection<LinkEntity>().count(),
+          'graphEdges': await isar.collection<GraphEdge>().count(),
+          'pdfCacheMetas': await isar.collection<PdfCacheMeta>().count(),
+          'recentTabs': await isar.collection<RecentTabs>().count(),
+          'settings': await isar.collection<SettingsEntity>().count(),
         };
 
         expect(restoredCounts, equals(originalCounts));
 
         // Verify specific data integrity
-        final restoredVaults = await isar.vaults.where().sortByName().findAll();
+        final restoredVaults = await isar.collection<Vault>().where().sortByName().findAll();
         expect(restoredVaults.length, 2);
         expect(restoredVaults[0].name, 'PersonalVault');
         expect(restoredVaults[1].name, 'WorkVault');
 
-        final restoredPersonalNotes = await isar.notes
+        final restoredPersonalNotes = await isar.collection<Note>()
             .filter()
             .vaultIdEqualTo(restoredVaults[0].id)
             .sortByName()
@@ -360,18 +360,18 @@ void main() {
         );
 
         // Verify relationships are preserved
-        final restoredLinks = await isar.linkEntitys.where().findAll();
+        final restoredLinks = await isar.collection<LinkEntity>().where().findAll();
         expect(restoredLinks.length, 1);
         expect(restoredLinks.first.label, 'Linked Note');
         expect(restoredLinks.first.dangling, isFalse);
 
-        final restoredEdges = await isar.graphEdges.where().findAll();
+        final restoredEdges = await isar.collection<GraphEdge>().where().findAll();
         expect(restoredEdges.length, 1);
         expect(restoredEdges.first.fromNoteId, restoredLinks.first.sourceNoteId);
         expect(restoredEdges.first.toNoteId, restoredLinks.first.targetNoteId);
 
         // Verify canvas data
-        final restoredCanvasData = await isar.canvasDatas.where().findAll();
+        final restoredCanvasData = await isar.collection<CanvasData>().where().findAll();
         expect(restoredCanvasData.length, 2);
         expect(restoredCanvasData.every((c) => c.json.isNotEmpty), isTrue);
 
@@ -387,14 +387,14 @@ void main() {
         expect(restoredPdfFiles.length, 2);
 
         // Verify settings
-        final restoredSettings = await isar.settingsEntitys.where().findFirst();
+        final restoredSettings = await isar.collection<SettingsEntity>().where().findFirst();
         expect(restoredSettings, isNotNull);
         expect(restoredSettings!.backupDailyAt, '03:00');
         expect(restoredSettings.backupRetentionDays, 14);
         expect(restoredSettings.pdfCacheMaxMB, 256);
 
         // Verify RecentTabs
-        final restoredTabs = await isar.recentTabs.where().findFirst();
+        final restoredTabs = await isar.collection<RecentTabs>().where().findFirst();
         expect(restoredTabs, isNotNull);
         expect(restoredTabs!.userId, 'local');
         expect(restoredTabs.noteIdsJson, isNotEmpty);

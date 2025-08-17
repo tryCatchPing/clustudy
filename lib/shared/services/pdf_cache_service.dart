@@ -8,6 +8,7 @@ import 'package:it_contest/features/pdf_cache/data/pdf_cache_repository.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:pdfx/pdfx.dart';
+import 'package:it_contest/features/db/models/vault_models.dart';
 
 class PdfCacheService {
   final PdfCacheRepository _repository;
@@ -82,7 +83,8 @@ class PdfCacheService {
     // pdfPath가 제공되지 않은 경우, DB에서 조회
     if (resolvedPdfPath == null) {
       final isar = await IsarDb.instance.open();
-      final page = await isar.pages
+      final page = await isar
+          .collection<Page>()
           .filter()
           .noteIdEqualTo(noteId)
           .indexEqualTo(pageIndex)

@@ -199,7 +199,10 @@ class GraphEdge {
   @Index()
   late int toNoteId;
 
-  // Composite unique index to prevent duplicate edges between the same notes in a vault
+  @Index()
+  late DateTime createdAt;
+
+  // Unique constraint to prevent duplicate edges: (vaultId, fromNoteId, toNoteId)
   @Index(
     composite: [
       CompositeIndex('vaultId'),
@@ -208,13 +211,6 @@ class GraphEdge {
     ],
     unique: true,
   )
-  String get _uniqueEdgeKey => '${vaultId}_${fromNoteId}_$toNoteId';
-
-  @Index()
-  late DateTime createdAt;
-
-  // Unique constraint to prevent duplicate edges: (vaultId, fromNoteId, toNoteId)
-  @Index(composite: [CompositeIndex('fromNoteId'), CompositeIndex('toNoteId')], unique: true)
   late String _uniqueEdgeKey;
 
   // Helper to set the unique key based on vaultId, fromNoteId, toNoteId

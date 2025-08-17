@@ -218,7 +218,7 @@ void main() {
         expect(result.message, contains('성공적으로 복원'));
 
         // Verify data was restored
-        final restoredVaults = await isar.vaults.where().findAll();
+        final restoredVaults = await isar.collection<Vault>().where().findAll();
         expect(restoredVaults.length, 1);
         expect(restoredVaults.first.name, 'OriginalVault'); // Should be restored to original
 
@@ -267,7 +267,7 @@ void main() {
         expect(result.databaseRestored, isTrue);
 
         // Verify data was restored
-        final restoredVaults = await isar.vaults.where().findAll();
+        final restoredVaults = await isar.collection<Vault>().where().findAll();
         expect(restoredVaults.length, 1);
         expect(restoredVaults.first.name, 'TestVault');
       },

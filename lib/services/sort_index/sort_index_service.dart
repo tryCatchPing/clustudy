@@ -1,6 +1,7 @@
 import 'package:isar/isar.dart';
 
 import 'package:it_contest/features/db/isar_db.dart';
+import 'package:it_contest/features/db/models/vault_models.dart';
 
 /// Thrown when there is no integer gap between prev and next indices.
 class SortIndexGapExhausted implements Exception {
@@ -59,12 +60,12 @@ int computeSortIndexBetween({int? prev, int? next, int step = 1000}) {
 /// The sequence will start at 1000 and increase by 1000.
 Future<void> compactSortIndexForFolder(int folderId, {int startAt = 1000, int step = 1000}) async {
   final isar = await IsarDb.instance.open();
-  final folder = await isar.folders.get(folderId);
+  final folder = await isar.collection<Folder>().get(folderId);
   if (folder == null) {
     throw IsarError('Folder not found: $folderId');
   }
   await isar.writeTxn(() async {
-    final notes = await isar.notes
+    final notes = await isar.collection<Note>()
         .filter()
         .vaultIdEqualTo(folder.vaultId)
         .and()
@@ -83,7 +84,7 @@ Future<void> compactSortIndexForFolder(int folderId, {int startAt = 1000, int st
       current += step;
     }
     if (notes.isNotEmpty) {
-      await isar.notes.putAll(notes);
+      await isar.collection<Note>().putAll(notes);
     }
   });
 }
@@ -94,18 +95,18 @@ Future<void> compactSortIndexForFolder(int folderId, {int startAt = 1000, int st
 Future<void> _setPageRotation({required int pageId, required int rotationDeg}) async {
   final isar = await IsarDb.instance.open();
   await isar.writeTxn(() async {
-    final page = await isar.pages.get(pageId);
+    final page = await isar.collection<Page>().get(pageId);
     if (page == null) return;
     page.rotationDeg = rotationDeg;
     page.updatedAt = DateTime.now();
-    await isar.pages.put(page);
+    await isar.collection<Page>().put(page);
   });
 }
 
 Future<void> _reindexPagesForNote({required int noteId}) async {
   final isar = await IsarDb.instance.open();
   await isar.writeTxn(() async {
-    final pages = await isar.pages
+    final pages = await isar.collection<Page>()
         .filter()
         .noteIdEqualTo(noteId)
         .and()
@@ -122,7 +123,7 @@ Future<void> _reindexPagesForNote({required int noteId}) async {
       idx += 1;
     }
     if (pages.isNotEmpty) {
-      await isar.pages.putAll(pages);
+      await isar.collection<Page>().putAll(pages);
     }
   });
 }

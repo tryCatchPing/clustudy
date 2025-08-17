@@ -1,5 +1,6 @@
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/vault_models.dart';
+import 'package:isar/isar.dart';
 
 /// 통합 검색 서비스
 ///
@@ -29,15 +30,15 @@ class SearchService {
     final isar = await IsarDb.instance.open();
     final q = query.toLowerCase().trim();
 
-    var builder = isar.notes.filter().vaultIdEqualTo(vaultId).and().deletedAtIsNull();
+    var builder = isar.notes.filter().vaultIdEqualTo(vaultId).deletedAtIsNull();
 
     if (folderId == null) {
-      builder = builder.and().folderIdIsNull();
+      builder = builder.folderIdIsNull();
     } else {
-      builder = builder.and().folderIdEqualTo(folderId);
+      builder = builder.folderIdEqualTo(folderId);
     }
 
-    return builder.and().nameLowerForSearchStartsWith(q).limit(limit).findAll();
+    return builder.nameLowerForSearchStartsWith(q).limit(limit).findAll();
   }
 
   /// 전체 텍스트 검색 (contains)
@@ -52,15 +53,15 @@ class SearchService {
     final isar = await IsarDb.instance.open();
     final q = query.toLowerCase().trim();
 
-    var builder = isar.notes.filter().vaultIdEqualTo(vaultId).and().deletedAtIsNull();
+    var builder = isar.notes.filter().vaultIdEqualTo(vaultId).deletedAtIsNull();
 
     if (folderId == null) {
-      builder = builder.and().folderIdIsNull();
+      builder = builder.folderIdIsNull();
     } else {
-      builder = builder.and().folderIdEqualTo(folderId);
+      builder = builder.folderIdEqualTo(folderId);
     }
 
-    return builder.and().nameLowerForSearchContains(q).limit(limit).findAll();
+    return builder.nameLowerForSearchContains(q).limit(limit).findAll();
   }
 
   /// 전역 검색 (모든 볼트)
@@ -78,7 +79,6 @@ class SearchService {
       return isar.notes
           .filter()
           .deletedAtIsNull()
-          .and()
           .nameLowerForSearchContains(q)
           .limit(limit)
           .findAll();
@@ -86,7 +86,6 @@ class SearchService {
       return isar.notes
           .filter()
           .deletedAtIsNull()
-          .and()
           .nameLowerForSearchStartsWith(q)
           .limit(limit)
           .findAll();
@@ -106,18 +105,18 @@ class SearchService {
     final isar = await IsarDb.instance.open();
     final q = query.toLowerCase().trim();
 
-    var builder = isar.notes.filter().vaultIdEqualTo(vaultId).and().deletedAtIsNull();
+    var builder = isar.notes.filter().vaultIdEqualTo(vaultId).deletedAtIsNull();
 
     if (folderId == null) {
-      builder = builder.and().folderIdIsNull();
+      builder = builder.folderIdIsNull();
     } else {
-      builder = builder.and().folderIdEqualTo(folderId);
+      builder = builder.folderIdEqualTo(folderId);
     }
 
     if (useContains) {
-      builder = builder.and().nameLowerForSearchContains(q);
+      builder = builder.nameLowerForSearchContains(q);
     } else {
-      builder = builder.and().nameLowerForSearchStartsWith(q);
+      builder = builder.nameLowerForSearchStartsWith(q);
     }
 
     return builder.sortByUpdatedAtDesc().limit(limit).findAll();
@@ -137,35 +136,35 @@ class SearchService {
   }) async {
     final isar = await IsarDb.instance.open();
 
-    var builder = isar.notes.filter().vaultIdEqualTo(vaultId).and().deletedAtIsNull();
+    var builder = isar.notes.filter().vaultIdEqualTo(vaultId).deletedAtIsNull();
 
     if (folderId == null) {
-      builder = builder.and().folderIdIsNull();
+      builder = builder.folderIdIsNull();
     } else {
-      builder = builder.and().folderIdEqualTo(folderId);
+      builder = builder.folderIdEqualTo(folderId);
     }
 
     // 날짜 필터
     if (createdAfter != null) {
-      builder = builder.and().createdAtGreaterThan(createdAfter);
+      builder = builder.createdAtGreaterThan(createdAfter);
     }
     if (createdBefore != null) {
-      builder = builder.and().createdAtLessThan(createdBefore);
+      builder = builder.createdAtLessThan(createdBefore);
     }
     if (updatedAfter != null) {
-      builder = builder.and().updatedAtGreaterThan(updatedAfter);
+      builder = builder.updatedAtGreaterThan(updatedAfter);
     }
     if (updatedBefore != null) {
-      builder = builder.and().updatedAtLessThan(updatedBefore);
+      builder = builder.updatedAtLessThan(updatedBefore);
     }
 
     // 텍스트 검색
     if (query != null && query.trim().isNotEmpty) {
       final q = query.toLowerCase().trim();
       if (useContains) {
-        builder = builder.and().nameLowerForSearchContains(q);
+        builder = builder.nameLowerForSearchContains(q);
       } else {
-        builder = builder.and().nameLowerForSearchStartsWith(q);
+        builder = builder.nameLowerForSearchStartsWith(q);
       }
     }
 
@@ -188,9 +187,7 @@ class SearchService {
       return isar.folders
           .filter()
           .vaultIdEqualTo(vaultId)
-          .and()
           .deletedAtIsNull()
-          .and()
           .nameContains(q, caseSensitive: false)
           .sortBySortIndex()
           .limit(limit)
@@ -199,9 +196,7 @@ class SearchService {
       return isar.folders
           .filter()
           .vaultIdEqualTo(vaultId)
-          .and()
           .deletedAtIsNull()
-          .and()
           .nameStartsWith(q, caseSensitive: false)
           .sortBySortIndex()
           .limit(limit)
@@ -224,7 +219,6 @@ class SearchService {
       return isar.vaults
           .filter()
           .deletedAtIsNull()
-          .and()
           .nameContains(q, caseSensitive: false)
           .sortByUpdatedAtDesc()
           .limit(limit)
@@ -233,7 +227,6 @@ class SearchService {
       return isar.vaults
           .filter()
           .deletedAtIsNull()
-          .and()
           .nameStartsWith(q, caseSensitive: false)
           .sortByUpdatedAtDesc()
           .limit(limit)

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io'; // TODO(web): Replace File API usage with platform-appropriate implementation
 
 import 'package:isar/isar.dart';
 import 'package:it_contest/features/db/isar_db.dart';
@@ -258,8 +259,8 @@ class IsarNotesRepository implements NotesRepository {
         if (existingPageMap.containsKey(pageIndex)) {
           // 기존 페이지 업데이트
           page = existingPageMap[pageIndex]!
-            ..widthPx = pageModel.backgroundWidth.toInt()
-            ..heightPx = pageModel.backgroundHeight.toInt()
+            ..widthPx = (pageModel.backgroundWidth ?? 0).round()
+            ..heightPx = (pageModel.backgroundHeight ?? 0).round()
             ..updatedAt = DateTime.now();
 
           // PDF 배경 정보 업데이트
@@ -273,8 +274,8 @@ class IsarNotesRepository implements NotesRepository {
           page = Page()
             ..noteId = noteId
             ..index = pageIndex
-            ..widthPx = pageModel.backgroundWidth.toInt()
-            ..heightPx = pageModel.backgroundHeight.toInt()
+            ..widthPx = (pageModel.backgroundWidth ?? 0).round()
+            ..heightPx = (pageModel.backgroundHeight ?? 0).round()
             ..rotationDeg = 0
             ..createdAt = DateTime.now()
             ..updatedAt = DateTime.now();

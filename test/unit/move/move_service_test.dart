@@ -92,12 +92,12 @@ void main() {
 
         await move_api.moveNote(noteId: m.id, targetFolderId: f2.id);
 
-        final moved = await isar.notes.get(m.id);
+        final moved = await isar.collection<Note>().get(m.id);
         expect(moved, isNotNull);
         expect(moved!.folderId, f2.id);
 
         // After compaction, only one note in f2, its sortIndex should be 1000
-        final inF2 = await isar.notes
+        final inF2 = await isar.collection<Note>()
             .filter()
             .vaultIdEqualTo(v.id)
             .folderIdEqualTo(f2.id)
@@ -108,7 +108,7 @@ void main() {
         expect(inF2.first.sortIndex, 1000);
 
         // Source folder still contains n1, n2 compacted to 1000, 2000
-        final inF1 = await isar.notes
+        final inF1 = await isar.collection<Note>()
             .filter()
             .vaultIdEqualTo(v.id)
             .folderIdEqualTo(f1.id)
@@ -166,7 +166,7 @@ void main() {
 
         await move_api.moveNote(noteId: m.id, targetFolderId: f2.id, beforeNoteId: t2.id);
 
-        final inF2 = await isar.notes
+        final inF2 = await isar.collection<Note>()
             .filter()
             .vaultIdEqualTo(v.id)
             .folderIdEqualTo(f2.id)

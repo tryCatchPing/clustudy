@@ -228,11 +228,11 @@ void main() {
         await CryptoKeyService.instance.reencryptDatabase(oldKey!, newKey);
 
         // Verify data is still accessible
-        final vaults = await isar.vaults.where().findAll();
+        final vaults = await isar.collection<Vault>().where().findAll();
         expect(vaults.length, 1);
         expect(vaults.first.name, 'TestVault');
 
-        final notes = await isar.notes.where().findAll();
+        final notes = await isar.collection<Note>().where().findAll();
         expect(notes.length, 1);
         expect(notes.first.name, 'TestNote');
       },
@@ -259,12 +259,12 @@ void main() {
         await IsarDb.instance.toggleEncryption(enable: true);
 
         // Verify data is still accessible
-        final vaults = await isar.vaults.where().findAll();
+        final vaults = await isar.collection<Vault>().where().findAll();
         expect(vaults.length, 1);
         expect(vaults.first.name, 'TestVault');
 
         // Verify encryption setting
-        final settings = await isar.settingsEntitys.where().findFirst();
+        final settings = await isar.collection<SettingsEntity>().where().findFirst();
         expect(settings?.encryptionEnabled, isTrue);
       },
       skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
@@ -283,12 +283,12 @@ void main() {
         await IsarDb.instance.toggleEncryption(enable: false);
 
         // Verify data is still accessible
-        final vaults = await isar.vaults.where().findAll();
+        final vaults = await isar.collection<Vault>().where().findAll();
         expect(vaults.length, 1);
         expect(vaults.first.name, 'TestVault');
 
         // Verify encryption setting
-        final settings = await isar.settingsEntitys.where().findFirst();
+        final settings = await isar.collection<SettingsEntity>().where().findFirst();
         expect(settings?.encryptionEnabled, isFalse);
       },
       skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
@@ -310,7 +310,7 @@ void main() {
             ..backupDailyAt = '02:00'
             ..backupRetentionDays = 7
             ..recycleRetentionDays = 30;
-          await isar.settingsEntitys.put(settings);
+          await isar.collection<SettingsEntity>().put(settings);
         });
 
         // Create test data
@@ -321,7 +321,7 @@ void main() {
         final reopenedIsar = await IsarDb.instance.open(enableEncryption: true);
 
         // Verify data is accessible
-        final vaults = await reopenedIsar.vaults.where().findAll();
+        final vaults = await reopenedIsar.collection<Vault>().where().findAll();
         expect(vaults.length, 1);
         expect(vaults.first.name, 'EncryptedVault');
       },
@@ -345,7 +345,7 @@ void main() {
         final reopenedIsar = await IsarDb.instance.open(encryptionKey: customKey);
 
         // Verify data is accessible
-        final vaults = await reopenedIsar.vaults.where().findAll();
+        final vaults = await reopenedIsar.collection<Vault>().where().findAll();
         expect(vaults.length, 1);
         expect(vaults.first.name, 'CustomKeyVault');
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:it_contest/features/notes/data/derived_note_providers.dart';
+import 'package:it_contest/features/notes/data/derived_note_providers.dart' as derived;
 import 'package:it_contest/features/notes/data/notes_repository_provider.dart';
 import 'package:it_contest/shared/routing/app_routes.dart';
 import 'package:it_contest/shared/services/note_deletion_service.dart';
@@ -159,7 +159,7 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final notesAsync = ref.watch(notesProvider);
+    final notesAsync = ref.watch(derived.notesProvider);
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
