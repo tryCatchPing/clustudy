@@ -1,180 +1,104 @@
-# Project Structure & Organization
+---
+inclusion: always
+---
 
-## Architecture Pattern
+# Project Structure & Architecture Guidelines
 
-**Feature-based modular architecture** with clear separation of concerns:
+## Core Architecture Rules
 
-- Each feature is self-contained with its own routing, pages, models, and business logic
-- Shared utilities and services are centralized in the `shared/` directory
-- Riverpod providers handle state management and dependency injection
+**Feature-based modular architecture** - Each feature is self-contained with clear boundaries:
 
-## Directory Structure
+- Features: `canvas/`, `home/`, `notes/` - domain-driven modules
+- Shared: Cross-feature utilities in `shared/` directory
+- State: Riverpod providers with `@riverpod` code generation
+- Navigation: GoRouter with feature-specific routing
+
+## Directory Structure Requirements
 
 ```
 lib/
-├── main.dart                    # App entry point with router configuration
-├── features/                    # Feature modules (domain-driven)
-│   ├── canvas/                  # Drawing and canvas functionality
-│   │   ├── constants/           # Canvas-specific constants
-│   │   ├── models/              # Canvas data models
-│   │   ├── notifiers/           # Riverpod state notifiers
-│   │   ├── pages/               # Canvas UI screens
-│   │   ├── providers/           # Riverpod providers
-│   │   ├── routing/             # Canvas route definitions
-│   │   └── widgets/             # Canvas-specific widgets
-│   ├── home/                    # Home screen and navigation
-│   │   ├── pages/               # Home UI screens
-│   │   └── routing/             # Home route definitions
-│   └── notes/                   # Note management functionality
-│       ├── data/                # Repository implementations
-│       ├── models/              # Note data models
-│       ├── pages/               # Note UI screens
-│       └── routing/             # Note route definitions
-└── shared/                      # Cross-feature shared code
-    ├── constants/               # App-wide constants (breakpoints, etc.)
-    ├── routing/                 # Shared routing utilities
+├── features/{feature_name}/
+│   ├── data/                    # Repositories & data sources
+│   ├── models/                  # Domain entities
+│   ├── pages/                   # UI screens
+│   ├── providers/               # Riverpod providers
+│   ├── routing/                 # Route definitions
+│   └── widgets/                 # Feature-specific components
+└── shared/
+    ├── constants/               # App-wide constants
     ├── services/                # Business logic services
     └── widgets/                 # Reusable UI components
 ```
 
-## Feature Module Organization
-
-Each feature follows a consistent internal structure:
-
-### `/models/` - Data Models
-
-- Domain entities and data transfer objects
-- Immutable classes with proper equality and serialization
-- Example: `NoteModel`, `NotePageModel`, `ThumbnailMetadata`
-
-### `/data/` - Data Layer
-
-- Repository interfaces and implementations
-- Data source abstractions (local storage, API, etc.)
-- Example: `NotesRepository`, `MemoryNotesRepository`
-
-### `/providers/` - State Management
-
-- Riverpod providers for dependency injection
-- State notifiers for complex state management
-- Generated providers using `riverpod_generator`
-
-### `/pages/` - UI Screens
-
-- Top-level screen widgets
-- Route-specific UI logic
-- Integration with providers for state management
-
-### `/widgets/` - Feature Components
-
-- Reusable widgets specific to the feature
-- Complex UI components that don't belong in shared/
-- Feature-specific custom widgets
-
-### `/routing/` - Navigation
-
-- Route definitions using GoRouter
-- Route parameters and navigation logic
-- Feature-specific route guards or middleware
-
-## Shared Module Organization
-
-### `/services/` - Business Logic
-
-Core business services that multiple features depend on:
-
-- `FileStorageService` - File system operations and storage management
-- `NoteService` - Cross-feature note operations
-- `PdfProcessor` - PDF handling and processing
-- `NoteDeletionService` - Cleanup and deletion logic
-
-### `/widgets/` - Reusable Components
-
-UI components used across multiple features:
-
-- `AppBrandingHeader` - Consistent app branding
-- `InfoCard` - Information display component
-- `NavigationCard` - Navigation UI elements
-
-### `/constants/` - App Constants
-
-- `Breakpoints` - Responsive design breakpoints
-- Theme constants and design tokens
-- App-wide configuration values
-
 ## File Naming Conventions
 
-### Dart Files
+**REQUIRED suffixes for clarity:**
 
-- **Snake case**: `file_name.dart`
-- **Descriptive suffixes**:
-  - `_model.dart` for data models
-  - `_service.dart` for business logic services
-  - `_repository.dart` for data repositories
-  - `_provider.dart` for Riverpod providers
-  - `_notifier.dart` for state notifiers
-  - `_page.dart` for screen widgets
-  - `_widget.dart` for reusable components
+- `_model.dart` - Data models
+- `_service.dart` - Business logic services
+- `_repository.dart` - Data repositories
+- `_provider.dart` - Riverpod providers
+- `_notifier.dart` - State notifiers
+- `_page.dart` - Screen widgets
+- `_widget.dart` - UI components
 
-### Directories
+**Directory naming:** Snake case, plural for collections (`models/`, `services/`)
 
-- **Snake case**: `directory_name/`
-- **Plural for collections**: `models/`, `services/`, `widgets/`
-- **Singular for single purpose**: `routing/`, `data/`
+## Import Organization (Enforced by Linter)
 
-## Import Organization
-
-### Import Order (enforced by linter)
-
-1. Dart SDK imports (`dart:*`)
-2. Flutter framework imports (`package:flutter/*`)
-3. Third-party package imports (`package:*`)
+1. `dart:*` imports
+2. `package:flutter/*` imports
+3. `package:*` third-party imports
 4. Relative imports (same feature)
-5. Shared module imports
+5. `shared/` module imports
 
-### Import Style
+**Style rules:**
 
-- **Relative imports** for files within the same feature
-- **Absolute imports** for shared modules and external packages
-- **Explicit imports** - avoid `show` and `hide` unless necessary
+- Relative imports within same feature
+- Absolute imports for shared modules
+- Avoid `show`/`hide` unless necessary
 
-## Code Organization Principles
-
-### Single Responsibility
-
-- Each file has one primary purpose
-- Classes and functions do one thing well
-- Clear separation between UI, business logic, and data
+## Architecture Patterns
 
 ### Dependency Direction
 
-- Features can depend on shared modules
-- Shared modules should not depend on specific features
-- UI depends on business logic, not the reverse
+- Features → Shared modules ✓
+- Shared → Features ✗
+- UI → Business logic ✓
+- Business logic → UI ✗
 
-### Testability
+### State Management Pattern
 
-- Business logic separated from UI
-- Repository pattern for data access
-- Dependency injection through Riverpod providers
+```dart
+@riverpod
+class ExampleNotifier extends _$ExampleNotifier {
+  @override
+  ExampleState build() => ExampleState.initial();
+  // Implementation
+}
+```
+
+### Repository Pattern
+
+- Interfaces in `/data/` directories
+- Dependency injection via Riverpod
+- Separate business logic from UI
+
+## Key Services (Shared Module)
+
+- `FileStorageService` - File system operations
+- `NoteService` - Cross-feature note operations
+- `PdfProcessor` - PDF handling
+- `NoteDeletionService` - Cleanup operations
 
 ## File Storage Structure
 
-The app maintains a structured file system for note storage:
-
 ```
-/Application Documents/
-├── notes/
-│   ├── {noteId}/
-│   │   ├── source.pdf          # Original PDF copy
-│   │   ├── pages/              # Pre-rendered page images
-│   │   ├── sketches/           # Sketch data (future)
-│   │   ├── thumbnails/         # Page thumbnail cache
-│   │   └── metadata.json       # Note metadata (future)
+/Application Documents/notes/{noteId}/
+├── source.pdf              # Original PDF
+├── pages/                  # Pre-rendered images
+├── thumbnails/             # Cached thumbnails
+└── metadata.json           # Note metadata
 ```
 
-This structure is managed by `FileStorageService` and supports:
-
-- Efficient file organization per note
-- Thumbnail caching for performance
-- Future extensibility for additional data types
+Managed by `FileStorageService` for efficient organization and caching.
