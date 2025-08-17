@@ -174,6 +174,7 @@ class _PageThumbnailGridState extends ConsumerState<PageThumbnailGrid> {
 
               // 썸네일 위젯
               DraggablePageThumbnail(
+                key: ValueKey(page.pageId), // 고유한 Key 설정
                 page: page,
                 thumbnail: thumbnail,
                 size: widget.thumbnailSize,
