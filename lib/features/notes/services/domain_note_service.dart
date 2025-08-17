@@ -40,7 +40,7 @@ class DomainNoteService {
       initialPageIndex: initialPageIndex,
     );
     final isar = await IsarDb.instance.open();
-    final note = await isar.notes.get(link.targetNoteId!);
+    final note = await isar.collection<Note>().get(link.targetNoteId!);
     if (note == null) {
       throw IsarError('Linked note not found after creation');
     }
@@ -58,9 +58,9 @@ class DomainNoteService {
     int? fromFolderId;
     int? vaultId;
     await isar.writeTxn(() async {
-      final note = await isar.notes.get(noteId);
+      final note = await isar.collection<Note>().get(noteId);
       if (note == null) return;
-      final targetFolder = await isar.folders.get(targetFolderId);
+      final targetFolder = await isar.collection<Folder>().get(targetFolderId);
       if (targetFolder == null) {
         throw IsarError('Target folder not found');
       }
@@ -74,7 +74,7 @@ class DomainNoteService {
       note.folderId = targetFolderId;
 
       // 정렬 재배치
-      final notesInTarget = await isar.notes
+      final notesInTarget = await isar.collection<Note>()
           .filter()
           .vaultIdEqualTo(note.vaultId)
           .and()
@@ -104,7 +104,7 @@ class DomainNoteService {
 
       note.sortIndex = newIndex;
       note.updatedAt = DateTime.now();
-      await isar.notes.put(note);
+      await isar.collection<Note>().put(note);
     });
 
     // 컴팩션은 A 유틸 호출로 트랜잭션 외부에서 수행
@@ -143,7 +143,7 @@ class DomainNoteService {
   /// RecentTabs 상위 10개 노트를 반환 (존재하지 않는 항목은 건너뜀)
   Future<List<Note>> getRecentTabs() async {
     final isar = await IsarDb.instance.open();
-    final existing = await isar.recentTabs.where().findFirst();
+    final existing = await isar.collection<RecentTabs>().where().findFirst();
     if (existing == null) return <Note>[];
     List<int> ids;
     try {
@@ -153,7 +153,7 @@ class DomainNoteService {
     }
     final result = <Note>[];
     for (final id in ids) {
-      final n = await isar.notes.get(id);
+      final n = await isar.collection<Note>().get(id);
       if (n != null && n.deletedAt == null) {
         result.add(n);
       }
@@ -205,7 +205,7 @@ class DomainNoteService {
   Future<void> _pushRecentLinkedNote({required Isar isar, required int noteId}) async {
     const String userId = 'local';
     final now = DateTime.now();
-    final existing = await isar.recentTabs.where().findFirst();
+    final existing = await isar.collection<RecentTabs>().where().findFirst();
     List<int> list;
     late RecentTabs tabs;
     if (existing == null) {
@@ -231,6 +231,6 @@ class DomainNoteService {
         ..noteIdsJson = jsonEncode(list)
         ..updatedAt = now;
     }
-    await isar.recentTabs.put(tabs);
+    await isar.collection<RecentTabs>().put(tabs);
   }
 }

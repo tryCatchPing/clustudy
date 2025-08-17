@@ -30,7 +30,7 @@ class SearchService {
     final isar = await IsarDb.instance.open();
     final q = query.toLowerCase().trim();
 
-    var builder = isar.notes.filter().vaultIdEqualTo(vaultId).deletedAtIsNull();
+    var builder = isar.collection<Note>().filter().vaultIdEqualTo(vaultId).deletedAtIsNull();
 
     if (folderId == null) {
       builder = builder.folderIdIsNull();
@@ -53,7 +53,7 @@ class SearchService {
     final isar = await IsarDb.instance.open();
     final q = query.toLowerCase().trim();
 
-    var builder = isar.notes.filter().vaultIdEqualTo(vaultId).deletedAtIsNull();
+    var builder = isar.collection<Note>().filter().vaultIdEqualTo(vaultId).deletedAtIsNull();
 
     if (folderId == null) {
       builder = builder.folderIdIsNull();
@@ -76,14 +76,14 @@ class SearchService {
     final q = query.toLowerCase().trim();
 
     if (useContains) {
-      return isar.notes
+      return isar.collection<Note>()
           .filter()
           .deletedAtIsNull()
           .nameLowerForSearchContains(q)
           .limit(limit)
           .findAll();
     } else {
-      return isar.notes
+      return isar.collection<Note>()
           .filter()
           .deletedAtIsNull()
           .nameLowerForSearchStartsWith(q)
@@ -105,7 +105,7 @@ class SearchService {
     final isar = await IsarDb.instance.open();
     final q = query.toLowerCase().trim();
 
-    var builder = isar.notes.filter().vaultIdEqualTo(vaultId).deletedAtIsNull();
+    var builder = isar.collection<Note>().filter().vaultIdEqualTo(vaultId).deletedAtIsNull();
 
     if (folderId == null) {
       builder = builder.folderIdIsNull();
@@ -136,7 +136,7 @@ class SearchService {
   }) async {
     final isar = await IsarDb.instance.open();
 
-    var builder = isar.notes.filter().vaultIdEqualTo(vaultId).deletedAtIsNull();
+    var builder = isar.collection<Note>().filter().vaultIdEqualTo(vaultId).deletedAtIsNull();
 
     if (folderId == null) {
       builder = builder.folderIdIsNull();
@@ -184,7 +184,7 @@ class SearchService {
     final q = query.toLowerCase().trim();
 
     if (useContains) {
-      return isar.folders
+      return isar.collection<Folder>()
           .filter()
           .vaultIdEqualTo(vaultId)
           .deletedAtIsNull()
@@ -193,7 +193,7 @@ class SearchService {
           .limit(limit)
           .findAll();
     } else {
-      return isar.folders
+      return isar.collection<Folder>()
           .filter()
           .vaultIdEqualTo(vaultId)
           .deletedAtIsNull()
@@ -216,7 +216,7 @@ class SearchService {
     final q = query.toLowerCase().trim();
 
     if (useContains) {
-      return isar.vaults
+      return isar.collection<Vault>()
           .filter()
           .deletedAtIsNull()
           .nameContains(q, caseSensitive: false)
@@ -224,7 +224,7 @@ class SearchService {
           .limit(limit)
           .findAll();
     } else {
-      return isar.vaults
+      return isar.collection<Vault>()
           .filter()
           .deletedAtIsNull()
           .nameStartsWith(q, caseSensitive: false)

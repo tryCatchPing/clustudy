@@ -64,7 +64,7 @@ void main() {
         );
 
         // Verify only one vault exists
-        final vaults = await isar.vaults.where().findAll();
+        final vaults = await isar.collection<Vault>().where().findAll();
         expect(vaults.length, 1);
         expect(vaults.first.name, 'TestVault');
       },
@@ -104,10 +104,10 @@ void main() {
         );
 
         // Verify folder counts
-        final vault1Folders = await isar.folders.filter().vaultIdEqualTo(vault1.id).findAll();
+        final vault1Folders = await isar.collection<Folder>().filter().vaultIdEqualTo(vault1.id).findAll();
         expect(vault1Folders.length, 1);
 
-        final vault2Folders = await isar.folders.filter().vaultIdEqualTo(vault2.id).findAll();
+        final vault2Folders = await isar.collection<Folder>().filter().vaultIdEqualTo(vault2.id).findAll();
         expect(vault2Folders.length, 1);
       },
       skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
@@ -172,7 +172,7 @@ void main() {
         );
 
         // Verify note counts
-        final folder1Notes = await isar.notes
+        final folder1Notes = await isar.collection<Note>()
             .filter()
             .vaultIdEqualTo(vault.id)
             .and()
@@ -180,7 +180,7 @@ void main() {
             .findAll();
         expect(folder1Notes.length, 1);
 
-        final folder2Notes = await isar.notes
+        final folder2Notes = await isar.collection<Note>()
             .filter()
             .vaultIdEqualTo(vault.id)
             .and()
@@ -188,7 +188,7 @@ void main() {
             .findAll();
         expect(folder2Notes.length, 1);
 
-        final rootNotes = await isar.notes
+        final rootNotes = await isar.collection<Note>()
             .filter()
             .vaultIdEqualTo(vault.id)
             .and()
@@ -228,7 +228,7 @@ void main() {
         edge1.setUniqueKey();
 
         await isar.writeTxn(() async {
-          await isar.graphEdges.put(edge1);
+          await isar.collection<GraphEdge>().put(edge1);
         });
 
         // Try to create duplicate edge
@@ -241,13 +241,13 @@ void main() {
 
         await expectLater(
           () => isar.writeTxn(() async {
-            await isar.graphEdges.put(edge2);
+            await isar.collection<GraphEdge>().put(edge2);
           }),
           throwsA(isA<IsarError>()),
         );
 
         // Verify only one edge exists
-        final edges = await isar.graphEdges.where().findAll();
+        final edges = await isar.collection<GraphEdge>().where().findAll();
         expect(edges.length, 1);
       },
       skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
@@ -277,7 +277,7 @@ void main() {
         cache1.setUniqueKey();
 
         await isar.writeTxn(() async {
-          await isar.pdfCacheMetas.put(cache1);
+          await isar.collection<PdfCacheMeta>().put(cache1);
         });
 
         // Try to create duplicate cache entry
@@ -292,7 +292,7 @@ void main() {
 
         await expectLater(
           () => isar.writeTxn(() async {
-            await isar.pdfCacheMetas.put(cache2);
+            await isar.collection<PdfCacheMeta>().put(cache2);
           }),
           throwsA(isA<IsarError>()),
         );
@@ -308,11 +308,11 @@ void main() {
         cache3.setUniqueKey();
 
         await isar.writeTxn(() async {
-          await isar.pdfCacheMetas.put(cache3);
+          await isar.collection<PdfCacheMeta>().put(cache3);
         });
 
         // Verify correct number of cache entries
-        final caches = await isar.pdfCacheMetas.where().findAll();
+        final caches = await isar.collection<PdfCacheMeta>().where().findAll();
         expect(caches.length, 2);
       },
       skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
@@ -330,7 +330,7 @@ void main() {
           ..updatedAt = DateTime.now();
 
         await isar.writeTxn(() async {
-          await isar.recentTabs.put(tabs1);
+          await isar.collection<RecentTabs>().put(tabs1);
         });
 
         // Try to create duplicate userId
@@ -342,7 +342,7 @@ void main() {
 
         await expectLater(
           () => isar.writeTxn(() async {
-            await isar.recentTabs.put(tabs2);
+            await isar.collection<RecentTabs>().put(tabs2);
           }),
           throwsA(isA<IsarError>()),
         );
@@ -355,11 +355,11 @@ void main() {
           ..updatedAt = DateTime.now();
 
         await isar.writeTxn(() async {
-          await isar.recentTabs.put(tabs3);
+          await isar.collection<RecentTabs>().put(tabs3);
         });
 
         // Verify correct records exist
-        final allTabs = await isar.recentTabs.where().findAll();
+        final allTabs = await isar.collection<RecentTabs>().where().findAll();
         expect(allTabs.length, 2);
         expect(allTabs.map((t) => t.userId).toSet(), {'local', 'user2'});
       },

@@ -8,7 +8,7 @@ class SeedRunner {
 
   Future<void> ensureInitialSeed() async {
     final isar = await IsarDb.instance.open();
-    final hasVault = await isar.vaults.where().count() > 0;
+    final hasVault = await isar.collection<Vault>().where().count() > 0;
     if (hasVault) return;
     await isar.writeTxn(() async {
       final now = DateTime.now();
@@ -17,7 +17,7 @@ class SeedRunner {
         ..nameLowerUnique = 'default'
         ..createdAt = now
         ..updatedAt = now;
-      final vaultId = await isar.vaults.put(vault);
+      final vaultId = await isar.collection<Vault>().put(vault);
       final folder = Folder()
         ..vaultId = vaultId
         ..name = 'General'
@@ -25,7 +25,7 @@ class SeedRunner {
         ..sortIndex = 1000
         ..createdAt = now
         ..updatedAt = now;
-      final folderId = await isar.folders.put(folder);
+      final folderId = await isar.collection<Folder>().put(folder);
       final note = Note()
         ..vaultId = vaultId
         ..folderId = folderId
@@ -36,7 +36,7 @@ class SeedRunner {
         ..sortIndex = 1000
         ..createdAt = now
         ..updatedAt = now;
-      final noteId = await isar.notes.put(note);
+      final noteId = await isar.collection<Note>().put(note);
       final page = Page()
         ..noteId = noteId
         ..index = 0
@@ -45,7 +45,7 @@ class SeedRunner {
         ..rotationDeg = 0
         ..createdAt = now
         ..updatedAt = now;
-      await isar.pages.put(page);
+      await isar.collection<Page>().put(page);
     });
   }
 }

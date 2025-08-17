@@ -30,7 +30,7 @@ class _EncryptionSettingsWidgetState extends State<EncryptionSettingsWidget> {
       // EncryptionManager에 public 메서드가 없으므로 직접 DB에서 읽기
       final isarDb = IsarDb.instance;
       final isar = await isarDb.open();
-      final settings = await isar.settingsEntitys.where().filter().findFirst();
+      final settings = await isar.collection<SettingsEntity>().where().filter().findFirst();
       final backupKeys = await _encryptionManager.getBackupKeysInfo();
 
       setState(() {

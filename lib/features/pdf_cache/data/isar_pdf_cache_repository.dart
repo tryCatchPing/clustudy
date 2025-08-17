@@ -27,7 +27,7 @@ class IsarPdfCacheRepository implements PdfCacheRepository {
 
     await isar.writeTxn(() async {
       // 기존 메타데이터 조회
-      final existing = await isar.pdfCacheMetas
+      final existing = await isar.collection<PdfCacheMeta>()
           .filter()
           .noteIdEqualTo(noteId)
           .and()
@@ -52,7 +52,7 @@ class IsarPdfCacheRepository implements PdfCacheRepository {
       // Unique constraint key 설정
       meta.setUniqueKey();
 
-      await isar.pdfCacheMetas.put(meta);
+      await isar.collection<PdfCacheMeta>().put(meta);
     });
   }
 
@@ -66,14 +66,14 @@ class IsarPdfCacheRepository implements PdfCacheRepository {
     await isar.writeTxn(() async {
       if (pageIndex == null) {
         // 노트의 모든 캐시 메타데이터 삭제
-        final metas = await isar.pdfCacheMetas.filter().noteIdEqualTo(noteId).findAll();
+        final metas = await isar.collection<PdfCacheMeta>().filter().noteIdEqualTo(noteId).findAll();
 
         if (metas.isNotEmpty) {
-          await isar.pdfCacheMetas.deleteAll(metas.map((e) => e.id).toList());
+          await isar.collection<PdfCacheMeta>().deleteAll(metas.map((e) => e.id).toList());
         }
       } else {
         // 특정 페이지의 캐시 메타데이터 삭제
-        final metas = await isar.pdfCacheMetas
+        final metas = await isar.collection<PdfCacheMeta>()
             .filter()
             .noteIdEqualTo(noteId)
             .and()
@@ -81,7 +81,7 @@ class IsarPdfCacheRepository implements PdfCacheRepository {
             .findAll();
 
         if (metas.isNotEmpty) {
-          await isar.pdfCacheMetas.deleteAll(metas.map((e) => e.id).toList());
+          await isar.collection<PdfCacheMeta>().deleteAll(metas.map((e) => e.id).toList());
         }
       }
     });
@@ -94,7 +94,7 @@ class IsarPdfCacheRepository implements PdfCacheRepository {
   }) async {
     final isar = await _open();
 
-    final meta = await isar.pdfCacheMetas
+    final meta = await isar.collection<PdfCacheMeta>()
         .filter()
         .noteIdEqualTo(noteId)
         .and()
@@ -110,7 +110,7 @@ class IsarPdfCacheRepository implements PdfCacheRepository {
   Future<List<PdfCacheMetaModel>> getAllCacheMetaOrderByLastAccess() async {
     final isar = await _open();
 
-    final metas = await isar.pdfCacheMetas.where().sortByLastAccessAt().findAll();
+    final metas = await isar.collection<PdfCacheMeta>().where().sortByLastAccessAt().findAll();
 
     return metas.map(_mapToModel).toList();
   }
@@ -119,7 +119,7 @@ class IsarPdfCacheRepository implements PdfCacheRepository {
   Future<int> getTotalCacheSize() async {
     final isar = await _open();
 
-    final metas = await isar.pdfCacheMetas.where().findAll();
+    final metas = await isar.collection<PdfCacheMeta>().where().findAll();
 
     return metas.fold<int>(0, (total, meta) => total + (meta.sizeBytes ?? 0));
   }
@@ -128,7 +128,7 @@ class IsarPdfCacheRepository implements PdfCacheRepository {
   Future<int> getMaxCacheSizeMB() async {
     final isar = await _open();
 
-    final settings = await isar.settingsEntitys.where().findFirst();
+    final settings = await isar.collection<SettingsEntity>().where().findFirst();
     return settings?.pdfCacheMaxMB ?? 512; // 기본값 512MB
   }
 
@@ -140,7 +140,7 @@ class IsarPdfCacheRepository implements PdfCacheRepository {
     final isar = await _open();
 
     await isar.writeTxn(() async {
-      final meta = await isar.pdfCacheMetas
+      final meta = await isar.collection<PdfCacheMeta>()
           .filter()
           .noteIdEqualTo(noteId)
           .and()
@@ -149,7 +149,7 @@ class IsarPdfCacheRepository implements PdfCacheRepository {
 
       if (meta != null) {
         meta.lastAccessAt = DateTime.now();
-        await isar.pdfCacheMetas.put(meta);
+        await isar.collection<PdfCacheMeta>().put(meta);
       }
     });
   }
@@ -182,7 +182,7 @@ class IsarPdfCacheRepository implements PdfCacheRepository {
   Future<List<PdfCacheMetaModel>> getCacheMetasOverSize(int maxSizeBytes) async {
     final isar = await _open();
 
-    final metas = await isar.pdfCacheMetas
+    final metas = await isar.collection<PdfCacheMeta>()
         .filter()
         .sizeBytesGreaterThan(maxSizeBytes)
         .sortByLastAccessAt()
@@ -195,7 +195,7 @@ class IsarPdfCacheRepository implements PdfCacheRepository {
   Future<List<PdfCacheMetaModel>> getCacheMetasOlderThan(DateTime cutoffDate) async {
     final isar = await _open();
 
-    final metas = await isar.pdfCacheMetas
+    final metas = await isar.collection<PdfCacheMeta>()
         .filter()
         .lastAccessAtLessThan(cutoffDate)
         .sortByLastAccessAt()
@@ -208,7 +208,7 @@ class IsarPdfCacheRepository implements PdfCacheRepository {
   Future<Map<int, int>> getCacheSizeByNote() async {
     final isar = await _open();
 
-    final metas = await isar.pdfCacheMetas.where().findAll();
+    final metas = await isar.collection<PdfCacheMeta>().where().findAll();
     final sizeMap = <int, int>{};
 
     for (final meta in metas) {
@@ -223,7 +223,7 @@ class IsarPdfCacheRepository implements PdfCacheRepository {
     final isar = await _open();
 
     await isar.writeTxn(() async {
-      await isar.pdfCacheMetas.deleteAll(metaIds);
+      await isar.collection<PdfCacheMeta>().deleteAll(metaIds);
     });
   }
 }
