@@ -1,7 +1,5 @@
-import 'package:isar/isar.dart';
-
-import '../isar_db.dart';
-import '../models/vault_models.dart';
+import 'package:it_contest/features/db/isar_db.dart';
+import 'package:it_contest/features/db/models/vault_models.dart';
 
 class SeedRunner {
   SeedRunner._();
@@ -50,5 +48,3 @@ class SeedRunner {
     });
   }
 }
-
-

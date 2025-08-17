@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:isar/isar.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/vault_models.dart';
 
@@ -85,17 +84,13 @@ class SnapshotService {
       }
 
       // 2) Enforce count limit.
-      final allRecent = await isar.pageSnapshots
-          .filter()
-          .pageIdEqualTo(pageId)
-          .findAll();
+      final allRecent = await isar.pageSnapshots.filter().pageIdEqualTo(pageId).findAll();
       if (allRecent.length > _retentionCount) {
         // Sort ascending by createdAt; delete oldest beyond the keep window.
         allRecent.sort((a, b) => a.createdAt.compareTo(b.createdAt));
         final toDelete = allRecent.take(allRecent.length - _retentionCount).toList();
         if (toDelete.isNotEmpty) {
-          await isar.pageSnapshots
-              .deleteAll(toDelete.map((e) => e.id).toList());
+          await isar.pageSnapshots.deleteAll(toDelete.map((e) => e.id).toList());
         }
       }
     });
@@ -115,5 +110,3 @@ class _SnapshotPayload {
   final String json;
   final String schemaVersion;
 }
-
-

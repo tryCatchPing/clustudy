@@ -3,15 +3,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../../features/notes/data/notes_repository_provider.dart';
-import '../../../shared/routing/app_routes.dart';
-import '../../../shared/services/file_storage_service.dart';
-import '../../../shared/services/note_deletion_service.dart';
-import '../../../shared/services/pdf_recovery_service.dart';
-import '../../notes/models/note_page_model.dart';
-import 'recovery_options_modal.dart';
-import 'recovery_progress_modal.dart';
+import 'package:it_contest/features/canvas/widgets/recovery_options_modal.dart';
+import 'package:it_contest/features/canvas/widgets/recovery_progress_modal.dart';
+import 'package:it_contest/features/notes/data/notes_repository_provider.dart';
+import 'package:it_contest/features/notes/models/note_page_model.dart';
+import 'package:it_contest/shared/routing/app_routes.dart';
+import 'package:it_contest/shared/services/file_storage_service.dart';
+import 'package:it_contest/shared/services/note_deletion_service.dart';
+import 'package:it_contest/shared/services/pdf_recovery_service.dart';
 
 /// 캔버스 배경을 표시하는 위젯
 ///
@@ -54,12 +53,10 @@ class CanvasBackgroundWidget extends ConsumerStatefulWidget {
   final double height;
 
   @override
-  ConsumerState<CanvasBackgroundWidget> createState() =>
-      _CanvasBackgroundWidgetState();
+  ConsumerState<CanvasBackgroundWidget> createState() => _CanvasBackgroundWidgetState();
 }
 
-class _CanvasBackgroundWidgetState
-    extends ConsumerState<CanvasBackgroundWidget> {
+class _CanvasBackgroundWidgetState extends ConsumerState<CanvasBackgroundWidget> {
   bool _isLoading = false;
   String? _errorMessage;
   File? _preRenderedImageFile;

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../features/notes/data/notes_repository_provider.dart';
-import '../../../shared/services/pdf_recovery_service.dart';
+import 'package:it_contest/features/notes/data/notes_repository_provider.dart';
+import 'package:it_contest/shared/services/pdf_recovery_service.dart';
 
 /// 재렌더링 진행 상황을 표시하는 모달
 ///
@@ -41,8 +41,7 @@ class RecoveryProgressModal extends ConsumerStatefulWidget {
   final VoidCallback onCancel;
 
   @override
-  ConsumerState<RecoveryProgressModal> createState() =>
-      _RecoveryProgressModalState();
+  ConsumerState<RecoveryProgressModal> createState() => _RecoveryProgressModalState();
 }
 
 class _RecoveryProgressModalState extends ConsumerState<RecoveryProgressModal> {

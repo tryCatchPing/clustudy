@@ -1,6 +1,5 @@
+import 'package:it_contest/features/canvas/models/tool_mode.dart';
 import 'package:scribble/scribble.dart';
-
-import '../models/tool_mode.dart';
 
 /// 도구 관리 기능을 제공하는 Mixin
 mixin ToolManagementMixin on ScribbleNotifier {

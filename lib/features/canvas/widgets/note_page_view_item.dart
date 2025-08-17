@@ -3,15 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:it_contest/features/canvas/constants/note_editor_constant.dart'; // NoteEditorConstants 정의 필요
+import 'package:it_contest/features/canvas/notifiers/custom_scribble_notifier.dart';
+import 'package:it_contest/features/canvas/providers/note_editor_provider.dart';
+import 'package:it_contest/features/canvas/providers/transformation_controller_provider.dart';
+import 'package:it_contest/features/canvas/widgets/canvas_background_widget.dart'; // CanvasBackgroundWidget 정의 필요
+import 'package:it_contest/features/canvas/widgets/linker_gesture_layer.dart';
+import 'package:it_contest/features/notes/data/derived_note_providers.dart';
 import 'package:scribble/scribble.dart';
-
-import '../../notes/data/derived_note_providers.dart';
-import '../constants/note_editor_constant.dart'; // NoteEditorConstants 정의 필요
-import '../notifiers/custom_scribble_notifier.dart';
-import '../providers/note_editor_provider.dart';
-import '../providers/transformation_controller_provider.dart';
-import 'canvas_background_widget.dart'; // CanvasBackgroundWidget 정의 필요
-import 'linker_gesture_layer.dart';
 
 /// Note 편집 화면의 단일 페이지 뷰 아이템입니다.
 class NotePageViewItem extends ConsumerStatefulWidget {
@@ -188,8 +187,7 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                   child: ValueListenableBuilder<ScribbleState>(
                     valueListenable: notifier,
                     builder: (context, scribbleState, child) {
-                      final currentToolMode =
-                          notifier.toolMode; // notifier에서 직접 toolMode 가져오기
+                      final currentToolMode = notifier.toolMode; // notifier에서 직접 toolMode 가져오기
                       return Stack(
                         children: [
                           // 배경 레이어
@@ -229,8 +227,7 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                             child: LinkerGestureLayer(
                               toolMode: currentToolMode,
                               allowMouseForLinker:
-                                  scribbleState.allowedPointersMode ==
-                                  ScribblePointerMode.all,
+                                  scribbleState.allowedPointersMode == ScribblePointerMode.all,
                               onLinkerRectanglesChanged: (rects) {
                                 setState(() {
                                   _currentLinkerRectangles = rects;
@@ -245,8 +242,9 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                               ),
                               linkerBorderColor: Colors.pinkAccent,
                               linkerBorderWidth: 2.0,
-                              currentLinkerFillColor: Colors.pinkAccent
-                                  .withAlpha((255 * 0.15).round()),
+                              currentLinkerFillColor: Colors.pinkAccent.withAlpha(
+                                (255 * 0.15).round(),
+                              ),
                               currentLinkerBorderColor: Colors.pinkAccent,
                               currentLinkerBorderWidth: 1.5,
                             ),

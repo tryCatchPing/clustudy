@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import '../models/note_model.dart';
-import 'notes_repository.dart';
+import 'package:it_contest/features/notes/data/notes_repository.dart';
+import 'package:it_contest/features/notes/models/note_model.dart';
 
 /// 간단한 인메모리 구현.
 ///
@@ -15,8 +15,7 @@ class MemoryNotesRepository implements NotesRepository {
   /// 외부에서 변경하지 않도록 주의해야 합니다(실무에선 immutable 권장).
   final List<NoteModel> _notes = <NoteModel>[];
 
-  MemoryNotesRepository()
-    : _controller = StreamController<List<NoteModel>>.broadcast();
+  MemoryNotesRepository() : _controller = StreamController<List<NoteModel>>.broadcast();
 
   void _emit() {
     // 방어적 복사로 외부 변이 방지

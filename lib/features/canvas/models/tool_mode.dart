@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'canvas_color.dart';
+import 'package:it_contest/features/canvas/models/canvas_color.dart';
 
 /// 캔버스에서 사용되는 도구 모드를 정의합니다.
 /// 각 도구는 표시 이름, 사용 가능한 굵기, 기본 굵기, 기본 색상 등의 속성을 가집니다.

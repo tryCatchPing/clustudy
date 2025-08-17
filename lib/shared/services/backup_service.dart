@@ -1,18 +1,15 @@
-import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart' show kDebugMode;
-import 'package:isar/isar.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 import 'package:archive/archive.dart';
 import 'package:encrypt/encrypt.dart';
-
-import '../../features/db/isar_db.dart';
-import '../../features/db/models/vault_models.dart';
-import 'crypto_key_service.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:it_contest/features/db/isar_db.dart';
+import 'package:it_contest/shared/services/crypto_key_service.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 class BackupService {
   BackupService._();
@@ -43,7 +40,7 @@ class BackupService {
     return false;
   }
 
-    Future<void> runIfDue() async {
+  Future<void> runIfDue() async {
     final isar = await IsarDb.instance.open();
     final settings = await isar.settingsEntitys.where().findFirst();
     if (settings == null) return;
@@ -300,11 +297,13 @@ class BackupService {
     final d = Directory(dir);
     final files = await d
         .list()
-        .where((e) => e is File && (
-          e.path.contains('integrated_backup_') ||
-          e.path.endsWith('.zip') ||
-          e.path.endsWith('.zip.encrypted')
-        ))
+        .where(
+          (e) =>
+              e is File &&
+              (e.path.contains('integrated_backup_') ||
+                  e.path.endsWith('.zip') ||
+                  e.path.endsWith('.zip.encrypted')),
+        )
         .cast<File>()
         .toList();
 
@@ -391,7 +390,6 @@ class BackupService {
 
       result.success = true;
       result.message = '백업이 성공적으로 복원되었습니다';
-
     } catch (e) {
       result.success = false;
       result.message = '복원 실패: $e';
@@ -407,7 +405,11 @@ class BackupService {
   }
 
   /// 암호화된 백업 추출
-  Future<void> _extractEncryptedBackup(String backupPath, String extractDir, String password) async {
+  Future<void> _extractEncryptedBackup(
+    String backupPath,
+    String extractDir,
+    String password,
+  ) async {
     final encryptedFile = File(backupPath);
     final encryptedContent = await encryptedFile.readAsString();
     final encryptedData = jsonDecode(encryptedContent);
@@ -542,14 +544,16 @@ class BackupService {
           continue; // 알 수 없는 파일 타입
         }
 
-        backups.add(BackupInfo(
-          fileName: fileName,
-          filePath: entity.path,
-          type: type,
-          isEncrypted: isEncrypted,
-          createdAt: stat.modified,
-          sizeBytes: stat.size,
-        ));
+        backups.add(
+          BackupInfo(
+            fileName: fileName,
+            filePath: entity.path,
+            type: type,
+            isEncrypted: isEncrypted,
+            createdAt: stat.modified,
+            sizeBytes: stat.size,
+          ),
+        );
       }
     }
 
@@ -657,7 +661,6 @@ class BackupService {
         // DB 파일 확인
         final dbFile = File(p.join(tempDir.path, 'database.isar'));
         result.databaseExtractable = await dbFile.exists();
-
       } finally {
         await tempDir.delete(recursive: true);
       }
@@ -667,7 +670,6 @@ class BackupService {
 
       result.success = true;
       result.message = '백업/복원 테스트가 성공적으로 완료되었습니다';
-
     } catch (e) {
       result.success = false;
       result.message = '테스트 실패: $e';
@@ -709,14 +711,15 @@ class BackupInfo {
   String get formattedSize {
     if (sizeBytes < 1024) return '$sizeBytes B';
     if (sizeBytes < 1024 * 1024) return '${(sizeBytes / 1024).toStringAsFixed(1)} KB';
-    if (sizeBytes < 1024 * 1024 * 1024) return '${(sizeBytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    if (sizeBytes < 1024 * 1024 * 1024)
+      return '${(sizeBytes / (1024 * 1024)).toStringAsFixed(1)} MB';
     return '${(sizeBytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
 }
 
 /// 백업 타입
 enum BackupType {
-  database,   // .isar 파일만
+  database, // .isar 파일만
   integrated, // DB + PDF 통합 백업
 }
 
@@ -741,7 +744,8 @@ class BackupStatus {
   String get formattedTotalSize {
     if (totalBackupSize < 1024) return '$totalBackupSize B';
     if (totalBackupSize < 1024 * 1024) return '${(totalBackupSize / 1024).toStringAsFixed(1)} KB';
-    if (totalBackupSize < 1024 * 1024 * 1024) return '${(totalBackupSize / (1024 * 1024)).toStringAsFixed(1)} MB';
+    if (totalBackupSize < 1024 * 1024 * 1024)
+      return '${(totalBackupSize / (1024 * 1024)).toStringAsFixed(1)} MB';
     return '${(totalBackupSize / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
 
@@ -763,5 +767,3 @@ class TestResult {
   bool metadataValid = false;
   bool databaseExtractable = false;
 }
-
-

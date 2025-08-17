@@ -1,13 +1,12 @@
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:it_contest/shared/services/file_picker_service.dart';
+import 'package:it_contest/shared/services/file_storage_service.dart';
+import 'package:it_contest/shared/services/pdf_processed_data.dart';
 import 'package:path/path.dart' as path;
 import 'package:pdfx/pdfx.dart';
 import 'package:uuid/uuid.dart';
-
-import 'file_picker_service.dart';
-import 'file_storage_service.dart';
-import 'pdf_processed_data.dart';
 
 /// PDF 문서 전용 처리기
 ///
@@ -15,7 +14,7 @@ import 'pdf_processed_data.dart';
 /// 효율성을 위해 PDF 문서를 한 번만 열어서 모든 작업을 수행합니다.
 class PdfProcessor {
   static const _uuid = Uuid();
-  
+
   /// 표준 캔버스 크기 (긴 변 기준)
   static const double TARGET_LONG_EDGE = 2000.0;
 
@@ -23,12 +22,12 @@ class PdfProcessor {
   /// 종횡비를 유지하면서 긴 변을 TARGET_LONG_EDGE로 맞춤
   static Size _normalizePageSize(double originalWidth, double originalHeight) {
     final aspectRatio = originalWidth / originalHeight;
-    
+
     if (originalWidth >= originalHeight) {
       // 가로가 더 긴 경우
       return Size(TARGET_LONG_EDGE, TARGET_LONG_EDGE / aspectRatio);
     } else {
-      // 세로가 더 긴 경우  
+      // 세로가 더 긴 경우
       return Size(TARGET_LONG_EDGE * aspectRatio, TARGET_LONG_EDGE);
     }
   }
@@ -98,8 +97,10 @@ class PdfProcessor {
       final originalWidth = pdfPage.width;
       final originalHeight = pdfPage.height;
       final normalizedSize = _normalizePageSize(originalWidth, originalHeight);
-      
-      print('📏 페이지 $pageNumber: 원본 ${originalWidth.toInt()}x${originalHeight.toInt()} → 정규화 ${normalizedSize.width.toInt()}x${normalizedSize.height.toInt()}');
+
+      print(
+        '📏 페이지 $pageNumber: 원본 ${originalWidth.toInt()}x${originalHeight.toInt()} → 정규화 ${normalizedSize.width.toInt()}x${normalizedSize.height.toInt()}',
+      );
 
       // 2. 이미지 렌더링 (정규화된 크기로)
       String? preRenderedImagePath;

@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../notes/data/derived_note_providers.dart';
-import '../providers/note_editor_provider.dart';
-import '../widgets/note_editor_canvas.dart';
-import '../widgets/toolbar/actions_bar.dart';
+import 'package:it_contest/features/canvas/widgets/note_editor_canvas.dart';
+import 'package:it_contest/features/canvas/widgets/toolbar/actions_bar.dart';
+import 'package:it_contest/features/notes/data/derived_note_providers.dart';
 
 /// 노트 편집 화면을 구성하는 위젯입니다.
 ///

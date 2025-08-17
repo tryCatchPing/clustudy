@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../models/canvas_color.dart';
-import '../../models/tool_mode.dart';
-import '../../providers/tool_settings_provider.dart';
-import 'color_button.dart';
+import 'package:it_contest/features/canvas/models/canvas_color.dart';
+import 'package:it_contest/features/canvas/models/tool_mode.dart';
+import 'package:it_contest/features/canvas/widgets/toolbar/color_button.dart';
 
 /// 스타일 선택기(색상 + 굵기)를 한 곳에서 제공하는 위젯.
 ///
@@ -94,13 +93,9 @@ class _ColorButton extends ConsumerWidget {
                 toolMode,
               );
           if (toolMode == ToolMode.pen) {
-            ref
-                .read(toolSettingsNotifierProvider(noteId).notifier)
-                .setPenColor(color);
+            ref.read(toolSettingsNotifierProvider(noteId).notifier).setPenColor(color);
           } else if (toolMode == ToolMode.highlighter) {
-            ref
-                .read(toolSettingsNotifierProvider(noteId).notifier)
-                .setHighlighterColor(color);
+            ref.read(toolSettingsNotifierProvider(noteId).notifier).setHighlighterColor(color);
           }
         },
         tooltip: tooltip,
@@ -133,9 +128,7 @@ class _StrokeRow extends ConsumerWidget {
     }
 
     final bool isEraser = toolSettings.toolMode == ToolMode.eraser;
-    final Color fillColor = isEraser
-        ? Colors.transparent
-        : toolSettings.currentColor;
+    final Color fillColor = isEraser ? Colors.transparent : toolSettings.currentColor;
 
     return Row(
       mainAxisSize: MainAxisSize.min,

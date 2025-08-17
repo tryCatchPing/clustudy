@@ -1,7 +1,6 @@
 import 'package:go_router/go_router.dart';
-
-import '../../../shared/routing/app_routes.dart';
-import '../pages/note_list_screen.dart';
+import 'package:it_contest/features/notes/pages/note_list_screen.dart';
+import 'package:it_contest/shared/routing/app_routes.dart';
 
 /// 📝 노트 기능 관련 라우트 설정
 ///

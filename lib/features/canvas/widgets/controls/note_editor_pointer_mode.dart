@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:scribble/scribble.dart';
 
-import '../../providers/note_editor_provider.dart';
-
 /// 포인터 모드 (모든 터치, 펜 전용)를 선택하는 위젯입니다.
 class NoteEditorPointerMode extends ConsumerWidget {
   /// [NoteEditorPointerMode]의 생성자.

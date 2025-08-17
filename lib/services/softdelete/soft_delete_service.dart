@@ -1,10 +1,7 @@
 import 'dart:async';
 
-import 'package:isar/isar.dart';
-
-import '../../features/db/isar_db.dart';
-import '../../features/db/models/vault_models.dart';
-import '../../features/db/services/note_db_service.dart';
+import 'package:it_contest/features/db/isar_db.dart';
+import 'package:it_contest/features/db/services/note_db_service.dart';
 
 /// Service for soft delete and restore operations.
 ///
@@ -44,7 +41,7 @@ class SoftDeleteService {
 
     bool restoredToRoot = false;
     final after = await isar.notes.get(noteId);
-    if (previousFolderId != null && (after?.folderId == null)) {
+    if ((after?.folderId == null)) {
       restoredToRoot = true;
     }
 
@@ -77,5 +74,3 @@ class NoteRestoreEvent {
   final bool restoredToRoot;
   final DateTime emittedAt;
 }
-
-

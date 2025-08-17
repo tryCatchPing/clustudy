@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:isar/isar.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/vault_models.dart';
 import 'package:it_contest/snapshot/snapshot_service.dart';
@@ -21,10 +20,7 @@ class CanvasPipeline {
 
     await isar.writeTxn(() async {
       // Upsert CanvasData by pageId unique index
-      final existing = await isar.canvasDatas
-          .filter()
-          .pageIdEqualTo(pageId)
-          .findFirst();
+      final existing = await isar.canvasDatas.filter().pageIdEqualTo(pageId).findFirst();
       if (existing == null) {
         final cd = CanvasData()
           ..noteId = noteId
@@ -58,5 +54,3 @@ class CanvasPipeline {
     await SnapshotService.flushPending(pageId: pageId);
   }
 }
-
-

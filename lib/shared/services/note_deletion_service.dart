@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
-import '../../features/notes/data/notes_repository.dart';
-import 'file_storage_service.dart';
+import 'package:it_contest/features/notes/data/notes_repository.dart';
+import 'package:it_contest/shared/services/file_storage_service.dart';
 
 /// 노트 삭제를 담당하는 서비스
 ///

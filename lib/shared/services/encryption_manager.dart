@@ -1,10 +1,8 @@
 import 'dart:async';
 
-import 'package:isar/isar.dart';
-
-import '../../features/db/isar_db.dart';
-import '../../features/db/models/vault_models.dart';
-import 'crypto_key_service.dart';
+import 'package:it_contest/features/db/isar_db.dart';
+import 'package:it_contest/features/db/models/vault_models.dart';
+import 'package:it_contest/shared/services/crypto_key_service.dart';
 
 /// 암호화 관리 서비스
 /// 키 회전, 재암호화, 복구 등의 고급 암호화 기능을 제공합니다.
@@ -29,7 +27,7 @@ class EncryptionManager {
       // 1. 현재 상태 확인
       final currentKey = await _cryptoService.loadKey();
       if (currentKey == null) {
-        throw EncryptionException('No encryption key found');
+        throw const EncryptionException('No encryption key found');
       }
 
       // 2. 데이터 무결성 사전 검증
@@ -58,7 +56,6 @@ class EncryptionManager {
         duration: duration,
         backupPath: backupPath,
       );
-
     } catch (e) {
       // 실패 시 복구 시도
       await _attemptRecovery();
@@ -106,7 +103,6 @@ class EncryptionManager {
         duration: DateTime.now().difference(startTime),
         backupPath: backupPath,
       );
-
     } catch (e) {
       await _attemptRecovery();
 
@@ -209,12 +205,14 @@ class EncryptionManager {
         final isValid = await _cryptoService.validateKey(key);
         final timestamp = int.tryParse(alias);
 
-        result.add(BackupKeyInfo(
-          alias: alias,
-          timestamp: timestamp != null ? DateTime.fromMillisecondsSinceEpoch(timestamp) : null,
-          isValid: isValid,
-          keyLength: key.length,
-        ));
+        result.add(
+          BackupKeyInfo(
+            alias: alias,
+            timestamp: timestamp != null ? DateTime.fromMillisecondsSinceEpoch(timestamp) : null,
+            isValid: isValid,
+            keyLength: key.length,
+          ),
+        );
       }
     }
 
@@ -240,7 +238,7 @@ class EncryptionManager {
       // 백업 키 유효성 검증
       final isValid = await _cryptoService.validateKey(backupKey);
       if (!isValid) {
-        throw EncryptionException('Backup key is invalid or corrupted');
+        throw const EncryptionException('Backup key is invalid or corrupted');
       }
 
       // 현재 DB 닫기
@@ -257,7 +255,6 @@ class EncryptionManager {
         recoveredFromAlias: backupAlias,
         duration: DateTime.now().difference(startTime),
       );
-
     } catch (e) {
       return RecoveryResult(
         success: false,

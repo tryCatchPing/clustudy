@@ -1,4 +1,4 @@
-import 'pdf_cache_service.dart';
+import 'package:it_contest/shared/services/pdf_cache_service.dart';
 
 /// PdfCache public interface (contract).
 class PdfCache {
@@ -14,5 +14,3 @@ class PdfCache {
     return PdfCacheService.instance.renderAndCache(noteId: noteId, pageIndex: pageIndex, dpi: dpi);
   }
 }
-
-

@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../notifiers/scribble_notifier_x.dart';
-import '../../providers/note_editor_provider.dart';
-
 /// 노트 편집기에서 실행할 수 있는 액션 버튼들을 모아놓은 위젯입니다.
 class NoteEditorActionsBar extends ConsumerWidget {
   /// [NoteEditorActionsBar]의 생성자.

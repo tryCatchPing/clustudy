@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../features/db/isar_db.dart';
-import '../../features/db/models/vault_models.dart';
-import '../services/encryption_manager.dart';
+import 'package:it_contest/features/db/isar_db.dart';
+import 'package:it_contest/shared/services/encryption_manager.dart';
 
 /// 암호화 설정을 관리하는 위젯
 class EncryptionSettingsWidget extends StatefulWidget {
@@ -31,7 +30,7 @@ class _EncryptionSettingsWidgetState extends State<EncryptionSettingsWidget> {
       // EncryptionManager에 public 메서드가 없으므로 직접 DB에서 읽기
       final isarDb = IsarDb.instance;
       final isar = await isarDb.open();
-      final settings = await isar.settingsEntitys.where().findFirst();
+      final settings = await isar.settingsEntitys.where().filter().findFirst();
       final backupKeys = await _encryptionManager.getBackupKeysInfo();
 
       setState(() {
@@ -62,9 +61,7 @@ class _EncryptionSettingsWidgetState extends State<EncryptionSettingsWidget> {
 
       if (result.success) {
         await _loadCurrentStatus();
-        _showSuccessDialog(
-          enable ? '암호화가 활성화되었습니다.' : '암호화가 비활성화되었습니다.'
-        );
+        _showSuccessDialog(enable ? '암호화가 활성화되었습니다.' : '암호화가 비활성화되었습니다.');
       } else {
         _showErrorDialog('암호화 토글 실패: ${result.error}');
       }
@@ -238,8 +235,7 @@ class _EncryptionSettingsWidgetState extends State<EncryptionSettingsWidget> {
         ),
         const SizedBox(height: 8),
         ...(_backupKeys.take(5).map((backup) => _buildBackupKeyItem(backup))),
-        if (_backupKeys.length > 5)
-          Text('... 및 ${_backupKeys.length - 5}개 더'),
+        if (_backupKeys.length > 5) Text('... 및 ${_backupKeys.length - 5}개 더'),
       ],
     );
   }
@@ -257,9 +253,7 @@ class _EncryptionSettingsWidgetState extends State<EncryptionSettingsWidget> {
       ),
       title: Text('백업 키 - $dateStr'),
       subtitle: Text(
-        backup.isValid
-            ? '유효 (${backup.keyLength} bytes)'
-            : '손상됨',
+        backup.isValid ? '유효 (${backup.keyLength} bytes)' : '손상됨',
       ),
       trailing: backup.isValid
           ? IconButton(

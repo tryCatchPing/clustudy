@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../models/tool_mode.dart';
-import '../../providers/tool_settings_provider.dart';
+import 'package:it_contest/features/canvas/models/tool_mode.dart';
 
 /// 그리기 모드 툴바
 ///
@@ -28,18 +27,16 @@ class NoteEditorToolSelector extends ConsumerWidget {
           drawingMode: ToolMode.pen,
           tooltip: 'Pen',
           selected: toolSettings.toolMode == ToolMode.pen,
-          onPressed: () => ref
-              .read(toolSettingsNotifierProvider(noteId).notifier)
-              .setToolMode(ToolMode.pen),
+          onPressed: () =>
+              ref.read(toolSettingsNotifierProvider(noteId).notifier).setToolMode(ToolMode.pen),
         ),
         _buildToolButton(
           context,
           drawingMode: ToolMode.eraser,
           tooltip: ToolMode.eraser.displayName,
           selected: toolSettings.toolMode == ToolMode.eraser,
-          onPressed: () => ref
-              .read(toolSettingsNotifierProvider(noteId).notifier)
-              .setToolMode(ToolMode.eraser),
+          onPressed: () =>
+              ref.read(toolSettingsNotifierProvider(noteId).notifier).setToolMode(ToolMode.eraser),
         ),
         _buildToolButton(
           context,
@@ -55,9 +52,8 @@ class NoteEditorToolSelector extends ConsumerWidget {
           drawingMode: ToolMode.linker,
           tooltip: ToolMode.linker.displayName,
           selected: toolSettings.toolMode == ToolMode.linker,
-          onPressed: () => ref
-              .read(toolSettingsNotifierProvider(noteId).notifier)
-              .setToolMode(ToolMode.linker),
+          onPressed: () =>
+              ref.read(toolSettingsNotifierProvider(noteId).notifier).setToolMode(ToolMode.linker),
         ),
       ],
     );

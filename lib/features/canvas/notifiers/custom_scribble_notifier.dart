@@ -1,16 +1,14 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
+import 'package:it_contest/features/canvas/models/tool_mode.dart';
+import 'package:it_contest/features/canvas/notifiers/auto_save_mixin.dart';
+import 'package:it_contest/features/canvas/notifiers/tool_management_mixin.dart';
+import 'package:it_contest/features/notes/models/note_page_model.dart' as page_model;
 import 'package:scribble/scribble.dart';
-
-import '../../notes/models/note_page_model.dart' as page_model;
-import '../models/tool_mode.dart';
-import 'auto_save_mixin.dart';
-import 'tool_management_mixin.dart';
 
 /// 캔버스에서 스케치 및 도구 관리를 담당하는 Notifier.
 /// [ScribbleNotifier], [AutoSaveMixin], [ToolManagementMixin]을 조합하여 사용합니다.
-class CustomScribbleNotifier extends ScribbleNotifier
-    with AutoSaveMixin, ToolManagementMixin {
+class CustomScribbleNotifier extends ScribbleNotifier with AutoSaveMixin, ToolManagementMixin {
   /// [CustomScribbleNotifier]의 생성자.
   ///
   /// [sketch]는 초기 스케치 데이터입니다.
@@ -80,8 +78,7 @@ class CustomScribbleNotifier extends ScribbleNotifier
     // 기존 로직과 동일하지만 선 굵기는 scaleFactor 적용 안함
     if (value.activePointerIds.isNotEmpty) {
       s = value.map(
-        drawing: (s) =>
-            (s.activeLine != null && s.activeLine!.points.length > 2)
+        drawing: (s) => (s.activeLine != null && s.activeLine!.points.length > 2)
             ? _finishLineForState(s)
             : s.copyWith(activeLine: null),
         erasing: (s) => s,
@@ -147,8 +144,7 @@ class CustomScribbleNotifier extends ScribbleNotifier
     final currentLine = (s as Drawing).activeLine!;
     final distanceToLast = currentLine.points.isEmpty
         ? double.infinity
-        : (_pointToOffset(currentLine.points.last) - event.localPosition)
-              .distance;
+        : (_pointToOffset(currentLine.points.last) - event.localPosition).distance;
 
     // 🔧 포인트 간격에는 실제 뷰어 스케일 적용 (필기감 개선)
     final threshold = kPrecisePointerPanSlop / _currentViewerScale;
@@ -217,8 +213,7 @@ class CustomScribbleNotifier extends ScribbleNotifier
     // 필압 센서가 없으면 0.5로 고정
     final normalized = event.pressureMin == event.pressureMax
         ? 0.5
-        : (event.pressure - event.pressureMin) /
-              (event.pressureMax - event.pressureMin);
+        : (event.pressure - event.pressureMin) / (event.pressureMax - event.pressureMin);
 
     // 런타임 토글: 비활성화 시 0.5 고정, 활성화 시 센서 값 사용
     final pressureValue = _simulatePressureEnabled ? normalized : 0.5;

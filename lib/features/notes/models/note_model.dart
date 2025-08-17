@@ -1,4 +1,4 @@
-import 'note_page_model.dart';
+import 'package:it_contest/features/notes/models/note_page_model.dart';
 
 /// 노트의 출처 타입을 정의합니다.
 enum NoteSourceType {

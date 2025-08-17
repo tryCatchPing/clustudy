@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../models/note_model.dart';
-import 'notes_repository_provider.dart';
+import 'package:it_contest/features/notes/data/notes_repository_provider.dart';
+import 'package:it_contest/features/notes/models/note_model.dart';
 
 // noteId 중심 리펙토링의 중심
 

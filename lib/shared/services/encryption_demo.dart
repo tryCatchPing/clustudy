@@ -1,10 +1,11 @@
 /// 암호화 시스템 사용 예시
 ///
 /// 이 파일은 구현된 암호화 기능들의 사용법을 보여주는 예시입니다.
+library;
 
-import '../../features/db/isar_db.dart';
-import 'crypto_key_service.dart';
-import 'encryption_manager.dart';
+import 'package:it_contest/features/db/isar_db.dart';
+import 'package:it_contest/shared/services/crypto_key_service.dart';
+import 'package:it_contest/shared/services/encryption_manager.dart';
 
 class EncryptionDemo {
   static Future<void> demonstrateBasicUsage() async {
@@ -34,7 +35,6 @@ class EncryptionDemo {
       print('   ✓ 키 유효성: $isValid');
 
       print('=== 데모 완료 ===');
-
     } catch (e) {
       print('❌ 오류 발생: $e');
     }
@@ -69,7 +69,6 @@ class EncryptionDemo {
       print('   회전 후 백업 키 개수: ${newBackups.length}');
 
       print('=== 키 회전 데모 완료 ===');
-
     } catch (e) {
       print('❌ 오류 발생: $e');
     }
@@ -112,7 +111,6 @@ class EncryptionDemo {
       */
 
       print('=== 복구 기능 데모 완료 ===');
-
     } catch (e) {
       print('❌ 오류 발생: $e');
     }
@@ -136,7 +134,6 @@ class EncryptionDemo {
       print('   존재하지 않는 키: ${nonExistentKey == null ? "null (정상)" : "오류"}');
 
       print('=== 오류 처리 데모 완료 ===');
-
     } catch (e) {
       print('❌ 오류 발생: $e');
     }

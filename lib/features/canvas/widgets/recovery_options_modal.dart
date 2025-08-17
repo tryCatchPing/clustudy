@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../shared/services/pdf_recovery_service.dart';
+import 'package:it_contest/shared/services/pdf_recovery_service.dart';
 
 /// 파일 손상 감지 시 표시되는 복구 옵션 모달
 ///
@@ -312,7 +312,7 @@ class RecoveryOptionsModal extends StatelessWidget {
         buttons.add(
           ElevatedButton.icon(
             onPressed: () {
-             context.pop();
+              context.pop();
               onSketchOnly();
             },
             icon: const Icon(Icons.visibility_off),

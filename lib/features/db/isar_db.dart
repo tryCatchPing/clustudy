@@ -1,15 +1,14 @@
 import 'dart:async';
 
 import 'package:isar/isar.dart';
-// Ensures Isar native bindings are available in Flutter (incl. tests)
-import 'package:isar_flutter_libs/isar_flutter_libs.dart';
-import 'package:path_provider/path_provider.dart';
 // Ensure native Isar binaries are bundled for Flutter test/desktop
 // ignore: unused_import
 import 'package:isar_flutter_libs/isar_flutter_libs.dart';
-
-import 'models/vault_models.dart';
-import '../../shared/services/crypto_key_service.dart';
+// Ensures Isar native bindings are available in Flutter (incl. tests)
+import 'package:isar_flutter_libs/isar_flutter_libs.dart';
+import 'package:it_contest/features/db/models/vault_models.dart';
+import 'package:it_contest/shared/services/crypto_key_service.dart';
+import 'package:path_provider/path_provider.dart';
 
 class IsarDb {
   IsarDb._internal();
@@ -104,12 +103,11 @@ class IsarDb {
     }
 
     // 현재 설정 확인
-    final settings = await currentIsar.settingsEntitys.where().findFirst() ??
-        SettingsEntity()
-          ..encryptionEnabled = false
-          ..backupDailyAt = '02:00'
-          ..backupRetentionDays = 7
-          ..recycleRetentionDays = 30;
+    final settings = await currentIsar.settingsEntitys.where().findFirst() ?? SettingsEntity()
+      ..encryptionEnabled = false
+      ..backupDailyAt = '02:00'
+      ..backupRetentionDays = 7
+      ..recycleRetentionDays = 30;
 
     if (settings.encryptionEnabled == enable) {
       // 이미 원하는 상태
@@ -150,7 +148,6 @@ class IsarDb {
 
       // 5. 백업 데이터 복원
       await _restoreDataBackup(backupData);
-
     } catch (e) {
       // 실패 시 원래 DB로 복구
       await open(enableEncryption: false);
@@ -174,7 +171,6 @@ class IsarDb {
 
       // 4. 백업 데이터 복원
       await _restoreDataBackup(backupData);
-
     } catch (e) {
       // 실패 시 암호화된 DB로 복구
       await open(enableEncryption: true);
@@ -255,5 +251,3 @@ class IsarDb {
     }
   }
 }
-
-

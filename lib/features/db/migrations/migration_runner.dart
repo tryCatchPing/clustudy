@@ -1,7 +1,5 @@
-import 'package:isar/isar.dart';
-
-import '../isar_db.dart';
-import '../models/vault_models.dart';
+import 'package:it_contest/features/db/isar_db.dart';
+import 'package:it_contest/features/db/models/vault_models.dart';
 
 class MigrationRunner {
   MigrationRunner._();
@@ -24,7 +22,7 @@ class MigrationRunner {
       });
       return;
     }
-    int current = settings.dataVersion ?? 1;
+    final int current = settings.dataVersion ?? 1;
     // Example future steps:
     // if (current < 2) { await _toV2(isar); current = 2; }
     // if (current < 3) { await _toV3(isar); current = 3; }
@@ -36,5 +34,3 @@ class MigrationRunner {
     }
   }
 }
-
-
