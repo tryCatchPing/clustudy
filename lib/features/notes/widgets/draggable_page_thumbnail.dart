@@ -205,7 +205,9 @@ class _DraggablePageThumbnailState extends ConsumerState<DraggablePageThumbnail>
 
   /// 썸네일을 로드합니다.
   Future<void> _loadThumbnail() async {
-    if (_isLoading) return;
+    if (_isLoading) {
+      return;
+    }
 
     setState(() {
       _isLoading = true;

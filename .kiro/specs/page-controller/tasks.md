@@ -53,7 +53,7 @@
   - 삭제 버튼 오버레이 구현
   - _Requirements: 1.3, 1.4, 1.5, 4.1_
 
-- [ ] 8. PageThumbnailGrid 위젯 구현
+- [x] 8. PageThumbnailGrid 위젯 구현
 
   - 그리드 형태 썸네일 레이아웃 구현
   - 드래그 앤 드롭 지원 구현 (ReorderableWrap 또는 커스텀)
