@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:it_contest/features/canvas/widgets/toolbar/style_selector.dart';
 import 'package:it_contest/features/canvas/widgets/toolbar/tool_selector.dart';
+import 'package:it_contest/features/canvas/providers/note_editor_providers.dart';
 
 /// 그리기 도구 모음을 표시하는 툴바 위젯입니다.
 ///

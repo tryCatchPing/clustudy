@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:it_contest/features/canvas/models/canvas_color.dart';
 import 'package:it_contest/features/canvas/models/tool_mode.dart';
 import 'package:it_contest/features/canvas/widgets/toolbar/color_button.dart';
+import 'package:it_contest/features/canvas/providers/tool_settings_provider.dart';
 
 /// 스타일 선택기(색상 + 굵기)를 한 곳에서 제공하는 위젯.
 ///
@@ -79,7 +80,7 @@ class _ColorButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final toolSettings = ref.watch(toolSettingsNotifierProvider(noteId));
+    final toolSettings = ref.watch<ToolSettings>(toolSettingsNotifierProvider(noteId));
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -113,7 +114,7 @@ class _StrokeRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final toolSettings = ref.watch(toolSettingsNotifierProvider(noteId));
+    final toolSettings = ref.watch<ToolSettings>(toolSettingsNotifierProvider(noteId));
 
     final widths = toolSettings.toolMode.widths;
     final minW = widths.reduce((a, b) => a < b ? a : b);

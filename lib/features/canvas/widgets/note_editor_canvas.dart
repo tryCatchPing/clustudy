@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:it_contest/features/canvas/constants/note_editor_constant.dart';
 import 'package:it_contest/features/canvas/widgets/note_page_view_item.dart';
 import 'package:it_contest/features/canvas/widgets/toolbar/toolbar.dart';
+import 'package:it_contest/features/canvas/providers/note_editor_providers.dart';
 
 /// 📱 캔버스 영역을 담당하는 위젯
 ///
@@ -35,8 +36,8 @@ class NoteEditorCanvas extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Provider에서 상태 읽기
-    final pageController = ref.watch(pageControllerProvider(noteId));
-    final notePagesCount = ref.watch(notePagesCountProvider(noteId));
+    final pageController = ref.watch<PageController>(pageControllerProvider(noteId));
+    final notePagesCount = ref.watch<int>(notePagesCountProvider(noteId));
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:it_contest/features/canvas/notifiers/custom_scribble_notifier.dart';
+import 'package:it_contest/features/canvas/providers/note_editor_providers.dart';
 import 'package:scribble/scribble.dart';
 
 /// 포인터 모드 (모든 터치, 펜 전용)를 선택하는 위젯입니다.
@@ -15,11 +17,11 @@ class NoteEditorPointerMode extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final totalPages = ref.watch(notePagesCountProvider(noteId));
+    final totalPages = ref.watch<int>(notePagesCountProvider(noteId));
     if (totalPages == 0) {
       return const SizedBox.shrink();
     }
-    final notifier = ref.watch(currentNotifierProvider(noteId));
+    final notifier = ref.watch<CustomScribbleNotifier>(currentNotifierProvider(noteId));
 
     return ValueListenableBuilder<ScribbleState>(
       valueListenable: notifier,

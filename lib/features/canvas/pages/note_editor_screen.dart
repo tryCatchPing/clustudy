@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:it_contest/features/canvas/widgets/note_editor_canvas.dart';
 import 'package:it_contest/features/canvas/widgets/toolbar/actions_bar.dart';
 import 'package:it_contest/features/notes/data/derived_note_providers.dart';
+import 'package:it_contest/features/canvas/providers/note_editor_providers.dart';
 
 /// 노트 편집 화면을 구성하는 위젯입니다.
 ///
@@ -33,8 +34,8 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
     final noteAsync = ref.watch(noteProvider(widget.noteId));
     final note = noteAsync.value;
     final noteTitle = note?.title ?? widget.noteId;
-    final notePagesCount = ref.watch(notePagesCountProvider(widget.noteId));
-    final currentIndex = ref.watch(currentPageIndexProvider(widget.noteId));
+    final notePagesCount = ref.watch<int>(notePagesCountProvider(widget.noteId));
+    final currentIndex = ref.watch<int>(currentPageIndexProvider(widget.noteId));
 
     // 노트가 사라진 경우(삭제 직후 등) 즉시 빈 화면 처리하여 BadState 방지
     if (note == null || notePagesCount == 0) {
