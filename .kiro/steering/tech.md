@@ -1,148 +1,142 @@
-# Technology Stack & Build System
+---
+inclusion: always
+---
 
-## Flutter Framework
+# Technology Stack & Development Guidelines
 
-- **Flutter SDK**: 3.32.5 (Dart SDK 3.8.1+)
-- **Version Management**: FVM (Flutter Version Management) - mandatory for team consistency
-- **Target Platforms**: iOS (primary), Android, Web (limited support)
+## Flutter Framework Requirements
 
-## State Management & Architecture
+- **Flutter SDK**: 3.32.5 (Dart SDK 3.8.1+) - Use FVM for version management
+- **Primary Platform**: iOS with Apple Pencil support
+- **Secondary Platforms**: Android, Web (limited functionality)
+- **Always use `fvm flutter` commands** instead of direct `flutter` commands
 
-- **State Management**: Riverpod 2.6.1 with code generation
-- **Architecture Pattern**: Feature-based modular architecture
-- **Code Generation**:
-  - `riverpod_generator` for providers
-  - `build_runner` for code generation
+## State Management Architecture
 
-## Key Dependencies
+- **Required**: Riverpod 2.6.1 with code generation using `@riverpod` annotations
+- **Pattern**: Feature-based modular architecture with providers in `/providers/` directories
+- **Code Generation**: Run `fvm flutter packages pub run build_runner build` after modifying providers
+- **State Notifiers**: Use for complex state management, simple state can use basic providers
 
-### Canvas & Drawing
+## Critical Dependencies & Usage
 
-- **scribble**: Custom fork from GitHub (pressure sensitivity support)
-- **flutter/material.dart**: Material 3 design system
+### Canvas Implementation
 
-### PDF Processing
+- **scribble**: Custom fork for pressure sensitivity - handle drawing performance at 55+ FPS
+- **Material 3**: Use Material Design 3 components and theming
 
-- **pdfx**: 2.5.0 - PDF rendering and manipulation
-- **file_picker**: 8.0.6 - File selection interface
+### PDF Integration
 
-### Navigation & Routing
+- **pdfx 2.5.0**: For PDF rendering - ensure non-blocking UI during processing
+- **file_picker 8.0.6**: For file selection interface
 
-- **go_router**: 16.0.0 - Declarative routing
+### Navigation
 
-### Storage & File Management
+- **go_router 16.0.0**: Use declarative routing with feature-based route organization
 
-- **path_provider**: 2.1.4 - Platform-specific directories
-- **path**: 1.9.0 - Cross-platform path manipulation
-- **uuid**: 4.5.1 - Unique identifier generation
+### File Management
 
-### Development Tools
+- **path_provider**: Access platform directories for note storage
+- **uuid**: Generate unique identifiers for notes and pages
 
-- **flutter_lints**: 5.0.0 - Dart/Flutter linting rules
-- **build_runner**: 2.5.4 - Code generation runner
+## Essential Commands
 
-## Build Commands
-
-### Environment Setup
+### Code Generation Workflow
 
 ```bash
-# Install FVM and set Flutter version
-dart pub global activate fvm
-fvm install 3.32.5
-fvm use 3.32.5
-
-# Verify installation
-fvm flutter doctor
-fvm list  # Should show ● in Local column
-```
-
-### Development Workflow
-
-```bash
-# Install dependencies
-fvm flutter pub get
-
-# Code generation (run after modifying providers)
+# After modifying @riverpod providers, always run:
 fvm flutter packages pub run build_runner build
 
-# Run app (development)
-fvm flutter run
-
-# Run with specific device
-fvm flutter run -d chrome  # Web
-fvm flutter run -d ios     # iOS Simulator
+# For continuous development:
+fvm flutter packages pub run build_runner watch
 ```
 
-### Testing & Quality
+### Development Commands
 
 ```bash
-
-# Run tests
-fvm flutter test
-
-# Static analysis
-fvm flutter analyze
-
-# Format code
-fvm flutter format .
-
-# Clean build artifacts
-fvm flutter clean
+# Standard development workflow:
+fvm flutter pub get                    # Install dependencies
+fvm flutter run                        # Run app
+fvm flutter test                       # Run tests
+fvm flutter analyze                    # Static analysis
+fvm flutter format .                   # Format code
 ```
 
-### Build & Release
+## Code Style Requirements
 
-```bash
-# Build for iOS
-fvm flutter build ios --release
+### Mandatory Conventions
 
-# Build for Android
-fvm flutter build apk --release
-
-# Build for Web
-fvm flutter build web --release
-```
-
-## Code Style & Linting
-
-### Analysis Options
-
-- **Strict mode**: Implicit casts and dynamic disabled
-- **Documentation**: Public API documentation required
 - **Line length**: 80 characters maximum
-- **Import ordering**: Directives ordering enforced
-- **Const usage**: Prefer const constructors and declarations
+- **Quotes**: Single quotes for strings
+- **Variables**: Use `final` for immutable variables, `const` for compile-time constants
+- **Logging**: Use `debugPrint()` instead of `print()`
+- **Documentation**: Public APIs must have dartdoc comments
 
-### Key Linting Rules
+### Import Organization (enforced by linter)
 
-- Single quotes preferred
-- Final variables encouraged
-- Avoid print statements (use debugPrint)
-- Public member API documentation required
-- Relative imports for lib/ files
+1. Dart SDK imports (`dart:*`)
+2. Flutter imports (`package:flutter/*`)
+3. Third-party packages (`package:*`)
+4. Relative imports (within same feature)
+5. Shared module imports
 
-## Performance Targets
+### File Naming
 
-- **Canvas rendering**: 55+ FPS during drawing
-- **Memory usage**: Efficient stroke storage (1000 strokes < 5MB)
-- **App startup**: < 3 seconds on target devices
-- **File operations**: Non-blocking UI during PDF processing
+- **Snake case**: `file_name.dart`
+- **Suffixes**: `_model.dart`, `_service.dart`, `_provider.dart`, `_page.dart`, `_widget.dart`
 
-## Platform-Specific Considerations
+## Performance Requirements
 
-### iOS
+### Critical Metrics
 
-- Apple Pencil pressure sensitivity support
-- TestFlight deployment for team testing
-- iOS 12+ compatibility
+- **Canvas rendering**: Maintain 55+ FPS during drawing operations
+- **Memory efficiency**: 1000 strokes must use < 5MB storage
+- **Startup time**: < 3 seconds on target devices
+- **UI responsiveness**: File operations must not block UI thread
 
-### Android
+### Implementation Guidelines
 
-- Stylus input support where available
-- APK distribution for testing
+- Use `async`/`await` for file operations
+- Implement proper canvas optimization for smooth drawing
+- Cache thumbnails and pre-rendered pages for performance
+- Use efficient data structures for stroke storage
 
-### Web
+## Platform-Specific Implementation
 
-- Limited canvas performance
-- File system access restrictions
-- Primarily for demonstration purposes
+### iOS (Primary Target)
+
+- **Apple Pencil**: Implement pressure sensitivity support
+- **Compatibility**: iOS 12+ minimum
+- **Performance**: Optimize for iPad drawing experience
+
+### Android & Web
+
+- **Android**: Basic stylus support where available
+- **Web**: Limited canvas performance, demonstration purposes only
+- **File Access**: Handle platform-specific file system restrictions
+
+## Architecture Patterns
+
+### Provider Pattern
+
+```dart
+@riverpod
+class ExampleNotifier extends _$ExampleNotifier {
+  @override
+  ExampleState build() => ExampleState.initial();
+
+  // State management methods
+}
+```
+
+### Repository Pattern
+
+- Implement data repositories in `/data/` directories
+- Use dependency injection through Riverpod providers
+- Separate business logic from UI components
+
+### Feature Organization
+
+- Each feature in `/lib/features/` is self-contained
+- Shared utilities in `/lib/shared/`
+- Follow consistent directory structure across features
