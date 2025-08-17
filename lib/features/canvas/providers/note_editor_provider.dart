@@ -81,7 +81,7 @@ class CustomScribbleNotifiers extends _$CustomScribbleNotifiers {
     final noteAsync = ref.watch(noteProvider(noteId));
     // 재생성 트리거가 되지 않도록 listen으로만 처리
     final simulatePressure = ref.read(simulatePressureProvider);
-    final toolSettings = ref.watch(toolSettingsNotifierProvider(noteId));
+    final toolSettings = ref.read(toolSettingsNotifierProvider(noteId));
 
     return noteAsync.maybeWhen(
       data: (note) {
@@ -95,14 +95,25 @@ class CustomScribbleNotifiers extends _$CustomScribbleNotifiers {
         final currentIds = map.keys.toSet();
         final nextIds = note.pages.map((p) => p.pageId).toSet();
 
+        print('🔍 [CustomScribbleNotifiers] 기존 pageIds: $currentIds');
+        print('🔍 [CustomScribbleNotifiers] 새로운 pageIds: $nextIds');
+        print(
+          '🔍 [CustomScribbleNotifiers] 삭제될 pageIds: ${currentIds.difference(nextIds)}',
+        );
+        print(
+          '🔍 [CustomScribbleNotifiers] _toolSettingsListenerAttached: $_toolSettingsListenerAttached',
+        );
+
         // 삭제된 페이지 정리
         for (final removedId in currentIds.difference(nextIds)) {
+          print('🗑️ [CustomScribbleNotifiers] 페이지 삭제: $removedId');
           map.remove(removedId)?.dispose();
         }
 
         // 새 페이지 추가 생성
         for (final page in note.pages) {
           if (!map.containsKey(page.pageId)) {
+            print('➕ [CustomScribbleNotifiers] 새 페이지 추가: ${page.pageId}');
             final notifier =
                 CustomScribbleNotifier(
                     toolMode: toolSettings.toolMode,
@@ -118,10 +129,13 @@ class CustomScribbleNotifiers extends _$CustomScribbleNotifiers {
             _applyToolSettings(notifier, toolSettings);
 
             map[page.pageId] = notifier;
+          } else {
+            print('♻️ [CustomScribbleNotifiers] 기존 페이지 재사용: ${page.pageId}');
           }
         }
 
         _cacheByPageId = map;
+        print('🎯 [CustomScribbleNotifiers] 최종 캐시 pageIds: ${map.keys}');
 
         // simulatePressure 변경을 기존 CSN 인스턴스에 주입하여 히스토리를 보존합니다.
         if (!_simulatePressureListenerAttached) {
@@ -138,39 +152,63 @@ class CustomScribbleNotifiers extends _$CustomScribbleNotifiers {
         }
 
         // tool settings 변경 주입 (재생성 금지)
-        if (!_toolSettingsListenerAttached) {
-          _toolSettingsListenerAttached = true;
-          ref.listen<ToolSettings>(
-            toolSettingsNotifierProvider(noteId),
-            (prev, next) {
-              final m = _cacheByPageId;
-              if (m == null) {
-                return;
-              }
-              for (final notifier in m.values) {
-                notifier.setTool(next.toolMode);
-                switch (next.toolMode) {
-                  case ToolMode.pen:
-                    notifier
-                      ..setColor(next.penColor)
-                      ..setStrokeWidth(next.penWidth);
-                    break;
-                  case ToolMode.highlighter:
-                    notifier
-                      ..setColor(next.highlighterColor)
-                      ..setStrokeWidth(next.highlighterWidth);
-                    break;
-                  case ToolMode.eraser:
-                    // 지우개는 색상 없음: setColor를 호출하면 drawing 상태로 바뀌므로 금지
-                    notifier.setStrokeWidth(next.eraserWidth);
-                    break;
-                  case ToolMode.linker:
-                    // 링크 모드는 Scribble 상태 변경 없음
-                    break;
+        // 🚨 핵심 수정: 캐시가 비어있으면 listener를 다시 연결
+        if (!_toolSettingsListenerAttached || currentIds.isEmpty) {
+          if (currentIds.isEmpty) {
+            print('🔄 [CustomScribbleNotifiers] 캐시가 비어있어서 listener 재연결');
+            _toolSettingsListenerAttached = false;
+          }
+
+          if (!_toolSettingsListenerAttached) {
+            _toolSettingsListenerAttached = true;
+            print('🔗 [CustomScribbleNotifiers] Tool settings listener 연결');
+            ref.listen<ToolSettings>(
+              toolSettingsNotifierProvider(noteId),
+              (prev, next) {
+                print(
+                  '🛠️ [CustomScribbleNotifiers] Tool settings 변경: ${prev?.toolMode} -> ${next.toolMode}',
+                );
+                final m = _cacheByPageId;
+                if (m == null) {
+                  print(
+                    '❌ [CustomScribbleNotifiers] 캐시가 null이므로 tool settings 적용 불가',
+                  );
+                  return;
                 }
-              }
-            },
-          );
+                print(
+                  '🎯 [CustomScribbleNotifiers] ${m.length}개 notifier에 tool settings 적용',
+                );
+                for (final entry in m.entries) {
+                  final pageId = entry.key;
+                  final notifier = entry.value;
+                  print(
+                    '🔧 [CustomScribbleNotifiers] $pageId에 tool settings 적용',
+                  );
+
+                  notifier.setTool(next.toolMode);
+                  switch (next.toolMode) {
+                    case ToolMode.pen:
+                      notifier
+                        ..setColor(next.penColor)
+                        ..setStrokeWidth(next.penWidth);
+                      break;
+                    case ToolMode.highlighter:
+                      notifier
+                        ..setColor(next.highlighterColor)
+                        ..setStrokeWidth(next.highlighterWidth);
+                      break;
+                    case ToolMode.eraser:
+                      // 지우개는 색상 없음: setColor 호출 금지
+                      notifier.setStrokeWidth(next.eraserWidth);
+                      break;
+                    case ToolMode.linker:
+                      // 링크 모드는 Scribble 상태 변경 없음
+                      break;
+                  }
+                }
+              },
+            );
+          }
         }
 
         ref.onDispose(() {
@@ -201,7 +239,11 @@ CustomScribbleNotifier currentNotifier(
   final toolSettings = ref.watch(toolSettingsNotifierProvider(noteId));
   final simulatePressure = ref.read(simulatePressureProvider);
 
+  print('🎯 [currentNotifier] noteId: $noteId, currentIndex: $currentIndex');
+  print('🎯 [currentNotifier] toolSettings: ${toolSettings.toolMode}');
+
   if (note == null || note.pages.isEmpty) {
+    print('❌ [currentNotifier] 노트가 없거나 페이지가 비어있음 - no-op notifier 반환');
     // 노트가 없거나 페이지가 없는 경우에는 no-op Notifier를 반환하여 예외를 방지합니다.
     return CustomScribbleNotifier(
       toolMode: toolSettings.toolMode,
@@ -213,13 +255,25 @@ CustomScribbleNotifier currentNotifier(
 
   final page = note.pages[currentIndex];
   final notifiers = ref.watch(customScribbleNotifiersProvider(noteId));
-  return notifiers[page.pageId] ??
-      CustomScribbleNotifier(
-        toolMode: toolSettings.toolMode,
-        page: null,
-        simulatePressure: simulatePressure,
-        maxHistoryLength: NoteEditorConstants.maxHistoryLength,
-      );
+
+  print('🎯 [currentNotifier] 현재 페이지: ${page.pageId}');
+  print('🎯 [currentNotifier] 사용 가능한 notifiers: ${notifiers.keys}');
+
+  final notifier = notifiers[page.pageId];
+  if (notifier != null) {
+    print('✅ [currentNotifier] 기존 notifier 반환: ${page.pageId}');
+    return notifier;
+  } else {
+    print(
+      '❌ [currentNotifier] notifier를 찾을 수 없음 - no-op notifier 반환: ${page.pageId}',
+    );
+    return CustomScribbleNotifier(
+      toolMode: toolSettings.toolMode,
+      page: null,
+      simulatePressure: simulatePressure,
+      maxHistoryLength: NoteEditorConstants.maxHistoryLength,
+    );
+  }
 }
 
 @riverpod

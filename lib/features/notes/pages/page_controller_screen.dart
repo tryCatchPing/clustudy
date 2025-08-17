@@ -340,11 +340,10 @@ class _PageControllerScreenState extends ConsumerState<PageControllerScreen> {
         .read(pageControllerScreenNotifierProvider(widget.noteId).notifier)
         .addBlankPage();
 
-    // 페이지 추가 후 썸네일 캐시 무효화 및 노트 데이터 새로고침
+    // 페이지 추가 후 썸네일 캐시 무효화
     ref
         .read(pageControllerNotifierProvider(widget.noteId).notifier)
         .clearThumbnailCache();
-    ref.invalidate(noteProvider(widget.noteId));
   }
 
   /// 페이지 삭제를 처리합니다.
@@ -405,11 +404,10 @@ class _PageControllerScreenState extends ConsumerState<PageControllerScreen> {
                   )
                   .deletePage(page);
 
-              // 페이지 삭제 후 썸네일 캐시 무효화 및 노트 데이터 새로고침
+              // 페이지 삭제 후 썸네일 캐시 무효화
               ref
                   .read(pageControllerNotifierProvider(widget.noteId).notifier)
                   .clearThumbnailCache();
-              ref.invalidate(noteProvider(widget.noteId));
             },
             style: TextButton.styleFrom(
               foregroundColor: Colors.red,
