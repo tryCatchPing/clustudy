@@ -120,9 +120,9 @@ class EncryptionManager {
 
     // 기본적인 읽기 테스트
     try {
-      await isar.vaults.count();
-      await isar.notes.count();
-      await isar.settingsEntitys.count();
+      await isar.collection<Vault>().count();
+      await isar.collection<Note>().count();
+      await isar.collection<SettingsEntity>().count();
     } catch (e) {
       throw EncryptionException('Database integrity check failed: $e');
     }
@@ -183,7 +183,7 @@ class EncryptionManager {
   /// 현재 설정을 조회합니다
   Future<SettingsEntity?> _getCurrentSettings() async {
     final isar = await _isarDb.open();
-    return await isar.settingsEntitys.where().findFirst();
+    return await isar.collection<SettingsEntity>().where().findFirst();
   }
 
   /// 키 검증을 수행합니다

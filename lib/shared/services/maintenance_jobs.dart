@@ -18,29 +18,29 @@ class MaintenanceJobs {
     final threshold = DateTime.now().subtract(Duration(days: olderThanDays));
     int deleted = 0;
     await isar.writeTxn(() async {
-      final notes = await isar.notes.filter().deletedAtLessThan(threshold).findAll();
+      final notes = await isar.collection<Note>().filter().deletedAtLessThan(threshold).findAll();
       if (notes.isNotEmpty) {
-        await isar.notes.deleteAll(notes.map((e) => e.id).toList());
+        await isar.collection<Note>().deleteAll(notes.map((e) => e.id).toList());
         deleted += notes.length;
       }
-      final folders = await isar.folders.filter().deletedAtLessThan(threshold).findAll();
+      final folders = await isar.collection<Folder>().filter().deletedAtLessThan(threshold).findAll();
       if (folders.isNotEmpty) {
-        await isar.folders.deleteAll(folders.map((e) => e.id).toList());
+        await isar.collection<Folder>().deleteAll(folders.map((e) => e.id).toList());
         deleted += folders.length;
       }
-      final pages = await isar.pages.filter().deletedAtLessThan(threshold).findAll();
+      final pages = await isar.collection<Page>().filter().deletedAtLessThan(threshold).findAll();
       if (pages.isNotEmpty) {
-        await isar.pages.deleteAll(pages.map((e) => e.id).toList());
+        await isar.collection<Page>().deleteAll(pages.map((e) => e.id).toList());
         deleted += pages.length;
       }
       // also trim dangling links older than threshold
-      final links = await isar.linkEntitys
+      final links = await isar.collection<LinkEntity>()
           .filter()
           .danglingEqualTo(true)
           .updatedAtLessThan(threshold)
           .findAll();
       if (links.isNotEmpty) {
-        await isar.linkEntitys.deleteAll(links.map((e) => e.id).toList());
+        await isar.collection<LinkEntity>().deleteAll(links.map((e) => e.id).toList());
         deleted += links.length;
       }
     });
@@ -54,11 +54,11 @@ class MaintenanceJobs {
     int deleted = 0;
     await isar.writeTxn(() async {
       // by page group
-      final groups = await isar.pageSnapshots.where().findAll();
+      final groups = await isar.collection<PageSnapshot>().where().findAll();
       // naive: filter by time first
       final old = groups.where((s) => s.createdAt.isBefore(threshold)).toList();
       if (old.isNotEmpty) {
-        await isar.pageSnapshots.deleteAll(old.map((e) => e.id).toList());
+        await isar.collection<PageSnapshot>().deleteAll(old.map((e) => e.id).toList());
         deleted += old.length;
       }
       // enforce count: keep recent maxCount per pageId
@@ -70,7 +70,7 @@ class MaintenanceJobs {
         final list = entry.value..sort((a, b) => b.createdAt.compareTo(a.createdAt));
         if (list.length > maxCount) {
           final drop = list.sublist(maxCount);
-          await isar.pageSnapshots.deleteAll(drop.map((e) => e.id).toList());
+          await isar.collection<PageSnapshot>().deleteAll(drop.map((e) => e.id).toList());
           deleted += drop.length;
         }
       }
