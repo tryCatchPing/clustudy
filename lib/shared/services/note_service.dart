@@ -1,9 +1,8 @@
+import 'package:it_contest/features/notes/models/note_model.dart';
+import 'package:it_contest/features/notes/models/note_page_model.dart';
+import 'package:it_contest/shared/services/pdf_processed_data.dart';
+import 'package:it_contest/shared/services/pdf_processor.dart';
 import 'package:uuid/uuid.dart';
-
-import '../../features/notes/models/note_model.dart';
-import '../../features/notes/models/note_page_model.dart';
-import 'pdf_processed_data.dart';
-import 'pdf_processor.dart';
 
 class NoteService {
   static final NoteService _instance = NoteService._();
@@ -34,8 +33,7 @@ class NoteService {
       final noteId = _uuid.v4();
 
       // 노트 제목 생성
-      final noteTitle =
-          title ?? '새 노트 ${DateTime.now().toString().substring(0, 16)}';
+      final noteTitle = title ?? '새 노트 ${DateTime.now().toString().substring(0, 16)}';
 
       print('🆔 노트 ID 생성: $noteId');
       print('📝 노트 제목: $noteTitle');

@@ -1,14 +1,12 @@
-import 'dart:math';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:isar/isar.dart';
+import 'package:it_contest/features/db/isar_db.dart';
 import 'package:path_provider/path_provider.dart';
-
-import '../../features/db/isar_db.dart';
-import '../../features/db/models/vault_models.dart';
 
 class CryptoKeyService {
   CryptoKeyService._();
@@ -81,13 +79,14 @@ class CryptoKeyService {
 
       // 백업된 데이터 복원
       await _restoreFromBackup(newIsar, backupData);
-
     } catch (e) {
       // 실패 시 원래 키로 복구 시도
       try {
         await isarDb.open(encryptionKey: oldKey);
       } catch (rollbackError) {
-        throw Exception('Database reencryption failed and rollback also failed: $e, $rollbackError');
+        throw Exception(
+          'Database reencryption failed and rollback also failed: $e, $rollbackError',
+        );
       }
       rethrow;
     }
@@ -248,5 +247,3 @@ class CryptoKeyService {
     }
   }
 }
-
-

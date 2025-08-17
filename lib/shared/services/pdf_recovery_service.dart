@@ -2,14 +2,13 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
+import 'package:it_contest/features/notes/data/isar_notes_repository.dart';
+import 'package:it_contest/features/notes/data/notes_repository.dart';
+import 'package:it_contest/features/notes/models/note_page_model.dart';
+import 'package:it_contest/shared/services/file_storage_service.dart';
+import 'package:it_contest/shared/services/note_deletion_service.dart';
 import 'package:path/path.dart' as path;
 import 'package:pdfx/pdfx.dart';
-
-import '../../features/notes/data/notes_repository.dart';
-import '../../features/notes/data/isar_notes_repository.dart';
-import '../../features/notes/models/note_page_model.dart';
-import 'file_storage_service.dart';
-import 'note_deletion_service.dart';
 
 /// PDF 파일 손상 유형을 정의합니다.
 enum CorruptionType {
@@ -59,13 +58,17 @@ class PdfRecoveryService {
       // IsarNotesRepository의 효율적인 손상 감지 사용
       if (repo is IsarNotesRepository) {
         final corruptedPages = await repo.detectCorruptedPages(noteId: intNoteId);
-        final result = corruptedPages.map((page) => {
-          'pageId': page.pageId.toString(),
-          'pageIndex': page.pageIndex,
-          'reason': page.reason,
-          'pdfOriginalPath': page.pdfOriginalPath,
-          'corruptionType': CorruptionType.sourcePdfMissing,
-        }).toList();
+        final result = corruptedPages
+            .map(
+              (page) => {
+                'pageId': page.pageId.toString(),
+                'pageIndex': page.pageIndex,
+                'reason': page.reason,
+                'pdfOriginalPath': page.pdfOriginalPath,
+                'corruptionType': CorruptionType.sourcePdfMissing,
+              },
+            )
+            .toList();
 
         debugPrint('✅ 손상 감지 완료 (최적화됨): ${result.length}개 페이지 손상');
         return result;
@@ -376,12 +379,16 @@ class PdfRecoveryService {
       List<Map<String, dynamic>> pagesInfo;
       if (repo is IsarNotesRepository) {
         final pdfPages = await repo.getPdfPagesInfo(noteId: intNoteId);
-        pagesInfo = pdfPages.map((page) => {
-          'pageId': page.pageId.toString(),
-          'pageNumber': page.pageIndex + 1, // pageIndex는 0부터 시작
-          'width': page.width,
-          'height': page.height,
-        }).toList();
+        pagesInfo = pdfPages
+            .map(
+              (page) => {
+                'pageId': page.pageId.toString(),
+                'pageNumber': page.pageIndex + 1, // pageIndex는 0부터 시작
+                'width': page.width,
+                'height': page.height,
+              },
+            )
+            .toList();
         debugPrint('✅ PDF 페이지 정보 조회 완료 (최적화됨): ${pagesInfo.length}개 페이지');
       } else {
         // 기본 Repository의 경우 기존 방식
@@ -392,12 +399,14 @@ class PdfRecoveryService {
 
         pagesInfo = note.pages
             .where((page) => page.backgroundType == PageBackgroundType.pdf)
-            .map((page) => {
-              'pageId': page.pageId,
-              'pageNumber': page.pageNumber,
-              'width': page.backgroundWidth,
-              'height': page.backgroundHeight,
-            })
+            .map(
+              (page) => {
+                'pageId': page.pageId,
+                'pageNumber': page.pageNumber,
+                'width': page.backgroundWidth,
+                'height': page.backgroundHeight,
+              },
+            )
             .toList();
 
         // pageNumber 오름차순 정렬

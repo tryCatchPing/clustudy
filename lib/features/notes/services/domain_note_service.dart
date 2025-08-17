@@ -2,10 +2,10 @@ import 'dart:convert';
 
 import 'package:isar/isar.dart';
 
-import '../../db/isar_db.dart';
-import '../../db/models/vault_models.dart';
-import '../../db/services/note_db_service.dart';
-import '../../../shared/models/rect_norm.dart';
+import 'package:it_contest/features/db/isar_db.dart';
+import 'package:it_contest/features/db/models/vault_models.dart';
+import 'package:it_contest/features/db/services/note_db_service.dart';
+import 'package:it_contest/shared/models/rect_norm.dart';
 
 /// 도메인 서비스: 링크 생성/이동/삭제/복원/RecentTabs/Settings 등 B 트랙 책임 구현
 class DomainNoteService {
@@ -234,5 +234,3 @@ class DomainNoteService {
     await isar.recentTabs.put(tabs);
   }
 }
-
-

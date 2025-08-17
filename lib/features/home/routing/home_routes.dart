@@ -1,7 +1,6 @@
 import 'package:go_router/go_router.dart';
-
-import '../../../shared/routing/app_routes.dart';
-import '../pages/home_screen.dart';
+import 'package:it_contest/features/home/pages/home_screen.dart';
+import 'package:it_contest/shared/routing/app_routes.dart';
 
 /// 🏠 홈 기능 관련 라우트 설정
 ///

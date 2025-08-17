@@ -1,8 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../../shared/routing/app_routes.dart';
-import '../pages/note_editor_screen.dart';
+import 'package:it_contest/features/canvas/pages/note_editor_screen.dart';
+import 'package:it_contest/shared/routing/app_routes.dart';
 
 /// 🎨 캔버스 기능 관련 라우트 설정
 ///

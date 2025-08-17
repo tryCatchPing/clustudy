@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../providers/note_editor_provider.dart';
-import '../controls/note_editor_page_navigation.dart';
-import '../controls/note_editor_pointer_mode.dart';
-import '../controls/note_editor_pressure_toggle.dart';
-import '../controls/note_editor_viewport_info.dart';
-import 'drawing_toolbar.dart';
+import 'package:it_contest/features/canvas/widgets/controls/note_editor_page_navigation.dart';
+import 'package:it_contest/features/canvas/widgets/controls/note_editor_pointer_mode.dart';
+import 'package:it_contest/features/canvas/widgets/controls/note_editor_pressure_toggle.dart';
+import 'package:it_contest/features/canvas/widgets/controls/note_editor_viewport_info.dart';
+import 'package:it_contest/features/canvas/widgets/toolbar/drawing_toolbar.dart';
 
 /// 노트 편집기 하단에 표시되는 툴바 위젯입니다.
 ///

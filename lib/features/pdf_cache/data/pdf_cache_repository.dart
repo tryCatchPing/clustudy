@@ -1,4 +1,4 @@
-import '../models/pdf_cache_meta_model.dart';
+import 'package:it_contest/features/pdf_cache/models/pdf_cache_meta_model.dart';
 
 /// PDF 캐시 메타데이터 관리를 위한 Repository 인터페이스
 abstract class PdfCacheRepository {

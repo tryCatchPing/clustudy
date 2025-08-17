@@ -20,13 +20,15 @@ void main() {
   setUp(() async {
     // Ensure fresh temp directory per test and mock path_provider
     tempRoot = await Directory.systemTemp.createTemp('it_contest_test_');
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(pathProviderChannel, (MethodCall call) async {
-      if (call.method == 'getApplicationDocumentsDirectory') {
-        return tempRoot!.path;
-      }
-      return null;
-    });
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      pathProviderChannel,
+      (MethodCall call) async {
+        if (call.method == 'getApplicationDocumentsDirectory') {
+          return tempRoot!.path;
+        }
+        return null;
+      },
+    );
 
     // Make sure DB is closed before each test
     await IsarDb.instance.close();
@@ -35,308 +37,332 @@ void main() {
   tearDown(() async {
     // Close DB and clean temp dir
     await IsarDb.instance.close();
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(pathProviderChannel, null);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      pathProviderChannel,
+      null,
+    );
     if (tempRoot != null && await tempRoot!.exists()) {
       await tempRoot!.delete(recursive: true);
     }
   });
 
   group('Unique Constraints Tests', () {
-    test('Vault nameLowerUnique constraint prevents duplicates', () async {
-      final isar = await IsarDb.instance.open();
+    test(
+      'Vault nameLowerUnique constraint prevents duplicates',
+      () async {
+        final isar = await IsarDb.instance.open();
 
-      // Create first vault
-      final vault1 = await NoteDbService.instance.createVault(name: 'TestVault');
-      expect(vault1.nameLowerUnique, 'testvault');
+        // Create first vault
+        final vault1 = await NoteDbService.instance.createVault(name: 'TestVault');
+        expect(vault1.nameLowerUnique, 'testvault');
 
-      // Try to create duplicate vault (case insensitive)
-      await expectLater(
-        () => NoteDbService.instance.createVault(name: 'TESTVAULT'),
-        throwsA(isA<IsarError>()),
-      );
+        // Try to create duplicate vault (case insensitive)
+        await expectLater(
+          () => NoteDbService.instance.createVault(name: 'TESTVAULT'),
+          throwsA(isA<IsarError>()),
+        );
 
-      // Verify only one vault exists
-      final vaults = await isar.vaults.where().findAll();
-      expect(vaults.length, 1);
-      expect(vaults.first.name, 'TestVault');
-    }, skip: 'Requires native Isar runtime; run as integration test on device/desktop.');
+        // Verify only one vault exists
+        final vaults = await isar.vaults.where().findAll();
+        expect(vaults.length, 1);
+        expect(vaults.first.name, 'TestVault');
+      },
+      skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
+    );
 
-    test('Folder nameLowerForVaultUnique constraint works within vault scope', () async {
-      final isar = await IsarDb.instance.open();
+    test(
+      'Folder nameLowerForVaultUnique constraint works within vault scope',
+      () async {
+        final isar = await IsarDb.instance.open();
 
-      // Create vaults
-      final vault1 = await NoteDbService.instance.createVault(name: 'Vault1');
-      final vault2 = await NoteDbService.instance.createVault(name: 'Vault2');
+        // Create vaults
+        final vault1 = await NoteDbService.instance.createVault(name: 'Vault1');
+        final vault2 = await NoteDbService.instance.createVault(name: 'Vault2');
 
-      // Create folder in vault1
-      final folder1 = await NoteDbService.instance.createFolder(
-        vaultId: vault1.id,
-        name: 'TestFolder',
-      );
-      expect(folder1.nameLowerForVaultUnique, 'testfolder');
-
-      // Should allow same name in different vault
-      final folder2 = await NoteDbService.instance.createFolder(
-        vaultId: vault2.id,
-        name: 'TestFolder',
-      );
-      expect(folder2.nameLowerForVaultUnique, 'testfolder');
-
-      // Should prevent duplicate in same vault
-      await expectLater(
-        () => NoteDbService.instance.createFolder(
+        // Create folder in vault1
+        final folder1 = await NoteDbService.instance.createFolder(
           vaultId: vault1.id,
-          name: 'testfolder', // case insensitive
-        ),
-        throwsA(isA<IsarError>()),
-      );
+          name: 'TestFolder',
+        );
+        expect(folder1.nameLowerForVaultUnique, 'testfolder');
 
-      // Verify folder counts
-      final vault1Folders = await isar.folders
-          .filter()
-          .vaultIdEqualTo(vault1.id)
-          .findAll();
-      expect(vault1Folders.length, 1);
+        // Should allow same name in different vault
+        final folder2 = await NoteDbService.instance.createFolder(
+          vaultId: vault2.id,
+          name: 'TestFolder',
+        );
+        expect(folder2.nameLowerForVaultUnique, 'testfolder');
 
-      final vault2Folders = await isar.folders
-          .filter()
-          .vaultIdEqualTo(vault2.id)
-          .findAll();
-      expect(vault2Folders.length, 1);
-    }, skip: 'Requires native Isar runtime; run as integration test on device/desktop.');
+        // Should prevent duplicate in same vault
+        await expectLater(
+          () => NoteDbService.instance.createFolder(
+            vaultId: vault1.id,
+            name: 'testfolder', // case insensitive
+          ),
+          throwsA(isA<IsarError>()),
+        );
 
-    test('Note nameLowerForParentUnique constraint works within folder scope', () async {
-      final isar = await IsarDb.instance.open();
+        // Verify folder counts
+        final vault1Folders = await isar.folders.filter().vaultIdEqualTo(vault1.id).findAll();
+        expect(vault1Folders.length, 1);
 
-      // Setup vault and folders
-      final vault = await NoteDbService.instance.createVault(name: 'TestVault');
-      final folder1 = await NoteDbService.instance.createFolder(
-        vaultId: vault.id,
-        name: 'Folder1',
-      );
-      final folder2 = await NoteDbService.instance.createFolder(
-        vaultId: vault.id,
-        name: 'Folder2',
-      );
+        final vault2Folders = await isar.folders.filter().vaultIdEqualTo(vault2.id).findAll();
+        expect(vault2Folders.length, 1);
+      },
+      skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
+    );
 
-      // Create note in folder1
-      final note1 = await NoteDbService.instance.createNote(
-        vaultId: vault.id,
-        folderId: folder1.id,
-        name: 'TestNote',
-        pageSize: 'A4',
-        pageOrientation: 'portrait',
-      );
-      expect(note1.nameLowerForParentUnique, 'testnote');
+    test(
+      'Note nameLowerForParentUnique constraint works within folder scope',
+      () async {
+        final isar = await IsarDb.instance.open();
 
-      // Should allow same name in different folder
-      final note2 = await NoteDbService.instance.createNote(
-        vaultId: vault.id,
-        folderId: folder2.id,
-        name: 'TestNote',
-        pageSize: 'A4',
-        pageOrientation: 'portrait',
-      );
-      expect(note2.nameLowerForParentUnique, 'testnote');
+        // Setup vault and folders
+        final vault = await NoteDbService.instance.createVault(name: 'TestVault');
+        final folder1 = await NoteDbService.instance.createFolder(
+          vaultId: vault.id,
+          name: 'Folder1',
+        );
+        final folder2 = await NoteDbService.instance.createFolder(
+          vaultId: vault.id,
+          name: 'Folder2',
+        );
 
-      // Should allow same name in root (null folder)
-      final note3 = await NoteDbService.instance.createNote(
-        vaultId: vault.id,
-        folderId: null,
-        name: 'TestNote',
-        pageSize: 'A4',
-        pageOrientation: 'portrait',
-      );
-      expect(note3.nameLowerForParentUnique, 'testnote');
-
-      // Should prevent duplicate in same folder
-      await expectLater(
-        () => NoteDbService.instance.createNote(
+        // Create note in folder1
+        final note1 = await NoteDbService.instance.createNote(
           vaultId: vault.id,
           folderId: folder1.id,
-          name: 'TESTNOTE', // case insensitive
+          name: 'TestNote',
           pageSize: 'A4',
           pageOrientation: 'portrait',
-        ),
-        throwsA(isA<IsarError>()),
-      );
+        );
+        expect(note1.nameLowerForParentUnique, 'testnote');
 
-      // Verify note counts
-      final folder1Notes = await isar.notes
-          .filter()
-          .vaultIdEqualTo(vault.id)
-          .and()
-          .folderIdEqualTo(folder1.id)
-          .findAll();
-      expect(folder1Notes.length, 1);
+        // Should allow same name in different folder
+        final note2 = await NoteDbService.instance.createNote(
+          vaultId: vault.id,
+          folderId: folder2.id,
+          name: 'TestNote',
+          pageSize: 'A4',
+          pageOrientation: 'portrait',
+        );
+        expect(note2.nameLowerForParentUnique, 'testnote');
 
-      final folder2Notes = await isar.notes
-          .filter()
-          .vaultIdEqualTo(vault.id)
-          .and()
-          .folderIdEqualTo(folder2.id)
-          .findAll();
-      expect(folder2Notes.length, 1);
+        // Should allow same name in root (null folder)
+        final note3 = await NoteDbService.instance.createNote(
+          vaultId: vault.id,
+          folderId: null,
+          name: 'TestNote',
+          pageSize: 'A4',
+          pageOrientation: 'portrait',
+        );
+        expect(note3.nameLowerForParentUnique, 'testnote');
 
-      final rootNotes = await isar.notes
-          .filter()
-          .vaultIdEqualTo(vault.id)
-          .and()
-          .folderIdIsNull()
-          .findAll();
-      expect(rootNotes.length, 1);
-    }, skip: 'Requires native Isar runtime; run as integration test on device/desktop.');
+        // Should prevent duplicate in same folder
+        await expectLater(
+          () => NoteDbService.instance.createNote(
+            vaultId: vault.id,
+            folderId: folder1.id,
+            name: 'TESTNOTE', // case insensitive
+            pageSize: 'A4',
+            pageOrientation: 'portrait',
+          ),
+          throwsA(isA<IsarError>()),
+        );
 
-    test('GraphEdge unique constraint prevents duplicate edges', () async {
-      final isar = await IsarDb.instance.open();
+        // Verify note counts
+        final folder1Notes = await isar.notes
+            .filter()
+            .vaultIdEqualTo(vault.id)
+            .and()
+            .folderIdEqualTo(folder1.id)
+            .findAll();
+        expect(folder1Notes.length, 1);
 
-      // Setup vault and notes
-      final vault = await NoteDbService.instance.createVault(name: 'TestVault');
-      final note1 = await NoteDbService.instance.createNote(
-        vaultId: vault.id,
-        name: 'Note1',
-        pageSize: 'A4',
-        pageOrientation: 'portrait',
-      );
-      final note2 = await NoteDbService.instance.createNote(
-        vaultId: vault.id,
-        name: 'Note2',
-        pageSize: 'A4',
-        pageOrientation: 'portrait',
-      );
+        final folder2Notes = await isar.notes
+            .filter()
+            .vaultIdEqualTo(vault.id)
+            .and()
+            .folderIdEqualTo(folder2.id)
+            .findAll();
+        expect(folder2Notes.length, 1);
 
-      // Create first edge
-      final edge1 = GraphEdge()
-        ..vaultId = vault.id
-        ..fromNoteId = note1.id
-        ..toNoteId = note2.id
-        ..createdAt = DateTime.now();
-      edge1.setUniqueKey();
+        final rootNotes = await isar.notes
+            .filter()
+            .vaultIdEqualTo(vault.id)
+            .and()
+            .folderIdIsNull()
+            .findAll();
+        expect(rootNotes.length, 1);
+      },
+      skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
+    );
 
-      await isar.writeTxn(() async {
-        await isar.graphEdges.put(edge1);
-      });
+    test(
+      'GraphEdge unique constraint prevents duplicate edges',
+      () async {
+        final isar = await IsarDb.instance.open();
 
-      // Try to create duplicate edge
-      final edge2 = GraphEdge()
-        ..vaultId = vault.id
-        ..fromNoteId = note1.id
-        ..toNoteId = note2.id
-        ..createdAt = DateTime.now();
-      edge2.setUniqueKey();
+        // Setup vault and notes
+        final vault = await NoteDbService.instance.createVault(name: 'TestVault');
+        final note1 = await NoteDbService.instance.createNote(
+          vaultId: vault.id,
+          name: 'Note1',
+          pageSize: 'A4',
+          pageOrientation: 'portrait',
+        );
+        final note2 = await NoteDbService.instance.createNote(
+          vaultId: vault.id,
+          name: 'Note2',
+          pageSize: 'A4',
+          pageOrientation: 'portrait',
+        );
 
-      await expectLater(
-        () => isar.writeTxn(() async {
-          await isar.graphEdges.put(edge2);
-        }),
-        throwsA(isA<IsarError>()),
-      );
+        // Create first edge
+        final edge1 = GraphEdge()
+          ..vaultId = vault.id
+          ..fromNoteId = note1.id
+          ..toNoteId = note2.id
+          ..createdAt = DateTime.now();
+        edge1.setUniqueKey();
 
-      // Verify only one edge exists
-      final edges = await isar.graphEdges.where().findAll();
-      expect(edges.length, 1);
-    }, skip: 'Requires native Isar runtime; run as integration test on device/desktop.');
+        await isar.writeTxn(() async {
+          await isar.graphEdges.put(edge1);
+        });
 
-    test('PdfCacheMeta unique constraint prevents duplicate cache entries', () async {
-      final isar = await IsarDb.instance.open();
+        // Try to create duplicate edge
+        final edge2 = GraphEdge()
+          ..vaultId = vault.id
+          ..fromNoteId = note1.id
+          ..toNoteId = note2.id
+          ..createdAt = DateTime.now();
+        edge2.setUniqueKey();
 
-      // Setup vault and note
-      final vault = await NoteDbService.instance.createVault(name: 'TestVault');
-      final note = await NoteDbService.instance.createNote(
-        vaultId: vault.id,
-        name: 'TestNote',
-        pageSize: 'A4',
-        pageOrientation: 'portrait',
-      );
+        await expectLater(
+          () => isar.writeTxn(() async {
+            await isar.graphEdges.put(edge2);
+          }),
+          throwsA(isA<IsarError>()),
+        );
 
-      // Create first cache entry
-      final cache1 = PdfCacheMeta()
-        ..noteId = note.id
-        ..pageIndex = 0
-        ..cachePath = '/test/path1.png'
-        ..dpi = 144
-        ..renderedAt = DateTime.now();
-      cache1.setUniqueKey();
+        // Verify only one edge exists
+        final edges = await isar.graphEdges.where().findAll();
+        expect(edges.length, 1);
+      },
+      skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
+    );
 
-      await isar.writeTxn(() async {
-        await isar.pdfCacheMetas.put(cache1);
-      });
+    test(
+      'PdfCacheMeta unique constraint prevents duplicate cache entries',
+      () async {
+        final isar = await IsarDb.instance.open();
 
-      // Try to create duplicate cache entry
-      final cache2 = PdfCacheMeta()
-        ..noteId = note.id
-        ..pageIndex = 0  // Same noteId and pageIndex
-        ..cachePath = '/test/path2.png'
-        ..dpi = 144
-        ..renderedAt = DateTime.now();
-      cache2.setUniqueKey();
+        // Setup vault and note
+        final vault = await NoteDbService.instance.createVault(name: 'TestVault');
+        final note = await NoteDbService.instance.createNote(
+          vaultId: vault.id,
+          name: 'TestNote',
+          pageSize: 'A4',
+          pageOrientation: 'portrait',
+        );
 
-      await expectLater(
-        () => isar.writeTxn(() async {
-          await isar.pdfCacheMetas.put(cache2);
-        }),
-        throwsA(isA<IsarError>()),
-      );
+        // Create first cache entry
+        final cache1 = PdfCacheMeta()
+          ..noteId = note.id
+          ..pageIndex = 0
+          ..cachePath = '/test/path1.png'
+          ..dpi = 144
+          ..renderedAt = DateTime.now();
+        cache1.setUniqueKey();
 
-      // Should allow different pageIndex
-      final cache3 = PdfCacheMeta()
-        ..noteId = note.id
-        ..pageIndex = 1  // Different pageIndex
-        ..cachePath = '/test/path3.png'
-        ..dpi = 144
-        ..renderedAt = DateTime.now();
-      cache3.setUniqueKey();
+        await isar.writeTxn(() async {
+          await isar.pdfCacheMetas.put(cache1);
+        });
 
-      await isar.writeTxn(() async {
-        await isar.pdfCacheMetas.put(cache3);
-      });
+        // Try to create duplicate cache entry
+        final cache2 = PdfCacheMeta()
+          ..noteId = note.id
+          ..pageIndex =
+              0 // Same noteId and pageIndex
+          ..cachePath = '/test/path2.png'
+          ..dpi = 144
+          ..renderedAt = DateTime.now();
+        cache2.setUniqueKey();
 
-      // Verify correct number of cache entries
-      final caches = await isar.pdfCacheMetas.where().findAll();
-      expect(caches.length, 2);
-    }, skip: 'Requires native Isar runtime; run as integration test on device/desktop.');
+        await expectLater(
+          () => isar.writeTxn(() async {
+            await isar.pdfCacheMetas.put(cache2);
+          }),
+          throwsA(isA<IsarError>()),
+        );
 
-    test('RecentTabs userId unique constraint ensures single record', () async {
-      final isar = await IsarDb.instance.open();
+        // Should allow different pageIndex
+        final cache3 = PdfCacheMeta()
+          ..noteId = note.id
+          ..pageIndex =
+              1 // Different pageIndex
+          ..cachePath = '/test/path3.png'
+          ..dpi = 144
+          ..renderedAt = DateTime.now();
+        cache3.setUniqueKey();
 
-      // Create first RecentTabs record
-      final tabs1 = RecentTabs()
-        ..userId = 'local'
-        ..noteIdsJson = '[1, 2, 3]'
-        ..updatedAt = DateTime.now();
+        await isar.writeTxn(() async {
+          await isar.pdfCacheMetas.put(cache3);
+        });
 
-      await isar.writeTxn(() async {
-        await isar.recentTabs.put(tabs1);
-      });
+        // Verify correct number of cache entries
+        final caches = await isar.pdfCacheMetas.where().findAll();
+        expect(caches.length, 2);
+      },
+      skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
+    );
 
-      // Try to create duplicate userId
-      final tabs2 = RecentTabs()
-        ..userId = 'local'  // Same userId
-        ..noteIdsJson = '[4, 5, 6]'
-        ..updatedAt = DateTime.now();
+    test(
+      'RecentTabs userId unique constraint ensures single record',
+      () async {
+        final isar = await IsarDb.instance.open();
 
-      await expectLater(
-        () => isar.writeTxn(() async {
-          await isar.recentTabs.put(tabs2);
-        }),
-        throwsA(isA<IsarError>()),
-      );
+        // Create first RecentTabs record
+        final tabs1 = RecentTabs()
+          ..userId = 'local'
+          ..noteIdsJson = '[1, 2, 3]'
+          ..updatedAt = DateTime.now();
 
-      // Should allow different userId
-      final tabs3 = RecentTabs()
-        ..userId = 'user2'  // Different userId
-        ..noteIdsJson = '[7, 8, 9]'
-        ..updatedAt = DateTime.now();
+        await isar.writeTxn(() async {
+          await isar.recentTabs.put(tabs1);
+        });
 
-      await isar.writeTxn(() async {
-        await isar.recentTabs.put(tabs3);
-      });
+        // Try to create duplicate userId
+        final tabs2 = RecentTabs()
+          ..userId =
+              'local' // Same userId
+          ..noteIdsJson = '[4, 5, 6]'
+          ..updatedAt = DateTime.now();
 
-      // Verify correct records exist
-      final allTabs = await isar.recentTabs.where().findAll();
-      expect(allTabs.length, 2);
-      expect(allTabs.map((t) => t.userId).toSet(), {'local', 'user2'});
-    }, skip: 'Requires native Isar runtime; run as integration test on device/desktop.');
+        await expectLater(
+          () => isar.writeTxn(() async {
+            await isar.recentTabs.put(tabs2);
+          }),
+          throwsA(isA<IsarError>()),
+        );
+
+        // Should allow different userId
+        final tabs3 = RecentTabs()
+          ..userId =
+              'user2' // Different userId
+          ..noteIdsJson = '[7, 8, 9]'
+          ..updatedAt = DateTime.now();
+
+        await isar.writeTxn(() async {
+          await isar.recentTabs.put(tabs3);
+        });
+
+        // Verify correct records exist
+        final allTabs = await isar.recentTabs.where().findAll();
+        expect(allTabs.length, 2);
+        expect(allTabs.map((t) => t.userId).toSet(), {'local', 'user2'});
+      },
+      skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
+    );
   });
 }

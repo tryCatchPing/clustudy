@@ -1,22 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-import 'features/canvas/routing/canvas_routes.dart';
-import 'features/notes/data/notes_repository_provider.dart';
-import 'features/db/migrations/migration_runner.dart';
-import 'features/db/seed/seed_runner.dart';
-import 'shared/services/backup_service.dart';
-import 'shared/services/maintenance_jobs.dart';
-import 'features/home/routing/home_routes.dart';
-import 'features/notes/routing/notes_routes.dart';
+import 'package:it_contest/features/canvas/routing/canvas_routes.dart';
+import 'package:it_contest/features/db/migrations/migration_runner.dart';
+import 'package:it_contest/features/db/seed/seed_runner.dart';
+import 'package:it_contest/features/home/routing/home_routes.dart';
+import 'package:it_contest/features/notes/data/notes_repository_provider.dart';
+import 'package:it_contest/features/notes/routing/notes_routes.dart';
+import 'package:it_contest/shared/services/backup_service.dart';
+import 'package:it_contest/shared/services/maintenance_jobs.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Provider를 통한 데이터베이스 관리로 대체
   // DB 초기화는 Provider에서 자동으로 처리됨
-  
+
   runApp(const ProviderScope(child: MyApp()));
 }
 
@@ -62,7 +61,7 @@ class DatabaseInitializer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Isar Provider를 watch하여 DB 인스턴스 초기화
     final isarAsync = ref.watch(isarProvider);
-    
+
     return isarAsync.when(
       data: (isar) {
         // DB가 성공적으로 초기화된 경우
@@ -120,7 +119,7 @@ class DatabaseInitializer extends ConsumerWidget {
       ),
     );
   }
-  
+
   /// 마이그레이션과 시딩을 수행합니다
   Future<void> _runInitialSetup() async {
     await MigrationRunner.instance.runMigrationsIfNeeded();
@@ -137,9 +136,8 @@ class AppLifecycleManager extends ConsumerStatefulWidget {
   ConsumerState<AppLifecycleManager> createState() => _AppLifecycleManagerState();
 }
 
-class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> 
+class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager>
     with WidgetsBindingObserver {
-  
   @override
   void initState() {
     super.initState();

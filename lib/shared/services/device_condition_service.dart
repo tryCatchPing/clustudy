@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:battery_plus/battery_plus.dart';
-import 'connectivity_service.dart';
+import 'package:it_contest/shared/services/connectivity_service.dart';
 
 /// 디바이스 상태 (배터리, 충전, 연결성) 모니터링 서비스
 class DeviceConditionService {
@@ -74,11 +74,15 @@ class DeviceConditionService {
       // 3. 배터리 잔량 조건 체크
       final batteryLevel = await getBatteryLevel();
       if (batteryLevel < minBatteryLevel) {
-        print('DeviceConditionService: Battery level ($batteryLevel%) below minimum ($minBatteryLevel%), backup condition not met');
+        print(
+          'DeviceConditionService: Battery level ($batteryLevel%) below minimum ($minBatteryLevel%), backup condition not met',
+        );
         return false;
       }
 
-      print('DeviceConditionService: All backup conditions met - WiFi: ${requireWifi ? 'required & connected' : 'not required'}, Charging: ${requireCharging ? 'required & charging' : 'not required'}, Battery: $batteryLevel%');
+      print(
+        'DeviceConditionService: All backup conditions met - WiFi: ${requireWifi ? 'required & connected' : 'not required'}, Charging: ${requireCharging ? 'required & charging' : 'not required'}, Battery: $batteryLevel%',
+      );
       return true;
     } catch (e) {
       print('DeviceConditionService: Error checking backup conditions: $e');

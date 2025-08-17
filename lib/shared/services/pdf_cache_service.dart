@@ -1,14 +1,12 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:it_contest/features/db/isar_db.dart';
+import 'package:it_contest/features/pdf_cache/data/isar_pdf_cache_repository.dart';
+import 'package:it_contest/features/pdf_cache/data/pdf_cache_repository.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:pdfx/pdfx.dart';
-
-import '../../features/db/isar_db.dart';
-import '../../features/db/models/vault_models.dart';
-import '../../features/pdf_cache/data/isar_pdf_cache_repository.dart';
-import '../../features/pdf_cache/data/pdf_cache_repository.dart';
 
 class PdfCacheService {
   final PdfCacheRepository _repository;
@@ -38,14 +36,14 @@ class PdfCacheService {
 
   /// 캐시 파일의 상대 경로 반환 (기존 API와 호환)
   String path({required int noteId, required int pageIndex, int dpi = 144}) {
-    return 'notes/$noteId/pdf_cache/${pageIndex}@${dpi}.png';
+    return 'notes/$noteId/pdf_cache/$pageIndex@$dpi.png';
   }
 
   /// 캐시 파일의 절대 경로 반환
   Future<String> absolutePath({required int noteId, required int pageIndex, int dpi = 144}) async {
     final base = await _baseDir();
     final dir = p.join(base, '$noteId', 'pdf_cache');
-    final name = '${pageIndex}@${dpi}.png';
+    final name = '$pageIndex@$dpi.png';
     await Directory(dir).create(recursive: true);
     return p.join(dir, name);
   }
@@ -86,9 +84,7 @@ class PdfCacheService {
       final page = await isar.pages
           .filter()
           .noteIdEqualTo(noteId)
-          .and()
           .indexEqualTo(pageIndex)
-          .and()
           .deletedAtIsNull()
           .findFirst();
 
@@ -97,7 +93,7 @@ class PdfCacheService {
       }
 
       resolvedPdfPath = page.pdfOriginalPath;
-      if (resolvedPdfPath == null || !await File(resolvedPdfPath).exists()) {
+      if (!await File(resolvedPdfPath).exists()) {
         throw StateError('Original PDF not available for rendering');
       }
 
@@ -144,7 +140,6 @@ class PdfCacheService {
 
       await _enforceGlobalSizeLimit();
       return file;
-
     } finally {
       try {
         await doc?.close();
@@ -198,7 +193,7 @@ class PdfCacheService {
 
       // Repository에서 메타데이터 배치 삭제
       if (_repository is IsarPdfCacheRepository && metaIdsToDelete.isNotEmpty) {
-        await (_repository as IsarPdfCacheRepository).deleteCacheMetasBatch(metaIdsToDelete);
+        await (_repository).deleteCacheMetasBatch(metaIdsToDelete);
       }
     } catch (e) {
       // 캐시 정리 실패는 로그만 남기고 계속 진행
@@ -245,7 +240,7 @@ class PdfCacheService {
     final maxBytes = maxMB * 1024 * 1024;
 
     if (_repository is IsarPdfCacheRepository) {
-      final sizeByNote = await (_repository as IsarPdfCacheRepository).getCacheSizeByNote();
+      final sizeByNote = await (_repository).getCacheSizeByNote();
 
       return {
         'totalSizeBytes': totalBytes,
@@ -273,8 +268,7 @@ class PdfCacheService {
     final cutoffDate = DateTime.now().subtract(olderThan);
 
     if (_repository is IsarPdfCacheRepository) {
-      final oldMetas = await (_repository as IsarPdfCacheRepository)
-          .getCacheMetasOlderThan(cutoffDate);
+      final oldMetas = await (_repository).getCacheMetasOlderThan(cutoffDate);
 
       // 파일 삭제
       for (final meta in oldMetas) {
@@ -291,7 +285,7 @@ class PdfCacheService {
       // 메타데이터 배치 삭제
       final metaIds = oldMetas.map((meta) => meta.id!).toList();
       if (metaIds.isNotEmpty) {
-        await (_repository as IsarPdfCacheRepository).deleteCacheMetasBatch(metaIds);
+        await (_repository).deleteCacheMetasBatch(metaIds);
       }
     }
   }
@@ -301,5 +295,3 @@ class PdfCacheService {
     _repository.dispose();
   }
 }
-
-

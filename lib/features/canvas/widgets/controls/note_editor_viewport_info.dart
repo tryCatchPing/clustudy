@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../providers/note_editor_provider.dart';
-import '../../providers/transformation_controller_provider.dart';
-
 /// 캔버스와 뷰포트 정보를 표시하는 위젯
 class NoteEditorViewportInfo extends ConsumerWidget {
   /// [NoteEditorViewportInfo]의 생성자.

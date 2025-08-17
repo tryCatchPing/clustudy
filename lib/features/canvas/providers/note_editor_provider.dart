@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:it_contest/features/canvas/constants/note_editor_constant.dart';
+import 'package:it_contest/features/canvas/models/tool_mode.dart';
+import 'package:it_contest/features/canvas/notifiers/custom_scribble_notifier.dart';
+import 'package:it_contest/features/canvas/providers/tool_settings_provider.dart';
+import 'package:it_contest/features/notes/data/derived_note_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-
-import '../../notes/data/derived_note_providers.dart';
-import '../constants/note_editor_constant.dart';
-import '../models/tool_mode.dart';
-import '../notifiers/custom_scribble_notifier.dart';
-import 'tool_settings_provider.dart';
 
 part 'note_editor_provider.g.dart';
 

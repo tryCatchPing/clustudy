@@ -76,7 +76,11 @@ class Note {
   late String pageOrientation; // portrait, landscape
 
   // Unique within (vaultId, folderId): lower(name)
-  @Index(composite: [CompositeIndex('vaultId'), CompositeIndex('folderId')], unique: true, caseSensitive: false)
+  @Index(
+    composite: [CompositeIndex('vaultId'), CompositeIndex('folderId')],
+    unique: true,
+    caseSensitive: false,
+  )
   late String nameLowerForParentUnique;
 
   // Performance optimization: composite index for folder listing queries (vaultId, folderId, sortIndex)
@@ -196,7 +200,14 @@ class GraphEdge {
   late int toNoteId;
 
   // Composite unique index to prevent duplicate edges between the same notes in a vault
-  @Index(composite: [CompositeIndex('vaultId'), CompositeIndex('fromNoteId'), CompositeIndex('toNoteId')], unique: true)
+  @Index(
+    composite: [
+      CompositeIndex('vaultId'),
+      CompositeIndex('fromNoteId'),
+      CompositeIndex('toNoteId'),
+    ],
+    unique: true,
+  )
   String get _uniqueEdgeKey => '${vaultId}_${fromNoteId}_$toNoteId';
 
   @Index()
@@ -272,5 +283,3 @@ class SettingsEntity {
   bool? backupOnlyWhenCharging; // default false (placeholder without battery plugin)
   int? pdfCacheMaxMB; // default 512MB
 }
-
-

@@ -1,11 +1,10 @@
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../shared/routing/app_routes.dart';
-import '../../../shared/widgets/app_branding_header.dart';
-import '../../../shared/widgets/info_card.dart';
-import '../../../shared/widgets/navigation_card.dart';
+import 'package:it_contest/shared/routing/app_routes.dart';
+import 'package:it_contest/shared/widgets/app_branding_header.dart';
+import 'package:it_contest/shared/widgets/info_card.dart';
+import 'package:it_contest/shared/widgets/navigation_card.dart';
 
 /// 🏠 홈페이지 (시연/테스트용)
 ///

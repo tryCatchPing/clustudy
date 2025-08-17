@@ -210,8 +210,7 @@ class FileStorageService {
         } else if (entity is Directory) {
           final dirName = path.basename(entity.path);
           // 노트 ID 패턴인지 확인 (향후 더 정교한 검증 가능)
-          if (!dirName.startsWith('.') &&
-              !['pages', 'sketches'].contains(dirName)) {
+          if (!dirName.startsWith('.') && !['pages', 'sketches'].contains(dirName)) {
             totalNotes++;
           }
         }

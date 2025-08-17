@@ -1,9 +1,8 @@
 import 'package:isar/isar.dart';
-
-import '../../db/isar_db.dart';
-import '../../db/models/vault_models.dart';
-import '../models/pdf_cache_meta_model.dart';
-import 'pdf_cache_repository.dart';
+import 'package:it_contest/features/db/isar_db.dart';
+import 'package:it_contest/features/db/models/vault_models.dart';
+import 'package:it_contest/features/pdf_cache/data/pdf_cache_repository.dart';
+import 'package:it_contest/features/pdf_cache/models/pdf_cache_meta_model.dart';
 
 /// Isar 기반 PDF 캐시 Repository 구현체
 class IsarPdfCacheRepository implements PdfCacheRepository {
@@ -36,7 +35,7 @@ class IsarPdfCacheRepository implements PdfCacheRepository {
           .findFirst();
 
       final meta = existing ?? PdfCacheMeta();
-      
+
       if (existing == null) {
         meta
           ..noteId = noteId
@@ -52,7 +51,7 @@ class IsarPdfCacheRepository implements PdfCacheRepository {
 
       // Unique constraint key 설정
       meta.setUniqueKey();
-      
+
       await isar.pdfCacheMetas.put(meta);
     });
   }
@@ -67,11 +66,8 @@ class IsarPdfCacheRepository implements PdfCacheRepository {
     await isar.writeTxn(() async {
       if (pageIndex == null) {
         // 노트의 모든 캐시 메타데이터 삭제
-        final metas = await isar.pdfCacheMetas
-            .filter()
-            .noteIdEqualTo(noteId)
-            .findAll();
-        
+        final metas = await isar.pdfCacheMetas.filter().noteIdEqualTo(noteId).findAll();
+
         if (metas.isNotEmpty) {
           await isar.pdfCacheMetas.deleteAll(metas.map((e) => e.id).toList());
         }
@@ -83,7 +79,7 @@ class IsarPdfCacheRepository implements PdfCacheRepository {
             .and()
             .pageIndexEqualTo(pageIndex)
             .findAll();
-        
+
         if (metas.isNotEmpty) {
           await isar.pdfCacheMetas.deleteAll(metas.map((e) => e.id).toList());
         }
@@ -114,10 +110,7 @@ class IsarPdfCacheRepository implements PdfCacheRepository {
   Future<List<PdfCacheMetaModel>> getAllCacheMetaOrderByLastAccess() async {
     final isar = await _open();
 
-    final metas = await isar.pdfCacheMetas
-        .where()
-        .sortByLastAccessAt()
-        .findAll();
+    final metas = await isar.pdfCacheMetas.where().sortByLastAccessAt().findAll();
 
     return metas.map(_mapToModel).toList();
   }
@@ -127,7 +120,7 @@ class IsarPdfCacheRepository implements PdfCacheRepository {
     final isar = await _open();
 
     final metas = await isar.pdfCacheMetas.where().findAll();
-    
+
     return metas.fold<int>(0, (total, meta) => total + meta.sizeBytes);
   }
 

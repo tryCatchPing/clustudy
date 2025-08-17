@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../features/pdf_cache/data/pdf_cache_repository_provider.dart';
-import 'pdf_cache_service.dart';
+import 'package:it_contest/features/pdf_cache/data/pdf_cache_repository_provider.dart';
+import 'package:it_contest/shared/services/pdf_cache_service.dart';
 
 /// PDF Cache Service Provider
 ///

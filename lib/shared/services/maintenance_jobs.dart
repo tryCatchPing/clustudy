@@ -1,10 +1,8 @@
 import 'dart:async';
 
-import 'package:isar/isar.dart';
-
-import '../../features/db/isar_db.dart';
-import '../../features/db/models/vault_models.dart';
-import '../../services/recent_tabs/recent_tabs_service.dart';
+import 'package:it_contest/features/db/isar_db.dart';
+import 'package:it_contest/features/db/models/vault_models.dart';
+import 'package:it_contest/services/recent_tabs/recent_tabs_service.dart';
 
 class MaintenanceJobs {
   MaintenanceJobs._();
@@ -34,7 +32,12 @@ class MaintenanceJobs {
         deleted += pages.length;
       }
       // also trim dangling links older than threshold
-      final links = await isar.linkEntitys.filter().danglingEqualTo(true).and().updatedAtLessThan(threshold).findAll();
+      final links = await isar.linkEntitys
+          .filter()
+          .danglingEqualTo(true)
+          .and()
+          .updatedAtLessThan(threshold)
+          .findAll();
       if (links.isNotEmpty) {
         await isar.linkEntitys.deleteAll(links.map((e) => e.id).toList());
         deleted += links.length;
@@ -132,5 +135,3 @@ class MaintenanceJobs {
     _maintenanceTimer = null;
   }
 }
-
-

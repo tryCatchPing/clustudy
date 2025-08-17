@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../providers/note_editor_provider.dart';
+import 'package:it_contest/features/canvas/providers/note_editor_provider.dart';
 
 /// 필압 시뮬레이션 토글 위젯입니다.
 ///
@@ -19,8 +19,7 @@ class NoteEditorPressureToggle extends ConsumerWidget {
       scale: 0.75, // 전체 크기를 75%로 축소 (약 2/3)
       child: Switch.adaptive(
         value: simulatePressure,
-        onChanged: (value) =>
-            ref.read(simulatePressureProvider.notifier).setValue(value),
+        onChanged: (value) => ref.read(simulatePressureProvider.notifier).setValue(value),
         activeColor: Colors.orange[600],
         inactiveTrackColor: Colors.green[200],
       ),

@@ -1,9 +1,6 @@
 import 'dart:convert';
 
-import 'package:isar/isar.dart';
-
-import '../../features/db/isar_db.dart';
-import '../../features/db/models/vault_models.dart';
+import 'package:it_contest/features/db/isar_db.dart';
 
 /// Service responsible for maintaining RecentTabs integrity.
 ///
@@ -54,5 +51,3 @@ class RecentTabsService {
     });
   }
 }
-
-

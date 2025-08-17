@@ -1,7 +1,6 @@
 import 'package:isar/isar.dart';
 
-import '../../features/db/isar_db.dart';
-import '../../features/db/models/vault_models.dart';
+import 'package:it_contest/features/db/isar_db.dart';
 
 /// Thrown when there is no integer gap between prev and next indices.
 class SortIndexGapExhausted implements Exception {
@@ -10,7 +9,7 @@ class SortIndexGapExhausted implements Exception {
   final String message;
 
   SortIndexGapExhausted({this.prev, this.next, this.message = 'No gap between sort indices'})
-      : super();
+    : super();
 
   @override
   String toString() => 'SortIndexGapExhausted(prev: $prev, next: $next, message: $message)';
@@ -38,7 +37,11 @@ int computeSortIndexBetween({int? prev, int? next, int step = 1000}) {
     // insert before next
     final int candidate = next - step;
     if (candidate <= 0) {
-      throw SortIndexGapExhausted(prev: prev, next: next, message: 'Insufficient headroom before next');
+      throw SortIndexGapExhausted(
+        prev: prev,
+        next: next,
+        message: 'Insufficient headroom before next',
+      );
     }
     return candidate;
   }
@@ -123,5 +126,3 @@ Future<void> _reindexPagesForNote({required int noteId}) async {
     }
   });
 }
-
-

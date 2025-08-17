@@ -29,5 +29,3 @@ class CryptoKeys {
   String _encode(List<int> bytes) => base64Encode(bytes);
   List<int> _decode(String s) => base64Decode(s);
 }
-
-

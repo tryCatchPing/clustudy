@@ -1,12 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
-
-import '../../db/isar_db.dart';
-import '../../db/models/vault_models.dart';
-import '../models/note_model.dart';
-import 'memory_notes_repository.dart';
-import 'isar_notes_repository.dart';
-import 'notes_repository.dart';
+import 'package:it_contest/features/db/isar_db.dart';
+import 'package:it_contest/features/notes/data/isar_notes_repository.dart';
+import 'package:it_contest/features/notes/data/memory_notes_repository.dart';
+import 'package:it_contest/features/notes/data/notes_repository.dart';
+import 'package:it_contest/features/notes/models/note_model.dart';
 
 /// Isar 데이터베이스 인스턴스 Provider
 ///
@@ -26,7 +24,7 @@ final isarProvider = Provider<Future<Isar>>((ref) async {
 /// 기본 볼트 ID Provider (설정 가능)
 final defaultVaultIdProvider = Provider<int>((ref) {
   // 환경 변수나 설정에서 읽어올 수 있음
-  return int.fromEnvironment('DEFAULT_VAULT_ID', defaultValue: 1);
+  return const int.fromEnvironment('DEFAULT_VAULT_ID', defaultValue: 1);
 });
 
 /// 앱 전역에서 사용할 `NotesRepository` Provider
@@ -128,9 +126,7 @@ final pdfNotesProvider = StreamProvider<List<NoteModel>>((ref) {
     return repository.watchPdfNotes();
   }
 
-  return repository.watchNotes().map((notes) =>
-    notes.where((note) => note.isPdfBased).toList()
-  );
+  return repository.watchNotes().map((notes) => notes.where((note) => note.isPdfBased).toList());
 });
 
 /// 노트 검색 Provider
@@ -141,10 +137,9 @@ final searchNotesProvider = StreamProvider.family<List<NoteModel>, String>((ref,
     return repository.searchNotesByTitle(query);
   }
 
-  return repository.watchNotes().map((notes) =>
-    notes.where((note) =>
-      note.title.toLowerCase().contains(query.toLowerCase())
-    ).toList()
+  return repository.watchNotes().map(
+    (notes) =>
+        notes.where((note) => note.title.toLowerCase().contains(query.toLowerCase())).toList(),
   );
 });
 
@@ -162,8 +157,6 @@ final notesStatisticsProvider = FutureProvider<Map<String, int>>((ref) async {
     'total': notes.length,
     'pdf_based': notes.where((n) => n.isPdfBased).length,
     'blank': notes.where((n) => n.isBlank).length,
-    'recent_week': notes.where((n) =>
-      DateTime.now().difference(n.updatedAt).inDays <= 7
-    ).length,
+    'recent_week': notes.where((n) => DateTime.now().difference(n.updatedAt).inDays <= 7).length,
   };
 });

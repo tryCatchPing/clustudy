@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import '../models/note_model.dart';
+import 'package:it_contest/features/notes/models/note_model.dart';
 
 /// 노트에 대한 영속성 접근을 추상화하는 Repository 인터페이스.
 ///

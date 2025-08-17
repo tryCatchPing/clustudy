@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../providers/note_editor_provider.dart';
-
 /// 📄 페이지 네비게이션 컨트롤 위젯
 ///
 /// 다음 기능을 제공합니다:
@@ -84,14 +82,10 @@ class NoteEditorPageNavigation extends ConsumerWidget {
                   },
                   child: Container(
                     decoration: BoxDecoration(
-                      color: isCurrentPage
-                          ? Theme.of(context).primaryColor
-                          : Colors.grey[200],
+                      color: isCurrentPage ? Theme.of(context).primaryColor : Colors.grey[200],
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: isCurrentPage
-                            ? Theme.of(context).primaryColor
-                            : Colors.grey[400]!,
+                        color: isCurrentPage ? Theme.of(context).primaryColor : Colors.grey[400]!,
                         width: 2,
                       ),
                     ),
@@ -160,9 +154,7 @@ class NoteEditorPageNavigation extends ConsumerWidget {
             ), // 32x32 -> 28x28로 축소
             style: IconButton.styleFrom(
               backgroundColor: canGoPrevious ? null : Colors.grey[100],
-              foregroundColor: canGoPrevious
-                  ? Colors.black87
-                  : Colors.grey[400],
+              foregroundColor: canGoPrevious ? Colors.black87 : Colors.grey[400],
             ),
           ),
 
@@ -170,9 +162,7 @@ class NoteEditorPageNavigation extends ConsumerWidget {
 
           // 현재 페이지 표시 (탭하면 페이지 선택 다이얼로그)
           InkWell(
-            onTap: totalPages > 1
-                ? () => _showPageSelector(context, ref)
-                : null,
+            onTap: totalPages > 1 ? () => _showPageSelector(context, ref) : null,
             borderRadius: BorderRadius.circular(16),
             child: Container(
               padding: const EdgeInsets.symmetric(

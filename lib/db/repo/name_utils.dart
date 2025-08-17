@@ -20,8 +20,7 @@ class NameUtils {
     // Prefer unique composite index lookup if available (nameLowerForVaultUnique + vaultId)
     Folder? found;
     try {
-      found = await isar.folders
-          .getByNameLowerForVaultUnique(normalized, vaultId);
+      found = await isar.folders.getByNameLowerForVaultUnique(normalized, vaultId);
     } on IsarError {
       // Fallback to filter in case codegen name changes; still correct though not index-optimized.
       found = await isar.folders
@@ -79,8 +78,7 @@ class NameUtils {
     }
     // Prefer the base label as-is if available.
     final baseLower = trimmed.toLowerCase();
-    final existsBase =
-        await existsNoteNameLower(vaultId, folderId, baseLower);
+    final existsBase = await existsNoteNameLower(vaultId, folderId, baseLower);
     if (!existsBase) return trimmed;
 
     // Try with numeric suffixes starting from 2.
@@ -138,5 +136,3 @@ Future<String> generateUniqueNoteName(
 ) {
   return NameUtils.generateUniqueNoteName(vaultId, folderId, baseLabel);
 }
-
-

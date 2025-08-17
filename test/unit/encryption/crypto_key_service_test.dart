@@ -16,46 +16,52 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   const MethodChannel pathProviderChannel = MethodChannel('plugins.flutter.io/path_provider');
-  const MethodChannel secureStorageChannel = MethodChannel('plugins.it_all_the_time/flutter_secure_storage');
+  const MethodChannel secureStorageChannel = MethodChannel(
+    'plugins.it_all_the_time/flutter_secure_storage',
+  );
   Directory? tempRoot;
-  Map<String, String> mockStorage = {};
+  final Map<String, String> mockStorage = {};
 
   setUp(() async {
     // Ensure fresh temp directory per test and mock path_provider
     tempRoot = await Directory.systemTemp.createTemp('it_contest_test_');
     mockStorage.clear();
 
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(pathProviderChannel, (MethodCall call) async {
-      if (call.method == 'getApplicationDocumentsDirectory') {
-        return tempRoot!.path;
-      }
-      return null;
-    });
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      pathProviderChannel,
+      (MethodCall call) async {
+        if (call.method == 'getApplicationDocumentsDirectory') {
+          return tempRoot!.path;
+        }
+        return null;
+      },
+    );
 
     // Mock flutter_secure_storage
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(secureStorageChannel, (MethodCall call) async {
-      if (call.method == 'read') {
-        final key = call.arguments['key'] as String;
-        return mockStorage[key];
-      }
-      if (call.method == 'write') {
-        final key = call.arguments['key'] as String;
-        final value = call.arguments['value'] as String;
-        mockStorage[key] = value;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      secureStorageChannel,
+      (MethodCall call) async {
+        if (call.method == 'read') {
+          final key = call.arguments['key'] as String;
+          return mockStorage[key];
+        }
+        if (call.method == 'write') {
+          final key = call.arguments['key'] as String;
+          final value = call.arguments['value'] as String;
+          mockStorage[key] = value;
+          return null;
+        }
+        if (call.method == 'delete') {
+          final key = call.arguments['key'] as String;
+          mockStorage.remove(key);
+          return null;
+        }
+        if (call.method == 'readAll') {
+          return Map<String, String>.from(mockStorage);
+        }
         return null;
-      }
-      if (call.method == 'delete') {
-        final key = call.arguments['key'] as String;
-        mockStorage.remove(key);
-        return null;
-      }
-      if (call.method == 'readAll') {
-        return Map<String, String>.from(mockStorage);
-      }
-      return null;
-    });
+      },
+    );
 
     // Make sure DB is closed before each test
     await IsarDb.instance.close();
@@ -64,10 +70,14 @@ void main() {
   tearDown(() async {
     // Close DB and clean temp dir
     await IsarDb.instance.close();
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(pathProviderChannel, null);
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(secureStorageChannel, null);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      pathProviderChannel,
+      null,
+    );
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      secureStorageChannel,
+      null,
+    );
     if (tempRoot != null && await tempRoot!.exists()) {
       await tempRoot!.delete(recursive: true);
     }
@@ -195,139 +205,159 @@ void main() {
       expect(remainingAliases, containsAll(['3000000000000', '4000000000000']));
     });
 
-    test('reencryptDatabase preserves data with new encryption key', () async {
-      final isar = await IsarDb.instance.open();
+    test(
+      'reencryptDatabase preserves data with new encryption key',
+      () async {
+        final isar = await IsarDb.instance.open();
 
-      // Create test data
-      final vault = await NoteDbService.instance.createVault(name: 'TestVault');
-      final note = await NoteDbService.instance.createNote(
-        vaultId: vault.id,
-        name: 'TestNote',
-        pageSize: 'A4',
-        pageOrientation: 'portrait',
-      );
+        // Create test data
+        final vault = await NoteDbService.instance.createVault(name: 'TestVault');
+        final note = await NoteDbService.instance.createNote(
+          vaultId: vault.id,
+          name: 'TestNote',
+          pageSize: 'A4',
+          pageOrientation: 'portrait',
+        );
 
-      // Get current key and create new key for reencryption
-      final oldKey = await CryptoKeyService.instance.loadKey();
-      final newKey = await CryptoKeyService.instance.rotateKey();
+        // Get current key and create new key for reencryption
+        final oldKey = await CryptoKeyService.instance.loadKey();
+        final newKey = await CryptoKeyService.instance.rotateKey();
 
-      // Reencrypt database
-      await CryptoKeyService.instance.reencryptDatabase(oldKey!, newKey);
+        // Reencrypt database
+        await CryptoKeyService.instance.reencryptDatabase(oldKey!, newKey);
 
-      // Verify data is still accessible
-      final vaults = await isar.vaults.where().findAll();
-      expect(vaults.length, 1);
-      expect(vaults.first.name, 'TestVault');
+        // Verify data is still accessible
+        final vaults = await isar.vaults.where().findAll();
+        expect(vaults.length, 1);
+        expect(vaults.first.name, 'TestVault');
 
-      final notes = await isar.notes.where().findAll();
-      expect(notes.length, 1);
-      expect(notes.first.name, 'TestNote');
-    }, skip: 'Requires native Isar runtime; run as integration test on device/desktop.');
+        final notes = await isar.notes.where().findAll();
+        expect(notes.length, 1);
+        expect(notes.first.name, 'TestNote');
+      },
+      skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
+    );
   });
 
   group('IsarDb Encryption Integration Tests', () {
-    test('toggleEncryption enables encryption for new database', () async {
-      final isar = await IsarDb.instance.open();
+    test(
+      'toggleEncryption enables encryption for new database',
+      () async {
+        final isar = await IsarDb.instance.open();
 
-      // Create test data
-      final vault = await NoteDbService.instance.createVault(name: 'TestVault');
-      final note = await NoteDbService.instance.createNote(
-        vaultId: vault.id,
-        name: 'TestNote',
-        pageSize: 'A4',
-        pageOrientation: 'portrait',
-      );
+        // Create test data
+        final vault = await NoteDbService.instance.createVault(name: 'TestVault');
+        final note = await NoteDbService.instance.createNote(
+          vaultId: vault.id,
+          name: 'TestNote',
+          pageSize: 'A4',
+          pageOrientation: 'portrait',
+        );
 
-      // Enable encryption
-      await IsarDb.instance.toggleEncryption(enable: true);
+        // Enable encryption
+        await IsarDb.instance.toggleEncryption(enable: true);
 
-      // Verify data is still accessible
-      final vaults = await isar.vaults.where().findAll();
-      expect(vaults.length, 1);
-      expect(vaults.first.name, 'TestVault');
+        // Verify data is still accessible
+        final vaults = await isar.vaults.where().findAll();
+        expect(vaults.length, 1);
+        expect(vaults.first.name, 'TestVault');
 
-      // Verify encryption setting
-      final settings = await isar.settingsEntitys.where().findFirst();
-      expect(settings?.encryptionEnabled, isTrue);
-    }, skip: 'Requires native Isar runtime; run as integration test on device/desktop.');
+        // Verify encryption setting
+        final settings = await isar.settingsEntitys.where().findFirst();
+        expect(settings?.encryptionEnabled, isTrue);
+      },
+      skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
+    );
 
-    test('toggleEncryption disables encryption', () async {
-      final isar = await IsarDb.instance.open();
+    test(
+      'toggleEncryption disables encryption',
+      () async {
+        final isar = await IsarDb.instance.open();
 
-      // Create test data and enable encryption first
-      final vault = await NoteDbService.instance.createVault(name: 'TestVault');
-      await IsarDb.instance.toggleEncryption(enable: true);
+        // Create test data and enable encryption first
+        final vault = await NoteDbService.instance.createVault(name: 'TestVault');
+        await IsarDb.instance.toggleEncryption(enable: true);
 
-      // Disable encryption
-      await IsarDb.instance.toggleEncryption(enable: false);
+        // Disable encryption
+        await IsarDb.instance.toggleEncryption(enable: false);
 
-      // Verify data is still accessible
-      final vaults = await isar.vaults.where().findAll();
-      expect(vaults.length, 1);
-      expect(vaults.first.name, 'TestVault');
+        // Verify data is still accessible
+        final vaults = await isar.vaults.where().findAll();
+        expect(vaults.length, 1);
+        expect(vaults.first.name, 'TestVault');
 
-      // Verify encryption setting
-      final settings = await isar.settingsEntitys.where().findFirst();
-      expect(settings?.encryptionEnabled, isFalse);
-    }, skip: 'Requires native Isar runtime; run as integration test on device/desktop.');
+        // Verify encryption setting
+        final settings = await isar.settingsEntitys.where().findFirst();
+        expect(settings?.encryptionEnabled, isFalse);
+      },
+      skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
+    );
 
-    test('open with enableEncryption=true uses encryption key', () async {
-      // Create encryption key first
-      final key = await CryptoKeyService.instance.getOrCreateKey();
+    test(
+      'open with enableEncryption=true uses encryption key',
+      () async {
+        // Create encryption key first
+        final key = await CryptoKeyService.instance.getOrCreateKey();
 
-      // Open with encryption enabled
-      final isar = await IsarDb.instance.open(enableEncryption: true);
+        // Open with encryption enabled
+        final isar = await IsarDb.instance.open(enableEncryption: true);
 
-      // Create settings to enable encryption
-      await isar.writeTxn(() async {
-        final settings = SettingsEntity()
-          ..encryptionEnabled = true
-          ..backupDailyAt = '02:00'
-          ..backupRetentionDays = 7
-          ..recycleRetentionDays = 30;
-        await isar.settingsEntitys.put(settings);
-      });
+        // Create settings to enable encryption
+        await isar.writeTxn(() async {
+          final settings = SettingsEntity()
+            ..encryptionEnabled = true
+            ..backupDailyAt = '02:00'
+            ..backupRetentionDays = 7
+            ..recycleRetentionDays = 30;
+          await isar.settingsEntitys.put(settings);
+        });
 
-      // Create test data
-      final vault = await NoteDbService.instance.createVault(name: 'EncryptedVault');
+        // Create test data
+        final vault = await NoteDbService.instance.createVault(name: 'EncryptedVault');
 
-      // Close and reopen - should work with same key
-      await IsarDb.instance.close();
-      final reopenedIsar = await IsarDb.instance.open(enableEncryption: true);
+        // Close and reopen - should work with same key
+        await IsarDb.instance.close();
+        final reopenedIsar = await IsarDb.instance.open(enableEncryption: true);
 
-      // Verify data is accessible
-      final vaults = await reopenedIsar.vaults.where().findAll();
-      expect(vaults.length, 1);
-      expect(vaults.first.name, 'EncryptedVault');
-    }, skip: 'Requires native Isar runtime; run as integration test on device/desktop.');
+        // Verify data is accessible
+        final vaults = await reopenedIsar.vaults.where().findAll();
+        expect(vaults.length, 1);
+        expect(vaults.first.name, 'EncryptedVault');
+      },
+      skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
+    );
 
-    test('open with explicit encryptionKey parameter uses provided key', () async {
-      // Create custom key
-      final customKey = List<int>.generate(32, (i) => i % 256);
+    test(
+      'open with explicit encryptionKey parameter uses provided key',
+      () async {
+        // Create custom key
+        final customKey = List<int>.generate(32, (i) => i % 256);
 
-      // Open with explicit key
-      final isar = await IsarDb.instance.open(encryptionKey: customKey);
+        // Open with explicit key
+        final isar = await IsarDb.instance.open(encryptionKey: customKey);
 
-      // Create test data
-      final vault = await NoteDbService.instance.createVault(name: 'CustomKeyVault');
+        // Create test data
+        final vault = await NoteDbService.instance.createVault(name: 'CustomKeyVault');
 
-      // Close and reopen with same key
-      await IsarDb.instance.close();
-      final reopenedIsar = await IsarDb.instance.open(encryptionKey: customKey);
+        // Close and reopen with same key
+        await IsarDb.instance.close();
+        final reopenedIsar = await IsarDb.instance.open(encryptionKey: customKey);
 
-      // Verify data is accessible
-      final vaults = await reopenedIsar.vaults.where().findAll();
-      expect(vaults.length, 1);
-      expect(vaults.first.name, 'CustomKeyVault');
+        // Verify data is accessible
+        final vaults = await reopenedIsar.vaults.where().findAll();
+        expect(vaults.length, 1);
+        expect(vaults.first.name, 'CustomKeyVault');
 
-      // Try opening with wrong key should fail
-      await IsarDb.instance.close();
-      final wrongKey = List<int>.generate(32, (i) => (i + 1) % 256);
+        // Try opening with wrong key should fail
+        await IsarDb.instance.close();
+        final wrongKey = List<int>.generate(32, (i) => (i + 1) % 256);
 
-      await expectLater(
-        () => IsarDb.instance.open(encryptionKey: wrongKey),
-        throwsA(isA<IsarError>()),
-      );
-    }, skip: 'Requires native Isar runtime; run as integration test on device/desktop.');
+        await expectLater(
+          () => IsarDb.instance.open(encryptionKey: wrongKey),
+          throwsA(isA<IsarError>()),
+        );
+      },
+      skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
+    );
   });
 }

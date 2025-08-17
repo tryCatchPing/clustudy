@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../../shared/routing/app_routes.dart';
-import '../../../shared/services/note_deletion_service.dart';
-import '../../../shared/services/note_service.dart';
-import '../../../shared/widgets/navigation_card.dart';
-import '../data/derived_note_providers.dart';
-import '../data/notes_repository_provider.dart';
+import 'package:it_contest/features/notes/data/derived_note_providers.dart';
+import 'package:it_contest/features/notes/data/notes_repository_provider.dart';
+import 'package:it_contest/shared/routing/app_routes.dart';
+import 'package:it_contest/shared/services/note_deletion_service.dart';
+import 'package:it_contest/shared/services/note_service.dart';
+import 'package:it_contest/shared/widgets/navigation_card.dart';
 
 /// 노트 목록을 표시하고 새로운 노트를 생성하는 화면입니다.
 ///
@@ -222,8 +221,7 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                       child: NavigationCard(
                                         icon: Icons.brush,
                                         title: notes[i].title,
-                                        subtitle:
-                                            '${notes[i].pages.length} 페이지',
+                                        subtitle: '${notes[i].pages.length} 페이지',
                                         color: const Color(0xFF6750A4),
                                         onTap: () {
                                           debugPrint(
@@ -252,8 +250,7 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                     ),
                                   ],
                                 ),
-                                if (i < notes.length - 1)
-                                  const SizedBox(height: 16),
+                                if (i < notes.length - 1) const SizedBox(height: 16),
                               ],
                             ],
                           );

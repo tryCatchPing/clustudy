@@ -13,10 +13,14 @@ class RectNorm {
     double nx1 = x1.clamp(0.0, 1.0);
     double ny1 = y1.clamp(0.0, 1.0);
     if (nx0 > nx1) {
-      final t = nx0; nx0 = nx1; nx1 = t;
+      final t = nx0;
+      nx0 = nx1;
+      nx1 = t;
     }
     if (ny0 > ny1) {
-      final t = ny0; ny0 = ny1; ny1 = t;
+      final t = ny0;
+      ny0 = ny1;
+      ny1 = t;
     }
     return RectNorm(x0: nx0, y0: ny0, x1: nx1, y1: ny1);
   }
@@ -30,5 +34,3 @@ class RectNorm {
     }
   }
 }
-
-

@@ -1,8 +1,7 @@
 import 'dart:convert';
 
+import 'package:it_contest/features/canvas/constants/note_editor_constant.dart';
 import 'package:scribble/scribble.dart';
-
-import '../../canvas/constants/note_editor_constant.dart';
 
 /// 페이지 배경의 타입을 정의합니다.
 enum PageBackgroundType {
@@ -88,8 +87,7 @@ class NotePageModel {
   }
 
   /// PDF 배경이 있는지 여부를 반환합니다.
-  bool get hasPdfBackground =>
-      backgroundType == PageBackgroundType.pdf && showBackgroundImage;
+  bool get hasPdfBackground => backgroundType == PageBackgroundType.pdf && showBackgroundImage;
 
   /// 사전 렌더링된 이미지가 있는지 여부를 반환합니다.
   bool get hasPreRenderedImage => preRenderedImagePath != null;
@@ -128,8 +126,7 @@ class NotePageModel {
       jsonData: jsonData ?? this.jsonData,
       backgroundType: backgroundType ?? this.backgroundType,
       backgroundPdfPath: backgroundPdfPath ?? this.backgroundPdfPath,
-      backgroundPdfPageNumber:
-          backgroundPdfPageNumber ?? this.backgroundPdfPageNumber,
+      backgroundPdfPageNumber: backgroundPdfPageNumber ?? this.backgroundPdfPageNumber,
       backgroundWidth: backgroundWidth ?? this.backgroundWidth,
       backgroundHeight: backgroundHeight ?? this.backgroundHeight,
       preRenderedImagePath: preRenderedImagePath ?? this.preRenderedImagePath,

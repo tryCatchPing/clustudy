@@ -2,11 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:isar/isar.dart';
-import '../../../shared/models/rect_norm.dart';
-import '../../../search/search_service.dart';
-
-import '../isar_db.dart';
-import '../models/vault_models.dart';
+import 'package:it_contest/features/db/isar_db.dart';
+import 'package:it_contest/features/db/models/vault_models.dart';
+import 'package:it_contest/search/search_service.dart';
+import 'package:it_contest/shared/models/rect_norm.dart';
 
 class NoteDbService {
   NoteDbService._();
@@ -31,8 +30,9 @@ class NoteDbService {
       ..sortIndex = sortIndex
       ..createdAt = DateTime.now()
       ..updatedAt = DateTime.now()
-      ..vaultIdForSort = vaultId  // Set composite index field
-      ..nameLowerForSearch = name.toLowerCase();  // Set search optimization field
+      ..vaultIdForSort =
+          vaultId // Set composite index field
+      ..nameLowerForSearch = name.toLowerCase(); // Set search optimization field
     await isar.writeTxn(() async {
       await isar.notes.put(note);
     });
@@ -253,7 +253,8 @@ class NoteDbService {
       note
         ..name = newName
         ..nameLowerForParentUnique = newName.toLowerCase()
-        ..nameLowerForSearch = newName.toLowerCase()  // Update search field
+        ..nameLowerForSearch = newName
+            .toLowerCase() // Update search field
         ..updatedAt = DateTime.now();
       await isar.notes.put(note);
     });
@@ -590,5 +591,3 @@ class NoteDbService {
     return searchResults.toMap();
   }
 }
-
-

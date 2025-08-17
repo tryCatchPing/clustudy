@@ -1,10 +1,9 @@
 import 'package:isar/isar.dart';
-
-import '../../features/db/isar_db.dart';
-import '../../features/db/models/vault_models.dart';
-import '../../features/db/services/note_db_service.dart';
-import '../../shared/models/rect_norm.dart';
-import '../graph/graph_service.dart';
+import 'package:it_contest/features/db/isar_db.dart';
+import 'package:it_contest/features/db/models/vault_models.dart';
+import 'package:it_contest/features/db/services/note_db_service.dart';
+import 'package:it_contest/services/graph/graph_service.dart';
+import 'package:it_contest/shared/models/rect_norm.dart';
 
 class LinkService {
   LinkService._();
@@ -102,5 +101,3 @@ class LinkService {
     }
   }
 }
-
-

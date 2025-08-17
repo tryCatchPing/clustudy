@@ -5,13 +5,10 @@ import 'dart:typed_data';
 
 import 'package:archive/archive_io.dart';
 import 'package:encrypt/encrypt.dart' as enc;
-import 'package:isar/isar.dart';
+import 'package:it_contest/crypto/keys.dart';
+import 'package:it_contest/features/db/isar_db.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-
-import '../crypto/keys.dart';
-import '../features/db/isar_db.dart';
-import '../features/db/models/vault_models.dart';
 
 class FullBackupService {
   FullBackupService._internal();
@@ -105,7 +102,8 @@ class FullBackupService {
     final entries = await d.list().toList();
     for (final e in entries) {
       if (e is! File) continue;
-      if (!(e.path.endsWith('.zip') || e.path.endsWith('.zip.enc') || e.path.endsWith('.isar'))) continue;
+      if (!(e.path.endsWith('.zip') || e.path.endsWith('.zip.enc') || e.path.endsWith('.isar')))
+        continue;
       final stat = await e.stat();
       if (stat.modified.isBefore(threshold)) {
         try {
@@ -135,5 +133,3 @@ class FullBackupService {
     await _enforceRetention(retentionDays);
   }
 }
-
-

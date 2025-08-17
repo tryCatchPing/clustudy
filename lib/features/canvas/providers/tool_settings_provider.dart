@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:it_contest/features/canvas/models/tool_mode.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-
-import '../models/tool_mode.dart';
 
 part 'tool_settings_provider.g.dart';
 
@@ -88,18 +87,13 @@ class ToolSettingsNotifier extends _$ToolSettingsNotifier {
     linkerColor: ToolMode.linker.defaultColor,
   );
 
-  void setToolMode(ToolMode toolMode) =>
-      state = state.copyWith(toolMode: toolMode);
-  void setPenColor(Color penColor) =>
-      state = state.copyWith(penColor: penColor);
-  void setPenWidth(double penWidth) =>
-      state = state.copyWith(penWidth: penWidth);
+  void setToolMode(ToolMode toolMode) => state = state.copyWith(toolMode: toolMode);
+  void setPenColor(Color penColor) => state = state.copyWith(penColor: penColor);
+  void setPenWidth(double penWidth) => state = state.copyWith(penWidth: penWidth);
   void setHighlighterColor(Color highlighterColor) =>
       state = state.copyWith(highlighterColor: highlighterColor);
   void setHighlighterWidth(double highlighterWidth) =>
       state = state.copyWith(highlighterWidth: highlighterWidth);
-  void setEraserWidth(double eraserWidth) =>
-      state = state.copyWith(eraserWidth: eraserWidth);
-  void setLinkerColor(Color linkerColor) =>
-      state = state.copyWith(linkerColor: linkerColor);
+  void setEraserWidth(double eraserWidth) => state = state.copyWith(eraserWidth: eraserWidth);
+  void setLinkerColor(Color linkerColor) => state = state.copyWith(linkerColor: linkerColor);
 }
