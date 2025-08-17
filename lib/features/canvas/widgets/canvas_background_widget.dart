@@ -143,7 +143,7 @@ class _CanvasBackgroundWidgetState extends ConsumerState<CanvasBackgroundWidget>
       // NotePageModel에 이미지 경로가 있는 경우
       if (widget.page.preRenderedImagePath != null) {
         final imageFile = File(widget.page.preRenderedImagePath!);
-        if (await imageFile.exists()) {
+        if (imageFile.existsSync()) {
           _preRenderedImageFile = imageFile;
           return;
         }
@@ -157,7 +157,7 @@ class _CanvasBackgroundWidgetState extends ConsumerState<CanvasBackgroundWidget>
 
       if (imagePath != null) {
         final imageFile = File(imagePath);
-        if (await imageFile.exists()) {
+        if (imageFile.existsSync()) {
           _preRenderedImageFile = imageFile;
         }
       }

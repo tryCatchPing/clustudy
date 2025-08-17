@@ -23,7 +23,7 @@ class ThumbnailService {
     final docs = await getApplicationDocumentsDirectory();
     final rel = PdfCacheService.instance.path(noteId: noteId, pageIndex: pageIndex, dpi: dpi);
     final abs = p.join(docs.path, rel);
-    if (!await File(abs).exists()) {
+    if (!File(abs).existsSync()) {
       throw StateError('Thumbnail not created');
     }
     return abs;

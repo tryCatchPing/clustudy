@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
@@ -18,9 +19,9 @@ class ConnectivityService {
     try {
       final result = await _connectivity.checkConnectivity();
       return result == ConnectivityResult.wifi;
-    } catch (e) {
+    } on Exception catch (e, stack) {
       if (kDebugMode) {
-        debugPrint('ConnectivityService: Error checking WiFi connection: $e');
+        developer.log('Error checking WiFi connection', name: 'ConnectivityService', error: e, stackTrace: stack);
       }
       return false;
     }
@@ -31,9 +32,9 @@ class ConnectivityService {
     try {
       final result = await _connectivity.checkConnectivity();
       return result == ConnectivityResult.mobile;
-    } catch (e) {
+    } on Exception catch (e, stack) {
       if (kDebugMode) {
-        debugPrint('ConnectivityService: Error checking mobile connection: $e');
+        developer.log('Error checking mobile connection', name: 'ConnectivityService', error: e, stackTrace: stack);
       }
       return false;
     }
@@ -44,9 +45,9 @@ class ConnectivityService {
     try {
       final result = await _connectivity.checkConnectivity();
       return result != ConnectivityResult.none;
-    } catch (e) {
+    } on Exception catch (e, stack) {
       if (kDebugMode) {
-        debugPrint('ConnectivityService: Error checking connection: $e');
+        developer.log('Error checking connection', name: 'ConnectivityService', error: e, stackTrace: stack);
       }
       return false;
     }
@@ -62,12 +63,12 @@ class ConnectivityService {
       (ConnectivityResult result) {
         _connectivityController.add(result);
         if (kDebugMode) {
-          debugPrint('ConnectivityService: Connection changed to $result');
+          developer.log('Connection changed to $result', name: 'ConnectivityService');
         }
       },
-      onError: (e) {
+      onError: (Object e, StackTrace stack) {
         if (kDebugMode) {
-          debugPrint('ConnectivityService: Error monitoring connectivity: $e');
+          developer.log('Error monitoring connectivity', name: 'ConnectivityService', error: e, stackTrace: stack);
         }
         _connectivityController.add(ConnectivityResult.none);
       },

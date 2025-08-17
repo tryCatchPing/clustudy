@@ -60,7 +60,7 @@ class NoteEditorToolbar extends ConsumerWidget {
               children: [
                 if (totalPages > 1) NoteEditorPageNavigation(noteId: noteId),
                 // 필압 토글 컨트롤
-                // TODO(xodnd): simplify 0 으로 수정 필요
+                // TODO(jidam): simplify 0 으로 수정 필요
                 const NoteEditorPressureToggle(),
                 // 캔버스와 뷰포트 정보를 표시하는 위젯
                 NoteEditorViewportInfo(

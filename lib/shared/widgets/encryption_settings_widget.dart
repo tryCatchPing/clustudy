@@ -37,7 +37,7 @@ class _EncryptionSettingsWidgetState extends State<EncryptionSettingsWidget> {
         _currentEncryptionStatus = settings?.encryptionEnabled ?? false;
         _backupKeys = backupKeys;
       });
-    } catch (e) {
+    } on Exception catch (e) {
       _showErrorDialog('설정 로드 실패: $e');
     } finally {
       setState(() => _isLoading = false);
@@ -65,7 +65,7 @@ class _EncryptionSettingsWidgetState extends State<EncryptionSettingsWidget> {
       } else {
         _showErrorDialog('암호화 토글 실패: ${result.error}');
       }
-    } catch (e) {
+    } on Exception catch (e) {
       _showErrorDialog('암호화 토글 오류: $e');
     } finally {
       setState(() => _isLoading = false);
@@ -91,7 +91,7 @@ class _EncryptionSettingsWidgetState extends State<EncryptionSettingsWidget> {
       } else {
         _showErrorDialog('키 회전 실패: ${result.error}');
       }
-    } catch (e) {
+    } on Exception catch (e) {
       _showErrorDialog('키 회전 오류: $e');
     } finally {
       setState(() => _isLoading = false);
@@ -117,7 +117,7 @@ class _EncryptionSettingsWidgetState extends State<EncryptionSettingsWidget> {
       } else {
         _showErrorDialog('복구 실패: ${result.error}');
       }
-    } catch (e) {
+    } on Exception catch (e) {
       _showErrorDialog('복구 오류: $e');
     } finally {
       setState(() => _isLoading = false);
