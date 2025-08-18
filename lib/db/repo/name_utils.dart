@@ -6,9 +6,9 @@ import 'package:it_contest/features/db/models/models.dart';
 /// collision-free labels for Notes and Folders.
 ///
 /// Contract (do not change signatures without coordination):
-/// - Future<bool> existsFolderNameLower(int vaultId, String lower);
-/// - Future<bool> existsNoteNameLower(int vaultId, int folderId, String lower);
-/// - Future<String> generateUniqueNoteName(int vaultId, int folderId, String baseLabel);
+/// - `Future<bool> existsFolderNameLower(int vaultId, String lower);`
+/// - `Future<bool> existsNoteNameLower(int vaultId, int folderId, String lower);`
+/// - `Future<String> generateUniqueNoteName(int vaultId, int folderId, String baseLabel);`
 class NameUtils {
   const NameUtils._();
 
@@ -17,19 +17,12 @@ class NameUtils {
     final isar = await IsarDb.instance.open();
     final normalized = lower.toLowerCase();
 
-    // Prefer unique composite index lookup if available (nameLowerForVaultUnique + vaultId)
-    Folder? found;
-    try {
-      found = await isar.folders.getByNameLowerForVaultUniqueVaultId(normalized, vaultId);
-    } catch (e, st) {
-      // Fallback to filter in case codegen name changes; still correct though not index-optimized.
-      // Prefer matching by lower name first, then scope by vault for readability.
-      found = await isar.folders
-          .filter()
-          .nameLowerForVaultUniqueEqualTo(normalized)
-          .vaultIdEqualTo(vaultId)
-          .findFirst();
-    }
+    // Use filter chain for compatibility across codegen variants.
+    final Folder? found = await isar.folders
+        .filter()
+        .nameLowerForVaultUniqueEqualTo(normalized)
+        .vaultIdEqualTo(vaultId)
+        .findFirst();
     return found != null;
   }
 
@@ -44,21 +37,12 @@ class NameUtils {
     final normalized = lower.toLowerCase();
     final int? scopedFolderId = folderId > 0 ? folderId : null;
 
-    Note? found;
-    try {
-      found = await isar.notes.getByNameLowerForParentUniqueVaultIdFolderId(
-        normalized,
-        vaultId,
-        scopedFolderId,
-      );
-    } catch (e, st) {
-      found = await isar.notes
-          .filter()
-          .nameLowerForParentUniqueEqualTo(normalized)
-          .vaultIdEqualTo(vaultId)
-          .folderIdEqualTo(scopedFolderId)
-          .findFirst();
-    }
+    final Note? found = await isar.notes
+        .filter()
+        .nameLowerForParentUniqueEqualTo(normalized)
+        .vaultIdEqualTo(vaultId)
+        .folderIdEqualTo(scopedFolderId)
+        .findFirst();
     return found != null;
   }
 
@@ -101,9 +85,7 @@ class NameUtils {
     String seed,
   ) async {
     final baseLower = seed.toLowerCase();
-    if (!await existsNoteNameLower(vaultId, folderId, baseLower)) {
-      return seed;
-    }
+    if (!await existsNoteNameLower(vaultId, folderId, baseLower)) return seed;
     for (int n = 2; n < 100000; n++) {
       final candidate = '$seed ($n)';
       if (!await existsNoteNameLower(

@@ -52,16 +52,26 @@ class NoteEditorActionsBar extends ConsumerWidget {
             icon: const Icon(Icons.image),
             tooltip: 'Show PNG Image',
             onPressed: () {
-              // TODO: implement showImage in CustomScribbleNotifier or provide debug UI
-              // notifier.showImage(context);
+              // TODO(jidamkim): 연동 준비되면 `ScribbleNotifierX.showImage` 호출로 연결
+              // 참고: `lib/features/canvas/notifiers/scribble_notifier_x.dart`
+              // 임시: 빌드 안전을 위한 no-op 처리
+              final messenger = ScaffoldMessenger.maybeOf(context);
+              messenger?.showSnackBar(
+                const SnackBar(content: Text('미구현: 이미지 미리보기')),
+              );
             },
           ),
           IconButton(
             icon: const Icon(Icons.data_object),
             tooltip: 'Show JSON',
             onPressed: () {
-              // TODO: implement showJson in CustomScribbleNotifier or provide debug UI
-              // notifier.showJson(context);
+              // TODO(jidamkim): 연동 준비되면 `ScribbleNotifierX.showJson` 호출로 연결
+              // 참고: `lib/features/canvas/notifiers/scribble_notifier_x.dart`
+              // 임시: 빌드 안전을 위한 no-op 처리
+              final messenger = ScaffoldMessenger.maybeOf(context);
+              messenger?.showSnackBar(
+                const SnackBar(content: Text('미구현: JSON 보기')),
+              );
             },
           ),
         ],

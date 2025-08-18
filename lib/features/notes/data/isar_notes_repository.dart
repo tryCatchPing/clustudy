@@ -100,8 +100,13 @@ class IsarNotesRepository implements NotesRepository {
     return null;
   }
 
-  void _ensureNotesWatchInitialized() async {
-    if (_notesWatch != null) return;
+  /// 전체 노트 변화에 대한 내부 워치 초기화
+  ///
+  /// 첫 구독 시 초기화되고, 마지막 구독 취소 시 정리됩니다.
+  Future<void> _ensureNotesWatchInitialized() async {
+    if (_notesWatch != null) {
+      return;
+    }
     final isar = await _open();
 
     Future<void> emitAll() async {
@@ -118,6 +123,20 @@ class IsarNotesRepository implements NotesRepository {
     _canvasWatch = isar.canvasDatas.watchLazy().listen((_) {
       emitAll();
     });
+
+    // 컨트롤러 구독 상태에 따라 워치 해제
+    _notesController
+      ..onListen = () {
+        // no-op; 이미 초기화됨
+      }
+      ..onCancel = () async {
+        await _notesWatch?.cancel();
+        await _pagesWatch?.cancel();
+        await _canvasWatch?.cancel();
+        _notesWatch = null;
+        _pagesWatch = null;
+        _canvasWatch = null;
+      };
   }
 
   Future<List<NoteModel>> _loadAllNotes(Isar isar) async {
@@ -191,9 +210,13 @@ class IsarNotesRepository implements NotesRepository {
   Future<NoteModel?> getNoteById(String noteId) async {
     final isar = await _open();
     final intId = int.tryParse(noteId);
-    if (intId == null) return null;
+    if (intId == null) {
+      return null;
+    }
     final n = await isar.notes.get(intId);
-    if (n == null || n.deletedAt != null) return null;
+    if (n == null || n.deletedAt != null) {
+      return null;
+    }
     return _mapNote(isar, n);
   }
 
@@ -334,7 +357,9 @@ class IsarNotesRepository implements NotesRepository {
   @override
   Future<void> delete(String noteId) async {
     final intId = int.tryParse(noteId);
-    if (intId == null) return;
+    if (intId == null) {
+      return;
+    }
 
     // NoteDbService를 사용하여 일관된 소프트 삭제 처리
     try {
@@ -384,7 +409,9 @@ class IsarNotesRepository implements NotesRepository {
 
     final hasPdf = pageModels.any((e) => e.backgroundType == PageBackgroundType.pdf);
     final sourcePdfPath = hasPdf
-        ? pageModels.firstWhere((e) => e.backgroundType == PageBackgroundType.pdf).backgroundPdfPath
+        ? pageModels
+            .firstWhere((e) => e.backgroundType == PageBackgroundType.pdf)
+            .backgroundPdfPath
         : null;
 
     return NoteModel(
@@ -400,6 +427,9 @@ class IsarNotesRepository implements NotesRepository {
   }
 
   /// 여러 노트를 배치로 업데이트 (성능 최적화)
+  /// 여러 노트를 배치로 upsert 합니다.
+  ///
+  /// 대량 처리 시 트랜잭션 경계 최소화로 성능 최적화됩니다.
   Future<void> upsertBatch(List<NoteModel> notes) async {
     final isar = await _open();
 
@@ -430,11 +460,14 @@ class IsarNotesRepository implements NotesRepository {
   }
 
   /// 여러 노트를 배치로 삭제
+  /// 여러 노트를 배치로 삭제합니다. 존재하지 않는 ID는 무시됩니다.
   Future<void> deleteBatch(List<String> noteIds) async {
     final isar = await _open();
     final validIds = noteIds.map(int.tryParse).where((id) => id != null).cast<int>().toList();
 
-    if (validIds.isEmpty) return;
+    if (validIds.isEmpty) {
+      return;
+    }
 
     await isar.writeTxn(() async {
       final notes = await isar.notes.getAll(validIds);
@@ -453,21 +486,22 @@ class IsarNotesRepository implements NotesRepository {
   }
 
   /// 통계 정보 조회
+  /// 간단한 통계 정보를 반환합니다.
+  /// - total: 삭제되지 않은 전체 노트 수
+  /// - pdf_based: 이름에 '.pdf'가 포함된 노트 수
+  /// - recent_week: 최근 7일내 수정된 노트 수
+  /// - blank: pdf_based를 제외한 나머지
   Future<Map<String, int>> getStatistics() async {
     final isar = await _open();
 
     final totalCount = await isar.notes.filter().deletedAtIsNull().count();
 
-    // Replace anyOf generic usage with fold + group pattern to avoid generic inference issues
-    final List<String> pdfTerms = ['.pdf'];
-    final pdfQbBase = isar.notes.filter().deletedAtIsNull();
-    final pdfQb = pdfTerms.fold<QueryBuilder<Note, Note, QAfterFilterCondition>>(
-      pdfQbBase,
-      (acc, term) => acc.group(
-        (g) => g.nameContains(term, caseSensitive: false),
-      ),
-    );
-    final pdfCount = await pdfQb.count();
+    // 단일 조건으로 간소화하여 RepeatModifier 관련 제네릭 추론 이슈 방지
+    final pdfCount = await isar.notes
+        .filter()
+        .deletedAtIsNull()
+        .nameContains('.pdf', caseSensitive: false)
+        .count();
 
     final today = DateTime.now();
     final weekAgo = today.subtract(const Duration(days: 7));
@@ -490,6 +524,7 @@ class IsarNotesRepository implements NotesRepository {
   // Removed _getPdfNoteFilters; inlined with anyOf<String> above for clarity
 
   /// 캐시 무효화 (강제 새로고침)
+  /// 내부 캐시/스트림을 강제로 최신 상태로 갱신합니다.
   Future<void> invalidateCache() async {
     final isar = await _open();
     final notes = await _loadAllNotes(isar);
@@ -602,7 +637,9 @@ class IsarNotesRepository implements NotesRepository {
 
     // Isar Link를 활용한 효율적 조회
     final note = await isar.notes.get(noteId);
-    if (note == null) return backupData;
+    if (note == null) {
+      return backupData;
+    }
 
     // 노트의 모든 페이지 조회
     final pages = await isar.pages.filter().noteIdEqualTo(noteId).findAll();
@@ -623,7 +660,9 @@ class IsarNotesRepository implements NotesRepository {
   Future<void> restorePageCanvasData({
     required Map<int, String> backupData,
   }) async {
-    if (backupData.isEmpty) return;
+    if (backupData.isEmpty) {
+      return;
+    }
 
     final isar = await _open();
 
