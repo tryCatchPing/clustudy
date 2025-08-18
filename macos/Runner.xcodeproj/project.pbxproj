@@ -195,7 +195,6 @@
 				AC7D03C10B3D3AD8E60F9322 /* Pods-RunnerTests.release.xcconfig */,
 				F3A46B56BD55759A0818ACD0 /* Pods-RunnerTests.profile.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -569,6 +568,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 33E5194F232828860026EE4D /* AppInfo.xcconfig */;
 			buildSettings = {
+				ARCHS = arm64;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/DebugProfile.entitlements;
@@ -701,6 +701,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 33E5194F232828860026EE4D /* AppInfo.xcconfig */;
 			buildSettings = {
+				ARCHS = arm64;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/DebugProfile.entitlements;
@@ -721,6 +722,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 33E5194F232828860026EE4D /* AppInfo.xcconfig */;
 			buildSettings = {
+				ARCHS = arm64;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/Release.entitlements;
