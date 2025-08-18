@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:it_contest/features/db/isar_db.dart';
+import 'package:it_contest/features/db/models/models.dart';
 import 'package:it_contest/shared/services/encryption_manager.dart';
 
 /// 암호화 설정을 관리하는 위젯
@@ -30,7 +31,7 @@ class _EncryptionSettingsWidgetState extends State<EncryptionSettingsWidget> {
       // EncryptionManager에 public 메서드가 없으므로 직접 DB에서 읽기
       final isarDb = IsarDb.instance;
       final isar = await isarDb.open();
-      final settings = await isar.collection<SettingsEntity>().where().filter().findFirst();
+      final settings = await isar.collection<SettingsEntity>().filter().findFirst();
       final backupKeys = await _encryptionManager.getBackupKeysInfo();
 
       setState(() {
@@ -234,7 +235,7 @@ class _EncryptionSettingsWidgetState extends State<EncryptionSettingsWidget> {
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 8),
-        ...(_backupKeys.take(5).map((backup) => _buildBackupKeyItem(backup))),
+        ...(_backupKeys.take(5).map<Widget>((BackupKeyInfo backup) => _buildBackupKeyItem(backup))),
         if (_backupKeys.length > 5) Text('... 및 ${_backupKeys.length - 5}개 더'),
       ],
     );

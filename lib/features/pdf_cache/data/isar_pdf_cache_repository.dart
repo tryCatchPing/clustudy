@@ -1,6 +1,6 @@
 import 'package:isar/isar.dart';
 import 'package:it_contest/features/db/isar_db.dart';
-import 'package:it_contest/features/db/models/vault_models.dart';
+import 'package:it_contest/features/db/models/models.dart';
 import 'package:it_contest/features/pdf_cache/data/pdf_cache_repository.dart';
 import 'package:it_contest/features/pdf_cache/models/pdf_cache_meta_model.dart';
 
@@ -128,7 +128,7 @@ class IsarPdfCacheRepository implements PdfCacheRepository {
   Future<int> getMaxCacheSizeMB() async {
     final isar = await _open();
 
-    final settings = await isar.collection<SettingsEntity>().where().findFirst();
+    final settings = await isar.collection<SettingsEntity>().where().anyId().findFirst();
     return settings?.pdfCacheMaxMB ?? 512; // 기본값 512MB
   }
 

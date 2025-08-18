@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:isar/isar.dart';
 
 import 'package:it_contest/features/db/isar_db.dart';
-import 'package:it_contest/features/db/models/vault_models.dart';
+import 'package:it_contest/features/db/models/models.dart';
 import 'package:it_contest/features/db/services/note_db_service.dart';
 import 'package:it_contest/shared/models/rect_norm.dart';
 
@@ -143,7 +143,7 @@ class DomainNoteService {
   /// RecentTabs 상위 10개 노트를 반환 (존재하지 않는 항목은 건너뜀)
   Future<List<Note>> getRecentTabs() async {
     final isar = await IsarDb.instance.open();
-    final existing = await isar.collection<RecentTabs>().where().findFirst();
+    final existing = await isar.collection<RecentTabs>().where().anyId().findFirst();
     if (existing == null) return <Note>[];
     List<int> ids;
     try {
@@ -205,7 +205,7 @@ class DomainNoteService {
   Future<void> _pushRecentLinkedNote({required Isar isar, required int noteId}) async {
     const String userId = 'local';
     final now = DateTime.now();
-    final existing = await isar.collection<RecentTabs>().where().findFirst();
+    final existing = await isar.collection<RecentTabs>().where().anyId().findFirst();
     List<int> list;
     late RecentTabs tabs;
     if (existing == null) {

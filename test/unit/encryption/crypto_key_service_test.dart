@@ -9,7 +9,8 @@ import 'package:isar/isar.dart';
 import 'package:isar_flutter_libs/isar_flutter_libs.dart';
 
 import 'package:it_contest/features/db/isar_db.dart';
-import 'package:it_contest/features/db/models/vault_models.dart';
+import 'package:it_contest/features/db/models/models.dart';
+import 'package:it_contest/features/db/isar/db_schemas.dart';
 import 'package:it_contest/features/db/services/note_db_service.dart';
 import 'package:it_contest/shared/services/crypto_key_service.dart';
 
@@ -228,11 +229,11 @@ void main() {
         await CryptoKeyService.instance.reencryptDatabase(oldKey!, newKey);
 
         // Verify data is still accessible
-        final vaults = await isar.collection<Vault>().where().findAll();
+        final vaults = await isar.collection<Vault>().where().anyId().findAll();
         expect(vaults.length, 1);
         expect(vaults.first.name, 'TestVault');
 
-        final notes = await isar.collection<Note>().where().findAll();
+        final notes = await isar.collection<Note>().where().anyId().findAll();
         expect(notes.length, 1);
         expect(notes.first.name, 'TestNote');
       },
@@ -259,12 +260,12 @@ void main() {
         await IsarDb.instance.toggleEncryption(enable: true);
 
         // Verify data is still accessible
-        final vaults = await isar.collection<Vault>().where().findAll();
+        final vaults = await isar.collection<Vault>().where().anyId().findAll();
         expect(vaults.length, 1);
         expect(vaults.first.name, 'TestVault');
 
         // Verify encryption setting
-        final settings = await isar.collection<SettingsEntity>().where().findFirst();
+        final settings = await isar.collection<SettingsEntity>().filter().findFirst();
         expect(settings?.encryptionEnabled, isTrue);
       },
       skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
@@ -288,7 +289,7 @@ void main() {
         expect(vaults.first.name, 'TestVault');
 
         // Verify encryption setting
-        final settings = await isar.collection<SettingsEntity>().where().findFirst();
+        final settings = await isar.collection<SettingsEntity>().filter().findFirst();
         expect(settings?.encryptionEnabled, isFalse);
       },
       skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
@@ -321,7 +322,7 @@ void main() {
         final reopenedIsar = await IsarDb.instance.open(enableEncryption: true);
 
         // Verify data is accessible
-        final vaults = await reopenedIsar.collection<Vault>().where().findAll();
+        final vaults = await reopenedIsar.collection<Vault>().where().anyId().findAll();
         expect(vaults.length, 1);
         expect(vaults.first.name, 'EncryptedVault');
       },
@@ -345,7 +346,7 @@ void main() {
         final reopenedIsar = await IsarDb.instance.open(encryptionKey: customKey);
 
         // Verify data is accessible
-        final vaults = await reopenedIsar.collection<Vault>().where().findAll();
+        final vaults = await reopenedIsar.collection<Vault>().where().anyId().findAll();
         expect(vaults.length, 1);
         expect(vaults.first.name, 'CustomKeyVault');
 

@@ -1,5 +1,5 @@
 import 'package:it_contest/features/db/isar_db.dart';
-import 'package:it_contest/features/db/models/vault_models.dart';
+import 'package:it_contest/features/db/models/models.dart';
 import 'package:isar/isar.dart';
 
 class MigrationRunner {
@@ -8,7 +8,7 @@ class MigrationRunner {
 
   Future<void> runMigrationsIfNeeded() async {
     final isar = await IsarDb.instance.open();
-    final settings = await isar.collection<SettingsEntity>().filter().findFirst();
+    final settings = await isar.collection<SettingsEntity>().where().anyId().findFirst();
     if (settings == null) {
       // First run: create default settings with version 1
       final s = SettingsEntity()

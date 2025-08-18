@@ -3,7 +3,7 @@ import 'dart:io'; // TODO(web): Replace File API usage with platform-appropriate
 
 import 'package:isar/isar.dart';
 import 'package:it_contest/features/db/isar_db.dart';
-import 'package:it_contest/features/db/models/vault_models.dart';
+import 'package:it_contest/features/db/models/models.dart';
 import 'package:it_contest/features/db/services/note_db_service.dart';
 import 'package:it_contest/features/notes/data/notes_repository.dart';
 import 'package:it_contest/features/notes/models/note_model.dart';
@@ -464,7 +464,11 @@ class IsarNotesRepository implements NotesRepository {
         .filter()
         .deletedAtIsNull()
         .and()
-        .anyOf(_getPdfNoteFilters(), (q, filter) => filter(q))
+        .anyOf<String>(
+          ['.pdf'],
+          (QueryBuilder<Note, Note, QFilterCondition> q, String term) =>
+              q.nameContains(term, caseSensitive: false),
+        )
         .count();
 
     final today = DateTime.now();
@@ -485,13 +489,7 @@ class IsarNotesRepository implements NotesRepository {
   }
 
   /// PDF 노트 필터 조건들 (복잡한 쿼리용)
-  List<Note Function(QueryBuilder<Note, Note, QFilterCondition>)> _getPdfNoteFilters() {
-    // 실제로는 페이지 테이블과 조인하여 PDF 관련 정보를 확인해야 함
-    // 현재는 간단히 이름 패턴으로 추정
-    return [
-      (q) => q.nameContains('.pdf', caseSensitive: false),
-    ];
-  }
+  // Removed _getPdfNoteFilters; inlined with anyOf<String> above for clarity
 
   /// 캐시 무효화 (강제 새로고침)
   Future<void> invalidateCache() async {

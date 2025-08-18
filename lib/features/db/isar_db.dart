@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:isar/isar.dart';
 // Ensure native Isar binaries are bundled for Flutter test/desktop
+// Ensures Isar native bindings are available in Flutter (incl. tests)
 // ignore: unused_import
 import 'package:isar_flutter_libs/isar_flutter_libs.dart';
-// Ensures Isar native bindings are available in Flutter (incl. tests)
-import 'package:isar_flutter_libs/isar_flutter_libs.dart';
-import 'package:it_contest/features/db/models/vault_models.dart';
+import 'package:it_contest/features/db/isar/db_schemas.dart';
+import 'package:it_contest/features/db/models/models.dart';
 import 'package:it_contest/shared/services/crypto_key_service.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -55,22 +55,10 @@ class IsarDb {
     }
 
     _isar = await Isar.open(
-      [
-        VaultSchema,
-        FolderSchema,
-        NoteSchema,
-        PageSchema,
-        CanvasDataSchema,
-        PageSnapshotSchema,
-        LinkEntitySchema,
-        GraphEdgeSchema,
-        PdfCacheMetaSchema,
-        RecentTabsSchema,
-        SettingsEntitySchema,
-      ],
+      allSchemas,
       directory: directoryPath,
       inspector: false,
-      encryptionKey: finalEncryptionKey,
+      // Note: encryptionKey is not supported on this Isar version
     );
     return _isar!;
   }
@@ -86,7 +74,7 @@ class IsarDb {
         inspector: false,
       );
 
-      final settings = await tempIsar.settingsEntitys.where().findFirst();
+      final settings = await tempIsar.settingsEntitys.where().anyId().findFirst();
       await tempIsar.close();
       return settings;
     } catch (e) {
@@ -103,7 +91,7 @@ class IsarDb {
     }
 
     // 현재 설정 확인
-    final settings = await currentIsar.settingsEntitys.where().findFirst() ?? SettingsEntity()
+    final settings = await currentIsar.settingsEntitys.where().anyId().findFirst() ?? SettingsEntity()
       ..encryptionEnabled = false
       ..backupDailyAt = '02:00'
       ..backupRetentionDays = 7

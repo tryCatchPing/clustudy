@@ -45,7 +45,7 @@ class BackupService {
 
   Future<void> runIfDue() async {
     final isar = await IsarDb.instance.open();
-    final settings = await isar.collection<SettingsEntity>().filter().findFirst();
+    final settings = await isar.collection<SettingsEntity>().where().anyId().findFirst();
     if (settings == null) return;
 
     final due = await _isDueDaily(settings.backupDailyAt, settings.lastBackupAt);
@@ -207,11 +207,11 @@ class BackupService {
       'app_version': '1.0.0', // TODO: 실제 앱 버전으로 교체
       'database_schema_version': 1,
       'statistics': {
-        'vault_count': await isar.collection<Vault>().filter().count(),
-        'folder_count': await isar.collection<Folder>().filter().count(),
-        'note_count': await isar.collection<Note>().filter().count(),
-        'page_count': await isar.collection<Page>().filter().count(),
-        'link_count': await isar.collection<LinkEntity>().filter().count(),
+        'vault_count': await isar.collection<Vault>().where().count(),
+        'folder_count': await isar.collection<Folder>().where().count(),
+        'note_count': await isar.collection<Note>().where().count(),
+        'page_count': await isar.collection<Page>().where().count(),
+        'link_count': await isar.collection<LinkEntity>().where().count(),
       },
       'backup_type': 'integrated',
       'includes_pdf_files': true,
@@ -584,7 +584,7 @@ class BackupService {
   /// 백업 상태 조회
   Future<BackupStatus> getBackupStatus() async {
     final isar = await IsarDb.instance.open();
-    final settings = await isar.collection<SettingsEntity>().filter().findFirst();
+    final settings = await isar.collection<SettingsEntity>().where().anyId().findFirst();
     final backups = await getAvailableBackups();
 
     return BackupStatus(

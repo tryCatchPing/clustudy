@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:it_contest/features/db/isar_db.dart';
-import 'package:it_contest/features/db/models/vault_models.dart';
+import 'package:it_contest/features/db/models/models.dart';
 
 /// Service responsible for maintaining RecentTabs integrity.
 ///
@@ -17,7 +17,7 @@ class RecentTabsService {
   Future<void> recentTabsFixBrokenIds() async {
     final isar = await IsarDb.instance.open();
     await isar.writeTxn(() async {
-      final existing = await isar.collection<RecentTabs>().where().findFirst();
+      final existing = await isar.collection<RecentTabs>().where().anyId().findFirst();
       if (existing == null) return;
 
       List<int> ids;

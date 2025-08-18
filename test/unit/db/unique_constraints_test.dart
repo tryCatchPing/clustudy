@@ -9,7 +9,8 @@ import 'package:isar/isar.dart';
 import 'package:isar_flutter_libs/isar_flutter_libs.dart';
 
 import 'package:it_contest/features/db/isar_db.dart';
-import 'package:it_contest/features/db/models/vault_models.dart';
+import 'package:it_contest/features/db/models/models.dart';
+import 'package:it_contest/features/db/isar/db_schemas.dart';
 import 'package:it_contest/features/db/services/note_db_service.dart';
 
 void main() {
@@ -64,7 +65,7 @@ void main() {
         );
 
         // Verify only one vault exists
-        final vaults = await isar.collection<Vault>().where().findAll();
+        final vaults = await isar.collection<Vault>().where().anyId().findAll();
         expect(vaults.length, 1);
         expect(vaults.first.name, 'TestVault');
       },
@@ -247,7 +248,7 @@ void main() {
         );
 
         // Verify only one edge exists
-        final edges = await isar.collection<GraphEdge>().where().findAll();
+        final edges = await isar.collection<GraphEdge>().where().anyId().findAll();
         expect(edges.length, 1);
       },
       skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
@@ -312,7 +313,7 @@ void main() {
         });
 
         // Verify correct number of cache entries
-        final caches = await isar.collection<PdfCacheMeta>().where().findAll();
+        final caches = await isar.collection<PdfCacheMeta>().where().anyId().findAll();
         expect(caches.length, 2);
       },
       skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
@@ -359,7 +360,7 @@ void main() {
         });
 
         // Verify correct records exist
-        final allTabs = await isar.collection<RecentTabs>().where().findAll();
+        final allTabs = await isar.collection<RecentTabs>().where().anyId().findAll();
         expect(allTabs.length, 2);
         expect(allTabs.map((t) => t.userId).toSet(), {'local', 'user2'});
       },

@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:it_contest/features/db/isar_db.dart';
-import 'package:it_contest/features/db/models/vault_models.dart';
+import 'package:it_contest/features/db/models/models.dart';
 import 'package:it_contest/shared/services/crypto_key_service.dart';
 
 /// 암호화 관리 서비스
@@ -183,7 +183,7 @@ class EncryptionManager {
   /// 현재 설정을 조회합니다
   Future<SettingsEntity?> _getCurrentSettings() async {
     final isar = await _isarDb.open();
-    return await isar.collection<SettingsEntity>().where().findFirst();
+    return await isar.collection<SettingsEntity>().where().anyId().findFirst();
   }
 
   /// 키 검증을 수행합니다
