@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../notes/data/derived_note_providers.dart';
 import '../../../notes/pages/page_controller_screen.dart';
+import '../../../notes/widgets/pdf_export_modal.dart';
 import '../../notifiers/scribble_notifier_x.dart';
 import '../../providers/note_editor_provider.dart';
 
@@ -22,6 +24,8 @@ class NoteEditorActionsBar extends ConsumerWidget {
     }
 
     final notifier = ref.watch(currentNotifierProvider(noteId));
+    final note = ref.watch(noteProvider(noteId)).value;
+    final currentPageIndex = ref.watch(currentPageIndexProvider(noteId));
 
     return Row(
       children: [
@@ -68,7 +72,38 @@ class NoteEditorActionsBar extends ConsumerWidget {
           tooltip: '페이지 설정',
           onPressed: () => PageControllerScreen.show(context, noteId),
         ),
+        IconButton(
+          icon: const Icon(Icons.picture_as_pdf),
+          tooltip: 'PDF 내보내기',
+          onPressed: note == null ? null : () => _onPdfExport(context, ref),
+        ),
       ],
+    );
+  }
+
+  /// PDF 내보내기 모달을 표시합니다.
+  void _onPdfExport(BuildContext context, WidgetRef ref) async {
+    final note = ref.read(noteProvider(noteId)).value;
+    if (note == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('노트를 불러올 수 없습니다.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // 모든 페이지의 ScribbleNotifier 수집
+    final allNotifiers = ref.read(customScribbleNotifiersProvider(noteId));
+    final currentPageIndex = ref.read(currentPageIndexProvider(noteId));
+
+    // PDF 내보내기 모달 표시
+    await PdfExportModal.show(
+      context,
+      note: note,
+      pageNotifiers: allNotifiers,
+      currentPageIndex: currentPageIndex,
     );
   }
 }
