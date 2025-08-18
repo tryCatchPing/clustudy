@@ -1,6 +1,6 @@
+import 'dart:developer' as developer;
 import 'dart:io';
 import 'dart:ui';
-import 'dart:developer' as developer;
 
 import 'package:it_contest/shared/services/file_picker_service.dart';
 import 'package:it_contest/shared/services/file_storage_service.dart';
