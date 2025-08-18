@@ -7,7 +7,7 @@ import 'package:isar/isar.dart';
 import 'package:isar_flutter_libs/isar_flutter_libs.dart';
 import 'package:it_contest/features/db/isar/db_schemas.dart';
 import 'package:it_contest/features/db/models/models.dart';
-import 'package:it_contest/features/db/models/vault_models.g.dart';
+import 'package:it_contest/features/db/models/vault_models.dart';
 import 'package:it_contest/shared/services/crypto_key_service.dart';
 import 'package:path_provider/path_provider.dart';
 

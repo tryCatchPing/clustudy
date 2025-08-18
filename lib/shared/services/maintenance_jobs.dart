@@ -5,7 +5,7 @@ import 'package:isar/isar.dart';
 
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
-import 'package:it_contest/features/db/models/vault_models.g.dart';
+import 'package:it_contest/features/db/models/vault_models.dart';
 import 'package:it_contest/services/recent_tabs/recent_tabs_service.dart';
 
 /// 앱의 주기적인 유지보수 작업을 관리합니다.
