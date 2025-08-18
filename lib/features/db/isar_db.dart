@@ -24,6 +24,15 @@ class IsarDb {
   static IsarDb get instance => _instance;
 
   Isar? _isar;
+
+  /// Public getter for the Isar instance, primarily for testing.
+  Isar get isar {
+    if (_isar == null) {
+      throw StateError('Isar database has not been opened. Call open() first.');
+    }
+    return _isar!;
+  }
+
   static String? _testDirectoryOverride;
 
   /// Overrides the documents directory during tests.
