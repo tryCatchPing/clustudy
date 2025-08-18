@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:isar/isar.dart';
 // Ensure native libs are bundled for Flutter tests
 // ignore: unused_import
 import 'package:isar_flutter_libs/isar_flutter_libs.dart';
