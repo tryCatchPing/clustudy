@@ -11,12 +11,21 @@ import 'package:path_provider/path_provider.dart';
 /// 암호화 키를 생성/저장/회전/검증하는 서비스
 class CryptoKeyService {
   CryptoKeyService._();
+  /// 전역에서 접근 가능한 싱글턴 인스턴스입니다.
+  ///
+  /// 앱 수명 주기 전반에 걸쳐 동일한 키 관리 컨텍스트를 유지하기 위해
+  /// 하나의 인스턴스만 사용합니다.
   static final CryptoKeyService instance = CryptoKeyService._();
 
   static const _keyAlias = 'isar_encryption_key_v1';
   static const _backupPrefix = 'isar_backup_key_';
   static const _storage = FlutterSecureStorage();
 
+  /// 보안 저장소에서 현재 데이터베이스 암호화 키를 로드합니다.
+  ///
+  /// 반환:
+  /// - 저장된 키가 있으면 32바이트 키 바이트 배열
+  /// - 저장된 키가 없거나 읽기에 실패하면 `null`
   Future<List<int>?> loadKey() async {
     try {
       final base64 = await _storage.read(key: _keyAlias);
@@ -31,6 +40,9 @@ class CryptoKeyService {
     }
   }
 
+  /// 저장된 암호화 키를 반환하고, 없으면 새 32바이트 키를 생성하여 저장합니다.
+  ///
+  /// 항상 유효한 32바이트 키를 반환합니다.
   Future<List<int>> getOrCreateKey() async {
     final existing = await loadKey();
     if (existing != null) {
