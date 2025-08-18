@@ -5,7 +5,7 @@ import 'package:isar/isar.dart';
 
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
-import 'package:it_contest/features/db/models/vault_models.g.dart';
+import 'package:it_contest/features/db/models/vault_models.dart';
 import 'package:it_contest/shared/services/encryption_manager.dart';
 
 /// 암호화 설정을 관리하는 위젯
@@ -35,7 +35,7 @@ class _EncryptionSettingsWidgetState extends State<EncryptionSettingsWidget> {
       // EncryptionManager에 public 메서드가 없으므로 직접 DB에서 읽기
       final isarDb = IsarDb.instance;
       final isar = await isarDb.open();
-      final settings = await isar.settingsEntitys.where().anyId().findFirst();
+      final settings = await isar.settingsEntitys.where().findFirst();
       final backupKeys = await _encryptionManager.getBackupKeysInfo();
 
       setState(() {
@@ -52,9 +52,7 @@ class _EncryptionSettingsWidgetState extends State<EncryptionSettingsWidget> {
   Future<void> _toggleEncryption(bool enable) async {
     final confirmed = await _showConfirmationDialog(
       title: enable ? '암호화 활성화' : '암호화 비활성화',
-      message: enable
-          ? '데이터베이스를 암호화합니다. 이 작업은 시간이 걸릴 수 있습니다.'
-          : '데이터베이스 암호화를 해제합니다. 이 작업은 되돌릴 수 없습니다.',
+      message: enable ? '데이터베이스를 암호화합니다. 이 작업은 시간이 걸릴 수 있습니다.' : '데이터베이스 암호화를 해제합니다. 이 작업은 되돌릴 수 없습니다.',
     );
 
     if (!confirmed) {
