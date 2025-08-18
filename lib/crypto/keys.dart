@@ -9,6 +9,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 class CryptoKeys {
   CryptoKeys._internal();
   static final CryptoKeys _instance = CryptoKeys._internal();
+  /// 싱글톤 인스턴스
   static CryptoKeys get instance => _instance;
 
   static const _aesAlias = 'backup_aes_key_v1';

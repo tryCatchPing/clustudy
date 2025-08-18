@@ -7,9 +7,9 @@ import 'package:isar/isar.dart';
 // Ensure native libs are bundled for Flutter tests
 // ignore: unused_import
 import 'package:isar_flutter_libs/isar_flutter_libs.dart';
-import 'package:it_contest/features/db/models/models.dart';
 
 import 'package:it_contest/features/db/isar_db.dart';
+import 'package:it_contest/features/db/models/models.dart';
 import 'package:it_contest/features/db/services/note_db_service.dart';
 import 'package:it_contest/services/move/move_service.dart' as move_api;
 

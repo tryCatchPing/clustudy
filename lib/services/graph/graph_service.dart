@@ -1,3 +1,5 @@
+// ignore_for_file: public_member_api_docs
+
 import 'package:isar/isar.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
