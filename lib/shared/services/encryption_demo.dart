@@ -8,7 +8,15 @@ import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/shared/services/crypto_key_service.dart';
 import 'package:it_contest/shared/services/encryption_manager.dart';
 
+/// 암호화 데모의 공개 API를 제공하는 클래스입니다.
+///
+/// 앱 내 암호화/키 관리 기능의 사용 흐름을 소규모 시나리오로 시연합니다.
+/// 각 메서드는 콘솔 로그를 통해 단계별 결과를 안내합니다.
 class EncryptionDemo {
+  /// 기본 사용 흐름 데모입니다.
+  ///
+  /// - DB 평문 오픈 → 암호화 활성화 → 암호화 모드 재오픈 → 키 유효성 검증 순서를 시연합니다.
+  /// - 반환값: 없음 (콘솔 로그로 결과 출력)
   static Future<void> demonstrateBasicUsage() async {
     print('=== 기본 암호화 사용법 데모 ===');
 
@@ -41,6 +49,10 @@ class EncryptionDemo {
     }
   }
 
+  /// 키 회전 절차를 시연합니다.
+  ///
+  /// - 현재 백업 키 상태를 확인하고 키 회전을 수행합니다.
+  /// - 결과, 경과 시간, 생성된 백업 경로를 출력합니다.
   static Future<void> demonstrateKeyRotation() async {
     print('=== 키 회전 데모 ===');
 
@@ -75,6 +87,10 @@ class EncryptionDemo {
     }
   }
 
+  /// 백업 기반 복구 흐름을 시연합니다.
+  ///
+  /// - 최신 백업 메타 정보를 확인하고 복구 시뮬레이션 절차를 안내합니다.
+  /// - 실제 복구 코드는 안전을 위해 주석 처리되어 있습니다.
   static Future<void> demonstrateRecovery() async {
     print('=== 복구 기능 데모 ===');
 
@@ -117,6 +133,9 @@ class EncryptionDemo {
     }
   }
 
+  /// 오류 상황에서의 방어적 동작을 시연합니다.
+  ///
+  /// - 잘못된 키 유효성 검증, 존재하지 않는 백업 키 로드 등의 케이스를 다룹니다.
   static Future<void> demonstrateErrorHandling() async {
     print('=== 오류 처리 데모 ===');
 
