@@ -5,6 +5,7 @@
 /// PDF 페이지의 사전 렌더링(캐시)을 보장하고 해당 이미지 경로를
 /// 반환하는 간단한 API를 제공합니다. 향후에는 캔버스의 필기 레이어를
 /// PDF 이미지 위에 합성하는 기능을 확장할 수 있습니다.
+library thumbnail_service;
 import 'dart:io';
 
 import 'package:it_contest/shared/services/pdf_cache_service.dart';
