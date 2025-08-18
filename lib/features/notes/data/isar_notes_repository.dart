@@ -538,16 +538,15 @@ class IsarNotesRepository implements NotesRepository {
     // 개별 노트 스트림들도 무효화
     for (final entry in _noteStreams.entries) {
       final noteId = entry.key;
-      final controller = entry.value;
 
       final intId = int.tryParse(noteId);
       if (intId != null) {
         final note = await isar.notes.get(intId);
         if (note != null && note.deletedAt == null) {
           final noteModel = await _mapNote(isar, note);
-          controller.add(noteModel);
+          entry.value.add(noteModel);
         } else {
-          controller.add(null);
+          entry.value.add(null);
         }
       }
     }
