@@ -5,15 +5,20 @@ import 'package:isar/isar.dart';
 
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
+import 'package:it_contest/features/db/models/vault_models.g.dart';
 import 'package:it_contest/services/recent_tabs/recent_tabs_service.dart';
 
+/// 앱의 주기적인 유지보수 작업을 관리합니다.
+/// 휴지통 비우기, 스냅샷 정리, 최근 탭 정리 등의 작업을 수행합니다.
 class MaintenanceJobs {
+  /// [MaintenanceJobs]의 private 생성자입니다.
+  /// 이 클래스는 싱글턴 패턴을 따르므로, [instance]를 통해 접근해야 합니다.
   MaintenanceJobs._();
   static final MaintenanceJobs instance = MaintenanceJobs._();
 
   Timer? _maintenanceTimer;
 
-  // 휴지통 청소: 30일 경과 일괄 삭제
+  /// 휴지통 청소: 30일 경과 일괄 삭제
   Future<int> purgeRecycleBin({int olderThanDays = 30}) async {
     final isar = await IsarDb.instance.open();
     final threshold = DateTime.now().subtract(Duration(days: olderThanDays));
@@ -48,7 +53,7 @@ class MaintenanceJobs {
     return deleted;
   }
 
-  // 스냅샷 보존: 50개 또는 7일 초과 제거(선도달 기준)
+  /// 스냅샷 보존: 50개 또는 7일 초과 제거(선도달 기준)
   Future<int> trimSnapshots({int maxCount = 50, int maxDays = 7}) async {
     final isar = await IsarDb.instance.open();
     final threshold = DateTime.now().subtract(Duration(days: maxDays));

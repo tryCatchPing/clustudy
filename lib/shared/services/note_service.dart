@@ -5,11 +5,19 @@ import 'package:it_contest/shared/services/pdf_processed_data.dart';
 import 'package:it_contest/shared/services/pdf_processor.dart';
 import 'package:uuid/uuid.dart';
 
+/// 노트와 노트 페이지를 생성하는 서비스.
+///
+/// - 빈 노트/페이지 생성
+/// - PDF 기반 노트/페이지 생성
+///
+/// 애플리케이션 전역에서 하나의 인스턴스만 사용되는 싱글턴입니다.
 class NoteService {
   static final NoteService _instance = NoteService._();
   NoteService._();
 
-  // Singleton 패턴
+  /// 싱글턴 인스턴스.
+  ///
+  /// 앱 전역에서 동일한 `NoteService`를 사용합니다.
   static NoteService get instance => _instance;
 
   static const _uuid = Uuid();
