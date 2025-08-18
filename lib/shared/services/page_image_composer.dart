@@ -19,10 +19,6 @@ class PageImageComposer {
 
   /// 기본 해상도 설정
   static const double _defaultPixelRatio = 4.0; // 고해상도 (4배)
-  
-  /// 표준 페이지 크기 (A4 기준, DPI 300)
-  static const double _pageWidth = 2480.0; // 8.27" * 300 DPI
-  static const double _pageHeight = 3508.0; // 11.69" * 300 DPI
 
   /// ScribbleNotifier에서 고해상도 스케치 이미지를 추출합니다.
   ///
@@ -61,8 +57,8 @@ class PageImageComposer {
   /// Returns: 처리된 배경 이미지 또는 null (배경 없음 또는 실패시)
   static Future<ui.Image?> loadPdfBackground(
     NotePageModel page, {
-    double targetWidth = _pageWidth,
-    double targetHeight = _pageHeight,
+    double? targetWidth,
+    double? targetHeight,
   }) async {
     try {
       // PDF 배경이 없는 경우
@@ -83,8 +79,8 @@ class PageImageComposer {
       final imageBytes = await imageFile.readAsBytes();
       final codec = await ui.instantiateImageCodec(
         imageBytes,
-        targetWidth: targetWidth.toInt(),
-        targetHeight: targetHeight.toInt(),
+        targetWidth: targetWidth?.toInt(),
+        targetHeight: targetHeight?.toInt(),
       );
       final frame = await codec.getNextFrame();
 
@@ -111,9 +107,18 @@ class PageImageComposer {
     try {
       debugPrint('🎭 페이지 이미지 합성 시작: ${page.pageId}');
 
-      // 최종 이미지 크기 계산
-      final finalWidth = (_pageWidth * pixelRatio / _defaultPixelRatio).toInt();
-      final finalHeight = (_pageHeight * pixelRatio / _defaultPixelRatio).toInt();
+      // 페이지별 실제 캔버스 크기 사용
+      final pageWidth = page.drawingAreaWidth;
+      final pageHeight = page.drawingAreaHeight;
+
+      // 최종 이미지 크기 계산 (픽셀 비율 적용)
+      final finalWidth = (pageWidth * pixelRatio / _defaultPixelRatio).toInt();
+      final finalHeight = (pageHeight * pixelRatio / _defaultPixelRatio)
+          .toInt();
+
+      debugPrint(
+        '📐 캔버스 크기: ${pageWidth}x$pageHeight, 출력 크기: ${finalWidth}x$finalHeight',
+      );
 
       // PictureRecorder로 캔버스 생성
       final recorder = ui.PictureRecorder();
@@ -139,7 +144,9 @@ class PageImageComposer {
 
       if (byteData != null) {
         final bytes = byteData.buffer.asUint8List();
-        debugPrint('✅ 페이지 이미지 합성 완료: ${page.pageId} (크기: ${bytes.length} bytes)');
+        debugPrint(
+          '✅ 페이지 이미지 합성 완료: ${page.pageId} (크기: ${bytes.length} bytes)',
+        );
         return bytes;
       } else {
         throw Exception('이미지 바이트 변환 실패');
@@ -147,7 +154,11 @@ class PageImageComposer {
     } catch (e) {
       debugPrint('❌ 페이지 이미지 합성 실패: ${page.pageId} - $e');
       // 실패 시 플레이스홀더 이미지 반환
-      return await _generateErrorPlaceholder(page.pageNumber);
+      return await _generateErrorPlaceholder(
+        page.pageNumber,
+        width: page.drawingAreaWidth,
+        height: page.drawingAreaHeight,
+      );
     }
   }
 
@@ -166,14 +177,20 @@ class PageImageComposer {
     double pixelRatio = _defaultPixelRatio,
   }) async {
     final results = <Uint8List>[];
-    
+
     for (int i = 0; i < pages.length; i++) {
       final page = pages[i];
       final notifier = notifiers[page.pageId];
-      
+
       if (notifier == null) {
         debugPrint('⚠️ ScribbleNotifier 없음: ${page.pageId}');
-        results.add(await _generateErrorPlaceholder(page.pageNumber));
+        results.add(
+          await _generateErrorPlaceholder(
+            page.pageNumber,
+            width: page.drawingAreaWidth,
+            height: page.drawingAreaHeight,
+          ),
+        );
         continue;
       }
 
@@ -181,7 +198,11 @@ class PageImageComposer {
       onProgress?.call((i / pages.length), '페이지 ${page.pageNumber} 처리 중...');
 
       // 페이지 이미지 합성
-      final pageImage = await compositePageImage(page, notifier, pixelRatio: pixelRatio);
+      final pageImage = await compositePageImage(
+        page,
+        notifier,
+        pixelRatio: pixelRatio,
+      );
       results.add(pageImage);
 
       // 메모리 정리 (GC 힌트)
@@ -250,33 +271,40 @@ class PageImageComposer {
   ) async {
     try {
       // ScribbleNotifier에서 고해상도 스케치 추출
-      final sketchBytes = await extractSketchImage(notifier, pixelRatio: pixelRatio);
-      
+      final sketchBytes = await extractSketchImage(
+        notifier,
+        pixelRatio: pixelRatio,
+      );
+
       if (sketchBytes != null) {
-        // 스케치 이미지를 Canvas에 오버레이
-        final codec = await ui.instantiateImageCodec(sketchBytes);
-        final frame = await codec.getNextFrame();
-        final sketchImage = frame.image;
+        try {
+          // 스케치 이미지를 Canvas에 오버레이
+          final codec = await ui.instantiateImageCodec(sketchBytes);
+          final frame = await codec.getNextFrame();
+          final sketchImage = frame.image;
 
-        // 스케치 이미지를 캔버스 크기에 맞게 스케일링
-        final srcRect = Rect.fromLTWH(
-          0,
-          0,
-          sketchImage.width.toDouble(),
-          sketchImage.height.toDouble(),
-        );
-        final dstRect = Rect.fromLTWH(
-          0,
-          0,
-          canvasSize.width,
-          canvasSize.height,
-        );
+          // 스케치 이미지를 캔버스 크기에 맞게 스케일링
+          final srcRect = Rect.fromLTWH(
+            0,
+            0,
+            sketchImage.width.toDouble(),
+            sketchImage.height.toDouble(),
+          );
+          final dstRect = Rect.fromLTWH(
+            0,
+            0,
+            canvasSize.width,
+            canvasSize.height,
+          );
 
-        canvas.drawImageRect(sketchImage, srcRect, dstRect, Paint());
-        sketchImage.dispose();
-        debugPrint('✅ 스케치 오버레이 완료');
+          canvas.drawImageRect(sketchImage, srcRect, dstRect, Paint());
+          sketchImage.dispose();
+          debugPrint('✅ 스케치 오버레이 완료');
+        } catch (imageError) {
+          debugPrint('❌ 스케치 이미지 렌더링 실패: $imageError');
+        }
       } else {
-        debugPrint('⚠️ 스케치 이미지 추출 실패, 빈 스케치로 처리');
+        debugPrint('⚠️ 스케치 이미지 추출 실패, 배경만 처리');
       }
     } catch (e) {
       debugPrint('❌ 스케치 오버레이 실패: $e');
@@ -284,19 +312,20 @@ class PageImageComposer {
   }
 
   /// 오류 발생 시 플레이스홀더 이미지를 생성합니다.
-  static Future<Uint8List> _generateErrorPlaceholder(int pageNumber) async {
+  static Future<Uint8List> _generateErrorPlaceholder(
+    int pageNumber, {
+    double width = 2000.0, // 기본값: NoteEditorConstants.canvasWidth
+    double height = 2000.0, // 기본값: NoteEditorConstants.canvasHeight
+  }) async {
     try {
-      debugPrint('🔧 오류 플레이스홀더 생성: 페이지 $pageNumber');
-
-      const width = _pageWidth;
-      const height = _pageHeight;
+      debugPrint('🔧 오류 플레이스홀더 생성: 페이지 $pageNumber (${width}x$height)');
 
       final recorder = ui.PictureRecorder();
       final canvas = Canvas(recorder);
 
       // 연한 회색 배경
       final backgroundPaint = Paint()..color = const Color(0xFFF5F5F5);
-      canvas.drawRect(const Rect.fromLTWH(0, 0, width, height), backgroundPaint);
+      canvas.drawRect(Rect.fromLTWH(0, 0, width, height), backgroundPaint);
 
       // 테두리
       final borderPaint = Paint()
@@ -304,7 +333,7 @@ class PageImageComposer {
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.0;
       canvas.drawRect(
-        const Rect.fromLTWH(1, 1, width - 2, height - 2),
+        Rect.fromLTWH(1, 1, width - 2, height - 2),
         borderPaint,
       );
 

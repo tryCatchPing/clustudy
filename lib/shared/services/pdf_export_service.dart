@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
@@ -38,25 +39,32 @@ class PdfExportService {
   /// 단일 페이지 이미지를 PDF 페이지로 변환합니다.
   ///
   /// [pageImageBytes]: 페이지 이미지 바이트 배열
+  /// [pageWidth]: 페이지 너비 (포인트 단위)
+  /// [pageHeight]: 페이지 높이 (포인트 단위)
   /// [pageNumber]: 페이지 번호 (메타데이터용)
   ///
   /// Returns: PDF 페이지 위젯
   static pw.Page createPdfPage(
     Uint8List pageImageBytes, {
+    double? pageWidth,
+    double? pageHeight,
     int? pageNumber,
   }) {
     try {
-      debugPrint('📄 PDF 페이지 생성: ${pageNumber ?? '알 수 없음'}');
+      debugPrint('📄 PDF 페이지 생성: ${pageNumber ?? '알 수 없음'} (${pageWidth ?? 'A4'}x${pageHeight ?? 'A4'})');
+
+      // 페이지 크기가 지정된 경우 해당 크기로, 없으면 A4 기본값 사용
+      final pageFormat = (pageWidth != null && pageHeight != null)
+          ? PdfPageFormat(pageWidth, pageHeight)
+          : PdfPageFormat.a4;
 
       return pw.Page(
-        pageFormat: PdfPageFormat.a4,
+        pageFormat: pageFormat,
         margin: pw.EdgeInsets.zero, // 여백 없음으로 전체 페이지 활용
         build: (context) {
-          return pw.Center(
-            child: pw.Image(
-              pw.MemoryImage(pageImageBytes),
-              fit: pw.BoxFit.contain, // 비율 유지하며 페이지에 맞춤
-            ),
+          return pw.Image(
+            pw.MemoryImage(pageImageBytes),
+            fit: pw.BoxFit.fill, // 페이지 전체를 채움 (비율은 이미 이미지에서 처리됨)
           );
         },
       );
@@ -120,8 +128,14 @@ class PdfExportService {
         final pageImage = pageImages[i];
         final originalPage = pagesToExport[i];
         
+        // 캔버스 크기를 PDF 포인트 단위로 변환 (1픽셀 = 0.75포인트)
+        final pageWidthPoints = originalPage.drawingAreaWidth * 0.75;
+        final pageHeightPoints = originalPage.drawingAreaHeight * 0.75;
+        
         pdf.addPage(createPdfPage(
           pageImage,
+          pageWidth: pageWidthPoints,
+          pageHeight: pageHeightPoints,
           pageNumber: originalPage.pageNumber,
         ));
 
@@ -147,31 +161,67 @@ class PdfExportService {
     }
   }
 
-  /// PDF 파일을 로컬 저장소에 저장합니다.
+  /// PDF 파일을 임시 디렉토리에 저장합니다.
   ///
   /// [pdfBytes]: PDF 파일 바이트 배열
   /// [fileName]: 저장할 파일명 (확장자 제외)
   ///
   /// Returns: 저장된 파일의 전체 경로
-  static Future<String> savePdfToFile(
+  static Future<String> savePdfToTemporary(
     Uint8List pdfBytes,
     String fileName,
   ) async {
     try {
-      debugPrint('💾 PDF 파일 저장 시작: $fileName');
+      debugPrint('💾 PDF 임시 파일 저장 시작: $fileName');
 
-      // 임시 디렉토리 또는 문서 디렉토리 사용
-      final directory = await getApplicationDocumentsDirectory();
+      // 임시 디렉토리 사용
+      final directory = await getTemporaryDirectory();
       final filePath = path.join(directory.path, '${fileName}.pdf');
 
       // 파일 저장
       final file = File(filePath);
       await file.writeAsBytes(pdfBytes);
 
-      debugPrint('✅ PDF 파일 저장 완료: $filePath');
+      debugPrint('✅ PDF 임시 파일 저장 완료: $filePath');
       return filePath;
     } catch (e) {
-      debugPrint('❌ PDF 파일 저장 실패: $fileName - $e');
+      debugPrint('❌ PDF 임시 파일 저장 실패: $fileName - $e');
+      rethrow;
+    }
+  }
+
+  /// PDF 파일을 사용자가 선택한 위치에 저장합니다.
+  ///
+  /// [pdfBytes]: PDF 파일 바이트 배열
+  /// [defaultFileName]: 기본 파일명 (확장자 포함)
+  ///
+  /// Returns: 저장된 파일의 전체 경로 또는 null (취소시)
+  static Future<String?> savePdfToUserLocation(
+    Uint8List pdfBytes,
+    String defaultFileName,
+  ) async {
+    try {
+      debugPrint('📁 사용자 선택 PDF 저장 시작: $defaultFileName');
+
+      // 사용자에게 저장 위치 선택 요청
+      final outputPath = await FilePicker.platform.saveFile(
+        dialogTitle: 'PDF 저장 위치를 선택하세요',
+        fileName: defaultFileName,
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+        bytes: pdfBytes, // Android/iOS에서 필수
+        lockParentWindow: true,
+      );
+
+      if (outputPath == null) {
+        debugPrint('ℹ️ 사용자가 PDF 저장을 취소했습니다');
+        return null;
+      }
+
+      debugPrint('✅ 사용자 선택 PDF 저장 완료: $outputPath');
+      return outputPath;
+    } catch (e) {
+      debugPrint('❌ 사용자 선택 PDF 저장 실패: $defaultFileName - $e');
       rethrow;
     }
   }
@@ -234,11 +284,23 @@ class PdfExportService {
 
       // 2. 임시 파일로 저장
       final fileName = _generateFileName(note.title, exportOptions.quality);
-      final filePath = await savePdfToFile(pdfBytes, fileName);
+      final filePath = await savePdfToTemporary(pdfBytes, fileName);
 
       // 3. 파일 공유
       if (exportOptions.autoShare) {
         await sharePdf(filePath, shareText: exportOptions.shareText);
+        
+        // 공유 후 임시 파일 삭제
+        try {
+          final tempFile = File(filePath);
+          if (tempFile.existsSync()) {
+            await tempFile.delete();
+            debugPrint('🗑️ 임시 PDF 파일 삭제 완료: $filePath');
+          }
+        } catch (e) {
+          debugPrint('⚠️ 임시 PDF 파일 삭제 실패: $e');
+          // 삭제 실패는 치명적이지 않으므로 계속 진행
+        }
       }
 
       final endTime = DateTime.now();
@@ -246,7 +308,7 @@ class PdfExportService {
 
       final result = PdfExportResult(
         success: true,
-        filePath: filePath,
+        filePath: exportOptions.autoShare ? null : filePath, // 공유 시에는 경로 제거
         fileSize: pdfBytes.length,
         pageCount: note.pages.length,
         duration: duration,
@@ -268,6 +330,82 @@ class PdfExportService {
       );
 
       debugPrint('❌ PDF 내보내기 및 공유 실패: ${result.toString()}');
+      return result;
+    }
+  }
+
+  /// 노트를 PDF로 내보내고 사용자가 선택한 위치에 저장합니다.
+  ///
+  /// [note]: 내보낼 노트
+  /// [pageNotifiers]: 페이지별 ScribbleNotifier 맵
+  /// [options]: 내보내기 옵션
+  ///
+  /// Returns: 내보내기 결과 정보
+  static Future<PdfExportResult> exportAndSave(
+    NoteModel note,
+    Map<String, ScribbleNotifier> pageNotifiers, {
+    PdfExportOptions? options,
+  }) async {
+    final exportOptions = options ?? const PdfExportOptions();
+    final startTime = DateTime.now();
+    
+    try {
+      debugPrint('💾 PDF 내보내기 및 저장 시작: ${note.title}');
+
+      // 1. PDF 생성
+      final pdfBytes = await exportNoteToPdf(
+        note,
+        pageNotifiers,
+        quality: exportOptions.quality,
+        pageRange: exportOptions.pageRange,
+        onProgress: exportOptions.onProgress,
+      );
+
+      // 2. 사용자 선택 위치에 저장
+      final defaultFileName = '${_cleanFileName(note.title)}.pdf';
+      final savedPath = await savePdfToUserLocation(pdfBytes, defaultFileName);
+
+      final endTime = DateTime.now();
+      final duration = endTime.difference(startTime);
+
+      if (savedPath != null) {
+        final result = PdfExportResult(
+          success: true,
+          filePath: savedPath,
+          fileSize: pdfBytes.length,
+          pageCount: note.pages.length,
+          duration: duration,
+          quality: exportOptions.quality,
+        );
+
+        debugPrint('✅ PDF 내보내기 및 저장 완료: ${result.toString()}');
+        return result;
+      } else {
+        // 사용자가 저장을 취소한 경우
+        final result = PdfExportResult(
+          success: false,
+          error: '사용자가 저장을 취소했습니다.',
+          pageCount: note.pages.length,
+          duration: duration,
+          quality: exportOptions.quality,
+        );
+
+        debugPrint('ℹ️ PDF 저장 취소: ${result.toString()}');
+        return result;
+      }
+    } catch (e) {
+      final endTime = DateTime.now();
+      final duration = endTime.difference(startTime);
+
+      final result = PdfExportResult(
+        success: false,
+        error: e.toString(),
+        pageCount: note.pages.length,
+        duration: duration,
+        quality: exportOptions.quality,
+      );
+
+      debugPrint('❌ PDF 내보내기 및 저장 실패: ${result.toString()}');
       return result;
     }
   }
@@ -318,12 +456,15 @@ class PdfExportService {
             ? '_high' 
             : '';
     
-    // 파일명에 사용할 수 없는 문자 제거
-    final cleanTitle = noteTitle
+    final cleanTitle = _cleanFileName(noteTitle);
+    return '${cleanTitle}_${timestamp}$qualitySuffix';
+  }
+
+  /// 파일명에 사용할 수 없는 문자를 제거합니다.
+  static String _cleanFileName(String fileName) {
+    return fileName
         .replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')
         .replaceAll(RegExp(r'\s+'), '_');
-    
-    return '${cleanTitle}_${timestamp}$qualitySuffix';
   }
 }
 
