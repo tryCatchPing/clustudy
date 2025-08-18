@@ -82,7 +82,7 @@ void main() {
 
         // Create test data
         final vault = await NoteDbService.instance.createVault(name: 'TestVault');
-        final note = await NoteDbService.instance.createNote(
+        await NoteDbService.instance.createNote(
           vaultId: vault.id,
           name: 'TestNote',
           pageSize: 'A4',
@@ -159,7 +159,7 @@ void main() {
 
         // Create test data
         final vault = await NoteDbService.instance.createVault(name: 'TestVault');
-        final note = await NoteDbService.instance.createNote(
+        await NoteDbService.instance.createNote(
           vaultId: vault.id,
           name: 'TestNote',
           pageSize: 'A4',
@@ -193,7 +193,7 @@ void main() {
       () async {
         // Create initial data
         final vault = await NoteDbService.instance.createVault(name: 'OriginalVault');
-        final note = await NoteDbService.instance.createNote(
+        await NoteDbService.instance.createNote(
           vaultId: vault.id,
           name: 'OriginalNote',
           pageSize: 'A4',
@@ -236,7 +236,7 @@ void main() {
       () async {
         // Create test data
         final vault = await NoteDbService.instance.createVault(name: 'TestVault');
-        final note = await NoteDbService.instance.createNote(
+        await NoteDbService.instance.createNote(
           vaultId: vault.id,
           name: 'TestNote',
           pageSize: 'A4',
@@ -278,7 +278,7 @@ void main() {
       'restoreIntegratedBackup fails with wrong password',
       () async {
         // Create test data and encrypted backup
-        final vault = await NoteDbService.instance.createVault(name: 'TestVault');
+        await NoteDbService.instance.createVault(name: 'TestVault');
         final backupPath = await BackupService.instance.performIntegratedBackup(
           retentionDays: 7,
           includeEncryption: true,
@@ -304,7 +304,7 @@ void main() {
         await IsarDb.instance.open();
 
         // Create test data
-        final vault = await NoteDbService.instance.createVault(name: 'TestVault');
+        await NoteDbService.instance.createVault(name: 'TestVault');
 
         // Create different types of backups
         await BackupService.instance.performBackup(retentionDays: 7);
@@ -372,7 +372,7 @@ void main() {
       () async {
         // Create test data
         final vault = await NoteDbService.instance.createVault(name: 'TestVault');
-        final note = await NoteDbService.instance.createNote(
+        await NoteDbService.instance.createNote(
           vaultId: vault.id,
           name: 'TestNote',
           pageSize: 'A4',

@@ -191,7 +191,7 @@ void main() {
         const region = RectNorm(x0: 0.6, y0: 0.6, x1: 0.2, y1: 0.2);
 
         // Create linked note
-        final linkedNote = await LinkService.instance.createLinkedNoteFromRegion(
+        await LinkService.instance.createLinkedNoteFromRegion(
           vaultId: vault.id,
           sourceNoteId: sourceNote.id,
           sourcePageId: sourcePage.id,
