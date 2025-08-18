@@ -10,15 +10,25 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:pdfx/pdfx.dart';
 
+/// Provides PDF page rendering and on-disk cache management.
+///
+/// Handles cache file path helpers, metadata persistence via a
+/// [`PdfCacheRepository`], and global cache size enforcement (LRU).
 class PdfCacheService {
   final PdfCacheRepository _repository;
 
+  /// Creates a cache service backed by the given [repository].
+  ///
+  /// - repository: storage implementation used to persist cache metadata.
   PdfCacheService({
     required PdfCacheRepository repository,
   }) : _repository = repository;
 
   // 기존 Singleton 패턴을 위한 기본 인스턴스 (호환성)
   static PdfCacheService? _instance;
+  /// Returns the shared singleton instance for legacy compatibility.
+  ///
+  /// - return: a lazily created shared [PdfCacheService].
   static PdfCacheService get instance {
     _instance ??= PdfCacheService(
       repository: IsarPdfCacheRepository(),
@@ -27,6 +37,10 @@ class PdfCacheService {
   }
 
   // Repository 주입을 위한 팩토리 생성자
+  /// Creates a service that uses the provided [repository].
+  ///
+  /// - repository: the metadata repository to use.
+  /// - return: a new [PdfCacheService] instance using [repository].
   factory PdfCacheService.withRepository(PdfCacheRepository repository) {
     return PdfCacheService(repository: repository);
   }
@@ -50,6 +64,11 @@ class PdfCacheService {
     return p.join(dir, name);
   }
 
+  /// Deletes cached file(s) and metadata for a note or a specific page.
+  ///
+  /// - noteId: target note identifier.
+  /// - pageIndex: page to clear; when null, clears the entire note cache.
+  /// - return: completes when cache entries are removed.
   Future<void> invalidate({required int noteId, int? pageIndex}) async {
     final base = await _baseDir();
     final dir = Directory(p.join(base, '$noteId', 'pdf_cache'));
@@ -86,9 +105,8 @@ class PdfCacheService {
     if (resolvedPdfPath == null) {
       final isar = await IsarDb.instance.open();
       final page = await isar.pages
-          .where()
-          .deletedAtIsNull()
           .filter()
+          .deletedAtIsNull()
           .noteIdEqualTo(noteId)
           .indexEqualTo(pageIndex)
           .findFirst();
