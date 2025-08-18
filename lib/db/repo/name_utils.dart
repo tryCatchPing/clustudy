@@ -20,7 +20,7 @@ class NameUtils {
     // Prefer unique composite index lookup if available (nameLowerForVaultUnique + vaultId)
     Folder? found;
     try {
-      found = await isar.folders.getByNameLowerForVaultUnique(normalized, vaultId);
+      found = await isar.folders.getByNameLowerForVaultUniqueVaultId(normalized, vaultId);
     } catch (e, st) {
       // Fallback to filter in case codegen name changes; still correct though not index-optimized.
       // Prefer matching by lower name first, then scope by vault for readability.
@@ -46,7 +46,7 @@ class NameUtils {
 
     Note? found;
     try {
-      found = await isar.notes.getByNameLowerForParentUnique(
+      found = await isar.notes.getByNameLowerForParentUniqueVaultIdFolderId(
         normalized,
         vaultId,
         scopedFolderId,

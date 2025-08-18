@@ -19,11 +19,13 @@ class IsarDb {
   IsarDb._internal();
 
   static final IsarDb _instance = IsarDb._internal();
+  /// Singleton instance.
   static IsarDb get instance => _instance;
 
   Isar? _isar;
   static String? _testDirectoryOverride;
 
+  /// Overrides the documents directory during tests.
   static void setTestDirectoryOverride(String? path) {
     _testDirectoryOverride = path;
   }
@@ -91,8 +93,8 @@ class IsarDb {
   Future<void> _enableEncryption() async {
     final currentIsar = _isar!;
 
-    // 1. 새 암호화 키 생성
-    final encryptionKey = await CryptoKeyService.instance.getOrCreateKey();
+    // 1. 새 암호화 키 생성 (보관)
+    await CryptoKeyService.instance.getOrCreateKey();
 
     // 2. 현재 데이터 백업
     final backupData = await _createDataBackup(currentIsar);

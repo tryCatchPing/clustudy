@@ -33,8 +33,8 @@ class _EncryptionSettingsWidgetState extends State<EncryptionSettingsWidget> {
       final isar = await isarDb.open();
       final settings = await isar
           .collection<SettingsEntity>()
-          .filter()
-          .idGreaterThan(0)
+          .where()
+          .anyId()
           .findFirst();
       final backupKeys = await _encryptionManager.getBackupKeysInfo();
 
@@ -57,7 +57,9 @@ class _EncryptionSettingsWidgetState extends State<EncryptionSettingsWidget> {
           : '데이터베이스 암호화를 해제합니다. 이 작업은 되돌릴 수 없습니다.',
     );
 
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
 
     setState(() => _isLoading = true);
 
@@ -83,7 +85,9 @@ class _EncryptionSettingsWidgetState extends State<EncryptionSettingsWidget> {
       message: '새로운 암호화 키를 생성하고 데이터베이스를 재암호화합니다. 이 작업은 시간이 걸릴 수 있습니다.',
     );
 
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
 
     setState(() => _isLoading = true);
 
@@ -109,7 +113,9 @@ class _EncryptionSettingsWidgetState extends State<EncryptionSettingsWidget> {
       message: '선택한 백업 키로 데이터베이스를 복구합니다. 현재 데이터가 손실될 수 있습니다.',
     );
 
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
 
     setState(() => _isLoading = true);
 
