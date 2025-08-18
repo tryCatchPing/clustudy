@@ -1,15 +1,21 @@
+import 'package:isar/isar.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
-import 'package:isar/isar.dart';
 
+/// 초기 데이터(시드)를 보장하는 러너입니다.
 class SeedRunner {
+  /// 내부 생성자.
   SeedRunner._();
+  /// 싱글턴 인스턴스.
   static final SeedRunner instance = SeedRunner._();
 
+  /// 앱 최초 실행 시 필요한 기본 Vault/Folder/Note/Page를 생성합니다.
   Future<void> ensureInitialSeed() async {
     final isar = await IsarDb.instance.open();
     final hasVault = await isar.collection<Vault>().where().count() > 0;
-    if (hasVault) return;
+    if (hasVault) {
+      return;
+    }
     await isar.writeTxn(() async {
       final now = DateTime.now();
       final vault = Vault()
