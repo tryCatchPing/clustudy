@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:isar/isar.dart';
 // Ensure native libs are bundled for Flutter tests
 // ignore: unused_import
 import 'package:isar_flutter_libs/isar_flutter_libs.dart';
@@ -236,7 +235,7 @@ void main() {
             ..lastAccessAt = DateTime.now();
           cache2.setUniqueKey();
 
-          await IsarDb.instance.isar.collection<PdfCacheMeta>().putAll([cache1, cache2]);
+          await IsarDb.instance.isar.pdfCacheMetas.putAll([cache1, cache2]);
         });
 
         // 9. Create RecentTabs
@@ -246,7 +245,7 @@ void main() {
             ..noteIdsJson = '[${personalNote1.id}, ${workNote.id}, ${linkedNote.id}]'
             ..updatedAt = DateTime.now();
 
-          await IsarDb.instance.isar.collection<RecentTabs>().put(recentTabs);
+          await IsarDb.instance.isar.recentTabs.put(recentTabs);
         });
 
         // 10. Create settings
@@ -349,7 +348,8 @@ void main() {
         expect(restoredVaults[0].name, 'PersonalVault');
         expect(restoredVaults[1].name, 'WorkVault');
 
-        final restoredPersonalNotes = await currentIsar.collection<Note>()
+        final restoredPersonalNotes = await currentIsar
+            .collection<Note>()
             .filter()
             .vaultIdEqualTo(restoredVaults[0].id)
             .sortByName()
