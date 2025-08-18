@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:isar/isar.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
+import 'package:it_contest/features/db/models/vault_models.g.dart';
 import 'package:it_contest/shared/services/crypto_key_service.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -495,7 +496,6 @@ class BackupService {
 
   /// 현재 데이터 백업 (복원 전 안전장치)
   Future<void> _backupCurrentData() async {
-    final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-');
     await performBackup(retentionDays: 30); // 30일 보관
   }
 
@@ -765,8 +765,10 @@ class BackupInfo {
 
 /// 백업 타입
 enum BackupType {
-  database, // .isar 파일만
-  integrated, // DB + PDF 통합 백업
+  /// 데이터베이스(.isar)만 포함한 백업
+  database,
+  /// DB와 PDF 파일을 함께 포함한 통합 백업
+  integrated,
 }
 
 /// 백업 상태
