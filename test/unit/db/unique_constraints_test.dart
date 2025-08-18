@@ -1,11 +1,7 @@
 // ignore_for_file: avoid_slow_async_io
-import 'dart:io';
-
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:isar/isar.dart';
 // Ensure native libs are bundled for Flutter tests
-// ignore: unused_import
 import 'package:isar_flutter_libs/isar_flutter_libs.dart';
 
 import 'package:it_contest/features/db/isar/db_schemas.dart';
@@ -65,7 +61,7 @@ void main() {
         );
 
         // Verify only one vault exists
-        final vaults = await isar.collection<Vault>().filter().findAll();
+        final vaults = await isar.collection<Vault>().where().findAll();
         expect(vaults.length, 1);
         expect(vaults.first.name, 'TestVault');
       },
@@ -105,10 +101,10 @@ void main() {
         );
 
         // Verify folder counts
-        final vault1Folders = await isar.collection<Folder>().filter().vaultIdEqualTo(vault1.id).findAll();
+        final vault1Folders = await isar.collection<Folder>().where().vaultIdEqualTo(vault1.id).findAll();
         expect(vault1Folders.length, 1);
 
-        final vault2Folders = await isar.collection<Folder>().filter().vaultIdEqualTo(vault2.id).findAll();
+        final vault2Folders = await isar.collection<Folder>().where().vaultIdEqualTo(vault2.id).findAll();
         expect(vault2Folders.length, 1);
       },
       skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
@@ -174,7 +170,7 @@ void main() {
 
         // Verify note counts
         final folder1Notes = await isar.collection<Note>()
-            .filter()
+            .where()
             .vaultIdEqualTo(vault.id)
             .and()
             .folderIdEqualTo(folder1.id)
@@ -182,7 +178,7 @@ void main() {
         expect(folder1Notes.length, 1);
 
         final folder2Notes = await isar.collection<Note>()
-            .filter()
+            .where()
             .vaultIdEqualTo(vault.id)
             .and()
             .folderIdEqualTo(folder2.id)
@@ -190,7 +186,7 @@ void main() {
         expect(folder2Notes.length, 1);
 
         final rootNotes = await isar.collection<Note>()
-            .filter()
+            .where()
             .vaultIdEqualTo(vault.id)
             .and()
             .folderIdIsNull()
@@ -248,7 +244,7 @@ void main() {
         );
 
         // Verify only one edge exists
-        final edges = await isar.collection<GraphEdge>().filter().findAll();
+        final edges = await isar.collection<GraphEdge>().where().findAll();
         expect(edges.length, 1);
       },
       skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
@@ -313,7 +309,7 @@ void main() {
         });
 
         // Verify correct number of cache entries
-        final caches = await isar.collection<PdfCacheMeta>().filter().findAll();
+        final caches = await isar.collection<PdfCacheMeta>().where().findAll();
         expect(caches.length, 2);
       },
       skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
@@ -360,9 +356,9 @@ void main() {
         });
 
         // Verify correct records exist
-        final allTabs = await isar.collection<RecentTabs>().filter().findAll();
+        final allTabs = await isar.collection<RecentTabs>().where().findAll();
         expect(allTabs.length, 2);
-        expect(allTabs.map((t) => t.userId).toSet(), {'local', 'user2'});
+        expect(allTabs.map((RecentTabs t) => t.userId).toSet(), {'local', 'user2'});
       },
       skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
     );

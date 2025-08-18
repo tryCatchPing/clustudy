@@ -4,6 +4,7 @@ import 'package:isar/isar.dart';
 
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
+import 'package:it_contest/features/db/models/vault_models.g.dart';
 
 /// Thrown when there is no integer gap between prev and next indices.
 class SortIndexGapExhausted implements Exception {
