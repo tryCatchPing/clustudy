@@ -594,6 +594,14 @@ class AppTextStyles {
 
 ## 🔧 개발 환경 & 도구
 
+### AI/LLM 기본 비활성 정책
+
+- 이 저장소는 기본 개발/테스트/CI 플로우에서 **LLM/AI를 사용하지 않습니다**.
+- IDE 플러그인이나 외부 파이프라인으로 인해 모델 연결 오류가 발생할 수 있으니, 기본은 비활성하고 필요 시 **개인 로컬에서만 opt-in** 하세요.
+- 가이드:
+  - 문서: [모델 공급자 오류 트러블슈팅](docs/troubleshooting/model-provider-error/README.md)
+  - 문서: [IDE AI/LLM 플러그인 사용 지침](docs/troubleshooting/ide-ai.md)
+
 ### 필수 VSCode Extensions
 
 - Flutter
