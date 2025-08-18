@@ -31,7 +31,11 @@ class _EncryptionSettingsWidgetState extends State<EncryptionSettingsWidget> {
       // EncryptionManager에 public 메서드가 없으므로 직접 DB에서 읽기
       final isarDb = IsarDb.instance;
       final isar = await isarDb.open();
-      final settings = await isar.collection<SettingsEntity>().filter().findFirst();
+      final settings = await isar
+          .collection<SettingsEntity>()
+          .filter()
+          .idGreaterThan(0)
+          .findFirst();
       final backupKeys = await _encryptionManager.getBackupKeysInfo();
 
       setState(() {
@@ -290,7 +294,7 @@ class _EncryptionSettingsWidgetState extends State<EncryptionSettingsWidget> {
   }
 
   void _showSuccessDialog(String message) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('성공'),
@@ -306,7 +310,7 @@ class _EncryptionSettingsWidgetState extends State<EncryptionSettingsWidget> {
   }
 
   void _showErrorDialog(String message) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('오류'),

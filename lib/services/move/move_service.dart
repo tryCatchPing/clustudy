@@ -28,7 +28,9 @@ class MoveService {
 
     await isar.writeTxn(() async {
       final note = await isar.collection<Note>().get(noteId);
-      if (note == null) return;
+      if (note == null) {
+        return;
+      }
 
       final targetFolder = await isar.collection<Folder>().get(targetFolderId);
       if (targetFolder == null) {
@@ -101,7 +103,9 @@ class MoveService {
 
     await isar.writeTxn(() async {
       final folder = await isar.collection<Folder>().get(folderId);
-      if (folder == null) return;
+      if (folder == null) {
+        return;
+      }
       vaultId = folder.vaultId;
 
       // beforeFolderId가 주어지면 동일 볼트 검증

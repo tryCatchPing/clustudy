@@ -10,6 +10,11 @@ import 'package:it_contest/features/db/models/models.dart';
 import 'package:it_contest/shared/services/crypto_key_service.dart';
 import 'package:path_provider/path_provider.dart';
 
+/// Centralized Isar database lifecycle manager.
+///
+/// Provides a singleton instance to open/close the database and utilities
+/// for backup-assisted "encryption" toggling (note: Isar v3 does not support
+/// on-disk encryption; we use export/import around re-open to simulate the flow).
 class IsarDb {
   IsarDb._internal();
 
@@ -23,6 +28,9 @@ class IsarDb {
     _testDirectoryOverride = path;
   }
 
+  /// Opens the Isar instance. Parameters are kept for forward-compatibility.
+  ///
+  /// - [enableEncryption] and [encryptionKey] are currently no-ops on Isar v3.
   Future<Isar> open({bool enableEncryption = false, List<int>? encryptionKey}) async {
     if (_isar != null) {
       return _isar!;
@@ -36,24 +44,6 @@ class IsarDb {
       directoryPath = dir.path;
     }
 
-    // 암호화 키 처리
-    List<int>? finalEncryptionKey;
-    if (enableEncryption) {
-      if (encryptionKey != null) {
-        finalEncryptionKey = encryptionKey;
-      } else {
-        // 설정에서 암호화 상태 확인
-        final settings = await _getSettings();
-        if (settings?.encryptionEnabled == true) {
-          finalEncryptionKey = await CryptoKeyService.instance.loadKey();
-          finalEncryptionKey ??= await CryptoKeyService.instance.getOrCreateKey();
-        }
-      }
-    } else if (encryptionKey != null) {
-      // 명시적으로 키가 제공된 경우 사용 (재암호화 등에서 사용)
-      finalEncryptionKey = encryptionKey;
-    }
-
     _isar = await Isar.open(
       allSchemas,
       directory: directoryPath,
@@ -61,26 +51,6 @@ class IsarDb {
       // Note: encryptionKey is not supported on this Isar version
     );
     return _isar!;
-  }
-
-  /// 설정 정보를 조회합니다 (암호화 상태 확인용)
-  Future<SettingsEntity?> _getSettings() async {
-    try {
-      // 암호화되지 않은 임시 DB로 설정 확인
-      final tempIsar = await Isar.open(
-        [SettingsEntitySchema],
-        directory: _testDirectoryOverride ?? (await getApplicationDocumentsDirectory()).path,
-        name: 'settings_temp',
-        inspector: false,
-      );
-
-      final settings = await tempIsar.settingsEntitys.where().anyId().findFirst();
-      await tempIsar.close();
-      return settings;
-    } catch (e) {
-      // 설정을 읽을 수 없는 경우 null 반환
-      return null;
-    }
   }
 
   /// 암호화 켜기/끄기 토글

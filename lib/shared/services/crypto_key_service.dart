@@ -3,13 +3,13 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:developer' as developer;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:isar/isar.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
 import 'package:path_provider/path_provider.dart';
 
+/// 암호화 키를 생성/저장/회전/검증하는 서비스
 class CryptoKeyService {
   CryptoKeyService._();
   static final CryptoKeyService instance = CryptoKeyService._();
@@ -32,7 +32,9 @@ class CryptoKeyService {
 
   Future<List<int>> getOrCreateKey() async {
     final existing = await loadKey();
-    if (existing != null) return existing;
+    if (existing != null) {
+      return existing;
+    }
     final bytes = _randomBytes(32);
     await _storage.write(key: _keyAlias, value: _encode(bytes));
     return bytes;
@@ -98,7 +100,9 @@ class CryptoKeyService {
 
   /// 키의 유효성을 검증합니다.
   Future<bool> validateKey(List<int> key) async {
-    if (key.length != 32) return false;
+    if (key.length != 32) {
+      return false;
+    }
 
     try {
       // 키로 임시 DB 열기 테스트

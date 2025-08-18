@@ -7,13 +7,19 @@ import 'package:archive/archive_io.dart';
 import 'package:encrypt/encrypt.dart' as enc;
 import 'package:it_contest/crypto/keys.dart';
 import 'package:it_contest/features/db/isar_db.dart';
+import 'package:it_contest/features/db/models/models.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+/// Full backup service.
+///
+/// Creates an Isar snapshot and optional files archive, optionally encrypts the
+/// artifact, and enforces retention based on settings.
 class FullBackupService {
   FullBackupService._internal();
 
   static final FullBackupService _instance = FullBackupService._internal();
+  /// Singleton instance.
   static FullBackupService get instance => _instance;
 
   Future<String> _backupDir() async {
@@ -98,12 +104,18 @@ class FullBackupService {
     final dir = await _backupDir();
     final d = Directory(dir);
     final threshold = DateTime.now().subtract(Duration(days: retentionDays));
-    if (!d.existsSync()) return;
+    if (!d.existsSync()) {
+      return;
+    }
     final entries = await d.list().toList();
     for (final e in entries) {
-      if (e is! File) continue;
-      if (!(e.path.endsWith('.zip') || e.path.endsWith('.zip.enc') || e.path.endsWith('.isar')))
+      if (e is! File) {
         continue;
+      }
+      if (!(e.path.endsWith('.zip') || e.path.endsWith('.zip.enc') || e.path.endsWith('.isar')))
+        {
+          continue;
+        }
       final stat = e.statSync();
       if (stat.modified.isBefore(threshold)) {
         try {
@@ -113,10 +125,14 @@ class FullBackupService {
     }
   }
 
+  /// Run full backup.
+  ///
+  /// - When [encrypt] is true, the resulting zip is encrypted with AES-CBC.
+  /// - Enforces retention using the configured `backupRetentionDays`.
   Future<void> runFullBackup({required bool includeFiles, required bool encrypt}) async {
     // Guards based on settings
     final isar = await IsarDb.instance.open();
-    final settings = await isar.collection<SettingsEntity>().filter().findFirst();
+    final settings = await isar.collection<SettingsEntity>().where().anyId().findFirst();
     final retentionDays = settings?.backupRetentionDays ?? 7;
     // Placeholder for wifi/charging guards (plugins can be integrated later)
     // if (settings?.backupRequireWifi == true) { ... }

@@ -183,13 +183,20 @@ class EncryptionManager {
   /// 현재 설정을 조회합니다
   Future<SettingsEntity?> _getCurrentSettings() async {
     final isar = await _isarDb.open();
-    return await isar.collection<SettingsEntity>().where().anyId().findFirst();
+    // Isar 쿼리 표준화: filter → 조건 추가 → findFirst
+    return await isar
+        .collection<SettingsEntity>()
+        .filter()
+        .idGreaterThan(0)
+        .findFirst();
   }
 
   /// 키 검증을 수행합니다
   Future<bool> validateCurrentKey() async {
     final key = await _cryptoService.loadKey();
-    if (key == null) return false;
+    if (key == null) {
+      return false;
+    }
 
     return await _cryptoService.validateKey(key);
   }

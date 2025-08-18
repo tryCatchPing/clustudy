@@ -58,7 +58,9 @@ class LinkService {
     final isar = await IsarDb.instance.open();
     await isar.writeTxn(() async {
       final link = await isar.collection<LinkEntity>().get(linkId);
-      if (link == null) return;
+      if (link == null) {
+        return;
+      }
 
       final int? toNoteId = link.targetNoteId;
       if (toNoteId != null) {

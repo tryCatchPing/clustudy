@@ -2,6 +2,7 @@ import 'package:isar/isar.dart';
 
 part 'vault_models.g.dart';
 
+/// Logical data container. Top-level namespace that owns folders and notes.
 @collection
 class Vault {
   Id id = Isar.autoIncrement;
@@ -23,6 +24,7 @@ class Vault {
   DateTime? deletedAt;
 }
 
+/// Folder under a `Vault`. Organizes notes and preserves a local order.
 @collection
 class Folder {
   Id id = Isar.autoIncrement;
@@ -49,6 +51,7 @@ class Folder {
   late String nameLowerForVaultUnique;
 }
 
+/// A note composed of pages and associated canvas data.
 @collection
 class Note {
   Id id = Isar.autoIncrement;
@@ -92,6 +95,7 @@ class Note {
   late String nameLowerForSearch;
 }
 
+/// A single page belonging to a `Note` with dimensions and rotation.
 @collection
 class Page {
   Id id = Isar.autoIncrement;
@@ -118,6 +122,7 @@ class Page {
   DateTime? deletedAt;
 }
 
+/// Serialized canvas content per page.
 @collection
 class CanvasData {
   Id id = Isar.autoIncrement;
@@ -138,6 +143,7 @@ class CanvasData {
   late DateTime updatedAt;
 }
 
+/// Historical snapshot of page canvas content for recovery/undo.
 @collection
 class PageSnapshot {
   Id id = Isar.autoIncrement;
@@ -152,6 +158,7 @@ class PageSnapshot {
   late DateTime createdAt;
 }
 
+/// Link drawn on a page that can point to another note.
 @collection
 class LinkEntity {
   Id id = Isar.autoIncrement;
@@ -186,6 +193,7 @@ class LinkEntity {
   late DateTime updatedAt;
 }
 
+/// Graph edge between notes within a vault.
 @collection
 class GraphEdge {
   Id id = Isar.autoIncrement;
@@ -211,6 +219,7 @@ class GraphEdge {
     ],
     unique: true,
   )
+  // ignore: unused_field
   late String _uniqueEdgeKey;
 
   // Helper to set the unique key based on vaultId, fromNoteId, toNoteId
@@ -219,6 +228,7 @@ class GraphEdge {
   }
 }
 
+/// Metadata about cached PDF renders for faster thumbnails/previews.
 @collection
 class PdfCacheMeta {
   Id id = Isar.autoIncrement;
@@ -238,6 +248,7 @@ class PdfCacheMeta {
 
   // Unique constraint to prevent duplicate cache entries: (noteId, pageIndex)
   @Index(composite: [CompositeIndex('noteId'), CompositeIndex('pageIndex')], unique: true)
+  // ignore: unused_field
   late String _uniqueCacheKey;
 
   // Helper to set the unique key based on noteId, pageIndex
@@ -246,6 +257,7 @@ class PdfCacheMeta {
   }
 }
 
+/// Recently opened tabs state.
 @collection
 class RecentTabs {
   Id id = Isar.autoIncrement;
@@ -261,6 +273,7 @@ class RecentTabs {
   late DateTime updatedAt;
 }
 
+/// Application settings and data schema versioning.
 @collection
 class SettingsEntity {
   Id id = Isar.autoIncrement;

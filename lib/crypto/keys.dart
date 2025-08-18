@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+/// 보안 저장소에 AES 키를 저장/조회하는 헬퍼
 class CryptoKeys {
   CryptoKeys._internal();
   static final CryptoKeys _instance = CryptoKeys._internal();

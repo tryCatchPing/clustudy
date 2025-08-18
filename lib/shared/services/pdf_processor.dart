@@ -17,19 +17,19 @@ class PdfProcessor {
   static const _uuid = Uuid();
 
   /// 표준 캔버스 크기 (긴 변 기준)
-  static const double TARGET_LONG_EDGE = 2000.0;
+  static const double targetLongEdge = 2000.0;
 
   /// PDF 페이지 크기를 표준 크기로 정규화
-  /// 종횡비를 유지하면서 긴 변을 TARGET_LONG_EDGE로 맞춤
+  /// 종횡비를 유지하면서 긴 변을 targetLongEdge로 맞춤
   static Size _normalizePageSize(double originalWidth, double originalHeight) {
     final aspectRatio = originalWidth / originalHeight;
 
     if (originalWidth >= originalHeight) {
       // 가로가 더 긴 경우
-      return Size(TARGET_LONG_EDGE, TARGET_LONG_EDGE / aspectRatio);
+      return Size(targetLongEdge, targetLongEdge / aspectRatio);
     } else {
       // 세로가 더 긴 경우
-      return Size(TARGET_LONG_EDGE * aspectRatio, TARGET_LONG_EDGE);
+      return Size(targetLongEdge * aspectRatio, targetLongEdge);
     }
   }
 

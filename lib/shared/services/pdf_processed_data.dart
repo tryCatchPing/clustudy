@@ -1,4 +1,6 @@
 /// PDF 전처리 결과를 담는 데이터 클래스
+///
+/// PDF 선택 및 사전 렌더링 과정에서 생성되는 메타데이터를 보관합니다.
 class PdfProcessedData {
   /// 노트 고유 ID
   final String noteId;
@@ -25,6 +27,8 @@ class PdfProcessedData {
 }
 
 /// 개별 PDF 페이지 데이터
+///
+/// 각 페이지의 정규화된 크기와 사전 렌더링된 이미지 경로를 포함합니다.
 class PdfPageData {
   /// 페이지 번호 (1부터 시작)
   final int pageNumber;

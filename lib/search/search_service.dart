@@ -25,7 +25,9 @@ class SearchService {
     required String query,
     int limit = 10,
   }) async {
-    if (query.trim().isEmpty) return [];
+    if (query.trim().isEmpty) {
+      return [];
+    }
 
     final isar = await IsarDb.instance.open();
     final q = query.toLowerCase().trim();
@@ -48,7 +50,9 @@ class SearchService {
     required String query,
     int limit = 50,
   }) async {
-    if (query.trim().isEmpty) return [];
+    if (query.trim().isEmpty) {
+      return [];
+    }
 
     final isar = await IsarDb.instance.open();
     final q = query.toLowerCase().trim();
@@ -70,7 +74,9 @@ class SearchService {
     bool useContains = true,
     int limit = 100,
   }) async {
-    if (query.trim().isEmpty) return [];
+    if (query.trim().isEmpty) {
+      return [];
+    }
 
     final isar = await IsarDb.instance.open();
     final q = query.toLowerCase().trim();
@@ -100,7 +106,9 @@ class SearchService {
     bool useContains = true,
     int limit = 30,
   }) async {
-    if (query.trim().isEmpty) return [];
+    if (query.trim().isEmpty) {
+      return [];
+    }
 
     final isar = await IsarDb.instance.open();
     final q = query.toLowerCase().trim();
@@ -178,7 +186,9 @@ class SearchService {
     bool useContains = true,
     int limit = 30,
   }) async {
-    if (query.trim().isEmpty) return [];
+    if (query.trim().isEmpty) {
+      return [];
+    }
 
     final isar = await IsarDb.instance.open();
     final q = query.toLowerCase().trim();
@@ -210,7 +220,9 @@ class SearchService {
     bool useContains = true,
     int limit = 20,
   }) async {
-    if (query.trim().isEmpty) return [];
+    if (query.trim().isEmpty) {
+      return [];
+    }
 
     final isar = await IsarDb.instance.open();
     final q = query.toLowerCase().trim();
@@ -246,7 +258,7 @@ class SearchService {
       return SearchResults.empty();
     }
 
-    final futures = <Future>[];
+    final futures = <Future<void>>[];
     final results = SearchResults();
 
     // 볼트 검색 (vaultId가 지정되지 않은 경우)
@@ -314,7 +326,9 @@ class SearchService {
     required String query,
     int limit = 5,
   }) async {
-    if (query.trim().isEmpty) return [];
+    if (query.trim().isEmpty) {
+      return [];
+    }
 
     final notes = await quickSearchNotes(
       vaultId: vaultId,

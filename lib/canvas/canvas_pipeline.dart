@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:isar/isar.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
 import 'package:it_contest/snapshot/snapshot_service.dart';

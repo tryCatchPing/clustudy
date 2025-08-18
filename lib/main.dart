@@ -106,11 +106,6 @@ class DatabaseInitializer extends ConsumerWidget {
     );
   }
 
-  /// 마이그레이션과 시딩을 수행합니다
-  Future<void> _runInitialSetup() async {
-    await MigrationRunner.instance.runMigrationsIfNeeded();
-    await SeedRunner.instance.ensureInitialSeed();
-  }
 }
 
 class _InitialSetupGate extends StatefulWidget {
