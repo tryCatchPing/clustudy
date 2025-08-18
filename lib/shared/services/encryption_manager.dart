@@ -186,8 +186,8 @@ class EncryptionManager {
     // Isar 쿼리 표준화: filter → 조건 추가 → findFirst
     return await isar
         .collection<SettingsEntity>()
-        .filter()
-        .idGreaterThan(0)
+        .where()
+        .anyId()
         .findFirst();
   }
 
