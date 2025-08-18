@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:it_contest/features/canvas/notifiers/custom_scribble_notifier.dart';
+
 import 'package:scribble/scribble.dart';
+
+import 'package:it_contest/features/canvas/notifiers/custom_scribble_notifier.dart';
 import 'package:it_contest/features/canvas/providers/note_editor_provider.dart';
 
 /// 포인터 모드 (모든 터치, 펜 전용)를 선택하는 위젯입니다.

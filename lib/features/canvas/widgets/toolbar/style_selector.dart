@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:it_contest/features/canvas/models/canvas_color.dart';
 import 'package:it_contest/features/canvas/models/tool_mode.dart';
-import 'package:it_contest/features/canvas/widgets/toolbar/color_button.dart';
 import 'package:it_contest/features/canvas/providers/tool_settings_provider.dart';
+import 'package:it_contest/features/canvas/widgets/toolbar/color_button.dart';
 
 /// 스타일 선택기(색상 + 굵기)를 한 곳에서 제공하는 위젯.
 ///

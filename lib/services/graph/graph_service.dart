@@ -1,6 +1,6 @@
+import 'package:isar/isar.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
-import 'package:isar/isar.dart';
 
 /// Graph operations on `GraphEdge` relations.
 class GraphService {

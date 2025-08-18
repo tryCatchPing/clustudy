@@ -9,6 +9,10 @@ import 'package:it_contest/features/db/models/models.dart';
 /// - `Future<bool> existsFolderNameLower(int vaultId, String lower);`
 /// - `Future<bool> existsNoteNameLower(int vaultId, int folderId, String lower);`
 /// - `Future<String> generateUniqueNoteName(int vaultId, int folderId, String baseLabel);`
+/// 노트/폴더 이름의 유일성 검사 및 자동 생성 유틸리티.
+///
+/// - 소문자 기반 유니크 제약을 준수하도록 도와줍니다.
+/// - 충돌 시 " (n)" 접미사를 붙여 가용한 이름을 생성합니다.
 class NameUtils {
   const NameUtils._();
 
@@ -102,14 +106,17 @@ class NameUtils {
 
 // -------- Public contract (top-level functions) --------
 
+/// 볼트 내 소문자 폴더명 존재 여부를 반환합니다.
 Future<bool> existsFolderNameLower(int vaultId, String lower) {
   return NameUtils.existsFolderNameLower(vaultId, lower);
 }
 
+/// (vaultId, folderId) 스코프에서 소문자 노트명 존재 여부를 반환합니다.
 Future<bool> existsNoteNameLower(int vaultId, int folderId, String lower) {
   return NameUtils.existsNoteNameLower(vaultId, folderId, lower);
 }
 
+/// (vaultId, folderId) 스코프에서 유일한 노트 이름을 생성합니다.
 Future<String> generateUniqueNoteName(
   int vaultId,
   int folderId,

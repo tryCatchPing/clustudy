@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:it_contest/features/canvas/providers/note_editor_provider.dart';
+
 import 'package:go_router/go_router.dart';
+
+import 'package:it_contest/features/canvas/providers/note_editor_provider.dart';
 
 /// 📄 페이지 네비게이션 컨트롤 위젯
 ///
