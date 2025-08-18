@@ -1,19 +1,25 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'dart:io';
 import 'dart:typed_data';
-import 'dart:developer' as developer;
+
+import 'package:flutter/foundation.dart' show kDebugMode;
 
 import 'package:archive/archive.dart';
 import 'package:encrypt/encrypt.dart';
 import 'package:isar/isar.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
-import 'package:it_contest/features/db/isar_db.dart';
-import 'package:it_contest/features/db/models/models.dart';
-import 'package:it_contest/shared/services/crypto_key_service.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import 'package:it_contest/features/db/isar_db.dart';
+import 'package:it_contest/features/db/models/models.dart';
+import 'package:it_contest/shared/services/crypto_key_service.dart';
+
+/// 백업 및 복원 기능을 제공하는 싱글톤 서비스.
+///
+/// - 통합 백업(데이터베이스 + PDF) 생성/보존/삭제
+/// - 자동 백업 스케줄링과 상태 조회
 class BackupService {
   BackupService._();
   static final BackupService instance = BackupService._();
@@ -34,7 +40,9 @@ class BackupService {
     final hh = int.parse(parts[0]);
     final mm = int.parse(parts[1]);
     final scheduledToday = DateTime(now.year, now.month, now.day, hh, mm);
-    if (lastBackupAt == null) return now.isAfter(scheduledToday);
+    if (lastBackupAt == null) {
+      return now.isAfter(scheduledToday);
+    }
     final lastDay = DateTime(lastBackupAt.year, lastBackupAt.month, lastBackupAt.day);
     final today = DateTime(now.year, now.month, now.day);
     if (today.isAfter(lastDay)) {
@@ -43,19 +51,27 @@ class BackupService {
     return false;
   }
 
+  /// 설정된 일일 시각에 도달하면 백업을 실행합니다.
+  /// 통합 백업 실패 시 기본 DB 백업으로 폴백합니다.
   Future<void> runIfDue() async {
     final isar = await IsarDb.instance.open();
     final settings = await isar.collection<SettingsEntity>().where().anyId().findFirst();
-    if (settings == null) return;
+    if (settings == null) {
+      return;
+    }
 
     final due = await _isDueDaily(settings.backupDailyAt, settings.lastBackupAt);
-    if (!due) return;
+    if (!due) {
+      return;
+    }
 
     // Guards: wifi/charging placeholder (can be extended with connectivity/battery plugins)
     // if (settings.backupRequireWifi == true) { ... }
     // if (settings.backupOnlyWhenCharging == true) { ... }
 
-    if (_isRunningBackup) return;
+    if (_isRunningBackup) {
+      return;
+    }
     _isRunningBackup = true;
     try {
       // 통합 백업 사용 (DB + PDF 파일들)
@@ -82,6 +98,9 @@ class BackupService {
     });
   }
 
+  /// 주기적으로 [runIfDue]를 호출하는 스케줄러를 시작합니다.
+  ///
+  /// [interval] 스케줄 주기 (기본 15분)
   void startScheduler({Duration interval = const Duration(minutes: 15)}) {
     _timer?.cancel();
     _timer = Timer.periodic(interval, (_) {
@@ -101,11 +120,14 @@ class BackupService {
     });
   }
 
+  /// [startScheduler]로 시작한 스케줄러를 중지합니다.
   void stopScheduler() {
     _timer?.cancel();
     _timer = null;
   }
 
+  /// 데이터베이스(.isar)만 단독으로 백업합니다.
+  /// 완료 후 [retentionDays] 기준의 보존 정책을 적용합니다.
   Future<void> performBackup({required int retentionDays}) async {
     final isar = await IsarDb.instance.open();
     final dir = await _backupDir();
@@ -176,7 +198,9 @@ class BackupService {
       final docs = await getApplicationDocumentsDirectory();
       final notesDir = Directory(p.join(docs.path, 'notes'));
 
-      if (!notesDir.existsSync()) return;
+      if (!notesDir.existsSync()) {
+        return;
+      }
 
       await for (final entity in notesDir.list(recursive: true)) {
         if (entity is File) {
@@ -204,7 +228,7 @@ class BackupService {
     return {
       'version': '1.0',
       'created_at': DateTime.now().toIso8601String(),
-      'app_version': '1.0.0', // TODO: 실제 앱 버전으로 교체
+      'app_version': '1.0.0', // TODO(jidamkim): 실제 앱 버전으로 교체
       'database_schema_version': 1,
       'statistics': {
         'vault_count': await isar.collection<Vault>().where().count(),
@@ -254,7 +278,9 @@ class BackupService {
     }
 
     final zipData = ZipEncoder().encode(archive);
-    if (zipData == null) throw Exception('ZIP 생성 실패');
+    if (zipData == null) {
+      throw Exception('ZIP 생성 실패');
+    }
 
     // 2. 암호화
     final password = customPassword ?? await _getBackupEncryptionKey();
@@ -753,9 +779,13 @@ class BackupStatus {
   }
 
   Duration? get timeUntilNextBackup {
-    if (nextBackupDue == null) return null;
+    if (nextBackupDue == null) {
+      return null;
+    }
     final now = DateTime.now();
-    if (nextBackupDue!.isBefore(now)) return Duration.zero;
+    if (nextBackupDue!.isBefore(now)) {
+      return Duration.zero;
+    }
     return nextBackupDue!.difference(now);
   }
 }
