@@ -1,6 +1,6 @@
+import 'package:isar/isar.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
-import 'package:isar/isar.dart';
 
 /// 통합 검색 서비스
 ///
@@ -14,6 +14,13 @@ class SearchService {
   static final SearchService instance = SearchService._();
 
   /// 검색 결과 타입 정의
+  ///
+  /// 검색 결과를 타입별로 식별하기 위한 상수입니다.
+  /// UI 또는 호출부에서 결과를 구분할 때 사용됩니다.
+  ///
+  /// - [typeVault]: 볼트 결과 키
+  /// - [typeFolder]: 폴더 결과 키
+  /// - [typeNote]: 노트 결과 키
   static const String typeVault = 'vaults';
   static const String typeFolder = 'folders';
   static const String typeNote = 'notes';
@@ -342,9 +349,14 @@ class SearchService {
 }
 
 /// 검색 결과를 담는 클래스
+///
+/// 통합 검색 시 엔티티 타입별로 결과를 보관합니다. 각 리스트는 비어있을 수 있습니다.
 class SearchResults {
+  /// 검색된 볼트 목록
   List<Vault> vaults = [];
+  /// 검색된 폴더 목록
   List<Folder> folders = [];
+  /// 검색된 노트 목록
   List<Note> notes = [];
 
   SearchResults();
@@ -358,6 +370,9 @@ class SearchResults {
   bool get hasResults => totalCount > 0;
 
   /// 타입별 결과를 Map으로 반환
+  ///
+  /// 반환되는 맵의 키는 [SearchService.typeVault], [SearchService.typeFolder],
+  /// [SearchService.typeNote] 입니다. 값은 각 타입의 결과 리스트입니다.
   Map<String, List<dynamic>> toMap() {
     return {
       SearchService.typeVault: vaults,
