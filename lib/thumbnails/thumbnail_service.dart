@@ -1,3 +1,5 @@
+// ignore_for_file: public_member_api_docs
+
 /// 썸네일 서비스 라이브러리
 ///
 /// PDF 페이지의 사전 렌더링(캐시)을 보장하고 해당 이미지 경로를

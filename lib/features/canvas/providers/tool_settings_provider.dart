@@ -1,3 +1,5 @@
+// ignore_for_file: public_member_api_docs
+
 import 'package:flutter/material.dart';
 import 'package:it_contest/features/canvas/models/tool_mode.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
