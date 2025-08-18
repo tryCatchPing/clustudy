@@ -1,30 +1,33 @@
 // ignore_for_file: avoid_slow_async_io
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:isar/isar.dart';
-
-import 'package:it_contest/features/db/isar/db_schemas.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
 import 'package:it_contest/features/db/services/note_db_service.dart';
 import 'package:it_contest/services/graph/graph_service.dart';
 import 'package:it_contest/services/link/link_service.dart';
+import 'package:it_contest/services/softdelete/soft_delete_service.dart';
 import 'package:it_contest/shared/models/rect_norm.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  const MethodChannel pathProviderChannel = MethodChannel('plugins.flutter.io/path_provider');
+  Directory? tempRoot;
 
   setUp(() async {
     // Ensure fresh temp directory per test and mock path_provider
-    final Directory tempRoot = await Directory.systemTemp.createTemp('it_contest_test_');
-    const MethodChannel pathProviderChannel = MethodChannel('plugins.flutter.io/path_provider');
+    tempRoot = await Directory.systemTemp.createTemp('it_contest_test_');
+    IsarDb.setTestDirectoryOverride(tempRoot!.path);
+
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
       pathProviderChannel,
       (MethodCall call) async {
         if (call.method == 'getApplicationDocumentsDirectory') {
-          return tempRoot.path;
+          return tempRoot!.path;
         }
         return null;
       },
@@ -41,9 +44,10 @@ void main() {
       pathProviderChannel,
       null,
     );
-    if (tempRoot != null && await tempRoot.exists()) {
-      await tempRoot.delete(recursive: true);
+    if (tempRoot != null && await tempRoot!.exists()) {
+      await tempRoot!.delete(recursive: true);
     }
+    IsarDb.setTestDirectoryOverride(null);
   });
 
   group('Link Synchronization Tests', () {
