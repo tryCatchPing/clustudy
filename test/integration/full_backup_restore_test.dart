@@ -118,7 +118,7 @@ void main() {
           sortIndex: 1000,
         );
 
-        final personalNote2 = await NoteDbService.instance.createNote(
+        await NoteDbService.instance.createNote(
           vaultId: vault1.id,
           folderId: personalFolder.id,
           name: 'Personal Note 2',
@@ -127,7 +127,7 @@ void main() {
           sortIndex: 2000,
         );
 
-        final rootNote = await NoteDbService.instance.createNote(
+        await NoteDbService.instance.createNote(
           vaultId: vault1.id,
           folderId: null, // Root note
           name: 'Root Note',
@@ -356,7 +356,7 @@ void main() {
             .findAll();
         expect(restoredPersonalNotes.length, 3); // 2 folder notes + 1 root note + 1 linked note
         expect(
-          restoredPersonalNotes.map((n) => n.name).toList(),
+          restoredPersonalNotes.map((Note n) => n.name).toList(),
           containsAll(['Personal Note 1', 'Personal Note 2', 'Root Note', 'Linked Note']),
         );
 
@@ -374,7 +374,7 @@ void main() {
         // Verify canvas data
         final restoredCanvasData = await currentIsar.collection<CanvasData>().where().findAll();
         expect(restoredCanvasData.length, 2);
-        expect(restoredCanvasData.every((c) => c.json.isNotEmpty), isTrue);
+        expect(restoredCanvasData.every((CanvasData c) => c.json.isNotEmpty), isTrue);
 
         // Verify PDF files were restored
         final restoredNotesDir = Directory('${tempRoot!.path}/notes');
@@ -410,7 +410,7 @@ void main() {
 
         // Create test data
         final vault = await NoteDbService.instance.createVault(name: 'SecureVault');
-        final note = await NoteDbService.instance.createNote(
+        await NoteDbService.instance.createNote(
           vaultId: vault.id,
           name: 'Secret Note',
           pageSize: 'A4',
