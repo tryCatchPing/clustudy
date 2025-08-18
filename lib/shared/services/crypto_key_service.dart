@@ -2,13 +2,11 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:io';
 import 'dart:math';
-
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:isar/isar.dart';
-import 'package:path_provider/path_provider.dart';
-
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
+import 'package:path_provider/path_provider.dart';
 
 /// 암호화 키를 생성/저장/회전/검증하는 서비스
 class CryptoKeyService {
@@ -22,7 +20,9 @@ class CryptoKeyService {
   Future<List<int>?> loadKey() async {
     try {
       final base64 = await _storage.read(key: _keyAlias);
-      if (base64 == null) return null;
+      if (base64 == null) {
+        return null;
+      }
       return _decode(base64);
     } on Exception catch (e, stack) {
       // Log storage access failures for debugging
@@ -135,7 +135,9 @@ class CryptoKeyService {
   Future<List<int>?> loadBackupKey(String backupAlias) async {
     final fullAlias = '$_backupPrefix$backupAlias';
     final base64 = await _storage.read(key: fullAlias);
-    if (base64 == null) return null;
+    if (base64 == null) {
+      return null;
+    }
     return _decode(base64);
   }
 

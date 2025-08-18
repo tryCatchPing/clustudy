@@ -58,7 +58,9 @@ class PdfCacheMetaModel {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other)) return true;
+    if (identical(this, other)) {
+      return true;
+    }
     return other is PdfCacheMetaModel &&
         other.id == id &&
         other.noteId == noteId &&

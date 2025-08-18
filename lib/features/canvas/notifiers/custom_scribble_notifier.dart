@@ -69,7 +69,9 @@ class CustomScribbleNotifier extends ScribbleNotifier with AutoSaveMixin, ToolMa
   /// 링커 모드일 때는 아무것도 하지 않습니다.
   @override
   void onPointerDown(PointerDownEvent event) {
-    if (toolMode.isLinker) return; // 링커 모드일 때는 아무것도 하지 않음
+    if (toolMode.isLinker) {
+      return; // 링커 모드일 때는 아무것도 하지 않음
+    }
     if (!value.supportedPointerKinds.contains(event.kind)) {
       return;
     }
@@ -103,7 +105,9 @@ class CustomScribbleNotifier extends ScribbleNotifier with AutoSaveMixin, ToolMa
   /// 링커 모드일 때는 아무것도 하지 않습니다.
   @override
   void onPointerUpdate(PointerMoveEvent event) {
-    if (toolMode.isLinker) return; // 링커 모드일 때는 아무것도 하지 않음
+    if (toolMode.isLinker) {
+      return; // 링커 모드일 때는 아무것도 하지 않음
+    }
     if (!value.supportedPointerKinds.contains(event.kind)) {
       return;
     }

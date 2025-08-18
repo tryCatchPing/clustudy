@@ -158,12 +158,16 @@ class PdfCacheService {
     try {
       // Repository를 통해 최대 캐시 크기와 현재 사용량 확인
       final maxMB = await _repository.getMaxCacheSizeMB();
-      if (maxMB <= 0) return;
+      if (maxMB <= 0) {
+        return;
+      }
 
       final maxBytes = maxMB * 1024 * 1024;
       final currentBytes = await _repository.getTotalCacheSize();
 
-      if (currentBytes <= maxBytes) return;
+      if (currentBytes <= maxBytes) {
+        return;
+      }
 
       // Repository에서 LRU 순으로 캐시 메타데이터 조회
       final allMetas = await _repository.getAllCacheMetaOrderByLastAccess();
@@ -173,7 +177,9 @@ class PdfCacheService {
       final filesToDelete = <String>[];
 
       for (final meta in allMetas) {
-        if (totalToDelete <= 0) break;
+        if (totalToDelete <= 0) {
+          break;
+        }
 
         // 절대 경로로 변환
         final docs = await getApplicationDocumentsDirectory();

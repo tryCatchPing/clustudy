@@ -55,7 +55,9 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
         ) ??
         false;
 
-    if (!shouldDelete) return;
+    if (!shouldDelete) {
+      return;
+    }
 
     try {
       final repo = ref.read(notesRepositoryProvider);
@@ -63,7 +65,9 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
         noteId,
         repo: repo,
       );
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -80,7 +84,9 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
         );
       }
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('노트 삭제 실패: $e'),
@@ -92,7 +98,9 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
 
   /// PDF 파일을 선택하고 노트로 가져옵니다.
   Future<void> _importPdfNote() async {
-    if (_isImporting) return;
+    if (_isImporting) {
+      return;
+    }
 
     setState(() => _isImporting = true);
 

@@ -66,7 +66,9 @@ class NameUtils {
     // Prefer the base label as-is if available.
     final baseLower = trimmed.toLowerCase();
     final existsBase = await existsNoteNameLower(vaultId, folderId, baseLower);
-    if (!existsBase) return trimmed;
+    if (!existsBase) {
+      return trimmed;
+    }
 
     // Try with numeric suffixes starting from 2.
     for (int n = 2; n < 100000; n++) {
@@ -77,7 +79,9 @@ class NameUtils {
         folderId,
         candidateLower,
       );
-      if (!exists) return candidate;
+      if (!exists) {
+        return candidate;
+      }
     }
     // Extremely unlikely fallback
     return '${trimmed}_${DateTime.now().millisecondsSinceEpoch}';
@@ -89,7 +93,9 @@ class NameUtils {
     String seed,
   ) async {
     final baseLower = seed.toLowerCase();
-    if (!await existsNoteNameLower(vaultId, folderId, baseLower)) return seed;
+    if (!await existsNoteNameLower(vaultId, folderId, baseLower)) {
+      return seed;
+    }
     for (int n = 2; n < 100000; n++) {
       final candidate = '$seed ($n)';
       if (!await existsNoteNameLower(

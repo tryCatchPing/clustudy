@@ -8,9 +8,9 @@ import 'package:isar/isar.dart';
 // ignore: unused_import
 import 'package:isar_flutter_libs/isar_flutter_libs.dart';
 
+import 'package:it_contest/features/db/isar/db_schemas.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
-import 'package:it_contest/features/db/isar/db_schemas.dart';
 import 'package:it_contest/features/db/services/note_db_service.dart';
 
 void main() {

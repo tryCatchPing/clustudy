@@ -121,7 +121,9 @@ class CustomScribbleNotifiers extends _$CustomScribbleNotifiers {
           _simulatePressureListenerAttached = true;
           ref.listen<bool>(simulatePressureProvider, (prev, next) {
             final m = _cacheByPageId;
-            if (m == null) return;
+            if (m == null) {
+              return;
+            }
             for (final notifier in m.values) {
               notifier.setSimulatePressureEnabled(next);
             }
@@ -135,7 +137,9 @@ class CustomScribbleNotifiers extends _$CustomScribbleNotifiers {
             toolSettingsNotifierProvider(noteId),
             (prev, next) {
               final m = _cacheByPageId;
-              if (m == null) return;
+              if (m == null) {
+                return;
+              }
               for (final notifier in m.values) {
                 notifier.setTool(next.toolMode);
                 switch (next.toolMode) {
