@@ -7,6 +7,8 @@ import 'package:it_contest/shared/services/connectivity_service.dart';
 /// 디바이스 상태 (배터리, 충전, 연결성) 모니터링 서비스
 class DeviceConditionService {
   DeviceConditionService._();
+  /// 전역에서 재사용되는 싱글톤 인스턴스. 디바이스 상태 조회/검증 및
+  /// 배터리 상태 스트림 구독의 진입점으로 사용됩니다.
   static final DeviceConditionService instance = DeviceConditionService._();
 
   final Battery _battery = Battery();
