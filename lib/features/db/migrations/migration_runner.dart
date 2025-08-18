@@ -1,7 +1,7 @@
 import 'package:isar/isar.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
-import 'package:it_contest/features/db/models/vault_models.g.dart';
+import 'package:it_contest/features/db/models/vault_models.dart';
 
 /// 저장된 `SettingsEntity.dataVersion` 값을 기준으로
 /// 데이터 스키마 마이그레이션을 수행합니다.

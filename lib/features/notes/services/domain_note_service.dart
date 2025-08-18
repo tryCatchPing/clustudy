@@ -4,7 +4,7 @@ import 'package:isar/isar.dart';
 
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
-import 'package:it_contest/features/db/models/vault_models.g.dart';
+import 'package:it_contest/features/db/models/vault_models.dart';
 import 'package:it_contest/features/db/services/note_db_service.dart';
 import 'package:it_contest/shared/models/rect_norm.dart';
 

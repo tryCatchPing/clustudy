@@ -9,7 +9,7 @@ import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:isar/isar.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
-import 'package:it_contest/features/db/models/vault_models.g.dart';
+import 'package:it_contest/features/db/models/vault_models.dart';
 import 'package:it_contest/shared/services/crypto_key_service.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
