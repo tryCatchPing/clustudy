@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
+import 'package:it_contest/features/db/models/vault_models.g.dart';
 import 'package:it_contest/features/pdf_cache/data/isar_pdf_cache_repository.dart';
 import 'package:it_contest/features/pdf_cache/data/pdf_cache_repository.dart';
 import 'package:path/path.dart' as p;

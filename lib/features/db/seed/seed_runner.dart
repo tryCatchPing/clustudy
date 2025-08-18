@@ -1,6 +1,7 @@
 import 'package:isar/isar.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
+import 'package:it_contest/features/db/models/vault_models.g.dart';
 
 /// 초기 데이터(시드)를 보장하는 러너입니다.
 class SeedRunner {

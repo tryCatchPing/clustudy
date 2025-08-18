@@ -3,6 +3,7 @@
 import 'package:isar/isar.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
+import 'package:it_contest/features/db/models/vault_models.g.dart';
 
 /// 통합 검색 서비스
 ///

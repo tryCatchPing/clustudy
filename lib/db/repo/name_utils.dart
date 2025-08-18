@@ -1,6 +1,7 @@
 import 'package:isar/isar.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
+import 'package:it_contest/features/db/models/vault_models.g.dart';
 
 /// Utilities for enforcing unique lower-cased names and generating
 /// collision-free labels for Notes and Folders.
