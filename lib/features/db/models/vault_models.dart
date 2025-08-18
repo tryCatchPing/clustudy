@@ -1,3 +1,5 @@
+// ignore_for_file: public_member_api_docs
+
 import 'package:isar/isar.dart';
 
 part 'vault_models.g.dart';
@@ -222,7 +224,7 @@ class GraphEdge {
   // ignore: unused_field
   late String _uniqueEdgeKey;
 
-  // Helper to set the unique key based on vaultId, fromNoteId, toNoteId
+  /// Sets `_uniqueEdgeKey` based on `(vaultId, fromNoteId, toNoteId)`.
   void setUniqueKey() {
     _uniqueEdgeKey = '${vaultId}_${fromNoteId}_$toNoteId';
   }
@@ -251,7 +253,7 @@ class PdfCacheMeta {
   // ignore: unused_field
   late String _uniqueCacheKey;
 
-  // Helper to set the unique key based on noteId, pageIndex
+  /// Sets `_uniqueCacheKey` based on `(noteId, pageIndex)`.
   void setUniqueKey() {
     _uniqueCacheKey = '${noteId}_$pageIndex';
   }
