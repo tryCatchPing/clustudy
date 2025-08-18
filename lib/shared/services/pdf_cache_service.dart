@@ -2,6 +2,7 @@ import 'dart:developer' as developer;
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:isar/isar.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
 import 'package:it_contest/features/db/models/vault_models.dart';
@@ -117,7 +118,7 @@ class PdfCacheService {
       }
 
       resolvedPdfPath = page.pdfOriginalPath;
-      if (!File(resolvedPdfPath).existsSync()) {
+      if (resolvedPdfPath == null || !File(resolvedPdfPath).existsSync()) {
         throw StateError('Original PDF not available for rendering');
       }
 
