@@ -15,10 +15,14 @@ class GraphService {
   }) async {
     final isar = await IsarDb.instance.open();
     await isar.writeTxn(() async {
-      final edges = await isar.collection<GraphEdge>()
-          .filter()
+      // Use indexed where on vaultId, then filter remaining fields for better performance
+      final edges = await isar
+          .collection<GraphEdge>()
+          .where()
           .vaultIdEqualTo(vaultId)
+          .filter()
           .fromNoteIdEqualTo(fromNoteId)
+          .and()
           .toNoteIdEqualTo(toNoteId)
           .findAll();
       if (edges.isEmpty) {

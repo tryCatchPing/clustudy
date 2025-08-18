@@ -117,10 +117,8 @@ class IsarDb {
 
   /// 암호화를 비활성화합니다
   Future<void> _disableEncryption() async {
-    final currentIsar = _isar!;
-
     // 1. 현재 데이터 백업
-    final backupData = await _createDataBackup(currentIsar);
+    final backupData = await _createDataBackup(_isar!);
 
     // 2. DB 닫기
     await close();
@@ -203,6 +201,9 @@ class IsarDb {
     });
   }
 
+  /// 데이터베이스 연결을 닫습니다.
+  ///
+  /// 이미 닫혀 있으면 아무 작업도 수행하지 않습니다.
   Future<void> close() async {
     final isar = _isar;
     if (isar != null) {
