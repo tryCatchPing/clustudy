@@ -275,7 +275,9 @@ class _CanvasBackgroundWidgetState extends ConsumerState<CanvasBackgroundWidget>
 
   /// 복구 실패 시 삭제 여부를 확인하고 삭제합니다.
   Future<void> _promptDeleteAfterRecoveryFailure(String noteTitle) async {
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
     final shouldDelete =
         await showDialog<bool>(
           context: context,
@@ -300,7 +302,9 @@ class _CanvasBackgroundWidgetState extends ConsumerState<CanvasBackgroundWidget>
         ) ??
         false;
 
-    if (!shouldDelete || !mounted) return;
+    if (!shouldDelete || !mounted) {
+      return;
+    }
 
     try {
       final repo = ref.read(notesRepositoryProvider);
