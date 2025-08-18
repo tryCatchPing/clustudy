@@ -10,6 +10,7 @@ import 'package:it_contest/features/notes/routing/notes_routes.dart';
 import 'package:it_contest/shared/services/backup_service.dart';
 import 'package:it_contest/shared/services/maintenance_jobs.dart';
 
+/// 앱의 진입점입니다.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -55,6 +56,7 @@ class MyApp extends ConsumerWidget {
 /// 데이터베이스 초기화를 Provider를 통해 처리하는 위젯
 class DatabaseInitializer extends ConsumerWidget {
   const DatabaseInitializer({super.key, required this.child});
+  /// 자식 위젯입니다.
   final Widget? child;
 
   @override
@@ -129,9 +131,17 @@ class _InitialSetupGateState extends State<_InitialSetupGate> {
     try {
       await MigrationRunner.instance.runMigrationsIfNeeded();
       await SeedRunner.instance.ensureInitialSeed();
-      if (mounted) setState(() => _ready = true);
+      if (mounted) {
+        setState(() {
+          _ready = true;
+        });
+      }
     } catch (e) {
-      if (mounted) setState(() => _error = e);
+      if (mounted) {
+        setState(() {
+          _error = e;
+        });
+      }
     }
   }
 
@@ -169,6 +179,7 @@ class _InitialSetupGateState extends State<_InitialSetupGate> {
 /// 앱 생명주기를 관리하는 위젯 (Provider 기반)
 class AppLifecycleManager extends ConsumerStatefulWidget {
   const AppLifecycleManager({super.key, required this.child});
+  /// 자식 위젯입니다.
   final Widget? child;
 
   @override
