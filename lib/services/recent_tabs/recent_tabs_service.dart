@@ -17,7 +17,9 @@ class RecentTabsService {
   Future<void> recentTabsFixBrokenIds() async {
     final isar = await IsarDb.instance.open();
     await isar.writeTxn(() async {
-      final existing = await isar.collection<RecentTabs>().where().anyId().findFirst();
+      final results =
+          await isar.collection<RecentTabs>().where().anyId().limit(1).findAll();
+      final existing = results.isNotEmpty ? results.first : null;
       if (existing == null) {
         return;
       }
