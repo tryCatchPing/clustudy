@@ -17,6 +17,13 @@ class PdfProcessedData {
   /// 각 페이지의 메타데이터
   final List<PdfPageData> pages;
 
+  /// 전처리된 PDF의 메타데이터 집합을 생성합니다.
+  ///
+  /// - [noteId]: 노트 고유 ID
+  /// - [internalPdfPath]: 내부 복사된 PDF 파일 경로
+  /// - [extractedTitle]: PDF에서 추출한 제목
+  /// - [totalPages]: 총 페이지 수
+  /// - [pages]: 각 페이지의 메타데이터 목록
   const PdfProcessedData({
     required this.noteId,
     required this.internalPdfPath,
@@ -42,6 +49,12 @@ class PdfPageData {
   /// 사전 렌더링된 이미지 경로 (선택사항)
   final String? preRenderedImagePath;
 
+  /// 개별 PDF 페이지의 메타데이터를 생성합니다.
+  ///
+  /// - [pageNumber]: 페이지 번호(1부터 시작)
+  /// - [width]: 페이지 너비
+  /// - [height]: 페이지 높이
+  /// - [preRenderedImagePath]: 사전 렌더링된 이미지 경로(선택사항)
   const PdfPageData({
     required this.pageNumber,
     required this.width,
