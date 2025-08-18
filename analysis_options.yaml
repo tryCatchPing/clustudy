@@ -24,7 +24,7 @@ analyzer:
 
 formatter:
   trailing_commas: preserve
-  page_width: 100
+  page_width: 120
 
 linter:
   # The lint rules applied to this project can be customized in the
@@ -51,7 +51,7 @@ linter:
     avoid_relative_lib_imports: true
 
     # Documentation (협업을 위한 문서화)
-    public_member_api_docs: true
+    # public_member_api_docs: true
     lines_longer_than_80_chars: false
 
     # Performance & Best Practices
