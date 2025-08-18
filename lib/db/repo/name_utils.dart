@@ -21,12 +21,13 @@ class NameUtils {
     Folder? found;
     try {
       found = await isar.folders.getByNameLowerForVaultUnique(normalized, vaultId);
-    } on IsarError {
+    } catch (e, st) {
       // Fallback to filter in case codegen name changes; still correct though not index-optimized.
+      // Prefer matching by lower name first, then scope by vault for readability.
       found = await isar.folders
           .filter()
-          .vaultIdEqualTo(vaultId)
           .nameLowerForVaultUniqueEqualTo(normalized)
+          .vaultIdEqualTo(vaultId)
           .findFirst();
     }
     return found != null;
@@ -50,14 +51,12 @@ class NameUtils {
         vaultId,
         scopedFolderId,
       );
-    } on IsarError {
+    } catch (e, st) {
       found = await isar.notes
           .filter()
-          .vaultIdEqualTo(vaultId)
-          .and()
-          .folderIdEqualTo(scopedFolderId)
-          .and()
           .nameLowerForParentUniqueEqualTo(normalized)
+          .vaultIdEqualTo(vaultId)
+          .folderIdEqualTo(scopedFolderId)
           .findFirst();
     }
     return found != null;

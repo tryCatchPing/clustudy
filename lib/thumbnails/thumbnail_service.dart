@@ -1,11 +1,12 @@
 import 'dart:io';
 
-import 'package:it_contest/shared/services/pdf_cache_service.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:it_contest/shared/services/pdf_cache_service.dart';
 
 /// Simple thumbnail generator that ensures PDF base cache exists and returns its path.
 /// Future work: composite canvas strokes over the PDF image.
+/// Provides APIs for generating and resolving thumbnail paths.
 class ThumbnailService {
   ThumbnailService._();
   static final ThumbnailService instance = ThumbnailService._();

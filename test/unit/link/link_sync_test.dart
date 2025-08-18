@@ -87,7 +87,7 @@ void main() {
         expect(linkedNote.vaultId, vault.id);
 
         // Verify link was created
-        final links = await isar.linkEntitys.where().anyId().findAll();
+        final links = await isar.linkEntitys.filter().findAll();
         expect(links.length, 1);
 
         final link = links.first;
@@ -103,7 +103,7 @@ void main() {
         expect(link.y1, 0.3);
 
         // Verify graph edge was created
-        final edges = await isar.graphEdges.where().anyId().findAll();
+        final edges = await isar.graphEdges.filter().findAll();
         expect(edges.length, 1);
 
         final edge = edges.first;
@@ -163,7 +163,7 @@ void main() {
         expect(linkedNote2.name, 'TestLink (2)');
 
         // Verify both links exist
-        final links = await isar.linkEntitys.where().anyId().findAll();
+        final links = await isar.linkEntitys.filter().findAll();
         expect(links.length, 2);
         expect(links.map((l) => l.label).toSet(), {'TestLink', 'TestLink (2)'});
       },
@@ -201,7 +201,7 @@ void main() {
         );
 
         // Verify link was created with normalized coordinates
-        final links = await isar.linkEntitys.where().anyId().findAll();
+        final links = await isar.linkEntitys.filter().findAll();
         expect(links.length, 1);
 
         final link = links.first;
@@ -288,8 +288,8 @@ void main() {
         );
 
         // Verify link and edge exist
-        final linksBefore = await isar.linkEntitys.where().anyId().findAll();
-        final edgesBefore = await isar.graphEdges.where().anyId().findAll();
+        final linksBefore = await isar.linkEntitys.filter().findAll();
+        final edgesBefore = await isar.graphEdges.filter().findAll();
         expect(linksBefore.length, 1);
         expect(edgesBefore.length, 1);
 
@@ -297,8 +297,8 @@ void main() {
         await LinkService.instance.deleteLink(linksBefore.first.id);
 
         // Verify both link and edge are deleted
-        final linksAfter = await isar.linkEntitys.where().anyId().findAll();
-        final edgesAfter = await isar.graphEdges.where().anyId().findAll();
+        final linksAfter = await isar.linkEntitys.filter().findAll();
+        final edgesAfter = await isar.graphEdges.filter().findAll();
         expect(linksAfter.length, 0);
         expect(edgesAfter.length, 0);
 
@@ -337,18 +337,18 @@ void main() {
         );
 
         // Verify link is not dangling initially
-        final linkBefore = await isar.linkEntitys.where().findFirst();
+        final linkBefore = await isar.linkEntitys.filter().findFirst();
         expect(linkBefore!.dangling, isFalse);
 
         // Soft delete target note
         await SoftDeleteService.instance.softDeleteNote(linkedNote.id);
 
         // Verify link is now marked as dangling
-        final linkAfter = await isar.linkEntitys.where().findFirst();
+        final linkAfter = await isar.linkEntitys.filter().findFirst();
         expect(linkAfter!.dangling, isTrue);
 
         // Verify graph edge still exists (not deleted on soft delete)
-        final edges = await isar.graphEdges.where().anyId().findAll();
+        final edges = await isar.graphEdges.filter().findAll();
         expect(edges.length, 1);
       },
       skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
@@ -383,14 +383,14 @@ void main() {
 
         // Soft delete and verify dangling
         await SoftDeleteService.instance.softDeleteNote(linkedNote.id);
-        final linkAfterDelete = await isar.linkEntitys.where().findFirst();
+        final linkAfterDelete = await isar.linkEntitys.filter().findFirst();
         expect(linkAfterDelete!.dangling, isTrue);
 
         // Restore note
         await SoftDeleteService.instance.restoreNote(linkedNote.id);
 
         // Verify link is no longer dangling
-        final linkAfterRestore = await isar.linkEntitys.where().findFirst();
+        final linkAfterRestore = await isar.linkEntitys.filter().findFirst();
         expect(linkAfterRestore!.dangling, isFalse);
       },
       skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
@@ -502,7 +502,7 @@ void main() {
         });
 
         // Verify all edges exist
-        final edgesBefore = await isar.graphEdges.where().anyId().findAll();
+        final edgesBefore = await isar.graphEdges.filter().findAll();
         expect(edgesBefore.length, 3);
 
         // Delete specific edge
@@ -513,7 +513,7 @@ void main() {
         );
 
         // Verify only the specific edge was deleted
-        final edgesAfter = await isar.graphEdges.where().anyId().findAll();
+        final edgesAfter = await isar.graphEdges.filter().findAll();
         expect(edgesAfter.length, 2);
 
         final remainingEdges = edgesAfter.map((e) => '${e.fromNoteId}->${e.toNoteId}').toSet();

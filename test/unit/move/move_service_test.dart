@@ -101,7 +101,9 @@ void main() {
         final inF2 = await isar.collection<Note>()
             .filter()
             .vaultIdEqualTo(v.id)
+            .and()
             .folderIdEqualTo(f2.id)
+            .and()
             .deletedAtIsNull()
             .sortBySortIndex()
             .findAll();
@@ -112,7 +114,9 @@ void main() {
         final inF1 = await isar.collection<Note>()
             .filter()
             .vaultIdEqualTo(v.id)
+            .and()
             .folderIdEqualTo(f1.id)
+            .and()
             .deletedAtIsNull()
             .sortBySortIndex()
             .findAll();
@@ -170,7 +174,9 @@ void main() {
         final inF2 = await isar.collection<Note>()
             .filter()
             .vaultIdEqualTo(v.id)
+            .and()
             .folderIdEqualTo(f2.id)
+            .and()
             .deletedAtIsNull()
             .sortBySortIndex()
             .findAll();

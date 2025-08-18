@@ -53,7 +53,9 @@ class PdfCacheService {
   Future<void> invalidate({required int noteId, int? pageIndex}) async {
     final base = await _baseDir();
     final dir = Directory(p.join(base, '$noteId', 'pdf_cache'));
-    if (!dir.existsSync()) return;
+    if (!dir.existsSync()) {
+      return;
+    }
 
     if (pageIndex == null) {
       // 전체 노트 캐시 삭제
@@ -221,7 +223,9 @@ class PdfCacheService {
     final cachePath = await absolutePath(noteId: noteId, pageIndex: pageIndex, dpi: dpi);
     final file = File(cachePath);
 
-    if (!file.existsSync()) return false;
+    if (!file.existsSync()) {
+      return false;
+    }
 
     // 메타데이터도 확인
     final meta = await _repository.getCacheMeta(noteId: noteId, pageIndex: pageIndex);

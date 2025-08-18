@@ -1,11 +1,15 @@
+import 'package:isar/isar.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
-import 'package:isar/isar.dart';
 
+/// Runs data schema migrations based on the value stored in
+/// `SettingsEntity.dataVersion`.
 class MigrationRunner {
   MigrationRunner._();
   static final MigrationRunner instance = MigrationRunner._();
 
+  /// Executes necessary migrations if the on-disk data is older than the
+  /// current application schema version.
   Future<void> runMigrationsIfNeeded() async {
     final isar = await IsarDb.instance.open();
     final settings = await isar.collection<SettingsEntity>().where().anyId().findFirst();

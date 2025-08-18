@@ -65,7 +65,7 @@ void main() {
         );
 
         // Verify only one vault exists
-        final vaults = await isar.collection<Vault>().where().anyId().findAll();
+        final vaults = await isar.collection<Vault>().filter().findAll();
         expect(vaults.length, 1);
         expect(vaults.first.name, 'TestVault');
       },
@@ -248,7 +248,7 @@ void main() {
         );
 
         // Verify only one edge exists
-        final edges = await isar.collection<GraphEdge>().where().anyId().findAll();
+        final edges = await isar.collection<GraphEdge>().filter().findAll();
         expect(edges.length, 1);
       },
       skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
@@ -313,7 +313,7 @@ void main() {
         });
 
         // Verify correct number of cache entries
-        final caches = await isar.collection<PdfCacheMeta>().where().anyId().findAll();
+        final caches = await isar.collection<PdfCacheMeta>().filter().findAll();
         expect(caches.length, 2);
       },
       skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
@@ -360,7 +360,7 @@ void main() {
         });
 
         // Verify correct records exist
-        final allTabs = await isar.collection<RecentTabs>().where().anyId().findAll();
+        final allTabs = await isar.collection<RecentTabs>().filter().findAll();
         expect(allTabs.length, 2);
         expect(allTabs.map((t) => t.userId).toSet(), {'local', 'user2'});
       },

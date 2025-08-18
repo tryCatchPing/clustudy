@@ -92,6 +92,7 @@ Future<void> compactSortIndexForFolder(int folderId, {int startAt = 1000, int st
 // Internal page utilities (not part of the public contract). These are helpers
 // to ensure updatedAt is set when page attributes affecting order or rotation change.
 
+// ignore: unused_element
 Future<void> _setPageRotation({required int pageId, required int rotationDeg}) async {
   final isar = await IsarDb.instance.open();
   await isar.writeTxn(() async {
@@ -103,6 +104,7 @@ Future<void> _setPageRotation({required int pageId, required int rotationDeg}) a
   });
 }
 
+// ignore: unused_element
 Future<void> _reindexPagesForNote({required int noteId}) async {
   final isar = await IsarDb.instance.open();
   await isar.writeTxn(() async {

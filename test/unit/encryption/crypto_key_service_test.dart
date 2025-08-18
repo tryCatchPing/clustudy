@@ -210,7 +210,7 @@ void main() {
     test(
       'reencryptDatabase preserves data with new encryption key',
       () async {
-        final isar = await IsarDb.instance.open();
+        await IsarDb.instance.open();
 
         // Create test data
         final vault = await NoteDbService.instance.createVault(name: 'TestVault');
@@ -229,11 +229,11 @@ void main() {
         await CryptoKeyService.instance.reencryptDatabase(oldKey!, newKey);
 
         // Verify data is still accessible
-        final vaults = await isar.collection<Vault>().where().anyId().findAll();
+        final vaults = await isar.collection<Vault>().filter().findAll();
         expect(vaults.length, 1);
         expect(vaults.first.name, 'TestVault');
 
-        final notes = await isar.collection<Note>().where().anyId().findAll();
+        final notes = await isar.collection<Note>().filter().findAll();
         expect(notes.length, 1);
         expect(notes.first.name, 'TestNote');
       },
@@ -245,7 +245,7 @@ void main() {
     test(
       'toggleEncryption enables encryption for new database',
       () async {
-        final isar = await IsarDb.instance.open();
+        await IsarDb.instance.open();
 
         // Create test data
         final vault = await NoteDbService.instance.createVault(name: 'TestVault');
@@ -260,7 +260,7 @@ void main() {
         await IsarDb.instance.toggleEncryption(enable: true);
 
         // Verify data is still accessible
-        final vaults = await isar.collection<Vault>().where().anyId().findAll();
+        final vaults = await isar.collection<Vault>().filter().findAll();
         expect(vaults.length, 1);
         expect(vaults.first.name, 'TestVault');
 
@@ -274,7 +274,7 @@ void main() {
     test(
       'toggleEncryption disables encryption',
       () async {
-        final isar = await IsarDb.instance.open();
+        await IsarDb.instance.open();
 
         // Create test data and enable encryption first
         final vault = await NoteDbService.instance.createVault(name: 'TestVault');
@@ -322,7 +322,7 @@ void main() {
         final reopenedIsar = await IsarDb.instance.open(enableEncryption: true);
 
         // Verify data is accessible
-        final vaults = await reopenedIsar.collection<Vault>().where().anyId().findAll();
+        final vaults = await reopenedIsar.collection<Vault>().filter().findAll();
         expect(vaults.length, 1);
         expect(vaults.first.name, 'EncryptedVault');
       },
@@ -346,7 +346,7 @@ void main() {
         final reopenedIsar = await IsarDb.instance.open(encryptionKey: customKey);
 
         // Verify data is accessible
-        final vaults = await reopenedIsar.collection<Vault>().where().anyId().findAll();
+        final vaults = await reopenedIsar.collection<Vault>().filter().findAll();
         expect(vaults.length, 1);
         expect(vaults.first.name, 'CustomKeyVault');
 

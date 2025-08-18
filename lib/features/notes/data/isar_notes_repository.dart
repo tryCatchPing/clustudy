@@ -142,11 +142,6 @@ class IsarNotesRepository implements NotesRepository {
 
     _initializeNoteWatch(noteId, controller);
 
-    // 스트림이 더 이상 구독되지 않으면 정리
-    controller.onCancel = () {
-      _noteStreams.remove(noteId);
-    };
-
     return controller.stream;
   }
 
@@ -182,11 +177,13 @@ class IsarNotesRepository implements NotesRepository {
       isar.canvasDatas.filter().noteIdEqualTo(intId).watchLazy().listen((_) => emitNote()),
     ];
 
-    // 컨트롤러가 닫힐 때 구독 정리
+    // 컨트롤러가 닫힐 때 구독 정리 및 리소스 해제
     controller.onCancel = () async {
       for (final sub in subscriptions) {
         await sub.cancel();
       }
+      _noteStreams.remove(noteId);
+      await controller.close();
     };
   }
 
@@ -460,16 +457,17 @@ class IsarNotesRepository implements NotesRepository {
     final isar = await _open();
 
     final totalCount = await isar.notes.filter().deletedAtIsNull().count();
-    final pdfCount = await isar.notes
-        .filter()
-        .deletedAtIsNull()
-        .and()
-        .anyOf<String>(
-          ['.pdf'],
-          (QueryBuilder<Note, Note, QFilterCondition> q, String term) =>
-              q.nameContains(term, caseSensitive: false),
-        )
-        .count();
+
+    // Replace anyOf generic usage with fold + group pattern to avoid generic inference issues
+    final List<String> pdfTerms = ['.pdf'];
+    final pdfQbBase = isar.notes.filter().deletedAtIsNull();
+    final pdfQb = pdfTerms.fold<QueryBuilder<Note, Note, QAfterFilterCondition>>(
+      pdfQbBase,
+      (acc, term) => acc.group(
+        (g) => g.nameContains(term, caseSensitive: false),
+      ),
+    );
+    final pdfCount = await pdfQb.count();
 
     final today = DateTime.now();
     final weekAgo = today.subtract(const Duration(days: 7));

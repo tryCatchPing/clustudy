@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:isar/isar.dart';
 // Ensure native libs are bundled for Flutter tests
 // ignore: unused_import
 import 'package:isar_flutter_libs/isar_flutter_libs.dart';
@@ -75,7 +76,7 @@ void main() {
     test(
       'performBackup creates database backup file',
       () async {
-        final isar = await IsarDb.instance.open();
+        await IsarDb.instance.open();
 
         // Create test data
         final vault = await NoteDbService.instance.createVault(name: 'TestVault');
@@ -110,7 +111,7 @@ void main() {
     test(
       'performIntegratedBackup creates comprehensive backup',
       () async {
-        final isar = await IsarDb.instance.open();
+        await IsarDb.instance.open();
 
         // Create test data
         final vault = await NoteDbService.instance.createVault(name: 'TestVault');
@@ -152,7 +153,7 @@ void main() {
     test(
       'performIntegratedBackup with encryption creates encrypted backup',
       () async {
-        final isar = await IsarDb.instance.open();
+        await IsarDb.instance.open();
 
         // Create test data
         final vault = await NoteDbService.instance.createVault(name: 'TestVault');
@@ -219,11 +220,11 @@ void main() {
         expect(result.message, contains('성공적으로 복원'));
 
         // Verify data was restored
-        final restoredVaults = await isar.collection<Vault>().where().anyId().findAll();
+        final restoredVaults = await isar.collection<Vault>().filter().findAll();
         expect(restoredVaults.length, 1);
         expect(restoredVaults.first.name, 'OriginalVault'); // Should be restored to original
 
-        final restoredNotes = await isar.collection<Note>().where().anyId().findAll();
+        final restoredNotes = await isar.collection<Note>().filter().findAll();
         expect(restoredNotes.length, 1);
         expect(restoredNotes.first.name, 'OriginalNote');
       },
@@ -233,7 +234,7 @@ void main() {
     test(
       'restoreIntegratedBackup handles encrypted backup with password',
       () async {
-        final isar = await IsarDb.instance.open();
+        await IsarDb.instance.open();
 
         // Create test data
         final vault = await NoteDbService.instance.createVault(name: 'TestVault');
@@ -278,7 +279,7 @@ void main() {
     test(
       'restoreIntegratedBackup fails with wrong password',
       () async {
-        final isar = await IsarDb.instance.open();
+        await IsarDb.instance.open();
 
         // Create test data and encrypted backup
         final vault = await NoteDbService.instance.createVault(name: 'TestVault');
@@ -304,7 +305,7 @@ void main() {
     test(
       'getAvailableBackups lists backup files correctly',
       () async {
-        final isar = await IsarDb.instance.open();
+        await IsarDb.instance.open();
 
         // Create test data
         final vault = await NoteDbService.instance.createVault(name: 'TestVault');
@@ -349,7 +350,7 @@ void main() {
     test(
       'getBackupStatus returns current backup state',
       () async {
-        final isar = await IsarDb.instance.open();
+        await IsarDb.instance.open();
 
         // Create some backups
         await BackupService.instance.performBackup(retentionDays: 7);

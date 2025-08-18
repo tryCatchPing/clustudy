@@ -18,7 +18,9 @@ class RecentTabsService {
     final isar = await IsarDb.instance.open();
     await isar.writeTxn(() async {
       final existing = await isar.collection<RecentTabs>().where().anyId().findFirst();
-      if (existing == null) return;
+      if (existing == null) {
+        return;
+      }
 
       List<int> ids;
       try {
@@ -41,7 +43,9 @@ class RecentTabsService {
         final note = await isar.collection<Note>().get(id);
         if (note != null && note.deletedAt == null) {
           fixed.add(id);
-          if (fixed.length >= 10) break;
+          if (fixed.length >= 10) {
+            break;
+          }
         }
       }
 
