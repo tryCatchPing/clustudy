@@ -8,6 +8,7 @@ import 'package:it_contest/shared/services/crypto_key_service.dart';
 /// 키 회전, 재암호화, 복구 등의 고급 암호화 기능을 제공합니다.
 class EncryptionManager {
   EncryptionManager._();
+  /// 싱글턴 인스턴스
   static final EncryptionManager instance = EncryptionManager._();
 
   final CryptoKeyService _cryptoService = CryptoKeyService.instance;
@@ -183,12 +184,8 @@ class EncryptionManager {
   /// 현재 설정을 조회합니다
   Future<SettingsEntity?> _getCurrentSettings() async {
     final isar = await _isarDb.open();
-    // Isar 쿼리 표준화: filter → 조건 추가 → findFirst
-    return await isar
-        .collection<SettingsEntity>()
-        .where()
-        .anyId()
-        .findFirst();
+    // Isar v3 표준 쿼리 패턴 사용
+    return await isar.settingsEntitys.where().anyId().findFirst();
   }
 
   /// 키 검증을 수행합니다
@@ -276,12 +273,18 @@ class EncryptionManager {
 
 /// 키 회전 결과
 class KeyRotationResult {
+  /// 성공 여부
   final bool success;
+  /// 새 키 생성 여부
   final bool newKeyCreated;
+  /// 작업 소요 시간
   final Duration duration;
+  /// 응급 백업 식별자 경로(선택)
   final String? backupPath;
+  /// 오류 메시지(실패 시)
   final String? error;
 
+  /// 키 회전 결과 인스턴스를 생성합니다
   const KeyRotationResult({
     required this.success,
     this.newKeyCreated = false,
@@ -293,13 +296,20 @@ class KeyRotationResult {
 
 /// 암호화 토글 결과
 class EncryptionToggleResult {
+  /// 성공 여부
   final bool success;
+  /// 현재 암호화 활성화 여부(선택)
   final bool? encryptionEnabled;
+  /// 이미 원하는 상태였는지 여부
   final bool alreadyInDesiredState;
+  /// 작업 소요 시간
   final Duration duration;
+  /// 응급 백업 식별자 경로(선택)
   final String? backupPath;
+  /// 오류 메시지(실패 시)
   final String? error;
 
+  /// 암호화 토글 결과 인스턴스를 생성합니다
   const EncryptionToggleResult({
     required this.success,
     this.encryptionEnabled,
@@ -312,11 +322,16 @@ class EncryptionToggleResult {
 
 /// 백업 키 정보
 class BackupKeyInfo {
+  /// 백업 키 별칭
   final String alias;
+  /// 백업 생성 시각(별칭이 타임스탬프일 때)
   final DateTime? timestamp;
+  /// 키 유효성 여부
   final bool isValid;
+  /// 키 길이(바이트)
   final int keyLength;
 
+  /// 백업 키 정보 인스턴스를 생성합니다
   const BackupKeyInfo({
     required this.alias,
     this.timestamp,
@@ -327,11 +342,16 @@ class BackupKeyInfo {
 
 /// 복구 결과
 class RecoveryResult {
+  /// 성공 여부
   final bool success;
+  /// 복구에 사용된 백업 별칭(선택)
   final String? recoveredFromAlias;
+  /// 작업 소요 시간
   final Duration duration;
+  /// 오류 메시지(실패 시)
   final String? error;
 
+  /// 복구 결과 인스턴스를 생성합니다
   const RecoveryResult({
     required this.success,
     this.recoveredFromAlias,
@@ -342,8 +362,10 @@ class RecoveryResult {
 
 /// 암호화 예외
 class EncryptionException implements Exception {
+  /// 오류 메시지
   final String message;
 
+  /// 암호화 관련 예외를 생성합니다
   const EncryptionException(this.message);
 
   @override
