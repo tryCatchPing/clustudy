@@ -9,7 +9,6 @@ import 'package:isar/isar.dart';
 import 'package:isar_flutter_libs/isar_flutter_libs.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
-import 'package:it_contest/features/db/isar/db_schemas.dart';
 import 'package:it_contest/features/db/services/note_db_service.dart';
 // import 'package:it_contest/shared/services/crypto_key_service.dart';
 import 'package:it_contest/services/link/link_service.dart';
@@ -163,7 +162,7 @@ void main() {
           heightPx: 3508,
         );
 
-        final workPage = await NoteDbService.instance.createPage(
+        await NoteDbService.instance.createPage(
           noteId: workNote.id,
           index: 0,
         );
@@ -345,7 +344,7 @@ void main() {
         expect(restoredCounts, equals(originalCounts));
 
         // Verify specific data integrity
-        final restoredVaults = await isar.collection<Vault>().filter().sortByName().findAll();
+        final restoredVaults = await isar.collection<Vault>().where().sortByName().findAll();
         expect(restoredVaults.length, 2);
         expect(restoredVaults[0].name, 'PersonalVault');
         expect(restoredVaults[1].name, 'WorkVault');
@@ -362,18 +361,18 @@ void main() {
         );
 
         // Verify relationships are preserved
-        final restoredLinks = await isar.collection<LinkEntity>().filter().findAll();
+        final restoredLinks = await isar.collection<LinkEntity>().where().findAll();
         expect(restoredLinks.length, 1);
         expect(restoredLinks.first.label, 'Linked Note');
         expect(restoredLinks.first.dangling, isFalse);
 
-        final restoredEdges = await isar.collection<GraphEdge>().filter().findAll();
+        final restoredEdges = await isar.collection<GraphEdge>().where().findAll();
         expect(restoredEdges.length, 1);
         expect(restoredEdges.first.fromNoteId, restoredLinks.first.sourceNoteId);
         expect(restoredEdges.first.toNoteId, restoredLinks.first.targetNoteId);
 
         // Verify canvas data
-        final restoredCanvasData = await isar.collection<CanvasData>().filter().findAll();
+        final restoredCanvasData = await isar.collection<CanvasData>().where().findAll();
         expect(restoredCanvasData.length, 2);
         expect(restoredCanvasData.every((c) => c.json.isNotEmpty), isTrue);
 
@@ -389,14 +388,14 @@ void main() {
         expect(restoredPdfFiles.length, 2);
 
         // Verify settings
-        final restoredSettings = await isar.collection<SettingsEntity>().filter().findFirst();
+        final restoredSettings = await isar.collection<SettingsEntity>().where().findFirst();
         expect(restoredSettings, isNotNull);
         expect(restoredSettings!.backupDailyAt, '03:00');
         expect(restoredSettings.backupRetentionDays, 14);
         expect(restoredSettings.pdfCacheMaxMB, 256);
 
         // Verify RecentTabs
-        final restoredTabs = await isar.collection<RecentTabs>().filter().findFirst();
+        final restoredTabs = await isar.collection<RecentTabs>().where().findFirst();
         expect(restoredTabs, isNotNull);
         expect(restoredTabs!.userId, 'local');
         expect(restoredTabs.noteIdsJson, isNotEmpty);
