@@ -7,7 +7,6 @@ import 'package:isar/isar.dart';
 // Ensure native libs are bundled for Flutter tests
 // ignore: unused_import
 import 'package:isar_flutter_libs/isar_flutter_libs.dart';
-
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
 import 'package:it_contest/features/db/services/note_db_service.dart';
@@ -21,18 +20,19 @@ void main() {
     'plugins.it_all_the_time/flutter_secure_storage',
   );
   final Map<String, String> mockStorage = {};
+  Directory? tempRoot;
 
   setUp(() async {
     // Ensure fresh temp directory per test and mock path_provider
-    final tempRoot = await Directory.systemTemp.createTemp('it_contest_test_');
+    tempRoot = await Directory.systemTemp.createTemp('it_contest_test_');
     mockStorage.clear();
-    IsarDb.setTestDirectoryOverride(tempRoot.path);
+    IsarDb.setTestDirectoryOverride(tempRoot!.path);
 
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
       pathProviderChannel,
       (MethodCall call) async {
         if (call.method == 'getApplicationDocumentsDirectory') {
-          return tempRoot.path;
+          return tempRoot!.path;
         }
         return null;
       },
@@ -79,12 +79,8 @@ void main() {
       secureStorageChannel,
       null,
     );
-    final tempRootPath = IsarDb._testDirectoryOverride;
-    if (tempRootPath != null) {
-      final tempRoot = Directory(tempRootPath);
-      if (await tempRoot.exists()) {
-        await tempRoot.delete(recursive: true);
-      }
+    if (tempRoot != null && await tempRoot!.exists()) {
+      await tempRoot!.delete(recursive: true);
     }
     IsarDb.setTestDirectoryOverride(null);
   });
@@ -218,7 +214,7 @@ void main() {
 
         // Create test data
         final vault = await NoteDbService.instance.createVault(name: 'TestVault');
-        final note = await NoteDbService.instance.createNote(
+        await NoteDbService.instance.createNote(
           vaultId: vault.id,
           name: 'TestNote',
           pageSize: 'A4',
@@ -262,7 +258,7 @@ void main() {
       () async {
         // Create test data
         final vault = await NoteDbService.instance.createVault(name: 'TestVault');
-        final note = await NoteDbService.instance.createNote(
+        await NoteDbService.instance.createNote(
           vaultId: vault.id,
           name: 'TestNote',
           pageSize: 'A4',
@@ -288,7 +284,7 @@ void main() {
       'toggleEncryption disables encryption',
       () async {
         // Create test data and enable encryption first
-        final vault = await NoteDbService.instance.createVault(name: 'TestVault');
+        await NoteDbService.instance.createVault(name: 'TestVault');
         await IsarDb.instance.toggleEncryption(enable: true);
 
         // Disable encryption
@@ -310,7 +306,7 @@ void main() {
       'open with enableEncryption=true uses encryption key',
       () async {
         // Create encryption key first
-        final key = await CryptoKeyService.instance.getOrCreateKey();
+        await CryptoKeyService.instance.getOrCreateKey();
 
         // Open with encryption enabled
         // Removed: final isar = await IsarDb.instance.open(enableEncryption: true);
@@ -326,7 +322,7 @@ void main() {
         });
 
         // Create test data
-        final vault = await NoteDbService.instance.createVault(name: 'EncryptedVault');
+        await NoteDbService.instance.createVault(name: 'EncryptedVault');
 
         // Close and reopen - should work with same key
         await IsarDb.instance.close();
@@ -350,7 +346,7 @@ void main() {
         // Removed: final isar = await IsarDb.instance.open(encryptionKey: customKey);
 
         // Create test data
-        final vault = await NoteDbService.instance.createVault(name: 'CustomKeyVault');
+        await NoteDbService.instance.createVault(name: 'CustomKeyVault');
 
         // Close and reopen with same key
         await IsarDb.instance.close();
@@ -374,3 +370,4 @@ void main() {
     );
   });
 }
+

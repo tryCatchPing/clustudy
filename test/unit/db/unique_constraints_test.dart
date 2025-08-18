@@ -1,10 +1,11 @@
 // ignore_for_file: avoid_slow_async_io
+import 'dart:io';
+
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:isar/isar.dart';
 // Ensure native libs are bundled for Flutter tests
 import 'package:isar_flutter_libs/isar_flutter_libs.dart';
-
-import 'package:it_contest/features/db/isar/db_schemas.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
 import 'package:it_contest/features/db/services/note_db_service.dart';
@@ -18,6 +19,8 @@ void main() {
   setUp(() async {
     // Ensure fresh temp directory per test and mock path_provider
     tempRoot = await Directory.systemTemp.createTemp('it_contest_test_');
+    IsarDb.setTestDirectoryOverride(tempRoot!.path);
+
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
       pathProviderChannel,
       (MethodCall call) async {
@@ -42,6 +45,7 @@ void main() {
     if (tempRoot != null && await tempRoot!.exists()) {
       await tempRoot!.delete(recursive: true);
     }
+    IsarDb.setTestDirectoryOverride(null);
   });
 
   group('Unique Constraints Tests', () {
