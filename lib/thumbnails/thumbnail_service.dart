@@ -1,5 +1,3 @@
-// ignore_for_file: public_member_api_docs
-
 /// 썸네일 서비스 라이브러리
 ///
 /// PDF 페이지의 사전 렌더링(캐시)을 보장하고 해당 이미지 경로를
@@ -12,23 +10,33 @@ import 'package:it_contest/shared/services/pdf_cache_service.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
-/// PDF 기반 썸네일을 생성하고 파일 경로를 반환하는 서비스.
+/// `ThumbnailService` 는 PDF 페이지의 썸네일을 생성하고 관리하는 서비스를 제공합니다.
 ///
-/// 싱글턴 인스턴스 [`ThumbnailService.instance`] 를 통해 사용합니다.
+/// 이 서비스는 PDF 페이지를 사전 렌더링(캐시)하여 해당 이미지 파일의 경로를 반환하는
+/// 간단한 API를 제공합니다. 향후에는 캔버스 필기 레이어를 PDF 이미지 위에 합성하는
+/// 기능으로 확장될 수 있습니다.
+///
+/// 싱글턴 인스턴스 [`ThumbnailService.instance`] 를 통해 접근할 수 있습니다.
 class ThumbnailService {
+  /// `ThumbnailService` 의 private 생성자입니다.
   ThumbnailService._();
+  /// `ThumbnailService` 의 싱글턴 인스턴스입니다.
   static final ThumbnailService instance = ThumbnailService._();
 
-  /// PDF 페이지를 렌더링(또는 이미 렌더링된 경우 재사용)하여
-  /// 썸네일 파일의 절대 경로를 반환합니다.
+  /// 주어진 [noteId], [pageIndex], [dpi] 에 해당하는 PDF 페이지 썸네일을 생성하거나
+  /// 이미 존재하는 경우 해당 썸네일을 재사용하여 썸네일 파일의 절대 경로를 반환합니다.
   ///
-  /// - [noteId]: 노트(문서) 식별자
-  /// - [pageIndex]: 0 기반 페이지 인덱스
-  /// - [dpi]: 렌더링 해상도(DPI). 기본값은 144
+  /// 썸네일은 내부적으로 [PdfCacheService] 를 통해 렌더링되고 캐시됩니다.
   ///
-  /// 반환값: 생성(또는 존재)한 썸네일 이미지 파일의 절대 경로
+  /// - Parameters:
+  ///   - [noteId]: 썸네일을 생성할 노트(문서)의 고유 식별자입니다.
+  ///   - [pageIndex]: 썸네일을 생성할 페이지의 0 기반 인덱스입니다.
+  ///   - [dpi]: 썸네일 이미지의 렌더링 해상도(DPI)입니다. 기본값은 144입니다.
   ///
-  /// 오류: 파일이 존재하지 않으면 [StateError]를 던집니다.
+  /// - Returns: 생성되었거나 이미 존재하는 썸네일 이미지 파일의 절대 경로입니다.
+  ///
+  /// - Throws:
+  ///   - [StateError]: 썸네일 생성이 실패했거나 파일이 존재하지 않는 경우 발생합니다.
   Future<String> generateThumbnail({
     required int noteId,
     required int pageIndex,

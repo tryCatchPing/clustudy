@@ -16,6 +16,17 @@ class DomainNoteService {
   /// 영역 → 새 노트 생성 + Link + GraphEdge 동기화 (트랜잭션)
   ///
   /// 좌표는 이미 정규화되었다고 가정(0..1, x0<x1, y0<y1). B는 변환하지 않음.
+  ///
+  /// 새 링크 노트를 영역에서 생성하고 링크 및 그래프 엣지를 동기화합니다.
+  /// [vaultId]는 노트를 생성할 볼트의 ID입니다.
+  /// [sourceNoteId]는 링크를 생성할 원본 노트의 ID입니다.
+  /// [sourcePageId]는 링크를 생성할 원본 페이지의 ID입니다.
+  /// [region]은 링크가 생성될 영역의 정규화된 좌표입니다.
+  /// [label]은 새 링크 노트의 레이블입니다. 기본값은 '새 링크 노트'입니다.
+  /// [pageSize]는 새 노트의 페이지 크기입니다. 기본값은 'A4'입니다.
+  /// [pageOrientation]은 새 노트의 페이지 방향입니다. 기본값은 'portrait'입니다.
+  /// [initialPageIndex]는 새 노트의 초기 페이지 인덱스입니다. 기본값은 0입니다.
+  /// 생성된 [Note] 객체를 반환합니다.
   Future<Note> createLinkedNoteFromRegion({
     required int vaultId,
     required int sourceNoteId,
