@@ -22,6 +22,7 @@ import 'package:it_contest/shared/services/crypto_key_service.dart';
 /// - 자동 백업 스케줄링과 상태 조회
 class BackupService {
   BackupService._();
+  /// 싱글톤 인스턴스
   static final BackupService instance = BackupService._();
 
   bool _isRunningBackup = false;
@@ -711,23 +712,36 @@ class BackupService {
 
 /// 백업 복원 결과
 class RestoreResult {
+  /// 전체 복원 성공 여부
   bool success = false;
+  /// 사용자에게 표시할 메시지
   String message = '';
+  /// 오류가 발생한 경우 오류 상세
   String? error;
+  /// 백업 메타데이터
   Map<String, dynamic>? metadata;
+  /// 데이터베이스 복원 여부
   bool databaseRestored = false;
+  /// 복원된 PDF 파일 개수
   int pdfFilesRestored = 0;
 }
 
 /// 백업 정보
 class BackupInfo {
+  /// 파일 이름
   final String fileName;
+  /// 파일 경로(절대경로)
   final String filePath;
+  /// 백업 유형
   final BackupType type;
+  /// 암호화 여부
   final bool isEncrypted;
+  /// 생성 시각
   final DateTime createdAt;
+  /// 파일 크기(바이트)
   final int sizeBytes;
 
+  /// 백업 파일의 요약 정보를 생성합니다.
   BackupInfo({
     required this.fileName,
     required this.filePath,
@@ -737,11 +751,17 @@ class BackupInfo {
     required this.sizeBytes,
   });
 
+  /// 읽기 쉬운 파일 크기 문자열
   String get formattedSize {
-    if (sizeBytes < 1024) return '$sizeBytes B';
-    if (sizeBytes < 1024 * 1024) return '${(sizeBytes / 1024).toStringAsFixed(1)} KB';
-    if (sizeBytes < 1024 * 1024 * 1024)
+    if (sizeBytes < 1024) {
+      return '$sizeBytes B';
+    }
+    if (sizeBytes < 1024 * 1024) {
+      return '${(sizeBytes / 1024).toStringAsFixed(1)} KB';
+    }
+    if (sizeBytes < 1024 * 1024 * 1024) {
       return '${(sizeBytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
     return '${(sizeBytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
 }
@@ -754,13 +774,20 @@ enum BackupType {
 
 /// 백업 상태
 class BackupStatus {
+  /// 현재 백업 진행 중 여부
   final bool isRunning;
+  /// 마지막 백업 시간
   final DateTime? lastBackupAt;
+  /// 다음 백업 예정 시간
   final DateTime? nextBackupDue;
+  /// 사용 가능한 백업 개수
   final int availableBackupsCount;
+  /// 모든 백업의 총 용량(바이트)
   final int totalBackupSize;
+  /// 암호화 활성화 여부
   final bool encryptionEnabled;
 
+  /// 백업 상태 정보를 생성합니다.
   BackupStatus({
     required this.isRunning,
     this.lastBackupAt,
@@ -770,14 +797,21 @@ class BackupStatus {
     required this.encryptionEnabled,
   });
 
+  /// 읽기 쉬운 총 용량 문자열
   String get formattedTotalSize {
-    if (totalBackupSize < 1024) return '$totalBackupSize B';
-    if (totalBackupSize < 1024 * 1024) return '${(totalBackupSize / 1024).toStringAsFixed(1)} KB';
-    if (totalBackupSize < 1024 * 1024 * 1024)
+    if (totalBackupSize < 1024) {
+      return '$totalBackupSize B';
+    }
+    if (totalBackupSize < 1024 * 1024) {
+      return '${(totalBackupSize / 1024).toStringAsFixed(1)} KB';
+    }
+    if (totalBackupSize < 1024 * 1024 * 1024) {
       return '${(totalBackupSize / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
     return '${(totalBackupSize / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
 
+  /// 다음 백업까지 남은 시간
   Duration? get timeUntilNextBackup {
     if (nextBackupDue == null) {
       return null;
@@ -792,11 +826,18 @@ class BackupStatus {
 
 /// 테스트 결과
 class TestResult {
+  /// 전체 테스트 성공 여부
   bool success = false;
+  /// 요약 메시지
   String message = '';
+  /// 오류가 발생한 경우 오류 상세
   String? error;
+  /// 테스트 백업 생성 여부
   bool backupCreated = false;
+  /// 백업 파일 존재 여부
   bool backupFileExists = false;
+  /// 메타데이터 유효성 여부
   bool metadataValid = false;
+  /// 압축 해제된 DB 파일 존재 여부
   bool databaseExtractable = false;
 }

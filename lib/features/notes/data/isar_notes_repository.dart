@@ -1,3 +1,5 @@
+// ignore_for_file: public_member_api_docs
+
 import 'dart:async';
 import 'dart:io'; // TODO(web): Replace File API usage with platform-appropriate implementation
 

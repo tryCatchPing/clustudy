@@ -349,7 +349,7 @@ class RecoveryOptionsModal extends StatelessWidget {
     required VoidCallback onSketchOnly,
     required VoidCallback onDelete,
   }) {
-    return showDialog(
+    return showDialog<void>(
       context: context,
       barrierDismissible: false, // 사용자가 반드시 선택하도록 함
       builder: (context) => RecoveryOptionsModal(

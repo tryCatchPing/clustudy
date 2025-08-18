@@ -1,3 +1,5 @@
+// ignore_for_file: public_member_api_docs
+
 import 'dart:async';
 
 import 'package:it_contest/features/notes/data/notes_repository.dart';

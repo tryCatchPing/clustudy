@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:it_contest/features/canvas/constants/note_editor_constant.dart';
+import 'package:it_contest/features/canvas/providers/note_editor_provider.dart';
 import 'package:it_contest/features/canvas/widgets/note_page_view_item.dart';
 import 'package:it_contest/features/canvas/widgets/toolbar/toolbar.dart';
-import 'package:it_contest/features/canvas/providers/note_editor_provider.dart';
 
 /// 📱 캔버스 영역을 담당하는 위젯
 ///
