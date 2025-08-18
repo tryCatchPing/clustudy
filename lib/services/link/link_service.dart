@@ -5,6 +5,7 @@ import 'package:it_contest/features/db/services/note_db_service.dart';
 import 'package:it_contest/services/graph/graph_service.dart';
 import 'package:it_contest/shared/models/rect_norm.dart';
 
+/// 링크 생성/삭제와 그래프 간선 동기화를 담당하는 서비스.
 class LinkService {
   LinkService._();
   static final LinkService instance = LinkService._();
@@ -83,22 +84,27 @@ class LinkService {
     required String desired,
   }) async {
     // 동일 sourceNoteId+sourcePageId 내 라벨 유니크 보장
-    final existing = await isar.collection<LinkEntity>()
-        .filter()
+    final existing = await isar
+        .collection<LinkEntity>()
+        .where()
         .vaultIdEqualTo(vaultId)
-        .and()
+        .filter()
         .sourceNoteIdEqualTo(sourceNoteId)
         .and()
         .sourcePageIdEqualTo(sourcePageId)
         .findAll();
     final existingLabels = existing.map((e) => (e.label ?? '').trim()).toSet();
-    if (!existingLabels.contains(desired)) return desired;
+    if (!existingLabels.contains(desired)) {
+      return desired;
+    }
 
     // suffix 증가 방식: "desired (2)", "desired (3)" ...
     int n = 2;
     while (true) {
       final candidate = '$desired ($n)';
-      if (!existingLabels.contains(candidate)) return candidate;
+      if (!existingLabels.contains(candidate)) {
+        return candidate;
+      }
       n += 1;
     }
   }

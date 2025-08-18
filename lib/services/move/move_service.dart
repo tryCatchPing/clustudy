@@ -46,11 +46,12 @@ class MoveService {
       vaultId = note.vaultId;
       note.folderId = targetFolderId;
 
-      // 대상 폴더 내 정렬 재배치
-      final notesInTarget = await isar.collection<Note>()
+      // 대상 폴더 내 정렬 재배치 (indexed where로 시작)
+      final notesInTarget = await isar
+          .collection<Note>()
+          .where()
+          .vaultIdForSortEqualTo(note.vaultId)
           .filter()
-          .vaultIdEqualTo(note.vaultId)
-          .and()
           .folderIdEqualTo(targetFolderId)
           .and()
           .deletedAtIsNull()
@@ -118,11 +119,12 @@ class MoveService {
         }
       }
 
-      // 볼트 내 폴더 목록(루트 레벨)
-      final foldersInVault = await isar.collection<Folder>()
-          .filter()
+      // 볼트 내 폴더 목록(루트 레벨) - vaultId 인덱스를 where에서 사용
+      final foldersInVault = await isar
+          .collection<Folder>()
+          .where()
           .vaultIdEqualTo(vaultId)
-          .and()
+          .filter()
           .deletedAtIsNull()
           .sortBySortIndex()
           .findAll();
