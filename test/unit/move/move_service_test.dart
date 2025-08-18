@@ -66,22 +66,6 @@ void main() {
           sortIndex: 2000,
         );
 
-        final n1 = await NoteDbService.instance.createNote(
-          vaultId: v.id,
-          folderId: f1.id,
-          name: 'N1',
-          pageSize: 'A4',
-          pageOrientation: 'portrait',
-          sortIndex: 1000,
-        );
-        final n2 = await NoteDbService.instance.createNote(
-          vaultId: v.id,
-          folderId: f1.id,
-          name: 'N2',
-          pageSize: 'A4',
-          pageOrientation: 'portrait',
-          sortIndex: 2000,
-        );
         final m = await NoteDbService.instance.createNote(
           vaultId: v.id,
           folderId: f1.id,
@@ -144,14 +128,6 @@ void main() {
           sortIndex: 2000,
         );
 
-        final t1 = await NoteDbService.instance.createNote(
-          vaultId: v.id,
-          folderId: f2.id,
-          name: 'T1',
-          pageSize: 'A4',
-          pageOrientation: 'portrait',
-          sortIndex: 1000,
-        );
         final t2 = await NoteDbService.instance.createNote(
           vaultId: v.id,
           folderId: f2.id,
@@ -228,11 +204,6 @@ void main() {
         final isar = await IsarDb.instance.open();
 
         final v = await NoteDbService.instance.createVault(name: 'V');
-        final a = await NoteDbService.instance.createFolder(
-          vaultId: v.id,
-          name: 'A',
-          sortIndex: 1000,
-        );
         final b = await NoteDbService.instance.createFolder(
           vaultId: v.id,
           name: 'B',
