@@ -101,7 +101,9 @@ class IsarPdfCacheRepository implements PdfCacheRepository {
         .pageIndexEqualTo(pageIndex)
         .findFirst();
 
-    if (meta == null) return null;
+    if (meta == null) {
+      return null;
+    }
 
     return _mapToModel(meta);
   }

@@ -97,7 +97,9 @@ Future<void> _setPageRotation({required int pageId, required int rotationDeg}) a
   final isar = await IsarDb.instance.open();
   await isar.writeTxn(() async {
     final page = await isar.collection<Page>().get(pageId);
-    if (page == null) return;
+    if (page == null) {
+      return;
+    }
     page.rotationDeg = rotationDeg;
     page.updatedAt = DateTime.now();
     await isar.collection<Page>().put(page);

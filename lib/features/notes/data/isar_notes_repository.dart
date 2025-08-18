@@ -146,7 +146,9 @@ class IsarNotesRepository implements NotesRepository {
     final result = <NoteModel>[];
     for (final n in rawNotes) {
       final mapped = await _mapNote(isar, n);
-      if (mapped != null) result.add(mapped);
+      if (mapped != null) {
+        result.add(mapped);
+      }
     }
     return result;
   }

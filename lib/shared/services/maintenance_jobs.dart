@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:developer' as developer;
 
+import 'package:isar/isar.dart';
+
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
 import 'package:it_contest/services/recent_tabs/recent_tabs_service.dart';
-import 'package:isar/isar.dart';
 
 class MaintenanceJobs {
   MaintenanceJobs._();

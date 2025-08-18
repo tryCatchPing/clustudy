@@ -59,7 +59,9 @@ class DomainNoteService {
     int? vaultId;
     await isar.writeTxn(() async {
       final note = await isar.collection<Note>().get(noteId);
-      if (note == null) return;
+      if (note == null) {
+        return;
+      }
       final targetFolder = await isar.collection<Folder>().get(targetFolderId);
       if (targetFolder == null) {
         throw IsarError('Target folder not found');
@@ -144,7 +146,9 @@ class DomainNoteService {
   Future<List<Note>> getRecentTabs() async {
     final isar = await IsarDb.instance.open();
     final existing = await isar.collection<RecentTabs>().where().anyId().findFirst();
-    if (existing == null) return <Note>[];
+    if (existing == null) {
+      return <Note>[];
+    }
     List<int> ids;
     try {
       ids = (jsonDecode(existing.noteIdsJson) as List).map((e) => e as int).toList();

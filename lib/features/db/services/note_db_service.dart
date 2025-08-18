@@ -160,7 +160,9 @@ class NoteDbService {
     final isar = await IsarDb.instance.open();
     await isar.writeTxn(() async {
       final note = await isar.notes.get(noteId);
-      if (note == null) return;
+      if (note == null) {
+        return;
+      }
       final int? fromFolderId = note.folderId;
       int? targetVaultId;
       if (toFolderId != null) {
@@ -228,7 +230,9 @@ class NoteDbService {
     final isar = await IsarDb.instance.open();
     await isar.writeTxn(() async {
       final v = await isar.vaults.get(vaultId);
-      if (v == null) return;
+      if (v == null) {
+        return;
+      }
       v
         ..name = newName
         ..nameLowerUnique = newName.toLowerCase()
@@ -249,7 +253,9 @@ class NoteDbService {
     final isar = await IsarDb.instance.open();
     await isar.writeTxn(() async {
       final note = await isar.notes.get(noteId);
-      if (note == null) return;
+      if (note == null) {
+        return;
+      }
       note
         ..name = newName
         ..nameLowerForParentUnique = newName.toLowerCase()
@@ -267,7 +273,9 @@ class NoteDbService {
     final isar = await IsarDb.instance.open();
     await isar.writeTxn(() async {
       final folder = await isar.folders.get(folderId);
-      if (folder == null) return;
+      if (folder == null) {
+        return;
+      }
       folder
         ..name = newName
         ..nameLowerForVaultUnique = newName.toLowerCase()
@@ -343,7 +351,9 @@ class NoteDbService {
     final isar = await IsarDb.instance.open();
     await isar.writeTxn(() async {
       final folder = await isar.folders.get(folderId);
-      if (folder == null) return;
+      if (folder == null) {
+        return;
+      }
       if (folder.vaultId != vaultId) {
         throw IsarError('Cross-vault operation is not allowed');
       }
@@ -359,7 +369,9 @@ class NoteDbService {
     final now = DateTime.now();
     await isar.writeTxn(() async {
       final folder = await isar.folders.get(folderId);
-      if (folder == null) return;
+      if (folder == null) {
+        return;
+      }
       folder.deletedAt = now;
       folder.updatedAt = now;
       await isar.folders.put(folder);
@@ -372,7 +384,9 @@ class NoteDbService {
     final now = DateTime.now();
     await isar.writeTxn(() async {
       final folder = await isar.folders.get(folderId);
-      if (folder == null) return;
+      if (folder == null) {
+        return;
+      }
       folder.deletedAt = null;
       folder.updatedAt = now;
       await isar.folders.put(folder);
@@ -383,7 +397,9 @@ class NoteDbService {
   Future<SettingsEntity> getSettings() async {
     final isar = await IsarDb.instance.open();
     final existing = await isar.settingsEntitys.where().anyId().findFirst();
-    if (existing != null) return existing;
+    if (existing != null) {
+      return existing;
+    }
     final defaults = SettingsEntity()
       ..encryptionEnabled = false
       ..backupDailyAt = '02:00'
@@ -406,11 +422,21 @@ class NoteDbService {
     final isar = await IsarDb.instance.open();
     await isar.writeTxn(() async {
       final s = await getSettings();
-      if (encryptionEnabled != null) s.encryptionEnabled = encryptionEnabled;
-      if (backupDailyAt != null) s.backupDailyAt = backupDailyAt;
-      if (backupRetentionDays != null) s.backupRetentionDays = backupRetentionDays;
-      if (recycleRetentionDays != null) s.recycleRetentionDays = recycleRetentionDays;
-      if (keychainAlias != null) s.keychainAlias = keychainAlias;
+      if (encryptionEnabled != null) {
+        s.encryptionEnabled = encryptionEnabled;
+      }
+      if (backupDailyAt != null) {
+        s.backupDailyAt = backupDailyAt;
+      }
+      if (backupRetentionDays != null) {
+        s.backupRetentionDays = backupRetentionDays;
+      }
+      if (recycleRetentionDays != null) {
+        s.recycleRetentionDays = recycleRetentionDays;
+      }
+      if (keychainAlias != null) {
+        s.keychainAlias = keychainAlias;
+      }
       await isar.settingsEntitys.put(s);
     });
   }
@@ -506,7 +532,9 @@ class NoteDbService {
     final now = DateTime.now();
     await isar.writeTxn(() async {
       final note = await isar.notes.get(noteId);
-      if (note == null) return;
+      if (note == null) {
+        return;
+      }
       note.deletedAt = now;
       note.updatedAt = now;
       await isar.notes.put(note);
@@ -525,7 +553,9 @@ class NoteDbService {
     final now = DateTime.now();
     await isar.writeTxn(() async {
       final note = await isar.notes.get(noteId);
-      if (note == null) return;
+      if (note == null) {
+        return;
+      }
       note.deletedAt = null;
       note.updatedAt = now;
       // If original folder is missing or deleted, restore to root

@@ -225,7 +225,9 @@ class EncryptionManager {
 
     // 타임스탬프 기준으로 정렬 (최신 순)
     result.sort((a, b) {
-      if (a.timestamp == null || b.timestamp == null) return 0;
+      if (a.timestamp == null || b.timestamp == null) {
+        return 0;
+      }
       return b.timestamp!.compareTo(a.timestamp!);
     });
 
