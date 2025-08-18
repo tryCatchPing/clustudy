@@ -5,6 +5,7 @@ import 'package:it_contest/features/db/models/vault_models.dart';
 ///
 /// Use this list when opening the database:
 /// `await Isar.open(allSchemas, directory: path)`.
+// ignore: strict_raw_type
 const List<CollectionSchema> allSchemas = [
   VaultSchema,
   FolderSchema,
