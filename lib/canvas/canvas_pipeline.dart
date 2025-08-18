@@ -20,8 +20,8 @@ class CanvasPipeline {
     final now = DateTime.now();
 
     await isar.writeTxn(() async {
-      // Upsert CanvasData by pageId unique index
-      final existing = await isar.canvasDatas.filter().pageIdEqualTo(pageId).findFirst();
+      // Upsert CanvasData by pageId unique index (use indexed where-stage)
+      final existing = await isar.canvasDatas.where().pageIdEqualTo(pageId).findFirst();
       if (existing == null) {
         final cd = CanvasData()
           ..noteId = noteId

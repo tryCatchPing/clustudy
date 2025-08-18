@@ -1,14 +1,14 @@
-import 'dart:io';
 import 'dart:developer' as developer;
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:it_contest/features/db/isar_db.dart';
+import 'package:it_contest/features/db/models/models.dart';
 import 'package:it_contest/features/pdf_cache/data/isar_pdf_cache_repository.dart';
 import 'package:it_contest/features/pdf_cache/data/pdf_cache_repository.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:pdfx/pdfx.dart';
-import 'package:it_contest/features/db/models/models.dart';
 
 class PdfCacheService {
   final PdfCacheRepository _repository;
@@ -85,12 +85,12 @@ class PdfCacheService {
     // pdfPath가 제공되지 않은 경우, DB에서 조회
     if (resolvedPdfPath == null) {
       final isar = await IsarDb.instance.open();
-      final page = await isar
-          .collection<Page>()
+      final page = await isar.pages
+          .where()
+          .deletedAtIsNull()
           .filter()
           .noteIdEqualTo(noteId)
           .indexEqualTo(pageIndex)
-          .deletedAtIsNull()
           .findFirst();
 
       if (page == null) {
