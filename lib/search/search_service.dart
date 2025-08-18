@@ -1,5 +1,5 @@
 import 'package:it_contest/features/db/isar_db.dart';
-import 'package:it_contest/features/db/models/vault_models.dart';
+import 'package:it_contest/features/db/models/models.dart';
 import 'package:isar/isar.dart';
 
 /// 통합 검색 서비스

@@ -101,28 +101,7 @@ class DatabaseInitializer extends ConsumerWidget {
         }
 
         // DB가 성공적으로 초기화된 경우 추가 초기 설정 수행
-        return FutureBuilder<void>(
-          future: _runInitialSetup(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.done) {
-              return child ?? const SizedBox.shrink();
-            }
-            return const MaterialApp(
-              home: Scaffold(
-                body: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 16),
-                      Text('데이터베이스 초기화 중...'),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        );
+        return _InitialSetupGate(child: child);
       },
     );
   }
@@ -131,6 +110,64 @@ class DatabaseInitializer extends ConsumerWidget {
   Future<void> _runInitialSetup() async {
     await MigrationRunner.instance.runMigrationsIfNeeded();
     await SeedRunner.instance.ensureInitialSeed();
+  }
+}
+
+class _InitialSetupGate extends StatefulWidget {
+  const _InitialSetupGate({required this.child});
+  final Widget? child;
+  @override
+  State<_InitialSetupGate> createState() => _InitialSetupGateState();
+}
+
+class _InitialSetupGateState extends State<_InitialSetupGate> {
+  bool _ready = false;
+  Object? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _run();
+  }
+
+  Future<void> _run() async {
+    try {
+      await MigrationRunner.instance.runMigrationsIfNeeded();
+      await SeedRunner.instance.ensureInitialSeed();
+      if (mounted) setState(() => _ready = true);
+    } catch (e) {
+      if (mounted) setState(() => _error = e);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_error != null) {
+      return MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: Text('초기화 실패: $_error'),
+          ),
+        ),
+      );
+    }
+    if (!_ready) {
+      return const MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('데이터베이스 초기화 중...'),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    return widget.child ?? const SizedBox.shrink();
   }
 }
 

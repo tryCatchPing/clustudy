@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:it_contest/features/canvas/notifiers/custom_scribble_notifier.dart';
@@ -46,16 +47,24 @@ class NoteEditorActionsBar extends ConsumerWidget {
           tooltip: 'Clear',
           onPressed: notifier.clear,
         ),
-        IconButton(
-          icon: const Icon(Icons.image),
-          tooltip: 'Show PNG Image',
-          onPressed: () => notifier.showImage(context),
-        ),
-        IconButton(
-          icon: const Icon(Icons.data_object),
-          tooltip: 'Show JSON',
-          onPressed: () => notifier.showJson(context),
-        ),
+        if (kDebugMode) ...[
+          IconButton(
+            icon: const Icon(Icons.image),
+            tooltip: 'Show PNG Image',
+            onPressed: () {
+              // TODO: implement showImage in CustomScribbleNotifier or provide debug UI
+              // notifier.showImage(context);
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.data_object),
+            tooltip: 'Show JSON',
+            onPressed: () {
+              // TODO: implement showJson in CustomScribbleNotifier or provide debug UI
+              // notifier.showJson(context);
+            },
+          ),
+        ],
         IconButton(
           icon: const Icon(Icons.save),
           tooltip: 'Save',

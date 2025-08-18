@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 // ignore: unused_import
 import 'package:isar_flutter_libs/isar_flutter_libs.dart';
 import 'package:it_contest/features/db/isar_db.dart';
+import 'package:it_contest/features/db/models/models.dart';
 import 'package:it_contest/features/db/services/note_db_service.dart';
 import 'package:it_contest/shared/services/backup_service.dart';
 
@@ -218,11 +219,11 @@ void main() {
         expect(result.message, contains('성공적으로 복원'));
 
         // Verify data was restored
-        final restoredVaults = await isar.collection<Vault>().where().findAll();
+        final restoredVaults = await isar.collection<Vault>().where().anyId().findAll();
         expect(restoredVaults.length, 1);
         expect(restoredVaults.first.name, 'OriginalVault'); // Should be restored to original
 
-        final restoredNotes = await isar.collection<Note>().where().findAll();
+        final restoredNotes = await isar.collection<Note>().where().anyId().findAll();
         expect(restoredNotes.length, 1);
         expect(restoredNotes.first.name, 'OriginalNote');
       },
@@ -267,7 +268,7 @@ void main() {
         expect(result.databaseRestored, isTrue);
 
         // Verify data was restored
-        final restoredVaults = await isar.collection<Vault>().where().findAll();
+        final restoredVaults = await isar.collection<Vault>().where().anyId().findAll();
         expect(restoredVaults.length, 1);
         expect(restoredVaults.first.name, 'TestVault');
       },

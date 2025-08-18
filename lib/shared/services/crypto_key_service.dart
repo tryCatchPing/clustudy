@@ -7,7 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:isar/isar.dart';
 import 'package:it_contest/features/db/isar_db.dart';
-import 'package:it_contest/features/db/models/vault_models.dart';
+import 'package:it_contest/features/db/models/models.dart';
 import 'package:path_provider/path_provider.dart';
 
 class CryptoKeyService {
@@ -121,8 +121,8 @@ class CryptoKeyService {
   Future<List<String>> getBackupKeyAliases() async {
     final allKeys = await _storage.readAll();
     return allKeys.keys
-        .where((key) => key.startsWith(_backupPrefix))
-        .map((key) => key.substring(_backupPrefix.length))
+        .where((String key) => key.startsWith(_backupPrefix))
+        .map<String>((String key) => key.substring(_backupPrefix.length))
         .toList();
   }
 

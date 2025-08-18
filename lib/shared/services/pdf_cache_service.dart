@@ -8,7 +8,7 @@ import 'package:it_contest/features/pdf_cache/data/pdf_cache_repository.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:pdfx/pdfx.dart';
-import 'package:it_contest/features/db/models/vault_models.dart';
+import 'package:it_contest/features/db/models/models.dart';
 
 class PdfCacheService {
   final PdfCacheRepository _repository;

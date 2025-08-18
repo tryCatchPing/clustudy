@@ -116,7 +116,7 @@ class FullBackupService {
   Future<void> runFullBackup({required bool includeFiles, required bool encrypt}) async {
     // Guards based on settings
     final isar = await IsarDb.instance.open();
-    final settings = await isar.collection<SettingsEntity>().where().findFirst();
+    final settings = await isar.collection<SettingsEntity>().filter().findFirst();
     final retentionDays = settings?.backupRetentionDays ?? 7;
     // Placeholder for wifi/charging guards (plugins can be integrated later)
     // if (settings?.backupRequireWifi == true) { ... }

@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:isar/isar.dart';
 import 'package:it_contest/features/db/isar_db.dart';
-import 'package:it_contest/features/db/models/vault_models.dart';
+import 'package:it_contest/features/db/models/models.dart';
 import 'package:it_contest/search/search_service.dart';
 import 'package:it_contest/shared/models/rect_norm.dart';
 
@@ -124,7 +124,7 @@ class NoteDbService {
     const String userId = 'local';
     final now = DateTime.now();
     // Get or create record
-    final existing = await isar.recentTabs.where().findFirst();
+    final existing = await isar.recentTabs.where().anyId().findFirst();
     List<int> list;
     late RecentTabs tabs;
     if (existing == null) {
@@ -382,7 +382,7 @@ class NoteDbService {
 
   Future<SettingsEntity> getSettings() async {
     final isar = await IsarDb.instance.open();
-    final existing = await isar.settingsEntitys.where().findFirst();
+    final existing = await isar.settingsEntitys.where().anyId().findFirst();
     if (existing != null) return existing;
     final defaults = SettingsEntity()
       ..encryptionEnabled = false
