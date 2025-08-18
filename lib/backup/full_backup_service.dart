@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:archive/archive_io.dart';
 import 'package:encrypt/encrypt.dart' as enc;
+import 'package:isar/isar.dart';
 import 'package:it_contest/crypto/keys.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';

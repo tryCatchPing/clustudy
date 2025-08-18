@@ -6,6 +6,7 @@ import 'package:it_contest/features/db/models/models.dart';
 /// `SettingsEntity.dataVersion`.
 class MigrationRunner {
   MigrationRunner._();
+  /// Singleton instance.
   static final MigrationRunner instance = MigrationRunner._();
 
   /// Executes necessary migrations if the on-disk data is older than the
