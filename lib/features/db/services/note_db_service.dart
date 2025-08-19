@@ -58,9 +58,8 @@ class NoteDbService {
       ..rotationDeg = rotationDeg
       ..createdAt = DateTime.now()
       ..updatedAt = DateTime.now();
-    await isar.writeTxn(() async {
-      await isar.pages.put(page);
-    });
+    // createPage는 이미 트랜잭션 내부에서 호출될 수 있으므로, 자체 트랜잭션을 시작하지 않습니다.
+    await isar.pages.put(page);
     return page;
   }
 
@@ -82,45 +81,107 @@ class NoteDbService {
     final isar = await IsarDb.instance.open();
     late final Note newNote;
     late final LinkEntity link;
-    await isar.writeTxn(() async {
-      // Create note directly in transaction to set all fields
-      newNote = Note()
-        ..vaultId = vaultId
-        ..name = label
-        ..nameLowerForParentUnique = label.toLowerCase()
-        ..pageSize = pageSize
-        ..pageOrientation = pageOrientation
-        ..sortIndex = 1000
-        ..createdAt = DateTime.now()
-        ..updatedAt = DateTime.now()
-        ..vaultIdForSort = vaultId
-        ..nameLowerForSearch = label.toLowerCase();
-      await isar.notes.put(newNote);
-      await createPage(noteId: newNote.id, index: initialPageIndex);
-      link = LinkEntity()
-        ..vaultId = vaultId
-        ..sourceNoteId = sourceNoteId
-        ..sourcePageId = sourcePageId
-        ..x0 = rect.x0
-        ..y0 = rect.y0
-        ..x1 = rect.x1
-        ..y1 = rect.y1
-        ..targetNoteId = newNote.id
-        ..label = label
-        ..dangling = false
-        ..createdAt = DateTime.now()
-        ..updatedAt = DateTime.now();
-      await isar.linkEntitys.put(link);
-      final edge = GraphEdge()
-        ..vaultId = vaultId
-        ..fromNoteId = sourceNoteId
-        ..toNoteId = newNote.id
-        ..createdAt = DateTime.now();
-      edge.setUniqueKey(); // Set unique constraint key
-      await isar.graphEdges.put(edge);
-      await _pushRecentLinkedNote(isar: isar, noteId: newNote.id);
-    });
-    return link;
+    try {
+      await isar.writeTxn(() async {
+        final effectiveName = await _ensureUniqueNoteNameWithinVault(
+          isar: isar,
+          vaultId: vaultId,
+          desired: label,
+        );
+
+        // Create note directly in transaction to set all fields
+        newNote = Note()
+          ..vaultId = vaultId
+          ..name = effectiveName
+          ..nameLowerForParentUnique = effectiveName.toLowerCase()
+          ..pageSize = pageSize
+          ..pageOrientation = pageOrientation
+          ..sortIndex = 1000
+          ..createdAt = DateTime.now()
+          ..updatedAt = DateTime.now()
+          ..vaultIdForSort = vaultId
+          ..nameLowerForSearch = effectiveName.toLowerCase();
+        final newNoteId = await isar.notes.put(newNote);
+        print('Note put result ID: $newNoteId, newNote.id: ${newNote.id}');
+        if (newNoteId == 0) {
+          print('Warning: Note put operation returned 0, indicating failure.');
+        }
+        await createPage(noteId: newNote.id, index: initialPageIndex);
+        link = LinkEntity()
+          ..vaultId = vaultId
+          ..sourceNoteId = sourceNoteId
+          ..sourcePageId = sourcePageId
+          ..x0 = rect.x0
+          ..y0 = rect.y0
+          ..x1 = rect.x1
+          ..y1 = rect.y1
+          ..targetNoteId = newNote.id
+          ..label = label // 링크 라벨은 원래 의도된 값을 유지
+          ..dangling = false
+          ..createdAt = DateTime.now()
+          ..updatedAt = DateTime.now();
+        final linkEntityId = await isar.linkEntitys.put(link);
+        print('LinkEntity put result ID: $linkEntityId, link.id: ${link.id}');
+        if (linkEntityId == 0) {
+          print('Warning: LinkEntity put operation returned 0, indicating failure.');
+        }
+        final edge = GraphEdge()
+          ..vaultId = vaultId
+          ..fromNoteId = sourceNoteId
+          ..toNoteId = newNote.id
+          ..createdAt = DateTime.now();
+        edge.setUniqueKey(); // Set unique constraint key
+        final edgeId = await isar.graphEdges.put(edge);
+        print('GraphEdge put result ID: $edgeId');
+        if (edgeId == 0) {
+          print('Warning: GraphEdge put operation returned 0, indicating failure.');
+        }
+        await _pushRecentLinkedNote(isar: isar, noteId: newNote.id);
+      });
+      return link;
+    } catch (e, s) {
+      print('Error creating link and target note: $e\n$s');
+      rethrow; // Re-throw to ensure the original error is not swallowed
+    }
+  }
+
+  Future<String> _ensureUniqueNoteNameWithinVault({
+    required Isar isar,
+    required int vaultId,
+    required String desired,
+    int? folderId, // 동일 폴더 내에서만 유니크해야 할 경우
+  }) async {
+    final normalizedDesired = desired.trim();
+    if (normalizedDesired.isEmpty) {
+      // 비어있는 이름은 허용하지 않거나 기본값 설정
+      return '새 노트';
+    }
+
+    // vaultId가 인덱싱되지 않았을 수 있으므로 filter로 쿼리합니다.
+    final existing = await isar.notes
+        .where()
+        .filter()
+        .vaultIdEqualTo(vaultId)
+        .and()
+        .folderIdEqualTo(folderId) // folderId가 null이면 root에서 찾음
+        .nameLowerForParentUniqueStartsWith(normalizedDesired.toLowerCase())
+        .findAll();
+
+    final existingNames =
+        existing.map((e) => e.name.trim()).toSet();
+
+    if (!existingNames.contains(normalizedDesired)) {
+      return normalizedDesired;
+    }
+
+    int n = 2;
+    while (true) {
+      final candidate = '$normalizedDesired ($n)';
+      if (!existingNames.contains(candidate)) {
+        return candidate;
+      }
+      n += 1;
+    }
   }
 
   Future<void> _pushRecentLinkedNote({required Isar isar, required int noteId}) async {

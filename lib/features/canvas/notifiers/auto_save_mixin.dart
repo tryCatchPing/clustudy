@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:it_contest/canvas/canvas_pipeline.dart';
 import 'package:it_contest/features/notes/models/note_page_model.dart' as page_model;
 import 'package:scribble/scribble.dart';
 
@@ -18,7 +21,17 @@ mixin AutoSaveMixin on ScribbleNotifier {
   void saveSketch() {
     // 멀티페이지 - Page 객체가 있으면 해당 Page에 저장
     if (page != null) {
-      page!.updateFromSketch(currentSketch);
+      final pageId = int.parse(page!.pageId);
+      final noteId = int.parse(page!.noteId);
+      final json = jsonEncode(value.sketch.toJson());
+      const version = '1.0'; // Or get from somewhere else
+
+      CanvasPipeline.saveCanvasWithDebouncedSnapshot(
+        noteId,
+        pageId,
+        json,
+        version,
+      );
     }
   }
 }

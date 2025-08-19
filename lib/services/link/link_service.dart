@@ -23,38 +23,58 @@ class LinkService {
     required RectNorm region,
     String? label,
   }) async {
-    final normalized = region.normalized();
-    normalized.assertValid();
+    try {
+      final normalized = region.normalized();
+      normalized.assertValid();
 
-    final isar = await IsarDb.instance.open();
-    final effectiveLabel = await _ensureUniqueLabelWithinSource(
-      isar: isar,
-      vaultId: vaultId,
-      sourceNoteId: sourceNoteId,
-      sourcePageId: sourcePageId,
-      desired: label?.trim().isEmpty ?? true ? '링크' : label!.trim(),
-    );
+      final isar = await IsarDb.instance.open();
+      final effectiveLabel = await _ensureUniqueLabelWithinSource(
+        isar: isar,
+        vaultId: vaultId,
+        sourceNoteId: sourceNoteId,
+        sourcePageId: sourcePageId,
+        desired: label?.trim().isEmpty ?? true ? '링크' : label!.trim(),
+      );
 
-    // 기본 페이지 설정은 도메인 기본값 사용(A4/portrait, pageIndex 0)
-    final link = await NoteDbService.instance.createLinkAndTargetNote(
-      vaultId: vaultId,
-      sourceNoteId: sourceNoteId,
-      sourcePageId: sourcePageId,
-      x0: normalized.x0,
-      y0: normalized.y0,
-      x1: normalized.x1,
-      y1: normalized.y1,
-      label: effectiveLabel,
-      pageSize: 'A4',
-      pageOrientation: 'portrait',
-      initialPageIndex: 0,
-    );
+      // 기본 페이지 설정은 도메인 기본값 사용(A4/portrait, pageIndex 0)
+      final link = await NoteDbService.instance.createLinkAndTargetNote(
+        vaultId: vaultId,
+        sourceNoteId: sourceNoteId,
+        sourcePageId: sourcePageId,
+        x0: normalized.x0,
+        y0: normalized.y0,
+        x1: normalized.x1,
+        y1: normalized.y1,
+        label: effectiveLabel,
+        pageSize: 'A4',
+        pageOrientation: 'portrait',
+        initialPageIndex: 0,
+      );
 
-    final created = await isar.collection<Note>().get(link.targetNoteId!);
-    if (created == null) {
-      throw IsarError('Linked note not found after creation');
+      final created = await isar.collection<Note>().get(link.targetNoteId!);    if (created == null) {
+        throw IsarError('Linked note not found after creation');
+      }
+      return created;
+    } catch (e, s) {
+      print('''Error in createLinkedNoteFromRegion: $e
+$s''');
+      rethrow; // Re-throw to ensure the original error is not swallowed
     }
-    return created;
+  }
+
+  /// Link 삭제 + 대응 GraphEdge 동기 삭제
+  /// 주어진 노트 ID와 페이지 ID에 해당하는 모든 링크를 가져옵니다.
+  Future<List<LinkEntity>> getLinksForPage({
+    required int sourceNoteId,
+    required int sourcePageId,
+  }) async {
+    final isar = await IsarDb.instance.open();
+    return isar.collection<LinkEntity>()
+        .filter()
+        .sourceNoteIdEqualTo(sourceNoteId)
+        .and()
+        .sourcePageIdEqualTo(sourcePageId)
+        .findAll();
   }
 
   /// Link 삭제 + 대응 GraphEdge 동기 삭제

@@ -11,6 +11,8 @@ import 'package:it_contest/features/canvas/providers/note_editor_providers.dart'
 import 'package:it_contest/features/canvas/widgets/canvas_background_widget.dart'; // CanvasBackgroundWidget 정의 필요
 import 'package:it_contest/features/canvas/widgets/linker_gesture_layer.dart';
 import 'package:it_contest/features/notes/data/derived_note_providers.dart';
+import 'package:it_contest/shared/models/rect_norm.dart';
+import 'package:it_contest/services/link/link_service.dart';
 import 'package:scribble/scribble.dart';
 
 /// Note 편집 화면의 단일 페이지 뷰 아이템입니다.
@@ -48,6 +50,32 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
     _tc = ref.read<TransformationController>(transformationControllerProvider(widget.noteId));
     _tc.addListener(_onScaleChanged);
     _updateScale(); // 초기 스케일 설정
+    _loadLinkerRectangles(); // 기존 링커 로드
+  }
+
+  /// 저장된 링커 직사각형을 로드합니다.
+  Future<void> _loadLinkerRectangles() async {
+    try {
+      final links = await LinkService.instance.getLinksForPage(
+        sourceNoteId: int.parse(widget.noteId),
+        sourcePageId: widget.pageIndex,
+      );
+      setState(() {
+        _currentLinkerRectangles = links.map((link) {
+          final canvasWidth = _currentNotifier.page!.drawingAreaWidth;
+          final canvasHeight = _currentNotifier.page!.drawingAreaHeight;
+          return Rect.fromLTWH(
+            link.x0 * canvasWidth,
+            link.y0 * canvasHeight,
+            (link.x1 - link.x0) * canvasWidth,
+            (link.y1 - link.y0) * canvasHeight,
+          );
+        }).toList();
+      });
+      print('Loaded ${links.length} linker rectangles.');
+    } catch (e, s) {
+      print('Failed to load linker rectangles: $e\n$s');
+    }
   }
 
   @override
@@ -233,6 +261,41 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                                 setState(() {
                                   _currentLinkerRectangles = rects;
                                 });
+                              },
+                              onNewLinkerRectangleCreated: (newRect) async {
+                                final currentNote = ref.read(noteProvider(widget.noteId)).value;
+                                if (currentNote == null) {
+                                  print('Error: Note not found for creating link.');
+                                  return;
+                                }
+
+                                final canvasWidth = notifier.page!.drawingAreaWidth;
+                                final canvasHeight = notifier.page!.drawingAreaHeight;
+
+                                final rectNorm = RectNorm(
+                                  x0: newRect.left / canvasWidth,
+                                  y0: newRect.top / canvasHeight,
+                                  x1: newRect.right / canvasWidth,
+                                  y1: newRect.bottom / canvasHeight,
+                                );
+
+                                try {
+                                  await LinkService.instance.createLinkedNoteFromRegion(
+                                    vaultId: currentNote.vaultId,
+                                    sourceNoteId: int.parse(widget.noteId),
+                                    sourcePageId: widget.pageIndex,
+                                    region: rectNorm,
+                                    label: '링크', // 기본 라벨
+                                  );
+                                  print('Linker created successfully!');
+                                  // 링커가 성공적으로 저장되면, _currentLinkerRectangles를 업데이트하여 화면에 반영
+                                  // (이 부분은 LinkService에서 링커를 다시 로드하는 로직이 필요할 수 있음)
+                                  // 현재는 LinkerGestureLayer에서 _linkerRectangles에 추가하고 있으므로,
+                                  // 여기서는 추가적인 UI 업데이트 로직이 필요 없을 수 있습니다.
+                                  // 하지만, 앱을 재시작했을 때 링커가 로드되도록 하는 로직은 별도로 필요합니다.
+                                } catch (e, s) {
+                                  print('Failed to create linker: $e\n$s');
+                                }
                               },
                               onLinkerTapped: (tappedRect) {
                                 _showLinkerOptions(context, tappedRect);

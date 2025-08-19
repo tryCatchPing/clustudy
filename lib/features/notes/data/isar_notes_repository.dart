@@ -422,6 +422,7 @@ class IsarNotesRepository implements NotesRepository {
     return NoteModel(
       noteId: note.id.toString(),
       title: note.name,
+      vaultId: note.vaultId, // vaultId 추가
       pages: pageModels,
       sourceType: hasPdf ? NoteSourceType.pdfBased : NoteSourceType.blank,
       sourcePdfPath: sourcePdfPath,

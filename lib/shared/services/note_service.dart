@@ -34,6 +34,7 @@ class NoteService {
   ///
   /// Returns: 생성된 NoteModel 또는 null (실패시)
   Future<NoteModel?> createBlankNote({
+    required int vaultId,
     String? title,
     int initialPageCount = 1,
   }) async {
@@ -64,6 +65,7 @@ class NoteService {
       final note = NoteModel(
         noteId: noteId,
         title: noteTitle,
+        vaultId: vaultId,
         pages: pages,
         sourceType: NoteSourceType.blank,
       );
@@ -92,7 +94,10 @@ class NoteService {
   /// [title]: 노트 제목 (선택사항, 미제공시 PDF에서 추출한 제목 사용)
   ///
   /// Returns: 생성된 NoteModel 또는 null (실패시)
-  Future<NoteModel?> createPdfNote({String? title}) async {
+  Future<NoteModel?> createPdfNote({
+    required int vaultId,
+    String? title,
+  }) async {
     try {
       // 1. PDF 처리 (PdfProcessor에 위임)
       final pdfData = await PdfProcessor.processFromSelection();
@@ -114,6 +119,7 @@ class NoteService {
       final note = NoteModel(
         noteId: pdfData.noteId,
         title: noteTitle,
+        vaultId: vaultId,
         pages: pages,
         sourceType: NoteSourceType.pdfBased,
         sourcePdfPath: pdfData.internalPdfPath,

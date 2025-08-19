@@ -19,6 +19,9 @@ class NoteModel {
   /// 노트의 제목.
   final String title;
 
+  /// 노트가 속한 볼트의 ID.
+  final int vaultId;
+
   /// 노트에 포함된 페이지 목록.
   /// 일단은 변경 가능하게.. 추후 수정 필요
   final List<NotePageModel> pages;
@@ -42,6 +45,7 @@ class NoteModel {
   ///
   /// [noteId]는 노트의 고유 ID입니다.
   /// [title]은 노트의 제목입니다.
+  /// [vaultId]는 노트가 속한 볼트의 ID입니다.
   /// [pages]는 노트에 포함된 페이지 목록입니다.
   /// [sourceType]은 노트의 출처 타입입니다 (기본값: [NoteSourceType.blank]).
   /// [sourcePdfPath]는 원본 PDF 파일의 경로입니다.
@@ -51,6 +55,7 @@ class NoteModel {
   NoteModel({
     required this.noteId,
     required this.title,
+    required this.vaultId, // vaultId 추가
     required this.pages,
     this.sourceType = NoteSourceType.blank,
     this.sourcePdfPath,
@@ -70,6 +75,7 @@ class NoteModel {
   NoteModel copyWith({
     String? noteId,
     String? title,
+    int? vaultId, // copyWith에도 vaultId 추가
     List<NotePageModel>? pages,
     NoteSourceType? sourceType,
     String? sourcePdfPath,
@@ -80,6 +86,7 @@ class NoteModel {
     return NoteModel(
       noteId: noteId ?? this.noteId,
       title: title ?? this.title,
+      vaultId: vaultId ?? this.vaultId, // copyWith에서 vaultId 처리
       pages: pages ?? this.pages,
       sourceType: sourceType ?? this.sourceType,
       sourcePdfPath: sourcePdfPath ?? this.sourcePdfPath,

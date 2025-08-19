@@ -13,8 +13,8 @@ class SeedRunner {
   /// 앱 최초 실행 시 필요한 기본 Vault/Folder/Note/Page를 생성합니다.
   Future<void> ensureInitialSeed() async {
     final isar = await IsarDb.instance.open();
-    final hasVault = await isar.collection<Vault>().where().count() > 0;
-    if (hasVault) {
+    final defaultVault = await isar.vaults.filter().nameLowerUniqueEqualTo('default').findFirst();
+    if (defaultVault != null) {
       return;
     }
     await isar.writeTxn(() async {
@@ -43,7 +43,8 @@ class SeedRunner {
         ..sortIndex = 1000
         ..createdAt = now
         ..updatedAt = now
-        ..nameLowerForSearch = 'welcome';
+        ..nameLowerForSearch = 'welcome'
+        ..vaultIdForSort = vaultId;
       final noteId = await isar.collection<Note>().put(note);
       final page = Page()
         ..noteId = noteId

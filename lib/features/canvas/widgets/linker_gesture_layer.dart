@@ -13,6 +13,9 @@ class LinkerGestureLayer extends StatefulWidget {
   /// 링커 목록이 변경될 때 호출되는 콜백 함수.
   final ValueChanged<List<Rect>> onLinkerRectanglesChanged;
 
+  /// 새로운 링커 직사각형이 생성될 때 호출되는 콜백 함수.
+  final ValueChanged<Rect> onNewLinkerRectangleCreated;
+
   /// 링커가 탭될 때 호출되는 콜백 함수.
   final ValueChanged<Rect> onLinkerTapped;
 
@@ -44,6 +47,7 @@ class LinkerGestureLayer extends StatefulWidget {
   ///
   /// [toolMode]는 현재 도구 모드입니다.
   /// [onLinkerRectanglesChanged]는 링커 목록이 변경될 때 호출됩니다.
+  /// [onNewLinkerRectangleCreated]는 새로운 링커 직사각형이 생성될 때 호출됩니다.
   /// [onLinkerTapped]는 링커가 탭될 때 호출됩니다.
   /// [minLinkerRectangleSize]는 유효한 링커로 인식될 최소 크기입니다.
   /// [linkerFillColor], [linkerBorderColor], [linkerBorderWidth]는 기존 링커의 스타일을 정의합니다.
@@ -52,6 +56,7 @@ class LinkerGestureLayer extends StatefulWidget {
     super.key,
     required this.toolMode,
     required this.onLinkerRectanglesChanged,
+    required this.onNewLinkerRectangleCreated, // 새 콜백 추가
     required this.onLinkerTapped,
     this.minLinkerRectangleSize = 5.0,
     this.linkerFillColor = Colors.pinkAccent,
@@ -95,7 +100,9 @@ class _LinkerGestureLayerState extends State<LinkerGestureLayer> {
         if (rect.width.abs() > widget.minLinkerRectangleSize &&
             rect.height.abs() > widget.minLinkerRectangleSize) {
           _linkerRectangles.add(rect);
-          widget.onLinkerRectanglesChanged(_linkerRectangles); // 콜백 호출
+          widget.onLinkerRectanglesChanged(_linkerRectangles); // 기존 콜백 호출
+          widget.onNewLinkerRectangleCreated(rect); // 새 콜백 호출
+          print('New linker rectangle created: $rect'); // 디버깅용 로그
         }
       }
       _currentDragStart = null;

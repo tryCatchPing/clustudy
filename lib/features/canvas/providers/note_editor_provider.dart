@@ -7,7 +7,9 @@ import 'package:it_contest/features/canvas/models/tool_mode.dart';
 import 'package:it_contest/features/canvas/notifiers/custom_scribble_notifier.dart';
 import 'package:it_contest/features/canvas/providers/tool_settings_provider.dart';
 import 'package:it_contest/features/notes/data/derived_note_providers.dart';
+import 'package:it_contest/features/notes/models/note_page_model.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:scribble/scribble.dart';
 
 part 'note_editor_provider.g.dart';
 
@@ -70,14 +72,14 @@ class CustomScribbleNotifiers extends _$CustomScribbleNotifiers {
   }
 
   @override
-  Map<String, CustomScribbleNotifier> build(String noteId) {
+  Future<Map<String, CustomScribbleNotifier>> build(String noteId) async {
     final noteAsync = ref.watch(noteProvider(noteId));
     // 재생성 트리거가 되지 않도록 listen으로만 처리
     final simulatePressure = ref.read(simulatePressureProvider);
     final toolSettings = ref.watch(toolSettingsNotifierProvider(noteId));
 
     return noteAsync.maybeWhen(
-      data: (note) {
+      data: (note) async {
         if (note == null) {
           // 노트를 찾지 못한 경우: 기존 캐시가 있으면 유지, 없으면 빈 맵
           return _cacheByPageId ?? <String, CustomScribbleNotifier>{};
@@ -96,18 +98,12 @@ class CustomScribbleNotifiers extends _$CustomScribbleNotifiers {
         // 새 페이지 추가 생성
         for (final page in note.pages) {
           if (!map.containsKey(page.pageId)) {
-            final notifier =
-                CustomScribbleNotifier(
-                    toolMode: toolSettings.toolMode,
-                    page: page,
-                    simulatePressure: simulatePressure,
-                    maxHistoryLength: NoteEditorConstants.maxHistoryLength,
-                  )
-                  ..setSimulatePressureEnabled(simulatePressure)
-                  ..setSketch(
-                    sketch: page.toSketch(),
-                    addToUndoHistory: false,
-                  );
+            final notifier = await CustomScribbleNotifier.create(
+              pageId: int.parse(page.pageId),
+              page: page,
+              toolMode: toolSettings.toolMode,
+              simulatePressure: simulatePressure,
+            );
             _applyToolSettings(notifier, toolSettings);
 
             map[page.pageId] = notifier;
@@ -177,7 +173,7 @@ class CustomScribbleNotifiers extends _$CustomScribbleNotifiers {
 
         return map;
       },
-      orElse: () => <String, CustomScribbleNotifier>{},
+      orElse: () => Future.value(<String, CustomScribbleNotifier>{}),
     );
   }
 }
@@ -189,30 +185,30 @@ CustomScribbleNotifier currentNotifier(
   Ref ref,
   String noteId,
 ) {
+  final notifiersAsync = ref.watch(customScribbleNotifiersProvider(noteId));
   final currentIndex = ref.watch(currentPageIndexProvider(noteId));
   final note = ref.watch(noteProvider(noteId)).value;
-  final toolSettings = ref.watch(toolSettingsNotifierProvider(noteId));
-  final simulatePressure = ref.read(simulatePressureProvider);
 
-  if (note == null || note.pages.isEmpty) {
-    // 노트가 없거나 페이지가 없는 경우에는 no-op Notifier를 반환하여 예외를 방지합니다.
-    return CustomScribbleNotifier(
-      toolMode: toolSettings.toolMode,
-      page: null,
-      simulatePressure: simulatePressure,
-      maxHistoryLength: NoteEditorConstants.maxHistoryLength,
-    );
-  }
-
-  final page = note.pages[currentIndex];
-  final notifiers = ref.watch(customScribbleNotifiersProvider(noteId));
-  return notifiers[page.pageId] ??
-      CustomScribbleNotifier(
-        toolMode: toolSettings.toolMode,
-        page: null,
-        simulatePressure: simulatePressure,
-        maxHistoryLength: NoteEditorConstants.maxHistoryLength,
-      );
+  return notifiersAsync.when(
+    data: (notifiers) {
+      if (note == null || note.pages.isEmpty || notifiers.isEmpty) {
+        return _createEmptyNotifier(ref, noteId, null);
+      }
+      final page = note.pages[currentIndex];
+      return notifiers[page.pageId] ?? _createEmptyNotifier(ref, noteId, page);
+    },
+    loading: () {
+      if (note == null || note.pages.isEmpty) {
+        return _createEmptyNotifier(ref, noteId, null);
+      }
+      final page = note.pages[currentIndex];
+      return _createEmptyNotifier(ref, noteId, page);
+    },
+    error: (err, stack) {
+      // Handle error, maybe log it
+      return _createEmptyNotifier(ref, noteId, null);
+    },
+  );
 }
 
 @riverpod
@@ -221,29 +217,44 @@ CustomScribbleNotifier pageNotifier(
   String noteId,
   int pageIndex,
 ) {
+  final notifiersAsync = ref.watch(customScribbleNotifiersProvider(noteId));
   final note = ref.watch(noteProvider(noteId)).value;
+
+  return notifiersAsync.when(
+    data: (notifiers) {
+      if (note == null ||
+          note.pages.length <= pageIndex ||
+          notifiers.isEmpty) {
+        return _createEmptyNotifier(ref, noteId, null);
+      }
+      final page = note.pages[pageIndex];
+      return notifiers[page.pageId] ?? _createEmptyNotifier(ref, noteId, page);
+    },
+    loading: () {
+      if (note == null || note.pages.length <= pageIndex) {
+        return _createEmptyNotifier(ref, noteId, null);
+      }
+      final page = note.pages[pageIndex];
+      return _createEmptyNotifier(ref, noteId, page);
+    },
+    error: (err, stack) {
+      // Handle error, maybe log it
+      return _createEmptyNotifier(ref, noteId, null);
+    },
+  );
+}
+
+/// Helper to create a fallback empty notifier.
+CustomScribbleNotifier _createEmptyNotifier(
+    Ref ref, String noteId, NotePageModel? page) {
   final toolSettings = ref.watch(toolSettingsNotifierProvider(noteId));
   final simulatePressure = ref.read(simulatePressureProvider);
-
-  if (note == null || note.pages.length <= pageIndex) {
-    // 유효하지 않은 페이지 접근에도 no-op Notifier 반환
-    return CustomScribbleNotifier(
-      toolMode: toolSettings.toolMode,
-      page: null,
-      simulatePressure: simulatePressure,
-      maxHistoryLength: NoteEditorConstants.maxHistoryLength,
-    );
-  }
-
-  final page = note.pages[pageIndex];
-  final notifiers = ref.watch(customScribbleNotifiersProvider(noteId));
-  return notifiers[page.pageId] ??
-      CustomScribbleNotifier(
-        toolMode: toolSettings.toolMode,
-        page: null,
-        simulatePressure: simulatePressure,
-        maxHistoryLength: NoteEditorConstants.maxHistoryLength,
-      );
+  return CustomScribbleNotifier.createEmpty(
+    toolMode: toolSettings.toolMode,
+    page: page,
+    simulatePressure: simulatePressure,
+    maxHistoryLength: NoteEditorConstants.maxHistoryLength,
+  );
 }
 
 /// PageController

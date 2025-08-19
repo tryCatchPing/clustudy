@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:isar/isar.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
@@ -17,6 +18,7 @@ class CanvasPipeline {
     String json,
     String version,
   ) async {
+    debugPrint('[CanvasPipeline] Saving canvas for noteId: $noteId, pageId: $pageId, json: $json');
     final isar = await IsarDb.instance.open();
     final now = DateTime.now();
 

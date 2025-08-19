@@ -105,7 +105,7 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
     setState(() => _isImporting = true);
 
     try {
-      final pdfNote = await NoteService.instance.createPdfNote();
+      final pdfNote = await NoteService.instance.createPdfNote(vaultId: 1); // TODO: vaultId를 실제 값으로 교체
 
       if (pdfNote != null) {
         final repo = ref.read(notesRepositoryProvider);
@@ -138,7 +138,7 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
 
   Future<void> _createBlankNote() async {
     try {
-      final blankNote = await NoteService.instance.createBlankNote();
+      final blankNote = await NoteService.instance.createBlankNote(vaultId: 1); // TODO: vaultId를 실제 값으로 교체
       final repo = ref.read(notesRepositoryProvider);
 
       if (blankNote != null) {

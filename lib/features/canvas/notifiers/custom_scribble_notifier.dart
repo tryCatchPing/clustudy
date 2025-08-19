@@ -1,26 +1,23 @@
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
+import 'package:isar/isar.dart';
 import 'package:it_contest/features/canvas/models/tool_mode.dart';
 import 'package:it_contest/features/canvas/notifiers/auto_save_mixin.dart';
 import 'package:it_contest/features/canvas/notifiers/tool_management_mixin.dart';
+import 'package:it_contest/features/db/isar_db.dart';
+import 'package:it_contest/features/db/models/models.dart';
 import 'package:it_contest/features/notes/models/note_page_model.dart' as page_model;
 import 'package:scribble/scribble.dart';
 
 /// 캔버스에서 스케치 및 도구 관리를 담당하는 Notifier.
 /// [ScribbleNotifier], [AutoSaveMixin], [ToolManagementMixin]을 조합하여 사용합니다.
 class CustomScribbleNotifier extends ScribbleNotifier with AutoSaveMixin, ToolManagementMixin {
-  /// [CustomScribbleNotifier]의 생성자.
-  ///
-  /// [sketch]는 초기 스케치 데이터입니다.
-  /// [allowedPointersMode]는 허용되는 포인터 모드입니다.
-  /// [maxHistoryLength]는 되돌리기/다시 실행 기록의 최대 길이입니다.
-  /// [widths]는 사용 가능한 선 굵기 목록입니다.
-  /// [simplifier]는 스케치 단순화에 사용되는 객체입니다.
-  /// [simplificationTolerance]는 스케치 단순화 허용 오차입니다.
-  /// [toolMode]는 현재 선택된 도구 모드입니다.
-  /// [page]는 현재 노트 페이지 모델입니다.
-  CustomScribbleNotifier({
-    super.sketch,
+  /// 비공개 생성자. [create] 팩토리 메서드를 통해 인스턴스화해야 합니다.
+  CustomScribbleNotifier._({
+    required Sketch sketch,
     super.allowedPointersMode,
     super.maxHistoryLength,
     super.widths = const [1, 3, 5, 7],
@@ -30,10 +27,62 @@ class CustomScribbleNotifier extends ScribbleNotifier with AutoSaveMixin, ToolMa
     this.page,
     required bool simulatePressure,
   }) : super(
-         pressureCurve: simulatePressure
-             ? const _DefaultPressureCurve()
-             : const _ConstantPressureCurve(),
-       );
+          sketch: sketch,
+          pressureCurve: simulatePressure
+              ? const _DefaultPressureCurve()
+              : const _ConstantPressureCurve(),
+        );
+
+  /// [CustomScribbleNotifier]를 비동기적으로 생성하고 DB에서 캔버스 데이터를 로드합니다.
+  static Future<CustomScribbleNotifier> create({
+    required int pageId,
+    required page_model.NotePageModel page,
+    required ToolMode toolMode,
+    required bool simulatePressure,
+    ScribblePointerMode allowedPointersMode = ScribblePointerMode.all,
+  }) async {
+    final isar = await IsarDb.instance.open();
+    final canvasData = await isar.canvasDatas.where().pageIdEqualTo(pageId).findFirst();
+
+    debugPrint('[CustomScribbleNotifier] Loading canvas for pageId: $pageId, found data: ${canvasData != null}');
+
+    Sketch sketch;
+    if (canvasData != null && canvasData.json.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(canvasData.json);
+        sketch = Sketch.fromJson(decoded);
+      } catch (e) {
+        debugPrint('JSON 디코딩 실패: $e');
+        sketch = Sketch(lines: const []);
+      }
+    } else {
+      sketch = Sketch(lines: const []);
+    }
+
+    return CustomScribbleNotifier._(
+      sketch: sketch,
+      page: page,
+      toolMode: toolMode,
+      simulatePressure: simulatePressure,
+      allowedPointersMode: allowedPointersMode,
+    );
+  }
+
+  /// Creates an empty [CustomScribbleNotifier] for fallback.
+  factory CustomScribbleNotifier.createEmpty({
+    required ToolMode toolMode,
+    required page_model.NotePageModel? page,
+    required bool simulatePressure,
+    int maxHistoryLength = 100,
+  }) {
+    return CustomScribbleNotifier._(
+      sketch: Sketch(lines: const []),
+      toolMode: toolMode,
+      page: page,
+      simulatePressure: simulatePressure,
+      maxHistoryLength: maxHistoryLength,
+    );
+  }
 
   /// 현재 선택된 도구 모드.
   @override

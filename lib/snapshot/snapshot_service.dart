@@ -55,6 +55,14 @@ class SnapshotService {
     _latestPayloadByPage.remove(pageId);
   }
 
+  /// Flush all pending snapshots immediately.
+  static Future<void> flushAllPending() async {
+    final pageIds = _latestPayloadByPage.keys.toList();
+    for (final pageId in pageIds) {
+      await flushPending(pageId: pageId);
+    }
+  }
+
   static Future<void> _createSnapshot(_SnapshotPayload payload) async {
     final isar = await IsarDb.instance.open();
     final now = DateTime.now();
