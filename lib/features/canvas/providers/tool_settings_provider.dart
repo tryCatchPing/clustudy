@@ -19,6 +19,8 @@ class ToolSettings {
 
   final Color linkerColor;
 
+  final bool onlyPenMode; // New field
+
   const ToolSettings({
     required this.toolMode,
     required this.penColor,
@@ -27,6 +29,7 @@ class ToolSettings {
     required this.highlighterWidth,
     required this.eraserWidth,
     required this.linkerColor,
+    required this.onlyPenMode, // New field
   });
 
   ToolSettings copyWith({
@@ -37,6 +40,7 @@ class ToolSettings {
     double? highlighterWidth,
     double? eraserWidth,
     Color? linkerColor,
+    bool? onlyPenMode, // New field
   }) => ToolSettings(
     toolMode: toolMode ?? this.toolMode,
     penColor: penColor ?? this.penColor,
@@ -45,6 +49,7 @@ class ToolSettings {
     highlighterWidth: highlighterWidth ?? this.highlighterWidth,
     eraserWidth: eraserWidth ?? this.eraserWidth,
     linkerColor: linkerColor ?? this.linkerColor,
+    onlyPenMode: onlyPenMode ?? this.onlyPenMode, // New field
   );
 
   Color get currentColor {
@@ -87,6 +92,7 @@ class ToolSettingsNotifier extends _$ToolSettingsNotifier {
     highlighterWidth: ToolMode.highlighter.defaultWidth,
     eraserWidth: ToolMode.eraser.defaultWidth,
     linkerColor: ToolMode.linker.defaultColor,
+    onlyPenMode: false, // Initialize new field
   );
 
   void setToolMode(ToolMode toolMode) => state = state.copyWith(toolMode: toolMode);
@@ -98,4 +104,6 @@ class ToolSettingsNotifier extends _$ToolSettingsNotifier {
       state = state.copyWith(highlighterWidth: highlighterWidth);
   void setEraserWidth(double eraserWidth) => state = state.copyWith(eraserWidth: eraserWidth);
   void setLinkerColor(Color linkerColor) => state = state.copyWith(linkerColor: linkerColor);
+
+  void setOnlyPenMode(bool enabled) => state = state.copyWith(onlyPenMode: enabled); // New method
 }

@@ -3,17 +3,20 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart'; // Import PointerDeviceKind
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:it_contest/features/canvas/constants/note_editor_constant.dart'; // NoteEditorConstants 정의 필요
+import 'package:it_contest/features/canvas/constants/note_editor_constant.dart';
 import 'package:it_contest/features/canvas/notifiers/custom_scribble_notifier.dart';
 import 'package:it_contest/features/canvas/providers/note_editor_providers.dart';
-import 'package:it_contest/features/canvas/widgets/canvas_background_widget.dart'; // CanvasBackgroundWidget 정의 필요
+import 'package:it_contest/features/canvas/widgets/canvas_background_widget.dart';
 import 'package:it_contest/features/canvas/widgets/linker_gesture_layer.dart';
 import 'package:it_contest/features/notes/data/derived_note_providers.dart';
 import 'package:it_contest/shared/models/rect_norm.dart';
 import 'package:it_contest/services/link/link_service.dart';
 import 'package:scribble/scribble.dart';
+import 'package:it_contest/features/canvas/providers/tool_settings_provider.dart'; // Import tool_settings_provider
+import 'package:it_contest/features/canvas/models/link_model.dart'; // Import LinkModel
 
 /// Note 편집 화면의 단일 페이지 뷰 아이템입니다.
 class NotePageViewItem extends ConsumerStatefulWidget {
@@ -171,6 +174,7 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
     final notifier = ref.watch<CustomScribbleNotifier>(
       pageNotifierProvider(widget.noteId, widget.pageIndex),
     );
+    final toolSettings = ref.watch(toolSettingsNotifierProvider(widget.noteId)); // Get tool settings
 
     final drawingWidth = notifier.page!.drawingAreaWidth;
     final drawingHeight = notifier.page!.drawingAreaHeight;
@@ -200,7 +204,7 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
             maxScale: 3.0,
             constrained: false,
             // 패닝 활성화: 비-스타일러스 입력은 InteractiveViewer가 처리
-            panEnabled: true,
+            panEnabled: !toolSettings.onlyPenMode, // Adjust panEnabled based on onlyPenMode
             scaleEnabled: true,
             onInteractionEnd: (details) {
               _debounceTimer?.cancel();
@@ -238,14 +242,38 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                             child: Container(),
                           ),
                           // 필기 레이어 (링커 모드가 아닐 때만 활성화)
-                          IgnorePointer(
-                            ignoring: currentToolMode.isLinker,
-                            child: ClipRect(
-                              child: Scribble(
-                                notifier: notifier,
-                                drawPen: !currentToolMode.isLinker,
-                                simulatePressure: ref.watch(
-                                  simulatePressureProvider,
+                          GestureDetector(
+                            onTapUp: (details) {
+                              if (toolSettings.onlyPenMode &&
+                                  (details.kind == PointerDeviceKind.mouse ||
+                                      details.kind == PointerDeviceKind.touch)) {
+                                final tappedPosition = details.localPosition;
+                                for (final link in notifier.page!.links) {
+                                  // Assuming link.boundingBox is in canvas coordinates
+                                  if (link.boundingBox.contains(tappedPosition)) {
+                                    context.go('/note/${link.targetNoteId}');
+                                    return;
+                                  }
+                                }
+                              }
+                            },
+                            child: IgnorePointer(
+                              ignoring: currentToolMode.isLinker ||
+                                  (toolSettings.onlyPenMode &&
+                                      (scribbleState.allowedPointersMode == ScribblePointerMode.mouseOnly ||
+                                      scribbleState.allowedPointersMode == ScribblePointerMode.mouseAndPen ||
+                                      scribbleState.allowedPointersMode == ScribblePointerMode.all)),
+                              child: ClipRect(
+                                child: Scribble(
+                                  notifier: notifier,
+                                  drawPen: !currentToolMode.isLinker &&
+                                      (!toolSettings.onlyPenMode ||
+                                          scribbleState.allowedPointersMode == ScribblePointerMode.penOnly ||
+                                          scribbleState.allowedPointersMode == ScribblePointerMode.mouseAndPen ||
+                                          scribbleState.allowedPointersMode == ScribblePointerMode.all), // Adjust drawPen
+                                  simulatePressure: ref.watch(
+                                    simulatePressureProvider,
+                                  ),
                                 ),
                               ),
                             ),

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:it_contest/features/canvas/constants/note_editor_constant.dart';
+import 'package:it_contest/features/canvas/models/link_model.dart'; // Import LinkModel
 import 'package:scribble/scribble.dart';
 
 /// 페이지 배경의 타입을 정의합니다.
@@ -49,6 +50,9 @@ class NotePageModel {
   /// 배경 이미지 표시 여부 (필기만 보기 모드 지원).
   bool showBackgroundImage;
 
+  /// 페이지에 포함된 링크 목록.
+  final List<LinkModel> links;
+
   /// [NotePageModel]의 생성자.
   ///
   /// [noteId]는 노트의 고유 ID입니다.
@@ -62,6 +66,7 @@ class NotePageModel {
   /// [backgroundHeight]는 원본 PDF 페이지 높이입니다.
   /// [preRenderedImagePath]는 사전 렌더링된 이미지 경로입니다.
   /// [showBackgroundImage]는 배경 이미지 표시 여부입니다 (기본값: true).
+  /// [links]는 페이지에 포함된 링크 목록입니다 (기본값: 빈 리스트).
   NotePageModel({
     required this.noteId,
     required this.pageId,
@@ -74,6 +79,7 @@ class NotePageModel {
     this.backgroundHeight,
     this.preRenderedImagePath,
     this.showBackgroundImage = true,
+    this.links = const [], // Initialize with an empty list
   });
 
   /// JSON 데이터에서 [Sketch] 객체로 변환합니다.
@@ -118,6 +124,7 @@ class NotePageModel {
     double? backgroundHeight,
     String? preRenderedImagePath,
     bool? showBackgroundImage,
+    List<LinkModel>? links,
   }) {
     return NotePageModel(
       noteId: noteId,
@@ -131,6 +138,7 @@ class NotePageModel {
       backgroundHeight: backgroundHeight ?? this.backgroundHeight,
       preRenderedImagePath: preRenderedImagePath ?? this.preRenderedImagePath,
       showBackgroundImage: showBackgroundImage ?? this.showBackgroundImage,
+      links: links ?? this.links,
     );
   }
 }
