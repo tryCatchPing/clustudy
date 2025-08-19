@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.it_contest"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 34  // Force newer compileSdk to support lStar
     ndkVersion = "29.0.13599879"
 
     compileOptions {
@@ -25,7 +25,7 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 34  // Match compileSdk for consistency
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
