@@ -138,7 +138,7 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
     return null;
   }
 
-  /// 링커 옵션 다이얼로그를 표시합니다.
+    /// 기존 링커 탭 시 옵션 다이얼로그를 표시합니다.
   ///
   /// [context]는 빌드 컨텍스트입니다.
   /// [tappedRect]는 탭된 링커의 사각형 정보입니다.
@@ -182,6 +182,109 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
         );
       },
     );
+  }
+
+  /// 새로운 링커 생성 시 옵션 다이얼로그를 표시합니다.
+  ///
+  /// [context]는 빌드 컨텍스트입니다.
+  /// [newRect]는 새로 생성된 링커의 사각형 정보입니다.
+  void _showNewLinkerOptions(BuildContext context, Rect newRect) {
+    showModalBottomSheet<void>(
+      context: context,
+      isDismissible: false, // 바깥 영역 탭으로 닫기 방지
+      enableDrag: false, // 드래그로 닫기 방지
+      builder: (BuildContext bc) {
+        return SafeArea(
+          child: Wrap(
+            children: <Widget>[
+              ListTile(
+                leading: const Icon(Icons.search),
+                title: const Text('링크 찾기'),
+                onTap: () {
+                  context.pop(); // 바텀 시트 닫기
+                  _removeTemporaryRect(newRect);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('링크 찾기 선택됨')),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.add_link),
+                title: const Text('링크 생성'),
+                onTap: () async {
+                  context.pop(); // 바텀 시트 닫기
+                  await _createLinkFromRect(newRect);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.close),
+                title: const Text('취소'),
+                onTap: () {
+                  context.pop(); // 바텀 시트 닫기
+                  _removeTemporaryRect(newRect);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// 임시 사각형을 제거합니다.
+  void _removeTemporaryRect(Rect rect) {
+    setState(() {
+      _currentLinkerRectangles.remove(rect);
+    });
+  }
+
+  /// 사각형에서 링크를 생성합니다.
+  Future<void> _createLinkFromRect(Rect rect) async {
+    try {
+      final currentNote = ref.read(noteProvider(widget.noteId)).value;
+      if (currentNote == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('노트를 찾을 수 없습니다')),
+          );
+        }
+        return;
+      }
+
+      final canvasWidth = _currentNotifier.page!.drawingAreaWidth;
+      final canvasHeight = _currentNotifier.page!.drawingAreaHeight;
+
+      final rectNorm = RectNorm(
+        x0: rect.left / canvasWidth,
+        y0: rect.top / canvasHeight,
+        x1: rect.right / canvasWidth,
+        y1: rect.bottom / canvasHeight,
+      );
+
+      await LinkService.instance.createLinkedNoteFromRegion(
+        vaultId: currentNote.vaultId,
+        sourceNoteId: int.parse(widget.noteId),
+        sourcePageId: widget.pageIndex,
+        region: rectNorm,
+        label: '링크', // 기본 라벨
+      );
+
+      // 링크 생성 후 링커 목록 새로고침
+      await _loadLinkerRectangles();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('링크가 생성되었습니다')),
+        );
+      }
+    } catch (e, s) {
+      // 링크 생성 실패
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('링크 생성에 실패했습니다')),
+        );
+      }
+    }
   }
 
   /// 링크를 삭제합니다.
@@ -362,39 +465,8 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                                 });
                               },
                               onNewLinkerRectangleCreated: (newRect) async {
-                                final currentNote = ref.read(noteProvider(widget.noteId)).value;
-                                if (currentNote == null) {
-                                  print('Error: Note not found for creating link.');
-                                  return;
-                                }
-
-                                final canvasWidth = notifier.page!.drawingAreaWidth;
-                                final canvasHeight = notifier.page!.drawingAreaHeight;
-
-                                final rectNorm = RectNorm(
-                                  x0: newRect.left / canvasWidth,
-                                  y0: newRect.top / canvasHeight,
-                                  x1: newRect.right / canvasWidth,
-                                  y1: newRect.bottom / canvasHeight,
-                                );
-
-                                try {
-                                  await LinkService.instance.createLinkedNoteFromRegion(
-                                    vaultId: currentNote.vaultId,
-                                    sourceNoteId: int.parse(widget.noteId),
-                                    sourcePageId: widget.pageIndex,
-                                    region: rectNorm,
-                                    label: '링크', // 기본 라벨
-                                  );
-                                  print('Linker created successfully!');
-                                  // 링커가 성공적으로 저장되면, _currentLinkerRectangles를 업데이트하여 화면에 반영
-                                  // (이 부분은 LinkService에서 링커를 다시 로드하는 로직이 필요할 수 있음)
-                                  // 현재는 LinkerGestureLayer에서 _linkerRectangles에 추가하고 있으므로,
-                                  // 여기서는 추가적인 UI 업데이트 로직이 필요 없을 수 있습니다.
-                                  // 하지만, 앱을 재시작했을 때 링커가 로드되도록 하는 로직은 별도로 필요합니다.
-                                } catch (e, s) {
-                                  print('Failed to create linker: $e\n$s');
-                                }
+                                // 새로운 링커 생성 시 다이얼로그 표시
+                                _showNewLinkerOptions(context, newRect);
                               },
                               onLinkerTapped: (tappedRect) {
                                 _showLinkerOptions(context, tappedRect);
