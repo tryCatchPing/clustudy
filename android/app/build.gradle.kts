@@ -42,3 +42,11 @@ android {
 flutter {
     source = "../.."
 }
+
+// Fix for CI environment lStar resource linking error
+configurations.all {
+    resolutionStrategy {
+        force("androidx.core:core:1.10.1")
+        force("androidx.core:core-ktx:1.10.1")
+    }
+}
