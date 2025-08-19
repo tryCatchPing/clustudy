@@ -2,21 +2,22 @@
 
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/gestures.dart'; // Import PointerDeviceKind
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:scribble/scribble.dart';
+
 import 'package:it_contest/features/canvas/constants/note_editor_constant.dart';
 import 'package:it_contest/features/canvas/notifiers/custom_scribble_notifier.dart';
 import 'package:it_contest/features/canvas/providers/note_editor_providers.dart';
 import 'package:it_contest/features/canvas/widgets/canvas_background_widget.dart';
 import 'package:it_contest/features/canvas/widgets/linker_gesture_layer.dart';
+import 'package:it_contest/features/db/models/models.dart';
 import 'package:it_contest/features/notes/data/derived_note_providers.dart';
-import 'package:it_contest/shared/models/rect_norm.dart';
 import 'package:it_contest/services/link/link_service.dart';
-import 'package:scribble/scribble.dart';
-import 'package:it_contest/features/canvas/providers/tool_settings_provider.dart'; // Import tool_settings_provider
-import 'package:it_contest/features/canvas/models/link_model.dart'; // Import LinkModel
+import 'package:it_contest/shared/models/rect_norm.dart';
+import 'package:it_contest/shared/routing/app_routes.dart';
 
 /// Note 편집 화면의 단일 페이지 뷰 아이템입니다.
 class NotePageViewItem extends ConsumerStatefulWidget {
@@ -39,6 +40,7 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
   Timer? _debounceTimer;
   double _lastScale = 1.0;
   List<Rect> _currentLinkerRectangles = []; // LinkerGestureLayer로부터 받은 링커 목록
+  List<LinkEntity> _currentLinks = []; // 실제 링크 데이터
 
   // 비-build 컨텍스트에서 현재 노트의 notifier 접근용
   CustomScribbleNotifier get _currentNotifier =>
@@ -64,6 +66,7 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
         sourcePageId: widget.pageIndex,
       );
       setState(() {
+        _currentLinks = links; // 실제 링크 데이터 저장
         _currentLinkerRectangles = links.map((link) {
           final canvasWidth = _currentNotifier.page!.drawingAreaWidth;
           final canvasHeight = _currentNotifier.page!.drawingAreaHeight;
@@ -75,9 +78,9 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
           );
         }).toList();
       });
-      print('Loaded ${links.length} linker rectangles.');
+
     } catch (e, s) {
-      print('Failed to load linker rectangles: $e\n$s');
+      // 링커 사각형 로드 실패 시 빈 상태 유지
     }
   }
 
@@ -124,12 +127,27 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
     }
   }
 
+  /// 탭된 사각형에서 해당하는 링크 데이터를 찾습니다.
+  LinkEntity? _findLinkByRect(Rect tappedRect) {
+    for (int i = 0; i < _currentLinkerRectangles.length; i++) {
+      final rect = _currentLinkerRectangles[i];
+      if (rect == tappedRect && i < _currentLinks.length) {
+        return _currentLinks[i];
+      }
+    }
+    return null;
+  }
+
   /// 링커 옵션 다이얼로그를 표시합니다.
   ///
   /// [context]는 빌드 컨텍스트입니다.
   /// [tappedRect]는 탭된 링커의 사각형 정보입니다.
   void _showLinkerOptions(BuildContext context, Rect tappedRect) {
-    // 바텀 시트 표시 로직 (구현 생략)
+    final link = _findLinkByRect(tappedRect);
+    if (link == null) {
+      return;
+    }
+
     showModalBottomSheet<void>(
       context: context,
       builder: (BuildContext bc) {
@@ -137,23 +155,26 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
           child: Wrap(
             children: <Widget>[
               ListTile(
-                leading: const Icon(Icons.search),
-                title: const Text('링크 찾기'),
+                leading: const Icon(Icons.open_in_new),
+                title: const Text('링크로 이동'),
                 onTap: () {
                   context.pop(); // 바텀 시트 닫기
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('링크 찾기 선택됨')),
-                  );
+                  if (link.targetNoteId != null) {
+                    context.pushNamed(
+                      AppRoutes.noteEditName,
+                      pathParameters: {
+                        'noteId': link.targetNoteId.toString(),
+                      },
+                    );
+                  }
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.add_link),
-                title: const Text('링크 생성'),
+                leading: const Icon(Icons.delete),
+                title: const Text('링크 삭제'),
                 onTap: () {
                   context.pop(); // 바텀 시트 닫기
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('링크 생성 선택됨')),
-                  );
+                  _deleteLink(link);
                 },
               ),
             ],
@@ -161,6 +182,34 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
         );
       },
     );
+  }
+
+  /// 링크를 삭제합니다.
+  Future<void> _deleteLink(LinkEntity link) async {
+    try {
+      await LinkService.instance.deleteLink(link.id);
+      // UI 업데이트: 해당 링크를 목록에서 제거
+      setState(() {
+        final index = _currentLinks.indexWhere((l) => l.id == link.id);
+        if (index != -1) {
+          _currentLinks.removeAt(index);
+          _currentLinkerRectangles.removeAt(index);
+        }
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('링크가 삭제되었습니다')),
+        );
+      }
+    } catch (e, s) {
+      // 링크 삭제 실패
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('링크 삭제에 실패했습니다')),
+        );
+      }
+    }
   }
 
   @override
@@ -244,14 +293,35 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                           // 필기 레이어 (링커 모드가 아닐 때만 활성화)
                           GestureDetector(
                             onTapUp: (details) {
-                              if (toolSettings.onlyPenMode &&
+                              // penOnly 모드이고 비-펜 입력인 경우 링커 다이얼로그 표시
+                              if (scribbleState.allowedPointersMode == ScribblePointerMode.penOnly &&
                                   (details.kind == PointerDeviceKind.mouse ||
                                       details.kind == PointerDeviceKind.touch)) {
                                 final tappedPosition = details.localPosition;
+                                // 링커 사각형 체크
+                                for (int i = 0; i < _currentLinkerRectangles.length; i++) {
+                                  final rect = _currentLinkerRectangles[i];
+                                  if (rect.contains(tappedPosition)) {
+                                    _showLinkerOptions(context, rect);
+                                    return;
+                                  }
+                                }
+                              }
+                              // 기존 로직: toolSettings.onlyPenMode 체크 (호환성 유지)
+                              else if (toolSettings.onlyPenMode &&
+                                  (details.kind == PointerDeviceKind.mouse ||
+                                      details.kind == PointerDeviceKind.touch)) {
+                                final tappedPosition = details.localPosition;
+                                // 기존 로직: notifier.page!.links 체크 (호환성 유지)
                                 for (final link in notifier.page!.links) {
                                   // Assuming link.boundingBox is in canvas coordinates
                                   if (link.boundingBox.contains(tappedPosition)) {
-                                    context.go('/note/${link.targetNoteId}');
+                                    context.pushNamed(
+                                      AppRoutes.noteEditName,
+                                      pathParameters: {
+                                        'noteId': link.targetNoteId,
+                                      },
+                                    );
                                     return;
                                   }
                                 }
@@ -283,6 +353,7 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                           Positioned.fill(
                             child: LinkerGestureLayer(
                               toolMode: currentToolMode,
+                              existingLinkerRectangles: _currentLinkerRectangles,
                               allowMouseForLinker:
                                   scribbleState.allowedPointersMode == ScribblePointerMode.all,
                               onLinkerRectanglesChanged: (rects) {

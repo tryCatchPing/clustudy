@@ -20,9 +20,6 @@ class CustomScribbleNotifier extends ScribbleNotifier with AutoSaveMixin, ToolMa
     required Sketch sketch,
     super.allowedPointersMode,
     super.maxHistoryLength,
-    super.widths = const [1, 3, 5, 7],
-    super.simplifier,
-    super.simplificationTolerance,
     required this.toolMode,
     this.page,
     required bool simulatePressure,
@@ -53,7 +50,7 @@ class CustomScribbleNotifier extends ScribbleNotifier with AutoSaveMixin, ToolMa
         sketch = Sketch.fromJson(decoded);
       } catch (e) {
         debugPrint('JSON 디코딩 실패: $e');
-        sketch = Sketch(lines: const []);
+        sketch = const Sketch(lines: []);
       }
     } else {
       sketch = Sketch(lines: const []);
@@ -76,7 +73,7 @@ class CustomScribbleNotifier extends ScribbleNotifier with AutoSaveMixin, ToolMa
     int maxHistoryLength = 100,
   }) {
     return CustomScribbleNotifier._(
-      sketch: Sketch(lines: const []),
+      sketch: const Sketch(lines: []),
       toolMode: toolMode,
       page: page,
       simulatePressure: simulatePressure,

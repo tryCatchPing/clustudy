@@ -10,6 +10,9 @@ class LinkerGestureLayer extends StatefulWidget {
   /// 현재 도구 모드.
   final ToolMode toolMode;
 
+  /// 기존 링커 사각형 목록.
+  final List<Rect> existingLinkerRectangles;
+
   /// 링커 목록이 변경될 때 호출되는 콜백 함수.
   final ValueChanged<List<Rect>> onLinkerRectanglesChanged;
 
@@ -55,6 +58,7 @@ class LinkerGestureLayer extends StatefulWidget {
   const LinkerGestureLayer({
     super.key,
     required this.toolMode,
+    this.existingLinkerRectangles = const [],
     required this.onLinkerRectanglesChanged,
     required this.onNewLinkerRectangleCreated, // 새 콜백 추가
     required this.onLinkerTapped,
@@ -75,7 +79,23 @@ class LinkerGestureLayer extends StatefulWidget {
 class _LinkerGestureLayerState extends State<LinkerGestureLayer> {
   Offset? _currentDragStart;
   Offset? _currentDragEnd;
-  final List<Rect> _linkerRectangles = []; // 내부적으로 링커 목록 관리
+  late List<Rect> _linkerRectangles; // 내부적으로 링커 목록 관리
+
+  @override
+  void initState() {
+    super.initState();
+    // 기존 링커 사각형들로 초기화
+    _linkerRectangles = List.from(widget.existingLinkerRectangles);
+  }
+
+  @override
+  void didUpdateWidget(LinkerGestureLayer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 외부에서 전달된 링커 사각형이 변경되면 업데이트
+    if (widget.existingLinkerRectangles != oldWidget.existingLinkerRectangles) {
+      _linkerRectangles = List.from(widget.existingLinkerRectangles);
+    }
+  }
 
   /// 드래그 시작 시 호출
   void _onDragStart(DragStartDetails details) {
@@ -102,7 +122,7 @@ class _LinkerGestureLayerState extends State<LinkerGestureLayer> {
           _linkerRectangles.add(rect);
           widget.onLinkerRectanglesChanged(_linkerRectangles); // 기존 콜백 호출
           widget.onNewLinkerRectangleCreated(rect); // 새 콜백 호출
-          print('New linker rectangle created: $rect'); // 디버깅용 로그
+          // 새 링커 직사각형 생성됨
         }
       }
       _currentDragStart = null;
@@ -131,10 +151,10 @@ class _LinkerGestureLayerState extends State<LinkerGestureLayer> {
     final devices = <ui.PointerDeviceKind>{
       ui.PointerDeviceKind.stylus,
       ui.PointerDeviceKind.invertedStylus,
+      ui.PointerDeviceKind.mouse, // 항상 마우스 지원
+      ui.PointerDeviceKind.touch, // 터치도 지원
     };
-    if (widget.allowMouseForLinker) {
-      devices.add(ui.PointerDeviceKind.mouse);
-    }
+    // allowMouseForLinker는 드래그에만 적용하고, 탭은 항상 허용
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,

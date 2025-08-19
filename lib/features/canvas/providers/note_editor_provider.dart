@@ -9,7 +9,7 @@ import 'package:it_contest/features/canvas/providers/tool_settings_provider.dart
 import 'package:it_contest/features/notes/data/derived_note_providers.dart';
 import 'package:it_contest/features/notes/models/note_page_model.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:scribble/scribble.dart';
+
 
 part 'note_editor_provider.g.dart';
 
