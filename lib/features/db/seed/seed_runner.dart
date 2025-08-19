@@ -42,7 +42,8 @@ class SeedRunner {
         ..pageOrientation = 'portrait'
         ..sortIndex = 1000
         ..createdAt = now
-        ..updatedAt = now;
+        ..updatedAt = now
+        ..nameLowerForSearch = 'welcome';
       final noteId = await isar.collection<Note>().put(note);
       final page = Page()
         ..noteId = noteId
