@@ -101,11 +101,9 @@ class NoteDbService {
           ..updatedAt = DateTime.now()
           ..vaultIdForSort = vaultId
           ..nameLowerForSearch = effectiveName.toLowerCase();
-        final newNoteId = await isar.notes.put(newNote);
-        print('Note put result ID: $newNoteId, newNote.id: ${newNote.id}');
-        if (newNoteId == 0) {
-          print('Warning: Note put operation returned 0, indicating failure.');
-        }
+        await isar.notes.put(newNote);
+        
+        
         await createPage(noteId: newNote.id, index: initialPageIndex);
         link = LinkEntity()
           ..vaultId = vaultId
@@ -120,27 +118,22 @@ class NoteDbService {
           ..dangling = false
           ..createdAt = DateTime.now()
           ..updatedAt = DateTime.now();
-        final linkEntityId = await isar.linkEntitys.put(link);
-        print('LinkEntity put result ID: $linkEntityId, link.id: ${link.id}');
-        if (linkEntityId == 0) {
-          print('Warning: LinkEntity put operation returned 0, indicating failure.');
-        }
+        await isar.linkEntitys.put(link);
+        
+        
         final edge = GraphEdge()
           ..vaultId = vaultId
           ..fromNoteId = sourceNoteId
           ..toNoteId = newNote.id
           ..createdAt = DateTime.now();
         edge.setUniqueKey(); // Set unique constraint key
-        final edgeId = await isar.graphEdges.put(edge);
-        print('GraphEdge put result ID: $edgeId');
-        if (edgeId == 0) {
-          print('Warning: GraphEdge put operation returned 0, indicating failure.');
-        }
+        await isar.graphEdges.put(edge);
+        
+        
         await _pushRecentLinkedNote(isar: isar, noteId: newNote.id);
       });
       return link;
-    } catch (e, s) {
-      print('Error creating link and target note: $e\n$s');
+    } catch (e) {
       rethrow; // Re-throw to ensure the original error is not swallowed
     }
   }

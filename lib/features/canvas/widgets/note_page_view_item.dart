@@ -6,8 +6,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:scribble/scribble.dart';
-
 import 'package:it_contest/features/canvas/constants/note_editor_constant.dart';
 import 'package:it_contest/features/canvas/notifiers/custom_scribble_notifier.dart';
 import 'package:it_contest/features/canvas/providers/note_editor_providers.dart';
@@ -18,6 +16,7 @@ import 'package:it_contest/features/notes/data/derived_note_providers.dart';
 import 'package:it_contest/services/link/link_service.dart';
 import 'package:it_contest/shared/models/rect_norm.dart';
 import 'package:it_contest/shared/routing/app_routes.dart';
+import 'package:scribble/scribble.dart';
 
 /// Note 편집 화면의 단일 페이지 뷰 아이템입니다.
 class NotePageViewItem extends ConsumerStatefulWidget {
@@ -79,7 +78,7 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
         }).toList();
       });
 
-    } catch (e, s) {
+    } catch (e) {
       // 링커 사각형 로드 실패 시 빈 상태 유지
     }
   }
@@ -277,7 +276,7 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
           const SnackBar(content: Text('링크가 생성되었습니다')),
         );
       }
-    } catch (e, s) {
+    } catch (e) {
       // 링크 생성 실패
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -305,7 +304,7 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
           const SnackBar(content: Text('링크가 삭제되었습니다')),
         );
       }
-    } catch (e, s) {
+    } catch (e) {
       // 링크 삭제 실패
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

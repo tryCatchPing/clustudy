@@ -55,9 +55,7 @@ class LinkService {
         throw IsarError('Linked note not found after creation');
       }
       return created;
-    } catch (e, s) {
-      print('''Error in createLinkedNoteFromRegion: $e
-$s''');
+    } catch (e) {
       rethrow; // Re-throw to ensure the original error is not swallowed
     }
   }

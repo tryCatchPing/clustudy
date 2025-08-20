@@ -1,6 +1,7 @@
+// ignore_for_file: prefer_const_constructors
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 import 'package:isar/isar.dart';
@@ -56,6 +57,7 @@ class CustomScribbleNotifier extends ScribbleNotifier with AutoSaveMixin, ToolMa
       sketch = Sketch(lines: const []);
     }
 
+    
     return CustomScribbleNotifier._(
       sketch: sketch,
       page: page,
