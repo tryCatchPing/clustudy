@@ -4,6 +4,7 @@ import 'package:isar/isar.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
 import 'package:it_contest/features/db/models/vault_models.dart';
+import 'package:it_contest/features/notes/models/note_model.dart';
 
 /// 통합 검색 서비스
 ///
@@ -29,7 +30,7 @@ class SearchService {
   static const String typeNote = 'notes';
 
   /// 빠른 노트 검색 (기본: startsWith)
-  Future<List<Note>> quickSearchNotes({
+  Future<List<NoteModel>> quickSearchNotes({
     required int vaultId,
     int? folderId,
     required String query,
@@ -42,19 +43,16 @@ class SearchService {
     final isar = await IsarDb.instance.open();
     final q = query.toLowerCase().trim();
 
-    var builder = isar.collection<Note>().filter().vaultIdEqualTo(vaultId).deletedAtIsNull();
+    var builder = isar.collection<NoteModel>().filter().deletedAtIsNull();
 
-    if (folderId == null) {
-      builder = builder.folderIdIsNull();
-    } else {
-      builder = builder.folderIdEqualTo(folderId);
-    }
+    // NoteModel에는 vaultId와 folderId가 없으므로 임시로 처리
+    // TODO: NoteModel에 vaultId와 folderId 필드 추가 필요
 
-    return builder.nameLowerForSearchStartsWith(q).limit(limit).findAll();
+    return builder.titleContains(q, caseSensitive: false).limit(limit).findAll();
   }
 
   /// 전체 텍스트 검색 (contains)
-  Future<List<Note>> fullTextSearchNotes({
+  Future<List<NoteModel>> fullTextSearchNotes({
     required int vaultId,
     int? folderId,
     required String query,
@@ -67,19 +65,16 @@ class SearchService {
     final isar = await IsarDb.instance.open();
     final q = query.toLowerCase().trim();
 
-    var builder = isar.collection<Note>().filter().vaultIdEqualTo(vaultId).deletedAtIsNull();
+    var builder = isar.collection<NoteModel>().filter().deletedAtIsNull();
 
-    if (folderId == null) {
-      builder = builder.folderIdIsNull();
-    } else {
-      builder = builder.folderIdEqualTo(folderId);
-    }
+    // NoteModel에는 vaultId와 folderId가 없으므로 임시로 처리
+    // TODO: NoteModel에 vaultId와 folderId 필드 추가 필요
 
-    return builder.nameLowerForSearchContains(q).limit(limit).findAll();
+    return builder.titleContains(q, caseSensitive: false).limit(limit).findAll();
   }
 
   /// 전역 검색 (모든 볼트)
-  Future<List<Note>> globalSearchNotes({
+  Future<List<NoteModel>> globalSearchNotes({
     required String query,
     bool useContains = true,
     int limit = 100,
@@ -92,24 +87,24 @@ class SearchService {
     final q = query.toLowerCase().trim();
 
     if (useContains) {
-      return isar.collection<Note>()
+      return isar.collection<NoteModel>()
           .filter()
           .deletedAtIsNull()
-          .nameLowerForSearchContains(q)
+          .titleContains(q, caseSensitive: false)
           .limit(limit)
           .findAll();
     } else {
-      return isar.collection<Note>()
+      return isar.collection<NoteModel>()
           .filter()
           .deletedAtIsNull()
-          .nameLowerForSearchStartsWith(q)
+          .titleStartsWith(q, caseSensitive: false)
           .limit(limit)
           .findAll();
     }
   }
 
   /// 최근 수정된 노트 우선 검색
-  Future<List<Note>> searchNotesByRecentlyModified({
+  Future<List<NoteModel>> searchNotesByRecentlyModified({
     required int vaultId,
     int? folderId,
     required String query,
@@ -123,25 +118,22 @@ class SearchService {
     final isar = await IsarDb.instance.open();
     final q = query.toLowerCase().trim();
 
-    var builder = isar.collection<Note>().filter().vaultIdEqualTo(vaultId).deletedAtIsNull();
+    var builder = isar.collection<NoteModel>().filter().deletedAtIsNull();
 
-    if (folderId == null) {
-      builder = builder.folderIdIsNull();
-    } else {
-      builder = builder.folderIdEqualTo(folderId);
-    }
+    // NoteModel에는 vaultId와 folderId가 없으므로 임시로 처리
+    // TODO: NoteModel에 vaultId와 folderId 필드 추가 필요
 
     if (useContains) {
-      builder = builder.nameLowerForSearchContains(q);
+      builder = builder.titleContains(q, caseSensitive: false);
     } else {
-      builder = builder.nameLowerForSearchStartsWith(q);
+      builder = builder.titleStartsWith(q, caseSensitive: false);
     }
 
     return builder.sortByUpdatedAtDesc().limit(limit).findAll();
   }
 
   /// 날짜 범위 검색
-  Future<List<Note>> searchNotesByDateRange({
+  Future<List<NoteModel>> searchNotesByDateRange({
     required int vaultId,
     int? folderId,
     String? query,
@@ -154,13 +146,10 @@ class SearchService {
   }) async {
     final isar = await IsarDb.instance.open();
 
-    var builder = isar.collection<Note>().filter().vaultIdEqualTo(vaultId).deletedAtIsNull();
+    var builder = isar.collection<NoteModel>().filter().deletedAtIsNull();
 
-    if (folderId == null) {
-      builder = builder.folderIdIsNull();
-    } else {
-      builder = builder.folderIdEqualTo(folderId);
-    }
+    // NoteModel에는 vaultId와 folderId가 없으므로 임시로 처리
+    // TODO: NoteModel에 vaultId와 folderId 필드 추가 필요
 
     // 날짜 필터
     if (createdAfter != null) {
@@ -180,9 +169,9 @@ class SearchService {
     if (query != null && query.trim().isNotEmpty) {
       final q = query.toLowerCase().trim();
       if (useContains) {
-        builder = builder.nameLowerForSearchContains(q);
+        builder = builder.titleContains(q, caseSensitive: false);
       } else {
-        builder = builder.nameLowerForSearchStartsWith(q);
+        builder = builder.titleStartsWith(q, caseSensitive: false);
       }
     }
 
@@ -347,7 +336,7 @@ class SearchService {
       limit: limit,
     );
 
-    return notes.map((note) => note.name).toList();
+    return notes.map((note) => note.title).toList();
   }
 }
 
@@ -360,7 +349,7 @@ class SearchResults {
   /// 검색된 폴더 목록
   List<Folder> folders = [];
   /// 검색된 노트 목록
-  List<Note> notes = [];
+  List<NoteModel> notes = [];
 
   SearchResults();
 
