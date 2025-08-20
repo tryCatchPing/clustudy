@@ -117,7 +117,7 @@ class IsarNotesRepository implements NotesRepository {
       _notesController.add(notes);
     }
 
-    _notesWatch = isar.notes.watchLazy(fireImmediately: true).listen((_) {
+    _notesWatch = isar.collection<NoteModel>().watchLazy(fireImmediately: true).listen((_) {
       emitAll();
     });
     _pagesWatch = isar.pages.watchLazy().listen((_) {
@@ -143,7 +143,7 @@ class IsarNotesRepository implements NotesRepository {
   }
 
   Future<List<NoteModel>> _loadAllNotes(Isar isar) async {
-    final rawNotes = await isar.notes.filter().deletedAtIsNull().findAll();
+    final rawNotes = await isar.collection<NoteModel>().filter().deletedAtIsNull().findAll();
     final result = <NoteModel>[];
     for (final n in rawNotes) {
       final mapped = await _mapNote(isar, n);
@@ -182,7 +182,7 @@ class IsarNotesRepository implements NotesRepository {
 
     Future<void> emitNote() async {
       try {
-        final note = await isar.notes.get(intId);
+        final note = await isar.collection<NoteModel>().get(intId);
         if (note == null || note.deletedAt != null) {
           controller.add(null);
           return;
@@ -196,7 +196,7 @@ class IsarNotesRepository implements NotesRepository {
 
     // 각 관련 데이터의 변경을 감지
     final subscriptions = <StreamSubscription<void>>[
-      isar.notes.watchObject(intId, fireImmediately: true).listen((_) => emitNote()),
+      isar.collection<NoteModel>().watchObject(intId, fireImmediately: true).listen((_) => emitNote()),
       isar.pages.filter().noteIdEqualTo(intId).watchLazy().listen((_) => emitNote()),
       isar.canvasDatas.filter().noteIdEqualTo(intId).watchLazy().listen((_) => emitNote()),
     ];
@@ -218,7 +218,7 @@ class IsarNotesRepository implements NotesRepository {
     if (intId == null) {
       return null;
     }
-    final n = await isar.notes.get(intId);
+    final n = await isar.collection<NoteModel>().get(intId);
     if (n == null || n.deletedAt != null) {
       return null;
     }
@@ -251,7 +251,7 @@ class IsarNotesRepository implements NotesRepository {
   }
 
   /// 새 노트 생성
-  Future<Note> _createNewNote(NoteModel noteModel) async {
+  Future<NoteModel> _createNewNote(NoteModel noteModel) async {
     // NoteDbService를 사용하여 일관된 노트 생성
     final note = await NoteDbService.instance.createNote(
       vaultId: _defaultVaultId,
@@ -370,11 +370,11 @@ class IsarNotesRepository implements NotesRepository {
     try {
       final isar = await _open();
       await isar.writeTxn(() async {
-        final note = await isar.notes.get(intId);
+        final note = await isar.collection<NoteModel>().get(intId);
         if (note != null) {
           note.deletedAt = DateTime.now();
           note.updatedAt = DateTime.now();
-          await isar.notes.put(note);
+          await isar.collection<NoteModel>().put(note);
         }
       });
     } catch (e) {
@@ -383,7 +383,7 @@ class IsarNotesRepository implements NotesRepository {
     }
   }
 
-  Future<NoteModel?> _mapNote(Isar isar, Note note) async {
+  Future<NoteModel?> _mapNote(Isar isar, NoteModel note) async {
     final pages = await isar.pages
         .filter()
         .noteIdEqualTo(note.id)
@@ -399,8 +399,8 @@ class IsarNotesRepository implements NotesRepository {
       final isPdf = p.pdfOriginalPath != null;
       
       // 확장된 JSON에서 링커 데이터 분리하여 NotePageModel 생성
-      final pageModel = NotePageModel(
-        noteId: note.id.toString(),
+      final pageModel = NotePageModel.create(
+        noteId: note.id,
         pageId: p.id.toString(),
         pageNumber: p.index + 1,
         jsonData: json,
@@ -430,10 +430,9 @@ class IsarNotesRepository implements NotesRepository {
             .backgroundPdfPath
         : null;
 
-    return NoteModel(
+    return NoteModel.create(
       noteId: note.id.toString(),
-      title: note.name,
-      pages: pageModels,
+      title: note.title,
       sourceType: hasPdf ? NoteSourceType.pdfBased : NoteSourceType.blank,
       sourcePdfPath: sourcePdfPath,
       totalPdfPages: pageModels.length,
@@ -455,14 +454,12 @@ class IsarNotesRepository implements NotesRepository {
 
         if (intId != null) {
           // 기존 노트 업데이트
-          final existingNote = await isar.notes.get(intId);
+          final existingNote = await isar.collection<NoteModel>().get(intId);
           if (existingNote != null) {
             existingNote
-              ..name = note.title
-              ..nameLowerForParentUnique = note.title.toLowerCase()
-              ..nameLowerForSearch = note.title.toLowerCase()
+              ..title = note.title
               ..updatedAt = DateTime.now();
-            await isar.notes.put(existingNote);
+            await isar.collection<NoteModel>().put(existingNote);
 
             // 페이지 데이터 업데이트는 트랜잭션 외부에서 처리
             await _updateNotePages(intId, note.pages);
@@ -486,7 +483,7 @@ class IsarNotesRepository implements NotesRepository {
     }
 
     await isar.writeTxn(() async {
-      final notes = await isar.notes.getAll(validIds);
+      final notes = await isar.collection<NoteModel>().getAll(validIds);
       final now = DateTime.now();
 
       for (final note in notes) {
@@ -497,7 +494,7 @@ class IsarNotesRepository implements NotesRepository {
         }
       }
 
-      await isar.notes.putAll(notes.whereType<Note>().toList());
+      await isar.collection<NoteModel>().putAll(notes);
     });
   }
 
@@ -510,10 +507,10 @@ class IsarNotesRepository implements NotesRepository {
   Future<Map<String, int>> getStatistics() async {
     final isar = await _open();
 
-    final totalCount = await isar.notes.filter().deletedAtIsNull().count();
+    final totalCount = await isar.collection<NoteModel>().filter().deletedAtIsNull().count();
 
     // 단일 조건으로 간소화하여 RepeatModifier 관련 제네릭 추론 이슈 방지
-    final pdfCount = await isar.notes
+    final pdfCount = await isar.collection<NoteModel>()
         .filter()
         .deletedAtIsNull()
         .nameContains('.pdf', caseSensitive: false)
@@ -521,7 +518,7 @@ class IsarNotesRepository implements NotesRepository {
 
     final today = DateTime.now();
     final weekAgo = today.subtract(const Duration(days: 7));
-    final recentCount = await isar.notes
+    final recentCount = await isar.collection<NoteModel>()
         .filter()
         .deletedAtIsNull()
         .and()
@@ -552,7 +549,7 @@ class IsarNotesRepository implements NotesRepository {
 
       final intId = int.tryParse(noteId);
       if (intId != null) {
-        final note = await isar.notes.get(intId);
+        final note = await isar.collection<NoteModel>().get(intId);
         if (note != null && note.deletedAt == null) {
           final noteModel = await _mapNote(isar, note);
           entry.value.add(noteModel);
