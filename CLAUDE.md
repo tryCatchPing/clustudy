@@ -30,243 +30,195 @@ cd ios && pod install && cd ..  # Install iOS dependencies after pubspec changes
 
 ## Architecture Overview
 
-This is a Flutter-based handwriting note app built with a **feature-driven architecture** using **GoRouter** for navigation.
+Flutter-based handwriting note app with **Riverpod state management** and **Repository pattern** for data persistence.
 
-### Core Architecture Pattern
+### Current Architecture (2025-08-20)
 
-**Clean Feature Architecture:**
-
-- **Features** (`lib/features/`): Self-contained modules for major functionality
-- **Shared** (`lib/shared/`): Common utilities, services, and app-wide components
-- **GoRouter-based navigation**: Centralized routing with feature-specific route definitions
-
-### Feature Structure
+**Clean Architecture with Riverpod:**
 
 ```
-lib/features/[feature_name]/
-├── constants/     # Feature-specific constants
-├── controllers/   # Business logic and state management
-├── mixins/        # Reusable behavior mixins
-├── models/        # Data models
-├── notifiers/     # Custom notifiers and state providers
-├── pages/         # Screen/page widgets
-├── routing/       # Feature-specific routes
-└── widgets/       # UI components
-    ├── controls/  # Control widgets
-    └── toolbar/   # Toolbar components
+┌─────────────────────────────────────────┐
+│          Presentation Layer             │
+│    (ConsumerWidget + Riverpod)          │
+├─────────────────────────────────────────┤
+│         Business Logic Layer            │
+│  (Services + Provider Notifiers)        │
+├─────────────────────────────────────────┤
+│            Data Layer                   │
+│ (Repository Pattern + File Storage)     │
+└─────────────────────────────────────────┘
 ```
 
-### Key Features
+### Key Components
 
-#### 1. Canvas System (`lib/features/canvas/`)
+#### 1. State Management - Riverpod
 
-- Drawing state management with Provider migration in progress
-- Custom Scribble notifier with scaleFactor fixed at 1.0 for consistent stroke width
-- Modular toolbar system with controls for colors, strokes, tools
-- PDF Recovery System with corruption detection
+- **Provider Pattern**: Family providers for noteId-based state management
+- **CustomScribbleNotifiers**: Per-page drawing state management
+- **Tool Settings**: Global toolbar state with per-note sharing
+- **Page Controllers**: Automatic lifecycle management
 
-#### 2. Note Management (`lib/features/notes/`)
+#### 2. Data Layer - Repository Pattern
 
-- Core note structure with PDF metadata support
-- File-based storage (memory cache removed for performance)
-- Note browsing and PDF import functionality
-- Temporary fake data (will be replaced with Isar DB)
+- **NotesRepository Interface**: Abstraction for data persistence
+- **MemoryNotesRepository**: Current implementation (temporary)
+- **IsarNotesRepository**: Planned implementation (by secondary developer)
+- **Seamless switching**: Interface-based design allows easy implementation swap
 
-#### 3. Design System (`lib/design_system/`)
-- **tokens/**: Color, typography, spacing, shadow systems
-- **components/**: Atoms, molecules, organisms (아토믹 디자인)
-- **ai_generated/**: AI 도구로 생성된 원본 코드 보관
-- **utils/**: Theme configuration, extensions
-- **Usage**: `features/` 폴더에서 import하여 사용
+#### 3. PDF System
 
-#### 4. Shared Infrastructure (`lib/shared/`)
-- **Services**: File operations, PDF processing, note creation
-- **Routing**: GoRouter-based navigation
+- **PdfProcessor**: Unified PDF processing (90% performance improvement)
+- **PdfRecoveryService**: Complete corruption detection and user-controlled recovery
+- **File-based architecture**: No memory caching for better performance
 
-### External Dependencies
+#### 4. Canvas System
 
-- **Scribble**: Custom GitHub fork for Apple Pencil pressure support
-- **go_router**: v16.0.0 for navigation
-- **pdfx**: v2.5.0 for PDF viewing
-- **file_picker**: v8.0.6 for file selection
+- **Scribble Integration**: Custom fork with Apple Pencil pressure support
+- **Per-page notifiers**: Isolated drawing state per page
+- **scaleFactor**: Fixed at 1.0 for consistent stroke width
 
-### Development Standards
+## Current Status (85% Complete)
 
-- **Dart SDK**: 3.8.1+ required
-- **Strict linting** with comprehensive analysis rules
-- **Code style**: Single quotes, const constructors, final locals enforced
-- **Documentation**: Public API documentation required
+### ✅ Completed Major Features
+
+1. **Riverpod Migration** (85% complete)
+
+   - Core providers migrated to Riverpod
+   - Family pattern for note-specific state
+   - Automatic lifecycle management
+
+2. **Repository Pattern** (100% complete)
+
+   - Interface-based data abstraction
+   - Memory implementation fully functional
+   - Fake data completely removed
+
+3. **PDF System** (100% complete)
+
+   - File system migration completed
+   - PDF processor architecture optimized
+   - Complete recovery system implemented
+
+4. **Page Controller** (95% complete)
+
+   - Thumbnail generation and caching
+   - Drag & drop reordering
+   - Page add/delete functionality
+   - Integration with repository pattern
+
+5. **PDF Export** (100% complete)
+   - Canvas-to-PDF rendering
+   - Progress tracking and cancellation
+
+### 🔄 Current Tasks
+
+1. **Page-level Notifier Issues** (In Progress)
+
+   - Provider link disconnection during page operations
+   - Being addressed in separate Claude Code session
+
+2. **Memory Implementation Testing** (In Progress)
+   - Validating all features with repository pattern
+   - Preparing for Isar DB integration
+
+## Next Development Phase
+
+### Week 1 Priority: Provider Stabilization
+
+1. **Fix page-level notifier lifecycle management**
+
+   - Resolve provider link issues
+   - Ensure stable Canvas state during page operations
+
+2. **PDF processing improvements**
+   - Enhanced error handling
+   - Large file optimization
+
+### Week 2-3: Database Integration
+
+1. **Repository pattern completion**
+
+   - Interface-based full abstraction
+   - Transaction support preparation
+
+2. **Isar DB integration** (Secondary developer)
+   - Seamless repository implementation swap
+   - Performance-optimized schema
+
+### Week 3-4: Advanced Features
+
+1. **Graph View System**
+
+   - Note connection visualization
+   - Link system integration
+
+2. **Link functionality completion**
+   - Page-to-page linking
+   - Graph view integration
 
 ## Development Guidelines
 
+### Architecture Principles
+
+- **Repository Pattern**: Always access data through repository interfaces
+- **Provider-First**: Use Riverpod providers for all state management
+- **Service Layer**: Business logic separated from UI and data layers
+- **Interface-Based**: Design for easy implementation swapping
+
 ### Canvas Development
 
-- **scaleFactor Management**: Always use `setScaleFactor(1.0)` for consistent stroke width
-- **Performance**: Use 8ms debouncing for real-time updates (120fps)
-- **Custom Notifiers**: Override private Scribble methods with detailed source comments
+- **scaleFactor**: Always maintain 1.0 for consistent stroke width
+- **Per-page isolation**: Each page has independent drawing state
+- **Provider lifecycle**: Let Riverpod manage notifier creation/disposal
 
-### Adding New Features
+### Data Persistence
 
-1. Follow feature structure pattern under `lib/features/[feature_name]/`
-2. Create feature-specific routing files
-3. Register routes in main router
-4. Use `lib/design_system/components/` for UI, `lib/shared/` for services
-
-### Design System Usage
-
-```dart
-// Import design tokens
-import '../../design_system/tokens/app_colors.dart';
-import '../../design_system/tokens/app_typography.dart';
-
-// Use in features
-Container(
-  color: AppColors.primary,
-  child: Text('Title', style: AppTypography.headline1),
-)
-```
-
-### PDF System Architecture
-
-**Current Implementation:**
-
-- **NoteService**: Orchestrates note creation, delegates PDF processing
-- **PdfProcessor**: Handles all PDF operations (selection, rendering, storage)
-- **PdfRecoveryService**: Corruption detection and recovery options
-
-**Key Usage:**
-
-```dart
-// Unified note creation
-final note = await NoteService.instance.createPdfNote();
-final blankNote = await NoteService.instance.createBlankNote();
-```
-
-**File Structure:**
-
-```
-/Application Documents/notes/
-├── {noteId}/
-│   ├── source.pdf           # Original PDF file
-│   └── pages/
-│       ├── page_1.jpg       # Pre-rendered page images
-│       └── page_N.jpg
-```
-
-**Performance Features:**
-
-- Single PDF opening (90% performance improvement)
-- File-based storage (memory efficiency)
-- Pure constructors (Isar DB ready)
-
-## Current Status
-
-**State Management Transition:**
-
-- Transitioning to Provider for state management
-- Current controllers commented for Provider migration
-- Custom notifiers extend Scribble functionality
-
-**Testing:**
-
-- Use `fvm flutter test` to run all tests
-- Focus on canvas functionality and PDF integration
-
-## Work Distribution Strategy
-
-**Main Developer Tasks:**
-
-1. **Provider State Management** (Week 1): Migrate from StatefulWidget to Provider pattern
-2. **PDF Manager Service** (Week 2): Unified service with progress tracking, cancellation, and recovery
-3. **Graph View System** (Weeks 3-4): Node/edge visualization, canvas integration, complex algorithms
-
-**Secondary Developer Tasks:**
-
-1. **Link Functionality** (Weeks 1-2): Link creation, editing, navigation, storage
-2. **Isar Database Integration** (Weeks 3-4): Schema design, migration from fake data, PDF Manager integration
-
-**Recent Completions:**
-
-- PDF Processing Architecture with clean service separation
-- Canvas stroke scaling optimization (scaleFactor fixed at 1.0)
-- Complete PDF Recovery System with corruption detection
-- Unified note creation system
-
-**🔄 Next Development Priorities:**
-
-1. **Provider State Management Migration** (Week 1): Replace StatefulWidget patterns
-2. **Graph View System** (Weeks 2-3): Node/edge visualizations for note connections
-3. **Isar Database Integration** (Week 3-4): Migration from fake data to persistent storage
-4. **Advanced PDF Features** (Week 4): Enhanced recovery options and performance optimizations
-
-## 6-Week Development Roadmap
-
-### **Week 1: Provider Migration + PDF Manager Design**
-
-- **Days 1-2**: Provider pattern learning & basic setup
-- **Days 3-4**: Core canvas Provider conversion
-- **Days 5-7**: PDF Manager architecture design
-
-### **Week 2: Graph View Foundation**
-
-- **Days 8-10**: Graph view architecture design & basic structure
-- **Days 11-12**: Node/edge visualization core logic
-- **Days 13-14**: Canvas-graph view integration foundation
-
-### **Week 3: Graph View Completion + Isar DB**
-
-- **Days 15-17**: Graph view UI/UX completion
-- **Days 18-19**: Isar database schema design & basic implementation
-- **Days 20-21**: Graph view ↔ database integration
-
-### **Week 4: Full System Integration**
-
-- **Days 22-24**: Complete Isar DB migration from fake data
-- **Days 25-26**: Link system ↔ graph view integration (with other developer)
-- **Days 27-28**: PDF Recovery ↔ Isar DB integration and testing
-
-### **Week 5: Design Integration**
-
-- **Days 29-31**: Designer-provided UI component integration
-- **Days 32-33**: App-wide design system application
-- **Days 34-35**: Usability testing & improvements
-
-### **Week 6: Final Polish & Deployment**
-
-- **Days 36-38**: Comprehensive bug fixes & performance optimization
-- **Days 39-40**: App Store deployment preparation & documentation
-- **Days 41-42**: Final testing & launch
-
-## Team Context
-
-4-person team (2 designers, 2 developers) building a handwriting note app over 6 weeks core development + 2 weeks polish.
-
-**Team Division:**
-
-- **Main Developer**: Provider migration, PDF Manager service, Graph view system
-- **Secondary Developer**: Link functionality, Isar DB integration
-- **Designers**: UI component creation, design system, code conversion assistance
-
-**Current Phase**: Week 1 - Provider state management migration with solid PDF architecture foundation established.
-
-## Development Philosophy
+- **Repository only**: Never access fake data or direct storage
+- **Interface contracts**: Ensure all implementations follow same interface
+- **Async operations**: All data operations are Future-based
 
 ### Error Handling
 
-- **Transparency over Automation**: Clear user feedback instead of silent fallbacks
-- **User Control**: Provide options (re-render, delete) rather than automatic recovery
-- **Predictable Behavior**: Simple systems over complex fallbacks
+- **User transparency**: Clear error messages and recovery options
+- **Graceful degradation**: System continues functioning during partial failures
+- **Recovery options**: Always provide user choice in error scenarios
 
-### Performance Priorities
+## File Structure
 
-1. **Memory Efficiency**: Avoid in-memory caching for large files
-2. **Loading Predictability**: Consistent file-based loading
-3. **Code Simplicity**: Maintainable logic over feature complexity
+```
+lib/
+├── features/
+│   ├── canvas/
+│   │   ├── providers/          # Riverpod state management
+│   │   ├── widgets/           # UI components
+│   │   └── notifiers/         # Custom notifiers
+│   ├── notes/
+│   │   ├── data/              # Repository implementations
+│   │   ├── models/            # Data models
+│   │   └── pages/             # UI screens
+│   └── page_controller/       # Page management
+├── shared/
+│   ├── services/              # Business logic services
+│   ├── repositories/          # Repository interfaces
+│   └── widgets/               # Reusable components
+```
 
-### Code Review Focus
+## Dependencies
 
-- **Canvas scaling**: Ensure scaleFactor remains 1.0 for stroke consistency
-- **Service architecture**: Proper separation between services
-- **Pure constructors**: Isar DB compatibility
-- **Memory management**: Avoid storing large data structures in memory
-- **Singleton usage**: Use `NoteService.instance` for consistent state management
+- **riverpod**: v2.x for state management
+- **go_router**: v16.0.0 for navigation
+- **scribble**: Custom fork for drawing
+- **pdfx**: v2.5.0 for PDF handling
+- **file_picker**: v8.0.6 for file selection
+
+## Team Context
+
+**Current Phase**: Architecture stabilization and feature completion
+**Target**: 4-person team building production-ready handwriting note app
+**Timeline**: 4-5 weeks remaining for core features + 2 weeks polish
+
+### Developer Responsibilities
+
+- **Main**: Provider issues, PDF optimization, Graph view
+- **Secondary**: Isar DB integration, Link functionality
+- **Designers**: UI refinement, design system completion
