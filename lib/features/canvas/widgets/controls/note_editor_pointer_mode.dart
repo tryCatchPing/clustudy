@@ -31,7 +31,12 @@ class NoteEditorPointerMode extends ConsumerWidget {
         return SegmentedButton<ScribblePointerMode>(
           multiSelectionEnabled: false,
           emptySelectionAllowed: false,
-          onSelectionChanged: (v) => notifier.setAllowedPointersMode(v.first),
+          onSelectionChanged: (v) {
+            final mode = v.first;
+            notifier.setAllowedPointersMode(mode);
+            // 노트별 상태도 업데이트하여 다른 페이지와 동기화
+            ref.read(allowedPointersModeProvider(noteId).notifier).setMode(mode);
+          },
           style: ButtonStyle(
             padding: WidgetStateProperty.all(const EdgeInsets.all(4)),
           ),

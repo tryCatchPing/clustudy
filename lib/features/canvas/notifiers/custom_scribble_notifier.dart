@@ -1,7 +1,7 @@
 // ignore_for_file: prefer_const_constructors
 import 'dart:convert';
 
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 import 'package:isar/isar.dart';
@@ -16,6 +16,17 @@ import 'package:scribble/scribble.dart';
 /// 캔버스에서 스케치 및 도구 관리를 담당하는 Notifier.
 /// [ScribbleNotifier], [AutoSaveMixin], [ToolManagementMixin]을 조합하여 사용합니다.
 class CustomScribbleNotifier extends ScribbleNotifier with AutoSaveMixin, ToolManagementMixin {
+  /// 캔버스 데이터 캐시
+  static final Map<int, Sketch> _canvasDataCache = {};
+
+  /// 캐시를 무효화합니다.
+  static void clearCache() => _canvasDataCache.clear();
+
+  /// 특정 페이지의 캐시를 무효화합니다.
+  static void clearCacheForPage(int pageId) => _canvasDataCache.remove(pageId);
+
+  /// 특정 페이지의 캐시를 업데이트합니다.
+  static void updateCacheForPage(int pageId, Sketch sketch) => _canvasDataCache[pageId] = sketch;
   /// 비공개 생성자. [create] 팩토리 메서드를 통해 인스턴스화해야 합니다.
   CustomScribbleNotifier._({
     required Sketch sketch,
@@ -39,25 +50,41 @@ class CustomScribbleNotifier extends ScribbleNotifier with AutoSaveMixin, ToolMa
     required bool simulatePressure,
     ScribblePointerMode allowedPointersMode = ScribblePointerMode.all,
   }) async {
-    final isar = await IsarDb.instance.open();
-    final canvasData = await isar.canvasDatas.where().pageIdEqualTo(pageId).findFirst();
-
-    debugPrint('[CustomScribbleNotifier] Loading canvas for pageId: $pageId, found data: ${canvasData != null}');
-
     Sketch sketch;
-    if (canvasData != null && canvasData.json.isNotEmpty) {
-      try {
-        final decoded = jsonDecode(canvasData.json);
-        sketch = Sketch.fromJson(decoded);
-      } catch (e) {
-        debugPrint('JSON 디코딩 실패: $e');
-        sketch = const Sketch(lines: []);
+
+    // 캐시에서 먼저 확인
+    if (_canvasDataCache.containsKey(pageId)) {
+      sketch = _canvasDataCache[pageId]!;
+      if (kDebugMode) {
+        debugPrint('[CustomScribbleNotifier] Loading canvas for pageId: $pageId from cache');
       }
     } else {
-      sketch = Sketch(lines: const []);
+      // 캐시에 없으면 DB에서 로드
+      final isar = await IsarDb.instance.open();
+      final canvasData = await isar.canvasDatas.where().pageIdEqualTo(pageId).findFirst();
+
+      if (kDebugMode) {
+        debugPrint('[CustomScribbleNotifier] Loading canvas for pageId: $pageId from DB, found data: ${canvasData != null}');
+      }
+
+      if (canvasData != null && canvasData.json.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(canvasData.json);
+          sketch = Sketch.fromJson(decoded);
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('JSON 디코딩 실패: $e');
+          }
+          sketch = const Sketch(lines: []);
+        }
+      } else {
+        sketch = const Sketch(lines: []);
+      }
+
+      // 캐시에 저장
+      _canvasDataCache[pageId] = sketch;
     }
 
-    
     return CustomScribbleNotifier._(
       sketch: sketch,
       page: page,
@@ -72,6 +99,7 @@ class CustomScribbleNotifier extends ScribbleNotifier with AutoSaveMixin, ToolMa
     required ToolMode toolMode,
     required page_model.NotePageModel? page,
     required bool simulatePressure,
+    ScribblePointerMode allowedPointersMode = ScribblePointerMode.all,
     int maxHistoryLength = 100,
   }) {
     return CustomScribbleNotifier._(
@@ -79,6 +107,7 @@ class CustomScribbleNotifier extends ScribbleNotifier with AutoSaveMixin, ToolMa
       toolMode: toolMode,
       page: page,
       simulatePressure: simulatePressure,
+      allowedPointersMode: allowedPointersMode,
       maxHistoryLength: maxHistoryLength,
     );
   }

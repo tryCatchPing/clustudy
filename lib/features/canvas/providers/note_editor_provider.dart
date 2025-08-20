@@ -9,6 +9,7 @@ import 'package:it_contest/features/canvas/providers/tool_settings_provider.dart
 import 'package:it_contest/features/notes/data/derived_note_providers.dart';
 import 'package:it_contest/features/notes/models/note_page_model.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:scribble/scribble.dart';
 
 
 part 'note_editor_provider.g.dart';
@@ -34,6 +35,16 @@ class SimulatePressure extends _$SimulatePressure {
 
   void toggle() => state = !state;
   void setValue(bool value) => state = value;
+}
+
+/// 노트별 포인터 모드 상태 관리
+/// noteId(String)로 노트별 독립 관리 (family provider)
+@Riverpod(keepAlive: true)
+class AllowedPointersMode extends _$AllowedPointersMode {
+  @override
+  ScribblePointerMode build(String noteId) => ScribblePointerMode.all;
+
+  void setMode(ScribblePointerMode mode) => state = mode;
 }
 
 /// 노트별 CustomScribbleNotifier 관리
@@ -98,11 +109,15 @@ class CustomScribbleNotifiers extends _$CustomScribbleNotifiers {
         // 새 페이지 추가 생성
         for (final page in note.pages) {
           if (!map.containsKey(page.pageId)) {
+            // 노트별 포인터 모드 상태에서 설정 가져오기
+            final allowedMode = ref.read(allowedPointersModeProvider(noteId));
+
             final notifier = await CustomScribbleNotifier.create(
               pageId: int.parse(page.pageId),
               page: page,
               toolMode: toolSettings.toolMode,
               simulatePressure: simulatePressure,
+              allowedPointersMode: allowedMode,
             );
             _applyToolSettings(notifier, toolSettings);
 
@@ -192,21 +207,48 @@ CustomScribbleNotifier currentNotifier(
   return notifiersAsync.when(
     data: (notifiers) {
       if (note == null || note.pages.isEmpty || notifiers.isEmpty) {
-        return _createEmptyNotifier(ref, noteId, null);
+        // 기존 캐시된 notifier에서 설정 가져오기 시도
+        final cachedNotifiers = ref.read(customScribbleNotifiersProvider(noteId)).valueOrNull;
+        final preservedMode = cachedNotifiers?.values.firstOrNull?.value.allowedPointersMode;
+        return _createEmptyNotifier(ref, noteId, null, preservedMode);
       }
       final page = note.pages[currentIndex];
-      return notifiers[page.pageId] ?? _createEmptyNotifier(ref, noteId, page);
+      final existing = notifiers[page.pageId];
+      if (existing != null) {
+        return existing;
+      }
+      // 다른 페이지의 설정을 참조하여 일관성 유지
+      final preservedMode = notifiers.values.firstOrNull?.value.allowedPointersMode;
+      return _createEmptyNotifier(ref, noteId, page, preservedMode);
     },
     loading: () {
-      if (note == null || note.pages.isEmpty) {
-        return _createEmptyNotifier(ref, noteId, null);
+      // 로딩 중에는 기존 캐시된 notifier를 최대한 활용
+      final cachedNotifiers = ref.read(customScribbleNotifiersProvider(noteId)).valueOrNull;
+
+      if (note != null && note.pages.isNotEmpty && cachedNotifiers != null) {
+        final page = note.pages[currentIndex];
+        final existing = cachedNotifiers[page.pageId];
+        if (existing != null) {
+          return existing; // 캐시된 notifier가 있으면 그대로 사용
+        }
       }
+
+      // 캐시된 notifier가 없으면 fallback 생성
+      if (note == null || note.pages.isEmpty) {
+        final preservedMode = cachedNotifiers?.values.firstOrNull?.value.allowedPointersMode;
+        return _createEmptyNotifier(ref, noteId, null, preservedMode);
+      }
+
       final page = note.pages[currentIndex];
-      return _createEmptyNotifier(ref, noteId, page);
+      final preservedMode = cachedNotifiers?.values.firstOrNull?.value.allowedPointersMode;
+      return _createEmptyNotifier(ref, noteId, page, preservedMode);
     },
     error: (err, stack) {
       // Handle error, maybe log it
-      return _createEmptyNotifier(ref, noteId, null);
+      // 기존 캐시된 notifier에서 설정 가져오기 시도
+      final cachedNotifiers = ref.read(customScribbleNotifiersProvider(noteId)).valueOrNull;
+      final preservedMode = cachedNotifiers?.values.firstOrNull?.value.allowedPointersMode;
+      return _createEmptyNotifier(ref, noteId, null, preservedMode);
     },
   );
 }
@@ -225,34 +267,66 @@ CustomScribbleNotifier pageNotifier(
       if (note == null ||
           note.pages.length <= pageIndex ||
           notifiers.isEmpty) {
-        return _createEmptyNotifier(ref, noteId, null);
+        // 기존 캐시된 notifier에서 설정 가져오기 시도
+        final cachedNotifiers = ref.read(customScribbleNotifiersProvider(noteId)).valueOrNull;
+        final preservedMode = cachedNotifiers?.values.firstOrNull?.value.allowedPointersMode;
+        return _createEmptyNotifier(ref, noteId, null, preservedMode);
       }
       final page = note.pages[pageIndex];
-      return notifiers[page.pageId] ?? _createEmptyNotifier(ref, noteId, page);
+      final existing = notifiers[page.pageId];
+      if (existing != null) {
+        return existing;
+      }
+      // 다른 페이지의 설정을 참조하여 일관성 유지
+      final preservedMode = notifiers.values.firstOrNull?.value.allowedPointersMode;
+      return _createEmptyNotifier(ref, noteId, page, preservedMode);
     },
     loading: () {
-      if (note == null || note.pages.length <= pageIndex) {
-        return _createEmptyNotifier(ref, noteId, null);
+      // 로딩 중에는 기존 캐시된 notifier를 최대한 활용
+      final cachedNotifiers = ref.read(customScribbleNotifiersProvider(noteId)).valueOrNull;
+
+      if (note != null && note.pages.length > pageIndex && cachedNotifiers != null) {
+        final page = note.pages[pageIndex];
+        final existing = cachedNotifiers[page.pageId];
+        if (existing != null) {
+          return existing; // 캐시된 notifier가 있으면 그대로 사용
+        }
       }
+
+      // 캐시된 notifier가 없으면 fallback 생성
+      if (note == null || note.pages.length <= pageIndex) {
+        final preservedMode = cachedNotifiers?.values.firstOrNull?.value.allowedPointersMode;
+        return _createEmptyNotifier(ref, noteId, null, preservedMode);
+      }
+
       final page = note.pages[pageIndex];
-      return _createEmptyNotifier(ref, noteId, page);
+      final preservedMode = cachedNotifiers?.values.firstOrNull?.value.allowedPointersMode;
+      return _createEmptyNotifier(ref, noteId, page, preservedMode);
     },
     error: (err, stack) {
       // Handle error, maybe log it
-      return _createEmptyNotifier(ref, noteId, null);
+      // 기존 캐시된 notifier에서 설정 가져오기 시도
+      final cachedNotifiers = ref.read(customScribbleNotifiersProvider(noteId)).valueOrNull;
+      final preservedMode = cachedNotifiers?.values.firstOrNull?.value.allowedPointersMode;
+      return _createEmptyNotifier(ref, noteId, null, preservedMode);
     },
   );
 }
 
 /// Helper to create a fallback empty notifier.
 CustomScribbleNotifier _createEmptyNotifier(
-    Ref ref, String noteId, NotePageModel? page) {
+    Ref ref, String noteId, NotePageModel? page, [ScribblePointerMode? preservedPointerMode]) {
   final toolSettings = ref.watch(toolSettingsNotifierProvider(noteId));
   final simulatePressure = ref.read(simulatePressureProvider);
+
+  // 기존 설정이 있으면 보존, 없으면 노트별 상태에서 가져오기
+  final allowedPointersMode = preservedPointerMode ?? ref.read(allowedPointersModeProvider(noteId));
+
   return CustomScribbleNotifier.createEmpty(
     toolMode: toolSettings.toolMode,
     page: page,
     simulatePressure: simulatePressure,
+    allowedPointersMode: allowedPointersMode ?? ScribblePointerMode.all,
     maxHistoryLength: NoteEditorConstants.maxHistoryLength,
   );
 }
