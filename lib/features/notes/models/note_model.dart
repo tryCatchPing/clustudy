@@ -98,6 +98,7 @@ class NoteModel {
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? deletedAt,
+    List<NotePageModel>? pages,
   }) {
     final copy = NoteModel();
     copy.id = id;
@@ -109,6 +110,7 @@ class NoteModel {
     copy.createdAt = createdAt ?? this.createdAt;
     copy.updatedAt = updatedAt ?? this.updatedAt;
     copy.deletedAt = deletedAt ?? this.deletedAt;
+    copy.pages = pages ?? this.pages;
     return copy;
   }
 

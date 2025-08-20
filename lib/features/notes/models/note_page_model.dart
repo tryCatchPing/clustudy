@@ -26,7 +26,7 @@ class NotePageModel {
 
   /// 노트의 고유 ID.
   @Index()
-  late int noteId;
+  late String noteId;
 
   // NoteModel과의 관계는 noteId로만 관리
 
@@ -84,7 +84,7 @@ class NotePageModel {
   /// [showBackgroundImage]는 배경 이미지 표시 여부입니다 (기본값: true).
   /// [linkerRectangles]는 페이지에 그려진 링커 직사각형 목록입니다 (기본값: 빈 리스트).
   NotePageModel.create({
-    required int noteId,
+    required String noteId,
     required String pageId,
     required int pageNumber,
     required String jsonData,
@@ -117,7 +117,7 @@ class NotePageModel {
   /// 링커 직사각형 목록 setter (JSON으로 직렬화).
   @ignore
   set linkerRectangles(List<Rect> rectangles) {
-    linkerRectanglesJson = jsonEncode(_linkerRectanglesToJson(rectangles));
+    linkerRectanglesJson = jsonEncode(_linkerRectanglesToJson());
   }
 
   /// JSON 데이터에서 [Sketch] 객체로 변환합니다.
@@ -176,7 +176,7 @@ class NotePageModel {
   /// 확장된 JSON 데이터를 반환합니다 (Scribble + Linker 포함).
   String toExtendedJson() {
     final sketchJson = jsonDecode(jsonData) as Map<String, dynamic>;
-    sketchJson['linkerRectangles'] = _linkerRectanglesToJson(linkerRectangles);
+    sketchJson['linkerRectangles'] = _linkerRectanglesToJson();
     return jsonEncode(sketchJson);
   }
 
@@ -218,6 +218,9 @@ class NotePageModel {
 
   /// 새 값으로 일부 필드를 교체한 복제본을 반환합니다.
   NotePageModel copyWith({
+    String? noteId,
+    String? pageId,
+    int? pageNumber,
     String? jsonData,
     PageBackgroundType? backgroundType,
     String? backgroundPdfPath,
