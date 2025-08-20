@@ -28,6 +28,8 @@ class NotePageModel {
   @Index()
   late int noteId;
 
+  // NoteModel과의 관계는 noteId로만 관리
+
   /// 페이지의 고유 ID.
   @Index(unique: true)
   late String pageId;

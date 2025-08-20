@@ -32,9 +32,9 @@ class NoteModel {
   @Index()
   DateTime? deletedAt;
 
-  /// 노트에 포함된 페이지 목록 (Isar 관계).
-  @Backlink(to: 'noteId')
-  final IsarLinks<NotePageModel> pages = IsarLinks<NotePageModel>();
+  /// 노트에 포함된 페이지 목록 (임시로 일반 필드로 설정).
+  @ignore
+  List<NotePageModel>? _pages;
 
     /// 노트의 출처 타입 (빈 노트 또는 PDF 기반).
   @enumerated
@@ -113,8 +113,16 @@ class NoteModel {
   }
 
   /// pages 필드에 접근하기 위한 getter (기존 코드 호환성)
-  List<NotePageModel> get pagesList => pages.toList();
+  @ignore
+  List<NotePageModel> get pagesList => _pages ?? [];
 
   /// 기존 코드와의 호환성을 위한 pages getter
-  List<NotePageModel> get pages => pagesList;
+  @ignore
+  List<NotePageModel> get pages => _pages ?? [];
+
+  /// pages setter
+  @ignore
+  set pages(List<NotePageModel> pages) {
+    _pages = pages;
+  }
 }
