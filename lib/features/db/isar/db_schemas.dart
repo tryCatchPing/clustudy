@@ -12,31 +12,27 @@ import 'package:it_contest/features/pdf_cache/models/pdf_cache_meta_model.dart';
 /// 포함된 컬렉션 타입:
 /// - `Vault`
 /// - `Folder`
-/// - `Note` (vault_models.dart)
-/// - `NoteModel` (features/notes/models)
+/// - `NoteModel` (features/notes/models) - replaces vault_models Note
 /// - `Page`
 /// - `NotePageModel` (features/notes/models)
 /// - `CanvasData`
 /// - `PageSnapshot`
 /// - `LinkEntity`
 /// - `GraphEdge`
-/// - `PdfCacheMeta` (vault_models.dart)
-/// - `PdfCacheMetaModel` (features/pdf_cache/models)
+/// - `PdfCacheMetaModel` (features/pdf_cache/models) - replaces vault_models PdfCacheMeta
 /// - `RecentTabs`
 /// - `SettingsEntity`
 const List<CollectionSchema<dynamic>> allSchemas = [
   VaultSchema,
   FolderSchema,
-  NoteSchema,
-  NoteModelSchema,
+  NoteModelSchema, // 새로운 NoteModel 사용
   PageSchema,
   NotePageModelSchema,
   CanvasDataSchema,
   PageSnapshotSchema,
   LinkEntitySchema,
   GraphEdgeSchema,
-  PdfCacheMetaSchema,
-  PdfCacheMetaModelSchema,
+  PdfCacheMetaModelSchema, // 새로운 PdfCacheMetaModel 사용
   RecentTabsSchema,
   SettingsEntitySchema,
 ];

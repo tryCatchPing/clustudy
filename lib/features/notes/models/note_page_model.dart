@@ -140,10 +140,10 @@ class NotePageModel {
   void updateFromExtendedJson(String extendedJson) {
     final data = jsonDecode(extendedJson) as Map<String, dynamic>;
     final linkerData = data.remove('linkerRectangles');
-    
+
     // Scribble 데이터 업데이트
     jsonData = jsonEncode(data);
-    
+
     // 링커 데이터 업데이트
     if (linkerData != null) {
       linkerRectanglesJson = jsonEncode(linkerData);

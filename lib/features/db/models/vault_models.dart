@@ -53,49 +53,7 @@ class Folder {
   late String nameLowerForVaultUnique;
 }
 
-/// A note composed of pages and associated canvas data.
-@collection
-class Note {
-  Id id = Isar.autoIncrement;
-
-  late int vaultId;
-  int? folderId;
-
-  @Index(caseSensitive: false)
-  late String name;
-
-  @Index()
-  late int sortIndex;
-
-  @Index()
-  late DateTime createdAt;
-
-  @Index()
-  late DateTime updatedAt;
-
-  @Index()
-  DateTime? deletedAt;
-
-  // Page settings
-  late String pageSize; // e.g., A4, Letter
-  late String pageOrientation; // portrait, landscape
-
-  // Unique within (vaultId, folderId): lower(name)
-  @Index(
-    composite: [CompositeIndex('vaultId'), CompositeIndex('folderId')],
-    unique: true,
-    caseSensitive: false,
-  )
-  late String nameLowerForParentUnique;
-
-  // Performance optimization: composite index for folder listing queries (vaultId, folderId, sortIndex)
-  @Index(composite: [CompositeIndex('folderId'), CompositeIndex('sortIndex')])
-  late int vaultIdForSort;
-
-  // Performance optimization: composite index for name search with deletion status
-  @Index(composite: [CompositeIndex('deletedAt')], caseSensitive: false)
-  late String nameLowerForSearch;
-}
+// Note: Note 모델은 features/notes/models/note_model.dart로 이동됨
 
 /// A single page belonging to a `Note` with dimensions and rotation.
 @collection
@@ -230,34 +188,7 @@ class GraphEdge {
   }
 }
 
-/// Metadata about cached PDF renders for faster thumbnails/previews.
-@collection
-class PdfCacheMeta {
-  Id id = Isar.autoIncrement;
-
-  @Index()
-  late int noteId;
-
-  @Index()
-  late int pageIndex;
-
-  late String cachePath;
-  late int dpi;
-  late DateTime renderedAt;
-  int? sizeBytes;
-  @Index()
-  DateTime? lastAccessAt;
-
-  // Unique constraint to prevent duplicate cache entries: (noteId, pageIndex)
-  @Index(composite: [CompositeIndex('noteId'), CompositeIndex('pageIndex')], unique: true)
-  // ignore: unused_field
-  late String _uniqueCacheKey;
-
-  /// Sets `_uniqueCacheKey` based on `(noteId, pageIndex)`.
-  void setUniqueKey() {
-    _uniqueCacheKey = '${noteId}_$pageIndex';
-  }
-}
+// Note: PdfCacheMeta 모델은 features/pdf_cache/models/pdf_cache_meta_model.dart로 이동됨
 
 /// Recently opened tabs state.
 @collection
