@@ -4,7 +4,6 @@ import 'package:it_contest/features/notes/models/note_page_model.dart';
 part 'note_model.g.dart';
 
 /// 노트의 출처 타입을 정의합니다.
-@embedded
 enum NoteSourceType {
   /// 빈 노트.
   blank,

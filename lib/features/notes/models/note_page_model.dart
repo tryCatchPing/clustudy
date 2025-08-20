@@ -8,7 +8,6 @@ import 'package:scribble/scribble.dart';
 part 'note_page_model.g.dart';
 
 /// 페이지 배경의 타입을 정의합니다.
-@embedded
 enum PageBackgroundType {
   /// 빈 배경.
   blank,
@@ -69,9 +68,11 @@ class NotePageModel {
   NotePageModel();
 
   /// 링커 직사각형 목록 getter (JSON에서 파싱).
+  @ignore
   List<Rect> get linkerRectangles => _linkerRectanglesFromJson(linkerRectanglesJson);
 
   /// 링커 직사각형 목록 setter (JSON으로 직렬화).
+  @ignore
   set linkerRectangles(List<Rect> rectangles) {
     linkerRectanglesJson = jsonEncode(_linkerRectanglesToJson(rectangles));
   }
