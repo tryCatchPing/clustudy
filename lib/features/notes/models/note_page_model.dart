@@ -26,7 +26,7 @@ class NotePageModel {
 
   /// 노트의 고유 ID.
   @Index()
-  late String noteId;
+  late int noteId;
 
   /// 페이지의 고유 ID.
   @Index(unique: true)
@@ -66,6 +66,47 @@ class NotePageModel {
 
   /// [NotePageModel]의 기본 생성자.
   NotePageModel();
+
+  /// [NotePageModel]의 생성자.
+  ///
+  /// [noteId]는 노트의 고유 ID입니다.
+  /// [pageId]는 페이지의 고유 ID입니다.
+  /// [pageNumber]는 페이지 번호입니다.
+  /// [jsonData]는 스케치 데이터가 포함된 JSON 문자열입니다.
+  /// [backgroundType]은 페이지 배경의 타입입니다 (기본값: [PageBackgroundType.blank]).
+  /// [backgroundPdfPath]는 PDF 배경 파일 경로입니다.
+  /// [backgroundPdfPageNumber]는 PDF의 페이지 번호입니다.
+  /// [backgroundWidth]는 원본 PDF 페이지 너비입니다.
+  /// [backgroundHeight]는 원본 PDF 페이지 높이입니다.
+  /// [preRenderedImagePath]는 사전 렌더링된 이미지 경로입니다.
+  /// [showBackgroundImage]는 배경 이미지 표시 여부입니다 (기본값: true).
+  /// [linkerRectangles]는 페이지에 그려진 링커 직사각형 목록입니다 (기본값: 빈 리스트).
+  NotePageModel.create({
+    required int noteId,
+    required String pageId,
+    required int pageNumber,
+    required String jsonData,
+    PageBackgroundType backgroundType = PageBackgroundType.blank,
+    String? backgroundPdfPath,
+    int? backgroundPdfPageNumber,
+    double? backgroundWidth,
+    double? backgroundHeight,
+    String? preRenderedImagePath,
+    bool showBackgroundImage = true,
+    List<Rect> linkerRectangles = const [],
+  }) : noteId = noteId,
+       pageId = pageId,
+       pageNumber = pageNumber,
+       jsonData = jsonData,
+       backgroundType = backgroundType,
+       backgroundPdfPath = backgroundPdfPath,
+       backgroundPdfPageNumber = backgroundPdfPageNumber,
+       backgroundWidth = backgroundWidth,
+       backgroundHeight = backgroundHeight,
+       preRenderedImagePath = preRenderedImagePath,
+       showBackgroundImage = showBackgroundImage {
+    this.linkerRectangles = linkerRectangles;
+  }
 
   /// 링커 직사각형 목록 getter (JSON에서 파싱).
   @ignore

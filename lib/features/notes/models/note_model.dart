@@ -32,7 +32,11 @@ class NoteModel {
   @Index()
   DateTime? deletedAt;
 
-  /// 노트의 출처 타입 (빈 노트 또는 PDF 기반).
+  /// 노트에 포함된 페이지 목록 (Isar 관계).
+  @Backlink(to: 'noteId')
+  final IsarLinks<NotePageModel> pages = IsarLinks<NotePageModel>();
+
+    /// 노트의 출처 타입 (빈 노트 또는 PDF 기반).
   @enumerated
   late NoteSourceType sourceType;
 
@@ -52,6 +56,31 @@ class NoteModel {
 
   /// [NoteModel]의 기본 생성자.
   NoteModel();
+
+  /// [NoteModel]의 생성자.
+  ///
+  /// [noteId]는 노트의 고유 ID입니다.
+  /// [title]은 노트의 제목입니다.
+  /// [sourceType]은 노트의 출처 타입입니다 (기본값: [NoteSourceType.blank]).
+  /// [sourcePdfPath]는 원본 PDF 파일의 경로입니다.
+  /// [totalPdfPages]는 원본 PDF의 총 페이지 수입니다.
+  /// [createdAt]은 노트가 생성된 날짜 및 시간입니다 (기본값: 현재 시간).
+  /// [updatedAt]은 노트가 마지막으로 업데이트된 날짜 및 시간입니다 (기본값: 현재 시간).
+  NoteModel.create({
+    required String noteId,
+    required String title,
+    NoteSourceType sourceType = NoteSourceType.blank,
+    String? sourcePdfPath,
+    int? totalPdfPages,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) : noteId = noteId,
+       title = title,
+       sourceType = sourceType,
+       sourcePdfPath = sourcePdfPath,
+       totalPdfPages = totalPdfPages,
+       createdAt = createdAt ?? DateTime.now(),
+       updatedAt = updatedAt ?? DateTime.now();
 
   /// PDF 기반 노트인지 여부를 반환합니다.
   bool get isPdfBased => sourceType == NoteSourceType.pdfBased;
@@ -82,4 +111,10 @@ class NoteModel {
     copy.deletedAt = deletedAt ?? this.deletedAt;
     return copy;
   }
+
+  /// pages 필드에 접근하기 위한 getter (기존 코드 호환성)
+  List<NotePageModel> get pagesList => pages.toList();
+
+  /// 기존 코드와의 호환성을 위한 pages getter
+  List<NotePageModel> get pages => pagesList;
 }
