@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 /// 🔤 앱 전체에서 사용할 타이포그래피 시스템
-/// 
+///
 /// Figma 디자인 시스템을 기반으로 한 폰트 토큰입니다.
 /// 모든 Text 위젯에서 하드코딩된 스타일 대신 이 클래스를 사용해주세요.
-/// 
+///
 /// 예시:
 /// ```dart
 /// Text('제목', style: AppTypography.headline1),
@@ -224,7 +224,7 @@ class AppTypography {
 class AppTypographyDark {
   // Private constructor
   AppTypographyDark._();
-  
+
   // 다크 모드 타이포그래피는 필요시 추가 구현
   static const TextStyle headline1 = TextStyle(
     fontSize: 32,
@@ -233,12 +233,12 @@ class AppTypographyDark {
     letterSpacing: -0.8,
     color: Color(0xFFf9fafb), // Light text for dark mode
   );
-  
+
   // TODO: 다크 모드 타이포그래피 완전 구현
 }
 
 /// 폰트 가중치 상수
-class FontWeight {
+class AppFontWeight {
   static const FontWeight thin = FontWeight.w100;
   static const FontWeight extraLight = FontWeight.w200;
   static const FontWeight light = FontWeight.w300;
