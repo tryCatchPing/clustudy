@@ -7,7 +7,9 @@ import 'package:it_contest/features/canvas/models/tool_mode.dart';
 import 'package:it_contest/features/canvas/notifiers/custom_scribble_notifier.dart';
 import 'package:it_contest/features/canvas/providers/tool_settings_provider.dart';
 import 'package:it_contest/features/notes/data/derived_note_providers.dart';
+import 'package:it_contest/features/notes/models/note_page_model.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:scribble/scribble.dart';
 
 part 'note_editor_provider.g.dart';
 
@@ -32,6 +34,16 @@ class SimulatePressure extends _$SimulatePressure {
 
   void toggle() => state = !state;
   void setValue(bool value) => state = value;
+}
+
+/// 노트별 포인터 모드 상태 관리
+/// noteId(String)로 노트별 독립 관리 (family provider)
+@Riverpod(keepAlive: true)
+class AllowedPointersMode extends _$AllowedPointersMode {
+  @override
+  ScribblePointerMode build(String noteId) => ScribblePointerMode.all;
+
+  void setMode(ScribblePointerMode mode) => state = mode;
 }
 
 /// 노트별 CustomScribbleNotifier 관리
