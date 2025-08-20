@@ -40,6 +40,9 @@ class LinkerGestureLayer extends StatefulWidget {
   /// all 모드에서 마우스로도 링커 드래그를 허용할지 여부
   final bool allowMouseForLinker;
 
+  /// 초기 링커 직사각형 목록
+  final List<Rect> initialLinkerRectangles;
+
   /// [LinkerGestureLayer]의 생성자.
   ///
   /// [toolMode]는 현재 도구 모드입니다.
@@ -48,6 +51,7 @@ class LinkerGestureLayer extends StatefulWidget {
   /// [minLinkerRectangleSize]는 유효한 링커로 인식될 최소 크기입니다.
   /// [linkerFillColor], [linkerBorderColor], [linkerBorderWidth]는 기존 링커의 스타일을 정의합니다.
   /// [currentLinkerFillColor], [currentLinkerBorderColor], [currentLinkerBorderWidth]는 현재 드래그 중인 링커의 스타일을 정의합니다.
+  /// [initialLinkerRectangles]는 페이지 로드 시 표시할 기존 링커 직사각형 목록입니다.
   const LinkerGestureLayer({
     super.key,
     required this.toolMode,
@@ -61,6 +65,7 @@ class LinkerGestureLayer extends StatefulWidget {
     this.currentLinkerBorderColor = Colors.green,
     this.currentLinkerBorderWidth = 2.0,
     this.allowMouseForLinker = false,
+    this.initialLinkerRectangles = const [],
   });
 
   @override
@@ -70,7 +75,25 @@ class LinkerGestureLayer extends StatefulWidget {
 class _LinkerGestureLayerState extends State<LinkerGestureLayer> {
   Offset? _currentDragStart;
   Offset? _currentDragEnd;
-  final List<Rect> _linkerRectangles = []; // 내부적으로 링커 목록 관리
+  List<Rect> _linkerRectangles = []; // 내부적으로 링커 목록 관리
+
+  @override
+  void initState() {
+    super.initState();
+    // 초기 링커 데이터 설정
+    _linkerRectangles = [...widget.initialLinkerRectangles];
+  }
+
+  @override
+  void didUpdateWidget(LinkerGestureLayer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 초기 링커 데이터가 변경된 경우 업데이트
+    if (oldWidget.initialLinkerRectangles != widget.initialLinkerRectangles) {
+      setState(() {
+        _linkerRectangles = [...widget.initialLinkerRectangles];
+      });
+    }
+  }
 
   /// 드래그 시작 시 호출
   void _onDragStart(DragStartDetails details) {

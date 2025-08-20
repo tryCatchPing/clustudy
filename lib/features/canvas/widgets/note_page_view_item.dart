@@ -11,6 +11,8 @@ import 'package:it_contest/features/canvas/providers/note_editor_providers.dart'
 import 'package:it_contest/features/canvas/widgets/canvas_background_widget.dart'; // CanvasBackgroundWidget 정의 필요
 import 'package:it_contest/features/canvas/widgets/linker_gesture_layer.dart';
 import 'package:it_contest/features/notes/data/derived_note_providers.dart';
+import 'package:it_contest/features/notes/data/notes_repository_provider.dart'
+    show notesRepositoryProvider;
 import 'package:scribble/scribble.dart';
 
 /// Note 편집 화면의 단일 페이지 뷰 아이템입니다.
@@ -48,6 +50,11 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
     _tc = ref.read<TransformationController>(transformationControllerProvider(widget.noteId));
     _tc.addListener(_onScaleChanged);
     _updateScale(); // 초기 스케일 설정
+
+    // 저장된 링커 데이터 로드
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadLinkerData();
+    });
   }
 
   @override
@@ -90,6 +97,50 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
       );
     } catch (_) {
       // 초기 프레임에서 Notifier가 아직 생성되지 않은 경우가 있어 무시
+    }
+  }
+
+  /// 저장된 링커 데이터를 로드합니다.
+  void _loadLinkerData() {
+    try {
+      final note = ref.read(noteProvider(widget.noteId)).value;
+      if (note == null || note.pages.length <= widget.pageIndex) {
+        return;
+      }
+
+      final currentPage = note.pages[widget.pageIndex];
+      if (currentPage.linkerRectangles.isNotEmpty) {
+        setState(() {
+          _currentLinkerRectangles = currentPage.linkerRectangles;
+        });
+      }
+    } catch (e) {
+      debugPrint('링커 데이터 로드 실패: $e');
+    }
+  }
+
+  /// 링커 데이터를 페이지 모델에 업데이트합니다.
+  void _updateLinkerData(List<Rect> rects) async {
+    try {
+      final note = ref.read(noteProvider(widget.noteId)).value;
+      if (note == null || note.pages.length <= widget.pageIndex) {
+        return;
+      }
+
+      final currentPage = note.pages[widget.pageIndex];
+      final updatedPage = currentPage.copyWith(linkerRectangles: rects);
+
+      // 페이지 모델을 업데이트하여 노트 전체를 저장
+      final updatedPages = [...note.pages];
+      updatedPages[widget.pageIndex] = updatedPage;
+
+      final updatedNote = note.copyWith(pages: updatedPages);
+
+      // Repository 패턴을 따라 upsert 메서드 사용
+      final repository = ref.read(notesRepositoryProvider);
+      await repository.upsert(updatedNote);
+    } catch (e) {
+      debugPrint('링커 데이터 저장 실패: $e');
     }
   }
 
@@ -229,10 +280,13 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                               toolMode: currentToolMode,
                               allowMouseForLinker:
                                   scribbleState.allowedPointersMode == ScribblePointerMode.all,
+                              initialLinkerRectangles: _currentLinkerRectangles,
                               onLinkerRectanglesChanged: (rects) {
                                 setState(() {
                                   _currentLinkerRectangles = rects;
                                 });
+                                // 링커 데이터를 페이지 모델에 저장
+                                _updateLinkerData(rects);
                               },
                               onLinkerTapped: (tappedRect) {
                                 _showLinkerOptions(context, tappedRect);

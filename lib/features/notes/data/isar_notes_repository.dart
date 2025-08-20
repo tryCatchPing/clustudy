@@ -314,8 +314,8 @@ class IsarNotesRepository implements NotesRepository {
 
         final pageId = await isar.pages.put(page);
 
-        // 캔버스 데이터 업데이트
-        await _updateCanvasData(noteId, pageId, pageModel.jsonData);
+        // 캔버스 데이터 업데이트 (확장된 JSON 사용)
+        await _updateCanvasData(noteId, pageId, pageModel.toExtendedJson());
 
         existingPageMap.remove(pageIndex);
       }
@@ -351,7 +351,7 @@ class IsarNotesRepository implements NotesRepository {
       final canvasData = CanvasData()
         ..noteId = noteId
         ..pageId = pageId
-        ..schemaVersion = '1.0.0'
+        ..schemaVersion = '1.1.0' // 링커 지원을 위한 버전 업
         ..json = jsonData
         ..createdAt = DateTime.now()
         ..updatedAt = DateTime.now();
@@ -397,6 +397,8 @@ class IsarNotesRepository implements NotesRepository {
       final cd = await isar.canvasDatas.filter().pageIdEqualTo(p.id).findFirst();
       final json = cd?.json ?? '{"lines":[]}';
       final isPdf = p.pdfOriginalPath != null;
+      
+      // 확장된 JSON에서 링커 데이터 분리하여 NotePageModel 생성
       final pageModel = NotePageModel(
         noteId: note.id.toString(),
         pageId: p.id.toString(),
@@ -409,6 +411,15 @@ class IsarNotesRepository implements NotesRepository {
         backgroundHeight: p.heightPx.toDouble(),
         preRenderedImagePath: null,
       );
+      
+      // 확장된 JSON에서 데이터 복원
+      try {
+        pageModel.updateFromExtendedJson(json);
+      } catch (e) {
+        // 이전 버전 호환성: 링커 데이터가 없는 경우 무시
+        pageModel.jsonData = json;
+      }
+      
       pageModels.add(pageModel);
     }
 

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:it_contest/features/canvas/constants/note_editor_constant.dart';
 import 'package:scribble/scribble.dart';
 
@@ -49,6 +50,9 @@ class NotePageModel {
   /// 배경 이미지 표시 여부 (필기만 보기 모드 지원).
   bool showBackgroundImage;
 
+  /// 페이지에 그려진 링커 직사각형 목록.
+  List<Rect> linkerRectangles;
+
   /// [NotePageModel]의 생성자.
   ///
   /// [noteId]는 노트의 고유 ID입니다.
@@ -62,6 +66,7 @@ class NotePageModel {
   /// [backgroundHeight]는 원본 PDF 페이지 높이입니다.
   /// [preRenderedImagePath]는 사전 렌더링된 이미지 경로입니다.
   /// [showBackgroundImage]는 배경 이미지 표시 여부입니다 (기본값: true).
+  /// [linkerRectangles]는 페이지에 그려진 링커 직사각형 목록입니다 (기본값: 빈 리스트).
   NotePageModel({
     required this.noteId,
     required this.pageId,
@@ -74,6 +79,7 @@ class NotePageModel {
     this.backgroundHeight,
     this.preRenderedImagePath,
     this.showBackgroundImage = true,
+    this.linkerRectangles = const [],
   });
 
   /// JSON 데이터에서 [Sketch] 객체로 변환합니다.
@@ -84,6 +90,66 @@ class NotePageModel {
   /// [sketch]는 업데이트할 스케치 객체입니다.
   void updateFromSketch(Sketch sketch) {
     jsonData = jsonEncode(sketch.toJson());
+  }
+
+  /// 링커 직사각형을 추가합니다.
+  void addLinkerRectangle(Rect rect) {
+    linkerRectangles = [...linkerRectangles, rect];
+  }
+
+  /// 링커 직사각형을 제거합니다.
+  void removeLinkerRectangle(Rect rect) {
+    linkerRectangles = linkerRectangles.where((r) => r != rect).toList();
+  }
+
+  /// 링커 직사각형 목록을 업데이트합니다.
+  void updateLinkerRectangles(List<Rect> rectangles) {
+    linkerRectangles = [...rectangles];
+  }
+
+  /// 링커 직사각형을 JSON으로 직렬화합니다.
+  List<Map<String, dynamic>> _linkerRectanglesToJson() {
+    return linkerRectangles
+        .map((rect) => {
+              'left': rect.left,
+              'top': rect.top,
+              'right': rect.right,
+              'bottom': rect.bottom,
+            })
+        .toList();
+  }
+
+  /// JSON에서 링커 직사각형을 역직렬화합니다.
+  static List<Rect> _linkerRectanglesFromJson(List<dynamic>? json) {
+    if (json == null) return [];
+    return json
+        .cast<Map<String, dynamic>>()
+        .map((rectJson) => Rect.fromLTRB(
+              (rectJson['left'] as num).toDouble(),
+              (rectJson['top'] as num).toDouble(),
+              (rectJson['right'] as num).toDouble(),
+              (rectJson['bottom'] as num).toDouble(),
+            ))
+        .toList();
+  }
+
+  /// 확장된 JSON 데이터를 반환합니다 (Scribble + Linker 포함).
+  String toExtendedJson() {
+    final sketchJson = jsonDecode(jsonData) as Map<String, dynamic>;
+    sketchJson['linkerRectangles'] = _linkerRectanglesToJson();
+    return jsonEncode(sketchJson);
+  }
+
+  /// 확장된 JSON 데이터에서 업데이트합니다.
+  void updateFromExtendedJson(String extendedJson) {
+    final data = jsonDecode(extendedJson) as Map<String, dynamic>;
+    final linkerData = data.remove('linkerRectangles');
+    
+    // Scribble 데이터 업데이트
+    jsonData = jsonEncode(data);
+    
+    // 링커 데이터 업데이트
+    linkerRectangles = _linkerRectanglesFromJson(linkerData);
   }
 
   /// PDF 배경이 있는지 여부를 반환합니다.
@@ -118,6 +184,7 @@ class NotePageModel {
     double? backgroundHeight,
     String? preRenderedImagePath,
     bool? showBackgroundImage,
+    List<Rect>? linkerRectangles,
   }) {
     return NotePageModel(
       noteId: noteId,
@@ -131,6 +198,7 @@ class NotePageModel {
       backgroundHeight: backgroundHeight ?? this.backgroundHeight,
       preRenderedImagePath: preRenderedImagePath ?? this.preRenderedImagePath,
       showBackgroundImage: showBackgroundImage ?? this.showBackgroundImage,
+      linkerRectangles: linkerRectangles ?? this.linkerRectangles,
     );
   }
 }
