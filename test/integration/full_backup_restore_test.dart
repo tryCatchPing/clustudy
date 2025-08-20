@@ -216,7 +216,7 @@ void main() {
 
         // 8. Create PDF cache metadata
         await IsarDb.instance.isar.writeTxn(() async {
-          final cache1 = PdfCacheMeta()
+          final cache1 = PdfCacheMetaModel()
             ..noteId = personalNote1.id
             ..pageIndex = 0
             ..cachePath = '/cache/path1.png'
@@ -226,7 +226,7 @@ void main() {
             ..lastAccessAt = DateTime.now();
           cache1.setUniqueKey();
 
-          final cache2 = PdfCacheMeta()
+          final cache2 = PdfCacheMetaModel()
             ..noteId = workNote.id
             ..pageIndex = 0
             ..cachePath = '/cache/path2.png'
@@ -236,7 +236,7 @@ void main() {
             ..lastAccessAt = DateTime.now();
           cache2.setUniqueKey();
 
-          await IsarDb.instance.isar.pdfCacheMetas.putAll([cache1, cache2]);
+          await IsarDb.instance.isar.pdfCacheMetaModels.putAll([cache1, cache2]);
         });
 
         // 9. Create RecentTabs
@@ -281,13 +281,13 @@ void main() {
         final originalCounts = {
           'vaults': await currentIsar.collection<Vault>().count(),
           'folders': await currentIsar.collection<Folder>().count(),
-          'notes': await currentIsar.collection<Note>().count(),
+          'notes': await currentIsar.collection<NoteModel>().count(),
           'pages': await currentIsar.collection<Page>().count(),
           'canvasData': await currentIsar.collection<CanvasData>().count(),
           'pageSnapshots': await currentIsar.collection<PageSnapshot>().count(),
           'links': await currentIsar.collection<LinkEntity>().count(),
           'graphEdges': await currentIsar.collection<GraphEdge>().count(),
-          'pdfCacheMetas': await currentIsar.collection<PdfCacheMeta>().count(),
+          'pdfCacheMetas': await currentIsar.collection<PdfCacheMetaModel>().count(),
           'recentTabs': await currentIsar.collection<RecentTabs>().count(),
           'settings': await currentIsar.collection<SettingsEntity>().count(),
         };
@@ -312,7 +312,7 @@ void main() {
 
         // Verify data is gone
         expect(await currentIsar.collection<Vault>().count(), 0);
-        expect(await currentIsar.collection<Note>().count(), 0);
+        expect(await currentIsar.collection<NoteModel>().count(), 0);
 
         // 14. Restore from backup
         final restoreResult = await BackupService.instance.restoreIntegratedBackup(
@@ -330,13 +330,13 @@ void main() {
         final restoredCounts = {
           'vaults': await currentIsar.collection<Vault>().count(),
           'folders': await currentIsar.collection<Folder>().count(),
-          'notes': await currentIsar.collection<Note>().count(),
+          'notes': await currentIsar.collection<NoteModel>().count(),
           'pages': await currentIsar.collection<Page>().count(),
           'canvasData': await currentIsar.collection<CanvasData>().count(),
           'pageSnapshots': await currentIsar.collection<PageSnapshot>().count(),
           'links': await currentIsar.collection<LinkEntity>().count(),
           'graphEdges': await currentIsar.collection<GraphEdge>().count(),
-          'pdfCacheMetas': await currentIsar.collection<PdfCacheMeta>().count(),
+          'pdfCacheMetas': await currentIsar.collection<PdfCacheMetaModel>().count(),
           'recentTabs': await currentIsar.collection<RecentTabs>().count(),
           'settings': await currentIsar.collection<SettingsEntity>().count(),
         };
@@ -350,14 +350,14 @@ void main() {
         expect(restoredVaults[1].name, 'WorkVault');
 
         final restoredPersonalNotes = await currentIsar
-            .collection<Note>()
+            .collection<NoteModel>()
             .filter()
             .vaultIdEqualTo(restoredVaults[0].id)
             .sortByName()
             .findAll();
         expect(restoredPersonalNotes.length, 3); // 2 folder notes + 1 root note + 1 linked note
         expect(
-          restoredPersonalNotes.map((Note n) => n.name).toList(),
+          restoredPersonalNotes.map((NoteModel n) => n.name).toList(),
           containsAll(['Personal Note 1', 'Personal Note 2', 'Root Note', 'Linked Note']),
         );
 
@@ -460,7 +460,7 @@ void main() {
         expect(restoredVaults.length, 1);
         expect(restoredVaults.first.name, originalVaultName);
 
-        final restoredNotes = await IsarDb.instance.isar.collection<Note>().where().findAll();
+        final restoredNotes = await IsarDb.instance.isar.collection<NoteModel>().where().findAll();
         expect(restoredNotes.length, 1);
         expect(restoredNotes.first.name, 'Secret Note');
 

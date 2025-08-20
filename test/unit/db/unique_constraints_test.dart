@@ -256,7 +256,7 @@ void main() {
     );
 
     test(
-      'PdfCacheMeta unique constraint prevents duplicate cache entries',
+      'PdfCacheMetaModel unique constraint prevents duplicate cache entries',
       () async {
         final isar = await IsarDb.instance.open();
 
@@ -270,7 +270,7 @@ void main() {
         );
 
         // Create first cache entry
-        final cache1 = PdfCacheMeta()
+        final cache1 = PdfCacheMetaModel()
           ..noteId = note.id
           ..pageIndex = 0
           ..cachePath = '/test/path1.png'
@@ -279,11 +279,11 @@ void main() {
         cache1.setUniqueKey();
 
         await isar.writeTxn(() async {
-          await isar.collection<PdfCacheMeta>().put(cache1);
+          await isar.collection<PdfCacheMetaModel>().put(cache1);
         });
 
         // Try to create duplicate cache entry
-        final cache2 = PdfCacheMeta()
+        final cache2 = PdfCacheMetaModel()
           ..noteId = note.id
           ..pageIndex =
               0 // Same noteId and pageIndex
@@ -294,13 +294,13 @@ void main() {
 
         await expectLater(
           () => isar.writeTxn(() async {
-            await isar.collection<PdfCacheMeta>().put(cache2);
+            await isar.collection<PdfCacheMetaModel>().put(cache2);
           }),
           throwsA(isA<IsarError>()),
         );
 
         // Should allow different pageIndex
-        final cache3 = PdfCacheMeta()
+        final cache3 = PdfCacheMetaModel()
           ..noteId = note.id
           ..pageIndex =
               1 // Different pageIndex
@@ -310,11 +310,11 @@ void main() {
         cache3.setUniqueKey();
 
         await isar.writeTxn(() async {
-          await isar.collection<PdfCacheMeta>().put(cache3);
+          await isar.collection<PdfCacheMetaModel>().put(cache3);
         });
 
         // Verify correct number of cache entries
-        final caches = await isar.collection<PdfCacheMeta>().where().findAll();
+        final caches = await isar.collection<PdfCacheMetaModel>().where().findAll();
         expect(caches.length, 2);
       },
       skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
