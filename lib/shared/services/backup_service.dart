@@ -10,6 +10,7 @@ import 'package:isar/isar.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
 import 'package:it_contest/features/db/models/vault_models.dart';
+import 'package:it_contest/features/notes/models/note_model.dart';
 import 'package:it_contest/shared/services/crypto_key_service.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -232,7 +233,7 @@ class BackupService {
       'statistics': {
         'vault_count': await isar.collection<Vault>().where().count(),
         'folder_count': await isar.collection<Folder>().where().count(),
-        'note_count': await isar.collection<Note>().where().count(),
+        'note_count': await isar.collection<NoteModel>().where().count(),
         'page_count': await isar.collection<Page>().where().count(),
         'link_count': await isar.collection<LinkEntity>().where().count(),
       },

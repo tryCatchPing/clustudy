@@ -8,6 +8,8 @@ import 'package:isar_flutter_libs/isar_flutter_libs.dart';
 import 'package:it_contest/features/db/isar/db_schemas.dart';
 import 'package:it_contest/features/db/models/models.dart';
 import 'package:it_contest/features/db/models/vault_models.dart';
+import 'package:it_contest/features/notes/models/note_model.dart';
+import 'package:it_contest/features/pdf_cache/models/pdf_cache_meta_model.dart';
 import 'package:it_contest/shared/services/crypto_key_service.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -153,13 +155,13 @@ class IsarDb {
     // 각 컬렉션별로 데이터를 JSON으로 백업
     backup['vaults'] = await isar.vaults.where().exportJson();
     backup['folders'] = await isar.folders.where().exportJson();
-    backup['notes'] = await isar.notes.where().exportJson();
+    backup['notes'] = await isar.collection<NoteModel>().where().exportJson();
     backup['pages'] = await isar.pages.where().exportJson();
     backup['canvasData'] = await isar.canvasDatas.where().exportJson();
     backup['pageSnapshots'] = await isar.pageSnapshots.where().exportJson();
     backup['linkEntities'] = await isar.linkEntitys.where().exportJson();
     backup['graphEdges'] = await isar.graphEdges.where().exportJson();
-    backup['pdfCacheMetas'] = await isar.pdfCacheMetas.where().exportJson();
+    backup['pdfCacheMetas'] = await isar.collection<PdfCacheMetaModel>().where().exportJson();
     backup['recentTabs'] = await isar.recentTabs.where().exportJson();
     backup['settings'] = await isar.settingsEntitys.where().exportJson();
 
@@ -182,7 +184,7 @@ class IsarDb {
         await isar.folders.importJson(backupData['folders']!);
       }
       if (backupData['notes'] != null) {
-        await isar.notes.importJson(backupData['notes']!);
+        await isar.collection<NoteModel>().importJson(backupData['notes']!);
       }
       if (backupData['pages'] != null) {
         await isar.pages.importJson(backupData['pages']!);
@@ -200,7 +202,7 @@ class IsarDb {
         await isar.graphEdges.importJson(backupData['graphEdges']!);
       }
       if (backupData['pdfCacheMetas'] != null) {
-        await isar.pdfCacheMetas.importJson(backupData['pdfCacheMetas']!);
+        await isar.collection<PdfCacheMetaModel>().importJson(backupData['pdfCacheMetas']!);
       }
       if (backupData['recentTabs'] != null) {
         await isar.recentTabs.importJson(backupData['recentTabs']!);
