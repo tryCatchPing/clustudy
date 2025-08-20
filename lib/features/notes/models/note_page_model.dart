@@ -1,10 +1,14 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:isar/isar.dart';
 import 'package:it_contest/features/canvas/constants/note_editor_constant.dart';
 import 'package:scribble/scribble.dart';
 
+part 'note_page_model.g.dart';
+
 /// 페이지 배경의 타입을 정의합니다.
+@embedded
 enum PageBackgroundType {
   /// 빈 배경.
   blank,
@@ -16,71 +20,61 @@ enum PageBackgroundType {
 /// 노트 페이지 모델입니다.
 ///
 /// 각 노트 페이지의 고유 ID, 페이지 번호, 스케치 데이터 및 배경 정보를 포함합니다.
+@collection
 class NotePageModel {
+  /// 데이터베이스 ID.
+  Id id = Isar.autoIncrement;
+
   /// 노트의 고유 ID.
-  final String noteId;
+  @Index()
+  late String noteId;
 
   /// 페이지의 고유 ID.
-  final String pageId;
+  @Index(unique: true)
+  late String pageId;
 
   /// 페이지 번호 (1부터 시작).
-  final int pageNumber;
+  @Index()
+  late int pageNumber;
 
   /// 스케치 데이터가 포함된 JSON 문자열.
-  String jsonData;
+  late String jsonData;
 
   /// 페이지 배경의 타입.
-  final PageBackgroundType backgroundType;
+  @enumerated
+  late PageBackgroundType backgroundType;
 
   /// PDF 배경 파일 경로 (앱 내부 저장).
-  final String? backgroundPdfPath;
+  String? backgroundPdfPath;
 
   /// PDF의 몇 번째 페이지인지.
-  final int? backgroundPdfPageNumber;
+  int? backgroundPdfPageNumber;
 
   /// 원본 PDF 페이지 너비.
-  final double? backgroundWidth;
+  double? backgroundWidth;
 
   /// 원본 PDF 페이지 높이.
-  final double? backgroundHeight;
+  double? backgroundHeight;
 
   /// 사전 렌더링된 이미지 경로 (앱 내부 저장).
-  final String? preRenderedImagePath;
+  String? preRenderedImagePath;
 
   /// 배경 이미지 표시 여부 (필기만 보기 모드 지원).
-  bool showBackgroundImage;
+  late bool showBackgroundImage;
 
-  /// 페이지에 그려진 링커 직사각형 목록.
-  List<Rect> linkerRectangles;
+  /// 페이지에 그려진 링커 직사각형 목록 (JSON 문자열로 저장).
+  late String linkerRectanglesJson;
 
-  /// [NotePageModel]의 생성자.
-  ///
-  /// [noteId]는 노트의 고유 ID입니다.
-  /// [pageId]는 페이지의 고유 ID입니다.
-  /// [pageNumber]는 페이지 번호입니다.
-  /// [jsonData]는 스케치 데이터가 포함된 JSON 문자열입니다.
-  /// [backgroundType]은 페이지 배경의 타입입니다 (기본값: [PageBackgroundType.blank]).
-  /// [backgroundPdfPath]는 PDF 배경 파일 경로입니다.
-  /// [backgroundPdfPageNumber]는 PDF의 페이지 번호입니다.
-  /// [backgroundWidth]는 원본 PDF 페이지 너비입니다.
-  /// [backgroundHeight]는 원본 PDF 페이지 높이입니다.
-  /// [preRenderedImagePath]는 사전 렌더링된 이미지 경로입니다.
-  /// [showBackgroundImage]는 배경 이미지 표시 여부입니다 (기본값: true).
-  /// [linkerRectangles]는 페이지에 그려진 링커 직사각형 목록입니다 (기본값: 빈 리스트).
-  NotePageModel({
-    required this.noteId,
-    required this.pageId,
-    required this.pageNumber,
-    required this.jsonData,
-    this.backgroundType = PageBackgroundType.blank,
-    this.backgroundPdfPath,
-    this.backgroundPdfPageNumber,
-    this.backgroundWidth,
-    this.backgroundHeight,
-    this.preRenderedImagePath,
-    this.showBackgroundImage = true,
-    this.linkerRectangles = const [],
-  });
+  /// [NotePageModel]의 기본 생성자.
+  NotePageModel();
+
+  /// 링커 직사각형 목록 getter (JSON에서 파싱).
+  List<Rect> get linkerRectangles => _linkerRectanglesFromJson(linkerRectanglesJson);
+
+  /// 링커 직사각형 목록 setter (JSON으로 직렬화).
+  set linkerRectangles(List<Rect> rectangles) {
+    linkerRectanglesJson = jsonEncode(_linkerRectanglesToJson(rectangles));
+  }
 
   /// JSON 데이터에서 [Sketch] 객체로 변환합니다.
   Sketch toSketch() => Sketch.fromJson(jsonDecode(jsonData));
@@ -120,7 +114,9 @@ class NotePageModel {
   }
 
   /// JSON에서 링커 직사각형을 역직렬화합니다.
-  static List<Rect> _linkerRectanglesFromJson(List<dynamic>? json) {
+  static List<Rect> _linkerRectanglesFromJson(String? jsonString) {
+    if (jsonString == null || jsonString.isEmpty) return [];
+    final json = jsonDecode(jsonString) as List<dynamic>?;
     if (json == null) return [];
     return json
         .cast<Map<String, dynamic>>()
@@ -136,7 +132,7 @@ class NotePageModel {
   /// 확장된 JSON 데이터를 반환합니다 (Scribble + Linker 포함).
   String toExtendedJson() {
     final sketchJson = jsonDecode(jsonData) as Map<String, dynamic>;
-    sketchJson['linkerRectangles'] = _linkerRectanglesToJson();
+    sketchJson['linkerRectangles'] = _linkerRectanglesToJson(linkerRectangles);
     return jsonEncode(sketchJson);
   }
 
@@ -149,7 +145,9 @@ class NotePageModel {
     jsonData = jsonEncode(data);
     
     // 링커 데이터 업데이트
-    linkerRectangles = _linkerRectanglesFromJson(linkerData);
+    if (linkerData != null) {
+      linkerRectanglesJson = jsonEncode(linkerData);
+    }
   }
 
   /// PDF 배경이 있는지 여부를 반환합니다.
@@ -186,19 +184,20 @@ class NotePageModel {
     bool? showBackgroundImage,
     List<Rect>? linkerRectangles,
   }) {
-    return NotePageModel(
-      noteId: noteId,
-      pageId: pageId,
-      pageNumber: pageNumber,
-      jsonData: jsonData ?? this.jsonData,
-      backgroundType: backgroundType ?? this.backgroundType,
-      backgroundPdfPath: backgroundPdfPath ?? this.backgroundPdfPath,
-      backgroundPdfPageNumber: backgroundPdfPageNumber ?? this.backgroundPdfPageNumber,
-      backgroundWidth: backgroundWidth ?? this.backgroundWidth,
-      backgroundHeight: backgroundHeight ?? this.backgroundHeight,
-      preRenderedImagePath: preRenderedImagePath ?? this.preRenderedImagePath,
-      showBackgroundImage: showBackgroundImage ?? this.showBackgroundImage,
-      linkerRectangles: linkerRectangles ?? this.linkerRectangles,
-    );
+    final copy = NotePageModel();
+    copy.id = id;
+    copy.noteId = noteId;
+    copy.pageId = pageId;
+    copy.pageNumber = pageNumber;
+    copy.jsonData = jsonData ?? this.jsonData;
+    copy.backgroundType = backgroundType ?? this.backgroundType;
+    copy.backgroundPdfPath = backgroundPdfPath ?? this.backgroundPdfPath;
+    copy.backgroundPdfPageNumber = backgroundPdfPageNumber ?? this.backgroundPdfPageNumber;
+    copy.backgroundWidth = backgroundWidth ?? this.backgroundWidth;
+    copy.backgroundHeight = backgroundHeight ?? this.backgroundHeight;
+    copy.preRenderedImagePath = preRenderedImagePath ?? this.preRenderedImagePath;
+    copy.showBackgroundImage = showBackgroundImage ?? this.showBackgroundImage;
+    copy.linkerRectangles = linkerRectangles ?? this.linkerRectangles;
+    return copy;
   }
 }
