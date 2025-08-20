@@ -189,13 +189,13 @@ class CryptoKeyService {
     // 각 컬렉션별로 데이터 백업
     backup['vaults'] = await isar.collection<Vault>().where().exportJson();
     backup['folders'] = await isar.collection<Folder>().where().exportJson();
-    backup['notes'] = await isar.collection<Note>().where().exportJson();
+    backup['notes'] = await isar.collection<NoteModel>().where().exportJson();
     backup['pages'] = await isar.collection<Page>().where().exportJson();
     backup['canvasData'] = await isar.collection<CanvasData>().where().exportJson();
     backup['pageSnapshots'] = await isar.collection<PageSnapshot>().where().exportJson();
     backup['linkEntities'] = await isar.collection<LinkEntity>().where().exportJson();
     backup['graphEdges'] = await isar.collection<GraphEdge>().where().exportJson();
-    backup['pdfCacheMetas'] = await isar.collection<PdfCacheMeta>().where().exportJson();
+    backup['pdfCacheMetas'] = await isar.collection<PdfCacheMetaModel>().where().exportJson();
     backup['recentTabs'] = await isar.collection<RecentTabs>().where().exportJson();
     backup['settings'] = await isar.collection<SettingsEntity>().where().exportJson();
 
@@ -216,7 +216,7 @@ class CryptoKeyService {
         await isar.collection<Folder>().importJson(backupData['folders']);
       }
       if (backupData['notes'] != null) {
-        await isar.collection<Note>().importJson(backupData['notes']);
+        await isar.collection<NoteModel>().importJson(backupData['notes']);
       }
       if (backupData['pages'] != null) {
         await isar.collection<Page>().importJson(backupData['pages']);
@@ -234,7 +234,7 @@ class CryptoKeyService {
         await isar.collection<GraphEdge>().importJson(backupData['graphEdges']);
       }
       if (backupData['pdfCacheMetas'] != null) {
-        await isar.collection<PdfCacheMeta>().importJson(backupData['pdfCacheMetas']);
+        await isar.collection<PdfCacheMetaModel>().importJson(backupData['pdfCacheMetas']);
       }
       if (backupData['recentTabs'] != null) {
         await isar.collection<RecentTabs>().importJson(backupData['recentTabs']);

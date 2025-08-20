@@ -33,7 +33,7 @@ class SeedRunner {
         ..createdAt = now
         ..updatedAt = now;
       final folderId = await isar.collection<Folder>().put(folder);
-      final note = Note()
+      final note = NoteModel()
         ..vaultId = vaultId
         ..folderId = folderId
         ..name = 'Welcome'
@@ -44,7 +44,7 @@ class SeedRunner {
         ..createdAt = now
         ..updatedAt = now
         ..nameLowerForSearch = 'welcome';
-      final noteId = await isar.collection<Note>().put(note);
+      final noteId = await isar.collection<NoteModel>().put(note);
       final page = Page()
         ..noteId = noteId
         ..index = 0

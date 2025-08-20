@@ -46,7 +46,7 @@ class RecentTabsService {
 
       final fixed = <int>[];
       for (final id in deduped) {
-        final note = await isar.collection<Note>().get(id);
+        final note = await isar.collection<NoteModel>().get(id);
         if (note != null && note.deletedAt == null) {
           fixed.add(id);
           if (fixed.length >= 10) {
