@@ -397,7 +397,7 @@ class IsarNotesRepository implements NotesRepository {
       final cd = await isar.canvasDatas.filter().pageIdEqualTo(p.id).findFirst();
       final json = cd?.json ?? '{"lines":[]}';
       final isPdf = p.pdfOriginalPath != null;
-      
+
       // 확장된 JSON에서 링커 데이터 분리하여 NotePageModel 생성
       final pageModel = NotePageModel.create(
         noteId: note.id,
@@ -411,7 +411,7 @@ class IsarNotesRepository implements NotesRepository {
         backgroundHeight: p.heightPx.toDouble(),
         preRenderedImagePath: null,
       );
-      
+
       // 확장된 JSON에서 데이터 복원
       try {
         pageModel.updateFromExtendedJson(json);
@@ -419,7 +419,7 @@ class IsarNotesRepository implements NotesRepository {
         // 이전 버전 호환성: 링커 데이터가 없는 경우 무시
         pageModel.jsonData = json;
       }
-      
+
       pageModels.add(pageModel);
     }
 

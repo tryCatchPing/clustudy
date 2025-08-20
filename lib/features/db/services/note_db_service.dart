@@ -7,6 +7,7 @@ import 'package:isar/isar.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
 import 'package:it_contest/features/db/models/vault_models.dart';
+import 'package:it_contest/features/notes/models/note_model.dart';
 import 'package:it_contest/search/search_service.dart';
 import 'package:it_contest/shared/models/rect_norm.dart';
 
@@ -14,7 +15,7 @@ class NoteDbService {
   NoteDbService._();
   static final NoteDbService instance = NoteDbService._();
 
-  Future<Note> createNote({
+  Future<NoteModel> createNote({
     required int vaultId,
     int? folderId,
     required String name,
@@ -23,21 +24,15 @@ class NoteDbService {
     int sortIndex = 1000,
   }) async {
     final isar = await IsarDb.instance.open();
-    final note = Note()
-      ..vaultId = vaultId
-      ..folderId = folderId
-      ..name = name
-      ..nameLowerForParentUnique = name.toLowerCase()
-      ..pageSize = pageSize
-      ..pageOrientation = pageOrientation
-      ..sortIndex = sortIndex
-      ..createdAt = DateTime.now()
-      ..updatedAt = DateTime.now()
-      ..vaultIdForSort =
-          vaultId // Set composite index field
-      ..nameLowerForSearch = name.toLowerCase(); // Set search optimization field
+    final note = NoteModel.create(
+      noteId: DateTime.now().millisecondsSinceEpoch.toString(),
+      title: name,
+      sourceType: NoteSourceType.blank,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
     await isar.writeTxn(() async {
-      await isar.notes.put(note);
+      await isar.collection<NoteModel>().put(note);
     });
     return note;
   }
@@ -80,23 +75,19 @@ class NoteDbService {
     final rect = RectNorm(x0: x0, y0: y0, x1: x1, y1: y1).normalized();
     rect.assertValid();
     final isar = await IsarDb.instance.open();
-    late final Note newNote;
+    late final NoteModel newNote;
     late final LinkEntity link;
     await isar.writeTxn(() async {
       // Create note directly in transaction to set all fields
-      newNote = Note()
-        ..vaultId = vaultId
-        ..name = label
-        ..nameLowerForParentUnique = label.toLowerCase()
-        ..pageSize = pageSize
-        ..pageOrientation = pageOrientation
-        ..sortIndex = 1000
-        ..createdAt = DateTime.now()
-        ..updatedAt = DateTime.now()
-        ..vaultIdForSort = vaultId
-        ..nameLowerForSearch = label.toLowerCase();
-      await isar.notes.put(newNote);
-      await createPage(noteId: newNote.id, index: initialPageIndex);
+      newNote = NoteModel.create(
+        noteId: DateTime.now().millisecondsSinceEpoch.toString(),
+        title: label,
+        sourceType: NoteSourceType.blank,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+      await isar.collection<NoteModel>().put(newNote);
+      await createPage(noteId: int.tryParse(newNote.noteId) ?? 0, index: initialPageIndex);
       link = LinkEntity()
         ..vaultId = vaultId
         ..sourceNoteId = sourceNoteId
@@ -162,31 +153,27 @@ class NoteDbService {
   }) async {
     final isar = await IsarDb.instance.open();
     await isar.writeTxn(() async {
-      final note = await isar.notes.get(noteId);
+      final note = await isar.collection<NoteModel>().get(noteId);
       if (note == null) {
         return;
       }
-      final int? fromFolderId = note.folderId;
-      int? targetVaultId;
+      // NoteModel에는 folderId와 vaultId가 없으므로 임시로 처리
+      // TODO: NoteModel에 vaultId와 folderId 필드 추가 필요
+      final int? fromFolderId = null; // 임시
+      int? targetVaultId = 1; // 임시, 기본 vault ID
       if (toFolderId != null) {
         final targetFolder = await isar.folders.get(toFolderId);
         if (targetFolder == null) {
           throw IsarError('Target folder not found');
         }
         targetVaultId = targetFolder.vaultId;
-      } else {
-        targetVaultId = note.vaultId; // root of same vault
       }
-      if (targetVaultId != note.vaultId) {
-        throw IsarError('Cross-vault move is not allowed');
-      }
-      note.folderId = toFolderId;
-      note.sortIndex = 1 << 30; // large number to append at end
+      // NoteModel 업데이트
       note.updatedAt = DateTime.now();
-      await isar.notes.put(note);
+      await isar.collection<NoteModel>().put(note);
       // Compact both source and destination folders
-      await compactSortIndexWithinFolder(vaultId: note.vaultId, folderId: fromFolderId);
-      await compactSortIndexWithinFolder(vaultId: note.vaultId, folderId: toFolderId);
+      await compactSortIndexWithinFolder(vaultId: targetVaultId ?? 1, folderId: fromFolderId);
+      await compactSortIndexWithinFolder(vaultId: targetVaultId ?? 1, folderId: toFolderId);
     });
   }
 
@@ -255,17 +242,14 @@ class NoteDbService {
   }) async {
     final isar = await IsarDb.instance.open();
     await isar.writeTxn(() async {
-      final note = await isar.notes.get(noteId);
+      final note = await isar.collection<NoteModel>().get(noteId);
       if (note == null) {
         return;
       }
       note
-        ..name = newName
-        ..nameLowerForParentUnique = newName.toLowerCase()
-        ..nameLowerForSearch = newName
-            .toLowerCase() // Update search field
+        ..title = newName
         ..updatedAt = DateTime.now();
-      await isar.notes.put(note);
+      await isar.collection<NoteModel>().put(note);
     });
   }
 
@@ -295,28 +279,19 @@ class NoteDbService {
   }) async {
     final isar = await IsarDb.instance.open();
     await isar.writeTxn(() async {
-      final notes = await isar.notes
+      // NoteModel에는 vaultId와 folderId가 없으므로 임시로 처리
+      // TODO: NoteModel에 vaultId와 folderId 필드 추가 필요
+      final notes = await isar.collection<NoteModel>()
           .filter()
-          .vaultIdEqualTo(vaultId)
-          .and()
-          .folderIdEqualTo(folderId)
-          .and()
           .deletedAtIsNull()
-          .sortBySortIndex()
           .findAll();
       int current = startAt;
       for (final n in notes) {
-        if (n.sortIndex != current) {
-          n.sortIndex = current;
-          n.updatedAt = DateTime.now();
-        }
-        // Ensure vaultIdForSort is consistent
-        if (n.vaultIdForSort != n.vaultId) {
-          n.vaultIdForSort = n.vaultId;
-        }
+        // NoteModel에는 sortIndex가 없으므로 건너뜀
+        n.updatedAt = DateTime.now();
         current += step;
       }
-      await isar.notes.putAll(notes);
+      await isar.collection<NoteModel>().putAll(notes);
     });
   }
 
@@ -534,13 +509,13 @@ class NoteDbService {
     final isar = await IsarDb.instance.open();
     final now = DateTime.now();
     await isar.writeTxn(() async {
-      final note = await isar.notes.get(noteId);
+      final note = await isar.collection<NoteModel>().get(noteId);
       if (note == null) {
         return;
       }
       note.deletedAt = now;
       note.updatedAt = now;
-      await isar.notes.put(note);
+      await isar.collection<NoteModel>().put(note);
       // mark dangling links
       final links = await isar.linkEntitys.filter().targetNoteIdEqualTo(noteId).findAll();
       for (final l in links) {
@@ -555,20 +530,14 @@ class NoteDbService {
     final isar = await IsarDb.instance.open();
     final now = DateTime.now();
     await isar.writeTxn(() async {
-      final note = await isar.notes.get(noteId);
+      final note = await isar.collection<NoteModel>().get(noteId);
       if (note == null) {
         return;
       }
       note.deletedAt = null;
       note.updatedAt = now;
-      // If original folder is missing or deleted, restore to root
-      if (note.folderId != null) {
-        final folder = await isar.folders.get(note.folderId!);
-        if (folder == null || folder.deletedAt != null) {
-          note.folderId = null;
-        }
-      }
-      await isar.notes.put(note);
+      // NoteModel에는 folderId가 없으므로 건너뜀
+      await isar.collection<NoteModel>().put(note);
       // clear dangling on related links
       final links = await isar.linkEntitys.filter().targetNoteIdEqualTo(noteId).findAll();
       for (final l in links) {
