@@ -21,6 +21,16 @@ lib/design_system/
 │   ├── atoms/                # 기본 컴포넌트 (버튼, 입력 등)
 │   ├── molecules/            # 복합 컴포넌트 (카드, 폼 등)
 │   └── organisms/            # 복잡한 UI 섹션 (헤더, 툴바 등)
+├── 🖥️ screens/               # 완성된 스크린 UI (NEW!)
+│   ├── canvas/               # 완성된 캔버스 화면 UI
+│   ├── home/                 # 완성된 홈 화면 UI
+│   └── notes/                # 완성된 노트 관련 화면 UI
+├── 📄 pages/                 # 스토리북/데모 전용
+│   ├── component_showcase/   # 컴포넌트 데모
+│   ├── demo_shell.dart       # 데모 셸
+│   └── figma_pages/          # Figma 테스트 페이지
+├── 🎯 routing/               # 디자인 시스템 라우팅
+│   └── design_system_routes.dart
 ├── 🔧 utils/                 # 디자인 시스템 유틸리티
 │   ├── theme.dart            # 앱 테마 구성
 │   └── extensions.dart       # 유틸리티 확장
@@ -35,15 +45,16 @@ lib/design_system/
 
 ```
 lib/
-├── features/              # 메인 앱 구조 (화면, 로직, 라우팅)
+├── features/              # 메인 앱 구조 (로직, 라우팅)
 │   ├── canvas/
-│   │   ├── pages/        # 화면
+│   │   ├── pages/        # ⚠️  로직만 남기고 UI는 design_system/screens로 이동
 │   │   ├── controllers/  # 비즈니스 로직
 │   │   ├── routing/      # 라우팅
 │   │   └── widgets/      # ⬅️ 점진적으로 design_system 컴포넌트로 교체
 │   ├── notes/
 │   └── home/
 ├── design_system/         # UI 컴포넌트 라이브러리 (이 폴더)
+│   ├── screens/          # ➡️ 완성된 스크린 UI (NEW!)
 │   └── components/       # ➡️ features에서 import하여 사용
 └── shared/               # 서비스, 유틸리티
 ```
@@ -135,9 +146,14 @@ Figma 디자인 → AI 도구 (Figma MCP) → ai_generated/ 폴더에 저장
 ai_generated/ → 수동 정제 → components/atoms|molecules|organisms/
 ```
 
-### 3️⃣ features에서 사용
+### 3️⃣ 완성된 스크린 제작 (NEW!)
 ```
-features/canvas/widgets/ → import design_system/components/ → 기존 커스텀 위젯 교체
+AI 생성 페이지 → 정제 → design_system/screens/ → 완성된 스크린 UI
+```
+
+### 4️⃣ features에서 연결
+```
+features/canvas/pages/ → import design_system/screens/ → 로직과 UI 분리
 ```
 
 ### 실제 예시:
@@ -173,19 +189,47 @@ class AppButton extends StatelessWidget {
 }
 ```
 
-**features에서 사용:**
+**새로운 screens 방식:**
 ```dart
-// features/canvas/widgets/toolbar/note_editor_toolbar.dart
-import '../../../../design_system/components/atoms/app_button.dart';
+// design_system/screens/canvas/canvas_screen.dart (디자이너 제작)
+class CanvasScreen extends StatelessWidget {
+  final VoidCallback? onSave;
+  final VoidCallback? onUndo;
+  final VoidCallback? onColorChange;
+  
+  const CanvasScreen({
+    this.onSave,
+    this.onUndo, 
+    this.onColorChange,
+  });
+  
+  Widget build(context) => Scaffold(
+    body: Column(
+      children: [
+        // 완성된 툴바 UI
+        Toolbar(
+          onSave: onSave,
+          onUndo: onUndo,
+          onColorChange: onColorChange,
+        ),
+        // 완성된 캔버스 UI
+        Canvas(),
+      ],
+    ),
+  );
+}
+```
 
-class NoteEditorToolbar extends StatelessWidget {
-  Widget build(context) => Row(
-    children: [
-      AppButton(
-        text: '저장',
-        onPressed: () => _saveNote(), // 비즈니스 로직
-      ),
-    ],
+**features에서 로직 연결:**
+```dart
+// features/canvas/pages/note_editor_screen.dart (개발자 작업)
+import '../../../../design_system/screens/canvas/canvas_screen.dart';
+
+class NoteEditorScreen extends ConsumerWidget {
+  Widget build(context, ref) => CanvasScreen(
+    onSave: () => ref.read(noteProvider).save(), // 비즈니스 로직
+    onUndo: () => ref.read(canvasProvider).undo(),
+    onColorChange: () => ref.read(toolProvider).changeColor(),
   );
 }
 
