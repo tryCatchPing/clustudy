@@ -6,7 +6,6 @@ import 'dart:convert';
 import 'package:isar/isar.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
-import 'package:it_contest/features/db/models/vault_models.dart';
 import 'package:it_contest/features/notes/models/note_model.dart';
 import 'package:it_contest/search/search_service.dart';
 import 'package:it_contest/shared/models/rect_norm.dart';
@@ -64,6 +63,7 @@ class NoteDbService {
 
   Future<LinkEntity> createLinkAndTargetNote({
     required int vaultId,
+    required int folderId,
     required int sourceNoteId,
     required int sourcePageId,
     required double x0,
@@ -85,6 +85,8 @@ class NoteDbService {
       newNote = NoteModel.create(
         noteId: DateTime.now().millisecondsSinceEpoch.toString(),
         title: label,
+        vaultId: vaultId,
+        folderId: folderId,
         sourceType: NoteSourceType.blank,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -161,7 +163,7 @@ class NoteDbService {
         return;
       }
       // NoteModel에는 folderId와 vaultId가 없으므로 임시로 처리
-      // TODO: NoteModel에 vaultId와 folderId 필드 추가 필요
+      // TODO(jidam): NoteModel에 vaultId와 folderId 필드 추가 필요
       final int? fromFolderId = null; // 임시
       int? targetVaultId = 1; // 임시, 기본 vault ID
       if (toFolderId != null) {
@@ -283,7 +285,7 @@ class NoteDbService {
     final isar = await IsarDb.instance.open();
     await isar.writeTxn(() async {
       // NoteModel에는 vaultId와 folderId가 없으므로 임시로 처리
-      // TODO: NoteModel에 vaultId와 folderId 필드 추가 필요
+      // TODO(jidam): NoteModel에 vaultId와 folderId 필드 추가 필요
       final notes = await isar.collection<NoteModel>()
           .filter()
           .deletedAtIsNull()
@@ -423,7 +425,7 @@ class NoteDbService {
   }
 
   /// 노트 검색 (SearchService 위임)
-  Future<List<Note>> searchNotesByName({
+  Future<List<NoteModel>> searchNotesByName({
     required int vaultId,
     int? folderId,
     required String query,
@@ -448,7 +450,7 @@ class NoteDbService {
   }
 
   /// Contains 부분 검색 전용 메서드 (SearchService 위임)
-  Future<List<Note>> searchNotesByNameContains({
+  Future<List<NoteModel>> searchNotesByNameContains({
     required int vaultId,
     int? folderId,
     required String query,
@@ -463,7 +465,7 @@ class NoteDbService {
   }
 
   /// 전역 검색 (SearchService 위임)
-  Future<List<Note>> searchNotesGlobally({
+  Future<List<NoteModel>> searchNotesGlobally({
     required String query,
     int limit = 100,
     bool useContains = true,
@@ -476,7 +478,7 @@ class NoteDbService {
   }
 
   /// 고급 검색 (SearchService 위임)
-  Future<List<Note>> searchNotesAdvanced({
+  Future<List<NoteModel>> searchNotesAdvanced({
     int? vaultId,
     int? folderId,
     required String query,
