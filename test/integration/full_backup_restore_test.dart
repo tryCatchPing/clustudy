@@ -128,9 +128,14 @@ void main() {
           sortIndex: 2000,
         );
 
+        final rootFolder = await NoteDbService.instance.createFolder(
+          vaultId: vault1.id,
+          name: 'RootFolder',
+          sortIndex: 1000,
+        );
         await NoteDbService.instance.createNote(
           vaultId: vault1.id,
-          folderId: null, // Root note
+          folderId: rootFolder.id, // Use the new root folder
           name: 'Root Note',
           pageSize: 'A4',
           pageOrientation: 'portrait',
@@ -352,7 +357,7 @@ void main() {
         final restoredPersonalNotes = await currentIsar
             .collection<NoteModel>()
             .filter()
-            .vaultIdEqualTo(restoredVaults[0].id)
+            .vaultId.equalTo(restoredVaults[0].id)
             .sortByName()
             .findAll();
         expect(restoredPersonalNotes.length, 3); // 2 folder notes + 1 root note + 1 linked note
@@ -411,8 +416,13 @@ void main() {
 
         // Create test data
         final vault = await NoteDbService.instance.createVault(name: 'SecureVault');
+        final secureFolder = await NoteDbService.instance.createFolder(
+          vaultId: vault.id,
+          name: 'SecureFolder',
+        );
         await NoteDbService.instance.createNote(
           vaultId: vault.id,
+          folderId: secureFolder.id,
           name: 'Secret Note',
           pageSize: 'A4',
           pageOrientation: 'portrait',

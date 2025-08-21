@@ -173,14 +173,35 @@ class IsarNotesRepository implements NotesRepository {
   Future<void> _initializeNoteWatch(int noteId, StreamController<NoteModel?> controller) async {
     final isar = await _open();
 
-  @override
-  Future<NoteModel?> getNoteById(String noteId) async {
-    final isar = await _open();
-    final n = await isar.collection<NoteModel>().filter().noteIdEqualTo(noteId).findFirst();
-    if (n == null || n.deletedAt != null) {
-      return null;
+    Future<void> emitNote() async {
+      try {
+        final note = await isar.collection<NoteModel>().get(noteId);
+        if (note == null || note.deletedAt != null) {
+          controller.add(null);
+          return;
+        }
+        final noteModel = await _mapNote(isar, note);
+        controller.add(noteModel);
+      } catch (e) {
+        controller.addError(e);
+      }
     }
-    return _mapNote(isar, n);
+
+    // 각 관련 데이터의 변경을 감지
+    final subscriptions = <StreamSubscription<void>>[
+      isar.collection<NoteModel>().watchObject(noteId, fireImmediately: true).listen((_) => emitNote()),
+      isar.pages.filter().noteIdEqualTo(noteId).watchLazy().listen((_) => emitNote()),
+      isar.canvasDatas.filter().noteIdEqualTo(noteId).watchLazy().listen((_) => emitNote()),
+    ];
+
+    // 컨트롤러가 닫힐 때 구독 정리 및 리소스 해제
+    controller.onCancel = () async {
+      for (final sub in subscriptions) {
+        await sub.cancel();
+      }
+      _noteStreams.remove(noteId);
+      await controller.close();
+    };
   }
 
   @override
@@ -198,7 +219,7 @@ class IsarNotesRepository implements NotesRepository {
   }
 
   /// 기존 노트 업데이트
-  Future<void> _updateExistingNote(int noteId, NoteModel noteModel) async {
+  Future<void> _updateExistingNote(String noteId, NoteModel noteModel) async {
     // 기존 NoteDbService의 로직을 활용하여 일관성 보장
     await NoteDbService.instance.renameNote(
       noteId: noteId,
@@ -221,7 +242,7 @@ class IsarNotesRepository implements NotesRepository {
     );
 
     // 페이지 데이터 설정
-    await _updateNotePages(note.id, noteModel.pages);
+    await _updateNotePages(note.noteId, noteModel.pages);
 
     return note;
   }
@@ -320,17 +341,12 @@ class IsarNotesRepository implements NotesRepository {
   }
 
   @override
-  Future<void> delete(String noteId) async {
-    final intId = int.tryParse(noteId);
-    if (intId == null) {
-      return;
-    }
-
+  Future<void> delete(int noteId) async {
     // NoteDbService를 사용하여 일관된 소프트 삭제 처리
     try {
       final isar = await _open();
       await isar.writeTxn(() async {
-        final note = await isar.collection<NoteModel>().get(intId);
+        final note = await isar.collection<NoteModel>().get(noteId);
         if (note != null) {
           note.deletedAt = DateTime.now();
           note.updatedAt = DateTime.now();
@@ -391,7 +407,7 @@ class IsarNotesRepository implements NotesRepository {
         : null;
 
     return NoteModel.create(
-      noteId: note.id.toString(),
+      noteId: note.id,
       title: note.title,
       sourceType: hasPdf ? NoteSourceType.pdfBased : NoteSourceType.blank,
       sourcePdfPath: sourcePdfPath,
@@ -426,7 +442,7 @@ class IsarNotesRepository implements NotesRepository {
           }
         } else {
           // 새 노트는 개별적으로 생성 (복잡한 로직 때문)
-          await _createNewNote(note);
+          await _createNewNote(note, vaultId: note.vaultId, folderId: note.folderId);
         }
       }
     });
@@ -436,7 +452,7 @@ class IsarNotesRepository implements NotesRepository {
   /// 여러 노트를 배치로 삭제합니다. 존재하지 않는 ID는 무시됩니다.
   Future<void> deleteBatch(List<String> noteIds) async {
     final isar = await _open();
-    final validIds = noteIds.map(int.tryParse).where((id) => id != null).cast<int>().toList();
+    final validIds = noteIds;
 
     if (validIds.isEmpty) {
       return;
@@ -506,9 +522,7 @@ class IsarNotesRepository implements NotesRepository {
     // 개별 노트 스트림들도 무효화
     for (final entry in _noteStreams.entries) {
       final noteId = entry.key;
-
-      final intId = int.tryParse(noteId);
-      if (intId != null) {
+      if (noteId != null) {
         final note = await isar.collection<NoteModel>().get(intId);
         if (note != null && note.deletedAt == null) {
           final noteModel = await _mapNote(isar, note);
