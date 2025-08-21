@@ -37,13 +37,13 @@ class SoftDeleteService {
     final isar = await IsarDb.instance.open();
 
     int? previousFolderId;
-    final before = await isar.collection<Note>().get(noteId);
+    final before = await isar.collection<NoteModel>().get(noteId);
     previousFolderId = before?.folderId;
 
     await NoteDbService.instance.restoreNote(noteId);
 
     bool restoredToRoot = false;
-    final after = await isar.collection<Note>().get(noteId);
+    final after = await isar.collection<NoteModel>().get(noteId);
     if ((after?.folderId == null)) {
       restoredToRoot = true;
     }

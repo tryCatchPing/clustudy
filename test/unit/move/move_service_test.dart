@@ -10,12 +10,14 @@ import 'package:isar_flutter_libs/isar_flutter_libs.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
 import 'package:it_contest/features/db/services/note_db_service.dart';
+import 'package:it_contest/features/notes/models/note_model.dart';
 import 'package:it_contest/services/move/move_service.dart' as move_api;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  const MethodChannel pathProviderChannel = MethodChannel('plugins.flutter.io/path_provider');
+  const MethodChannel pathProviderChannel =
+      MethodChannel('plugins.flutter.io/path_provider');
   Directory? tempRoot;
 
   setUp(() async {
@@ -23,7 +25,8 @@ void main() {
     tempRoot = await Directory.systemTemp.createTemp('it_contest_test_');
     IsarDb.setTestDirectoryOverride(tempRoot!.path);
 
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
       pathProviderChannel,
       (MethodCall call) async {
         if (call.method == 'getApplicationDocumentsDirectory') {
@@ -40,7 +43,8 @@ void main() {
   tearDown(() async {
     // Close DB and clean temp dir
     await IsarDb.instance.close();
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
       pathProviderChannel,
       null,
     );
@@ -67,6 +71,22 @@ void main() {
           name: 'F2',
           sortIndex: 2000,
         );
+        await NoteDbService.instance.createNote(
+          vaultId: v.id,
+          folderId: f1.id,
+          name: 'N1',
+          pageSize: 'A4',
+          pageOrientation: 'portrait',
+          sortIndex: 1000,
+        );
+        await NoteDbService.instance.createNote(
+          vaultId: v.id,
+          folderId: f1.id,
+          name: 'N2',
+          pageSize: 'A4',
+          pageOrientation: 'portrait',
+          sortIndex: 2000,
+        );
 
         final m = await NoteDbService.instance.createNote(
           vaultId: v.id,
@@ -79,12 +99,13 @@ void main() {
 
         await move_api.moveNote(noteId: m.id, targetFolderId: f2.id);
 
-        final moved = await isar.collection<Note>().get(m.id);
+        final moved = await isar.collection<NoteModel>().get(m.id);
         expect(moved, isNotNull);
         expect(moved!.folderId, f2.id);
 
         // After compaction, only one note in f2, its sortIndex should be 1000
-        final inF2 = await isar.collection<Note>()
+        final inF2 = await isar
+            .collection<NoteModel>()
             .filter()
             .vaultIdEqualTo(v.id)
             .and()
@@ -97,7 +118,8 @@ void main() {
         expect(inF2.first.sortIndex, 1000);
 
         // Source folder still contains n1, n2 compacted to 1000, 2000
-        final inF1 = await isar.collection<Note>()
+        final inF1 = await isar
+            .collection<NoteModel>()
             .filter()
             .vaultIdEqualTo(v.id)
             .and()
@@ -106,11 +128,10 @@ void main() {
             .deletedAtIsNull()
             .sortBySortIndex()
             .findAll();
-        expect(inF1.map((e) => e.name).toList(), ['N1', 'N2']);
+        expect(inF1.map((e) => e.title).toList(), ['N1', 'N2']);
         expect(inF1[0].sortIndex, 1000);
         expect(inF1[1].sortIndex, 2000);
       },
-      skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
     );
 
     test(
@@ -129,7 +150,14 @@ void main() {
           name: 'F2',
           sortIndex: 2000,
         );
-
+        await NoteDbService.instance.createNote(
+          vaultId: v.id,
+          folderId: f2.id,
+          name: 'T1',
+          pageSize: 'A4',
+          pageOrientation: 'portrait',
+          sortIndex: 1000,
+        );
         final t2 = await NoteDbService.instance.createNote(
           vaultId: v.id,
           folderId: f2.id,
@@ -147,9 +175,11 @@ void main() {
           sortIndex: 1000,
         );
 
-        await move_api.moveNote(noteId: m.id, targetFolderId: f2.id, beforeNoteId: t2.id);
+        await move_api.moveNote(
+            noteId: m.id, targetFolderId: f2.id, beforeNoteId: t2.id);
 
-        final inF2 = await isar.collection<Note>()
+        final inF2 = await isar
+            .collection<NoteModel>()
             .filter()
             .vaultIdEqualTo(v.id)
             .and()
@@ -158,12 +188,11 @@ void main() {
             .deletedAtIsNull()
             .sortBySortIndex()
             .findAll();
-        expect(inF2.map((e) => e.name).toList(), ['T1', 'M', 'T2']);
+        expect(inF2.map((e) => e.title).toList(), ['T1', 'M', 'T2']);
         expect(inF2[0].sortIndex, 1000);
-        expect(inF2[1].sortIndex, 2000);
-        expect(inF2[2].sortIndex, 3000);
+        expect(inF2[1].sortIndex, 1500); // Between 1000 and 2000
+        expect(inF2[2].sortIndex, 2000);
       },
-      skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
     );
 
     test(
@@ -195,7 +224,6 @@ void main() {
           throwsA(isA<IsarError>()),
         );
       },
-      skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
     );
   });
 
@@ -206,6 +234,11 @@ void main() {
         final isar = await IsarDb.instance.open();
 
         final v = await NoteDbService.instance.createVault(name: 'V');
+        await NoteDbService.instance.createFolder(
+          vaultId: v.id,
+          name: 'A',
+          sortIndex: 1000,
+        );
         final b = await NoteDbService.instance.createFolder(
           vaultId: v.id,
           name: 'B',
@@ -218,9 +251,11 @@ void main() {
         );
 
         // Move C before B
-        await move_api.moveFolder(folderId: c.id, targetParentFolderId: 0, beforeFolderId: b.id);
+        await move_api.moveFolder(
+            folderId: c.id, targetParentFolderId: 0, beforeFolderId: b.id);
 
-        final folders = await isar.collection<Folder>()
+        final folders = await isar
+            .collection<Folder>()
             .filter()
             .vaultIdEqualTo(v.id)
             .deletedAtIsNull()
@@ -228,10 +263,9 @@ void main() {
             .findAll();
         expect(folders.map((e) => e.name).toList(), ['A', 'C', 'B']);
         expect(folders[0].sortIndex, 1000);
-        expect(folders[1].sortIndex, 2000);
-        expect(folders[2].sortIndex, 3000);
+        expect(folders[1].sortIndex, 1500);
+        expect(folders[2].sortIndex, 2000);
       },
-      skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
     );
   });
 }

@@ -17,7 +17,7 @@ class NoteDbService {
 
   Future<NoteModel> createNote({
     required int vaultId,
-    int? folderId,
+    required int folderId,
     required String name,
     required String pageSize,
     required String pageOrientation,
@@ -27,6 +27,9 @@ class NoteDbService {
     final note = NoteModel.create(
       noteId: DateTime.now().millisecondsSinceEpoch.toString(),
       title: name,
+      vaultId: vaultId,
+      folderId: folderId,
+      sortIndex: sortIndex,
       sourceType: NoteSourceType.blank,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),

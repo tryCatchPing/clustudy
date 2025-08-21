@@ -44,7 +44,7 @@ class NameUtils {
 
     final Note? found = await isar.notes
         .filter()
-        .nameLowerForParentUniqueEqualTo(normalized)
+        .titleEqualTo(normalized, caseSensitive: false)
         .vaultIdEqualTo(vaultId)
         .folderIdEqualTo(scopedFolderId)
         .findFirst();

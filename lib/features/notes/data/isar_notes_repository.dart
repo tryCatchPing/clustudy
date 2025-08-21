@@ -94,13 +94,13 @@ class IsarNotesRepository implements NotesRepository {
   /// 노트에서 볼트 ID 추출 (임시 구현)
   int _getVaultIdFromNote(NoteModel note) {
     // 실제 구현에서는 노트와 볼트 관계를 추적해야 함
-    return _defaultVaultId;
+    return note.vaultId; // Use actual vaultId from NoteModel
   }
 
   /// 노트에서 폴더 ID 추출 (임시 구현)
   int? _getFolderIdFromNote(NoteModel note) {
     // 실제 구현에서는 노트와 폴더 관계를 추적해야 함
-    return null;
+    return note.folderId; // Use actual folderId from NoteModel
   }
 
   /// 전체 노트 변화에 대한 내부 워치 초기화
@@ -251,10 +251,11 @@ class IsarNotesRepository implements NotesRepository {
   }
 
   /// 새 노트 생성
-  Future<NoteModel> _createNewNote(NoteModel noteModel) async {
+  Future<NoteModel> _createNewNote(NoteModel noteModel, {required int vaultId, int? folderId}) async {
     // NoteDbService를 사용하여 일관된 노트 생성
     final note = await NoteDbService.instance.createNote(
-      vaultId: _defaultVaultId,
+      vaultId: vaultId,
+      folderId: folderId,
       name: noteModel.title,
       pageSize: 'A4',
       pageOrientation: 'portrait',
@@ -513,7 +514,7 @@ class IsarNotesRepository implements NotesRepository {
     final pdfCount = await isar.collection<NoteModel>()
         .filter()
         .deletedAtIsNull()
-        .nameContains('.pdf', caseSensitive: false)
+        .nameLowerContains('.pdf')
         .count();
 
     final today = DateTime.now();

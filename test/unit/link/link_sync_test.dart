@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:isar/isar.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
+import 'package:it_contest/features/notes/models/note_model.dart';
 import 'package:it_contest/features/db/services/note_db_service.dart';
 import 'package:it_contest/services/graph/graph_service.dart';
 import 'package:it_contest/services/link/link_service.dart';
@@ -82,7 +83,7 @@ void main() {
         );
 
         // Verify note was created
-        expect(linkedNote.name, 'TestLink');
+        expect(linkedNote.title, 'TestLink');
         expect(linkedNote.vaultId, vault.id);
 
         // Verify link was created
@@ -115,7 +116,6 @@ void main() {
         expect(pages.length, 1);
         expect(pages.first.index, 0);
       },
-      skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
     );
 
     test(
@@ -158,15 +158,14 @@ void main() {
         );
 
         // Verify unique labels
-        expect(linkedNote1.name, 'TestLink');
-        expect(linkedNote2.name, 'TestLink (2)');
+        expect(linkedNote1.title, 'TestLink');
+        expect(linkedNote2.title, 'TestLink (2)');
 
         // Verify both links exist
         final links = await isar.linkEntitys.where().findAll();
         expect(links.length, 2);
         expect(links.map((l) => l.label).toSet(), {'TestLink', 'TestLink (2)'});
       },
-      skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
     );
 
     test(
@@ -210,7 +209,6 @@ void main() {
         expect(link.x1, 0.6);
         expect(link.y1, 0.6);
       },
-      skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
     );
 
     test(
@@ -256,7 +254,6 @@ void main() {
         final links = await isar.linkEntitys.where().findAll();
         expect(links.length, 0);
       },
-      skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
     );
 
     test(
@@ -302,10 +299,9 @@ void main() {
         expect(edgesAfter.length, 0);
 
         // Verify target note still exists (only link is deleted)
-        final targetNote = await isar.notes.get(linkedNote.id);
+        final targetNote = await isar.noteModels.get(linkedNote.id);
         expect(targetNote, isNotNull);
       },
-      skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
     );
 
     test(
@@ -350,7 +346,6 @@ void main() {
         final edges = await isar.graphEdges.where().findAll();
         expect(edges.length, 1);
       },
-      skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
     );
 
     test(
@@ -392,7 +387,6 @@ void main() {
         final linkAfterRestore = await isar.linkEntitys.where().findFirst();
         expect(linkAfterRestore!.dangling, isFalse);
       },
-      skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
     );
 
     test(
@@ -445,7 +439,6 @@ void main() {
         final edges = await isar.graphEdges.where().findAll();
         expect(edges.length, 1);
       },
-      skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
     );
 
     test(
@@ -518,7 +511,6 @@ void main() {
         final remainingEdges = edgesAfter.map((e) => '${e.fromNoteId}->${e.toNoteId}').toSet();
         expect(remainingEdges, {'${note1.id}->${note3.id}', '${note2.id}->${note3.id}'});
       },
-      skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
     );
   });
 }
