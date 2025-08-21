@@ -124,7 +124,7 @@ class EncryptionManager {
     // 기본적인 읽기 테스트
     try {
       await isar.collection<Vault>().count();
-      await isar.collection<Note>().count();
+      await isar.collection<NoteModel>().count();
       await isar.collection<SettingsEntity>().count();
     } catch (e) {
       throw EncryptionException('Database integrity check failed: $e');
