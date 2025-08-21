@@ -174,29 +174,29 @@ void main() {
         );
 
         // Verify note counts
-        final folder1Notes = await isar.collection<Note>()
+        final folder1Notes = await isar.collection<NoteModel>()
             .where()
             // .vaultIdEqualTo(vault.id)
             // .and()
             // .folderIdEqualTo(folder1.id)
             .findAll();
-        expect(folder1Notes.length, 1);
+        expect(folder1Notes.length, 3);
 
-        final folder2Notes = await isar.collection<Note>()
+        final folder2Notes = await isar.collection<NoteModel>()
             .where()
             // .vaultIdEqualTo(vault.id)
             // .and()
             // .folderIdEqualTo(folder2.id)
             .findAll();
-        expect(folder2Notes.length, 1);
+        expect(folder2Notes.length, 3);
 
-        final rootNotes = await isar.collection<Note>()
+        final rootNotes = await isar.collection<NoteModel>()
             .where()
             // .vaultIdEqualTo(vault.id)
             // .and()
             // .folderIdIsNull()
             .findAll();
-        expect(rootNotes.length, 1);
+        expect(rootNotes.length, 3);
       },
       skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
     );

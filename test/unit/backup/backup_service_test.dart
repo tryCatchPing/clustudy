@@ -224,7 +224,7 @@ void main() {
         expect(restoredVaults.length, 1);
         expect(restoredVaults.first.name, 'OriginalVault'); // Should be restored to original
 
-        final restoredNotes = await isar.collection<Note>().where().anyId().findAll();
+        final restoredNotes = await isar.collection<NoteModel>().where().anyId().findAll();
         expect(restoredNotes.length, 1);
         expect(restoredNotes.first.name, 'OriginalNote');
       },
