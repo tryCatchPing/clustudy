@@ -28,6 +28,15 @@ class NoteModel {
   @Index(caseSensitive: false)
   late String title;
 
+  @Index()
+  late int vaultId;
+
+  @Index()
+  late int folderId;
+
+  @Index()
+  late int sortIndex;
+
   /// 소프트 삭제를 위한 삭제 시간.
   @Index()
   DateTime? deletedAt;
@@ -69,6 +78,9 @@ class NoteModel {
   NoteModel.create({
     required String noteId,
     required String title,
+    required this.vaultId,
+    required this.folderId,
+    this.sortIndex = 1000,
     NoteSourceType sourceType = NoteSourceType.blank,
     String? sourcePdfPath,
     int? totalPdfPages,
@@ -92,6 +104,9 @@ class NoteModel {
   NoteModel copyWith({
     String? noteId,
     String? title,
+    int? vaultId,
+    int? folderId,
+    int? sortIndex,
     NoteSourceType? sourceType,
     String? sourcePdfPath,
     int? totalPdfPages,
@@ -104,6 +119,9 @@ class NoteModel {
     copy.id = id;
     copy.noteId = noteId ?? this.noteId;
     copy.title = title ?? this.title;
+    copy.vaultId = vaultId ?? this.vaultId;
+    copy.folderId = folderId ?? this.folderId;
+    copy.sortIndex = sortIndex ?? this.sortIndex;
     copy.sourceType = sourceType ?? this.sourceType;
     copy.sourcePdfPath = sourcePdfPath ?? this.sourcePdfPath;
     copy.totalPdfPages = totalPdfPages ?? this.totalPdfPages;

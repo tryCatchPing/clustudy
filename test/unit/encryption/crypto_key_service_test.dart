@@ -233,7 +233,7 @@ void main() {
         expect(vaults.length, 1);
         expect(vaults.first.name, 'TestVault');
 
-        final notes = await isar.collection<Note>().where().findAll();
+        final notes = await isar.collection<NoteModel>().where().findAll();
         expect(notes.length, 1);
         expect(notes.first.name, 'TestNote');
       },

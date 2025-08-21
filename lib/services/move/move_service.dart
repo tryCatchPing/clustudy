@@ -30,7 +30,7 @@ class MoveService {
     int? vaultId;
 
     await isar.writeTxn(() async {
-      final note = await isar.collection<Note>().get(noteId);
+      final note = await isar.collection<NoteModel>().get(noteId);
       if (note == null) {
         return;
       }
@@ -51,9 +51,9 @@ class MoveService {
 
       // 대상 폴더 내 정렬 재배치 (filter 단계에서 조건 지정)
       final notesInTarget = await isar
-          .collection<Note>()
+          .collection<NoteModel>()
           .filter()
-          .vaultIdForSortEqualTo(note.vaultId)
+          .vaultIdEqualTo(note.vaultId)
           .and()
           .folderIdEqualTo(targetFolderId)
           .and()
@@ -69,7 +69,7 @@ class MoveService {
 
       note.sortIndex = newIndex;
       note.updatedAt = DateTime.now();
-      await isar.collection<Note>().put(note);
+      await isar.collection<NoteModel>().put(note);
     });
 
     // 트랜잭션 외부에서 컴팩션 수행 (필요 시)
