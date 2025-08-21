@@ -28,6 +28,7 @@ class DomainNoteService {
   /// 생성된 [NoteModel] 객체를 반환합니다.
   Future<NoteModel> createLinkedNoteFromRegion({
     required int vaultId,
+    required int folderId,
     required int sourceNoteId,
     required int sourcePageId,
     required RectNorm region,
@@ -39,8 +40,9 @@ class DomainNoteService {
     // A의 유틸을 사용하여 원자적 파이프라인을 수행
     final link = await NoteDbService.instance.createLinkAndTargetNote(
       vaultId: vaultId,
-      sourceNoteId: sourceNoteId,
-      sourcePageId: sourcePageId,
+      folderId: folderId,
+      sourceNoteId: sourceNoteId.toString(),
+      sourcePageId: sourcePageId.toString(),
       x0: region.x0,
       y0: region.y0,
       x1: region.x1,

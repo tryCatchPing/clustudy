@@ -42,7 +42,7 @@ class NameUtils {
     final normalized = lower.toLowerCase();
     final int? scopedFolderId = folderId > 0 ? folderId : null;
 
-    final Note? found = await isar.notes
+    final NoteModel? found = await isar.noteModels
         .filter()
         .titleEqualTo(normalized, caseSensitive: false)
         .vaultIdEqualTo(vaultId)
