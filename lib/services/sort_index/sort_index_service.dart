@@ -68,7 +68,7 @@ Future<void> compactSortIndexForFolder(int folderId, {int startAt = 1000, int st
     throw IsarError('Folder not found: $folderId');
   }
   await isar.writeTxn(() async {
-    final notes = await isar.collection<Note>()
+    final notes = await isar.collection<NoteModel>()
         .filter()
         .vaultIdEqualTo(folder.vaultId)
         .and()
@@ -87,7 +87,7 @@ Future<void> compactSortIndexForFolder(int folderId, {int startAt = 1000, int st
       current += step;
     }
     if (notes.isNotEmpty) {
-      await isar.collection<Note>().putAll(notes);
+      await isar.collection<NoteModel>().putAll(notes);
     }
   });
 }
