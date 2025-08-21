@@ -234,7 +234,7 @@ class IsarNotesRepository implements NotesRepository {
       await _updateExistingNote(intId, note);
     } else {
       // 새 노트 생성
-      await _createNewNote(note);
+      await _createNewNote(note, vaultId: note.vaultId, folderId: note.folderId);
     }
   }
 
