@@ -1,9 +1,7 @@
 import 'package:isar/isar.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
-import 'package:it_contest/features/db/models/vault_models.dart';
 import 'package:it_contest/features/pdf_cache/data/pdf_cache_repository.dart';
-import 'package:it_contest/features/pdf_cache/models/pdf_cache_meta_model.dart';
 
 /// Isar 기반 PDF 캐시 Repository 구현체
 class IsarPdfCacheRepository implements PdfCacheRepository {
@@ -102,11 +100,7 @@ class IsarPdfCacheRepository implements PdfCacheRepository {
         .pageIndexEqualTo(pageIndex)
         .findFirst();
 
-    if (meta == null) {
-      return null;
-    }
-
-    return _mapToModel(meta);
+    return meta;
   }
 
   @override
@@ -115,7 +109,7 @@ class IsarPdfCacheRepository implements PdfCacheRepository {
 
     final metas = await isar.collection<PdfCacheMetaModel>().where().sortByLastAccessAt().findAll();
 
-    return metas.map(_mapToModel).toList();
+    return metas;
   }
 
   @override
@@ -124,7 +118,7 @@ class IsarPdfCacheRepository implements PdfCacheRepository {
 
     final metas = await isar.collection<PdfCacheMetaModel>().where().findAll();
 
-    return metas.fold<int>(0, (total, meta) => total + (meta.sizeBytes ?? 0));
+    return metas.fold<int>(0, (total, meta) => total + meta.sizeBytes);
   }
 
   @override
@@ -157,20 +151,6 @@ class IsarPdfCacheRepository implements PdfCacheRepository {
     });
   }
 
-  /// Isar PdfCacheMetaModel를 도메인 모델로 변환
-  PdfCacheMetaModel _mapToModel(PdfCacheMetaModel meta) {
-    return PdfCacheMetaModel(
-      id: meta.id,
-      noteId: meta.noteId,
-      pageIndex: meta.pageIndex,
-      cachePath: meta.cachePath,
-      dpi: meta.dpi,
-      sizeBytes: meta.sizeBytes ?? 0,
-      renderedAt: meta.renderedAt,
-      lastAccessAt: meta.lastAccessAt ?? meta.renderedAt,
-    );
-  }
-
   @override
   void dispose() {
     // Isar 인스턴스는 IsarDb에서 관리하므로 여기서는 참조만 해제
@@ -191,7 +171,7 @@ class IsarPdfCacheRepository implements PdfCacheRepository {
         .sortByLastAccessAt()
         .findAll();
 
-    return metas.map(_mapToModel).toList();
+    return metas;
   }
 
   /// 특정 날짜 이전의 캐시 메타데이터들을 조회 (정리용)
@@ -204,7 +184,7 @@ class IsarPdfCacheRepository implements PdfCacheRepository {
         .sortByLastAccessAt()
         .findAll();
 
-    return metas.map(_mapToModel).toList();
+    return metas;
   }
 
   /// 노트별 캐시 사용량 통계
@@ -215,7 +195,7 @@ class IsarPdfCacheRepository implements PdfCacheRepository {
     final sizeMap = <int, int>{};
 
     for (final meta in metas) {
-      sizeMap[meta.noteId] = (sizeMap[meta.noteId] ?? 0) + (meta.sizeBytes ?? 0);
+      sizeMap[meta.noteId] = (sizeMap[meta.noteId] ?? 0) + meta.sizeBytes;
     }
 
     return sizeMap;
