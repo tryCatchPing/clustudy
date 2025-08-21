@@ -4,7 +4,6 @@ import 'package:isar/isar.dart';
 
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
-import 'package:it_contest/features/db/models/vault_models.dart';
 import 'package:it_contest/features/db/services/note_db_service.dart';
 import 'package:it_contest/shared/models/rect_norm.dart';
 
@@ -26,8 +25,8 @@ class DomainNoteService {
   /// [pageSize]는 새 노트의 페이지 크기입니다. 기본값은 'A4'입니다.
   /// [pageOrientation]은 새 노트의 페이지 방향입니다. 기본값은 'portrait'입니다.
   /// [initialPageIndex]는 새 노트의 초기 페이지 인덱스입니다. 기본값은 0입니다.
-  /// 생성된 [Note] 객체를 반환합니다.
-  Future<Note> createLinkedNoteFromRegion({
+  /// 생성된 [NoteModel] 객체를 반환합니다.
+  Future<NoteModel> createLinkedNoteFromRegion({
     required int vaultId,
     required int sourceNoteId,
     required int sourcePageId,
@@ -52,7 +51,7 @@ class DomainNoteService {
       initialPageIndex: initialPageIndex,
     );
     final isar = await IsarDb.instance.open();
-    final note = await isar.collection<Note>().get(link.targetNoteId!);
+    final note = await isar.collection<NoteModel>().get(link.targetNoteId!);
     if (note == null) {
       throw IsarError('Linked note not found after creation');
     }
@@ -70,7 +69,7 @@ class DomainNoteService {
     int? fromFolderId;
     int? vaultId;
     await isar.writeTxn(() async {
-      final note = await isar.collection<Note>().get(noteId);
+      final note = await isar.collection<NoteModel>().get(noteId);
       if (note == null) {
         return;
       }
@@ -88,7 +87,7 @@ class DomainNoteService {
       note.folderId = targetFolderId;
 
       // 정렬 재배치
-      final notesInTarget = await isar.collection<Note>()
+      final notesInTarget = await isar.collection<NoteModel>()
           .filter()
           .vaultIdEqualTo(note.vaultId)
           .and()
@@ -118,7 +117,7 @@ class DomainNoteService {
 
       note.sortIndex = newIndex;
       note.updatedAt = DateTime.now();
-      await isar.collection<Note>().put(note);
+      await isar.collection<NoteModel>().put(note);
     });
 
     // 컴팩션은 A 유틸 호출로 트랜잭션 외부에서 수행
@@ -155,11 +154,11 @@ class DomainNoteService {
   }
 
   /// RecentTabs 상위 10개 노트를 반환 (존재하지 않는 항목은 건너뜀)
-  Future<List<Note>> getRecentTabs() async {
+  Future<List<NoteModel>> getRecentTabs() async {
     final isar = await IsarDb.instance.open();
     final existing = await isar.collection<RecentTabs>().where().anyId().findFirst();
     if (existing == null) {
-      return <Note>[];
+      return <NoteModel>[];
     }
     List<int> ids;
     try {
@@ -167,9 +166,9 @@ class DomainNoteService {
     } catch (_) {
       ids = <int>[];
     }
-    final result = <Note>[];
+    final result = <NoteModel>[];
     for (final id in ids) {
-      final n = await isar.collection<Note>().get(id);
+      final n = await isar.collection<NoteModel>().get(id);
       if (n != null && n.deletedAt == null) {
         result.add(n);
       }
@@ -200,7 +199,7 @@ class DomainNoteService {
   }
 
   /// 이름 검색: A가 제공한 인덱스 기반 검색 위임
-  Future<List<Note>> searchNotesByName({
+  Future<List<NoteModel>> searchNotesByName({
     required int vaultId,
     int? folderId,
     required String query,
