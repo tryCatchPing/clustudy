@@ -29,7 +29,7 @@ abstract class NotesRepository {
   Future<void> upsert(NoteModel note);
 
   /// 노트를 삭제합니다. 대상이 없어도 에러로 간주하지 않습니다(idempotent).
-  Future<void> delete(String noteId);
+  Future<void> delete(int noteId);
 
   /// 리소스 정리용(필요한 구현에서만 사용). 사용하지 않으면 빈 구현이면 됩니다.
   void dispose() {}

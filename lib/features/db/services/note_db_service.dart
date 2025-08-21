@@ -40,7 +40,7 @@ class NoteDbService {
   }
 
   Future<Page> createPage({
-    required int noteId,
+    required String noteId, // Changed to String
     required int index,
     int widthPx = 2480,
     int heightPx = 3508,
@@ -64,8 +64,8 @@ class NoteDbService {
   Future<LinkEntity> createLinkAndTargetNote({
     required int vaultId,
     required int folderId,
-    required int sourceNoteId,
-    required int sourcePageId,
+    required String sourceNoteId, // Changed to String
+    required String sourcePageId, // Changed to String
     required double x0,
     required double y0,
     required double x1,
@@ -83,7 +83,7 @@ class NoteDbService {
     await isar.writeTxn(() async {
       // Create note directly in transaction to set all fields
       newNote = NoteModel.create(
-        noteId: DateTime.now().millisecondsSinceEpoch.toString(),
+        noteId: DateTime.now().millisecondsSinceEpoch.toString(), // Ensure String
         title: label,
         vaultId: vaultId,
         folderId: folderId,
@@ -92,7 +92,7 @@ class NoteDbService {
         updatedAt: DateTime.now(),
       );
       await isar.collection<NoteModel>().put(newNote);
-      await createPage(noteId: int.tryParse(newNote.noteId) ?? 0, index: initialPageIndex);
+      await createPage(noteId: newNote.noteId, index: initialPageIndex); // Pass String noteId
       link = LinkEntity()
         ..vaultId = vaultId
         ..sourceNoteId = sourceNoteId
@@ -101,7 +101,7 @@ class NoteDbService {
         ..y0 = rect.y0
         ..x1 = rect.x1
         ..y1 = rect.y1
-        ..targetNoteId = newNote.id
+        ..targetNoteId = newNote.noteId // Pass String noteId
         ..label = label
         ..dangling = false
         ..createdAt = DateTime.now()
@@ -110,24 +110,24 @@ class NoteDbService {
       final edge = GraphEdge()
         ..vaultId = vaultId
         ..fromNoteId = sourceNoteId
-        ..toNoteId = newNote.id
+        ..toNoteId = newNote.noteId // Pass String noteId
         ..createdAt = DateTime.now();
       edge.setUniqueKey(); // Set unique constraint key
       await isar.graphEdges.put(edge);
-      await _pushRecentLinkedNote(isar: isar, noteId: newNote.id);
+      await _pushRecentLinkedNote(isar: isar, noteId: newNote.noteId); // Pass String noteId
     });
     return link;
   }
 
-  Future<void> _pushRecentLinkedNote({required Isar isar, required int noteId}) async {
+  Future<void> _pushRecentLinkedNote({required Isar isar, required String noteId}) async { // Changed to String
     const String userId = 'local';
     final now = DateTime.now();
     // Get or create record
     final existing = await isar.recentTabs.where().anyId().findFirst();
-    List<int> list;
+    List<String> list; // Changed to String
     late RecentTabs tabs;
     if (existing == null) {
-      list = <int>[noteId];
+      list = <String>[noteId]; // Changed to String
       tabs = RecentTabs()
         ..userId = userId
         ..noteIdsJson = jsonEncode(list)
@@ -136,9 +136,9 @@ class NoteDbService {
       tabs = existing;
       try {
         final decoded = jsonDecode(tabs.noteIdsJson);
-        list = (decoded as List).map((e) => e as int).toList();
+        list = (decoded as List).map((e) => e as String).toList(); // Changed to String
       } catch (_) {
-        list = <int>[];
+        list = <String>[]; // Changed to String
       }
       list.remove(noteId);
       list.insert(0, noteId);
@@ -153,12 +153,12 @@ class NoteDbService {
   }
 
   Future<void> moveNoteWithinVault({
-    required int noteId,
+    required String noteId, // Changed to String
     int? toFolderId,
   }) async {
     final isar = await IsarDb.instance.open();
     await isar.writeTxn(() async {
-      final note = await isar.collection<NoteModel>().get(noteId);
+      final note = await isar.collection<NoteModel>().filter().noteIdEqualTo(noteId).findFirst(); // Use filter
       if (note == null) {
         return;
       }
@@ -242,12 +242,12 @@ class NoteDbService {
   }
 
   Future<void> renameNote({
-    required int noteId,
+    required String noteId, // Changed to String
     required String newName,
   }) async {
     final isar = await IsarDb.instance.open();
     await isar.writeTxn(() async {
-      final note = await isar.collection<NoteModel>().get(noteId);
+      final note = await isar.collection<NoteModel>().filter().noteIdEqualTo(noteId).findFirst(); // Use filter
       if (note == null) {
         return;
       }
@@ -510,11 +510,11 @@ class NoteDbService {
     );
   }
 
-  Future<void> softDeleteNote(int noteId) async {
+  Future<void> softDeleteNote(String noteId) async { // Changed to String
     final isar = await IsarDb.instance.open();
     final now = DateTime.now();
     await isar.writeTxn(() async {
-      final note = await isar.collection<NoteModel>().get(noteId);
+      final note = await isar.collection<NoteModel>().filter().noteIdEqualTo(noteId).findFirst(); // Use filter
       if (note == null) {
         return;
       }
@@ -522,7 +522,7 @@ class NoteDbService {
       note.updatedAt = now;
       await isar.collection<NoteModel>().put(note);
       // mark dangling links
-      final links = await isar.linkEntitys.filter().targetNoteIdEqualTo(noteId).findAll();
+      final links = await isar.linkEntitys.filter().targetNoteIdEqualTo(noteId).findAll(); // Use filter
       for (final l in links) {
         l.dangling = true;
         l.updatedAt = now;
@@ -531,11 +531,11 @@ class NoteDbService {
     });
   }
 
-  Future<void> restoreNote(int noteId) async {
+  Future<void> restoreNote(String noteId) async { // Changed to String
     final isar = await IsarDb.instance.open();
     final now = DateTime.now();
     await isar.writeTxn(() async {
-      final note = await isar.collection<NoteModel>().get(noteId);
+      final note = await isar.collection<NoteModel>().filter().noteIdEqualTo(noteId).findFirst(); // Use filter
       if (note == null) {
         return;
       }
@@ -544,7 +544,7 @@ class NoteDbService {
       // NoteModel에는 folderId가 없으므로 건너뜀
       await isar.collection<NoteModel>().put(note);
       // clear dangling on related links
-      final links = await isar.linkEntitys.filter().targetNoteIdEqualTo(noteId).findAll();
+      final links = await isar.linkEntitys.filter().targetNoteIdEqualTo(noteId).findAll(); // Use filter
       for (final l in links) {
         l.dangling = false;
         l.updatedAt = now;

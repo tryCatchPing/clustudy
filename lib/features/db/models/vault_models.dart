@@ -60,7 +60,7 @@ class Folder {
 class Page {
   Id id = Isar.autoIncrement;
 
-  late int noteId;
+  late String noteId; // Changed to String
 
   @Index()
   late int index; // order within note
@@ -88,10 +88,10 @@ class CanvasData {
   Id id = Isar.autoIncrement;
 
   @Index()
-  late int noteId;
+  late String noteId; // Changed to String
 
   @Index(unique: true)
-  late int pageId;
+  late String pageId; // Changed to String
 
   late String schemaVersion; // semver
   late String json; // canvas JSON
@@ -110,7 +110,7 @@ class PageSnapshot {
 
   // Composite index for retention/query: (pageId, createdAt)
   @Index(composite: [CompositeIndex('createdAt')])
-  late int pageId;
+  late int pageId; // This remains int, as it's an internal Isar ID for PageSnapshot
 
   late String schemaVersion;
   late String json;
@@ -128,10 +128,10 @@ class LinkEntity {
 
   // Link lookup optimization: index for source queries
   @Index()
-  late int sourceNoteId;
+  late String sourceNoteId; // Changed to String
 
   @Index()
-  late int sourcePageId;
+  late String sourcePageId; // Changed to String
 
   // normalized rect [0..1]
   late double x0;
@@ -139,7 +139,7 @@ class LinkEntity {
   late double x1;
   late double y1;
 
-  int? targetNoteId; // created note id
+  String? targetNoteId; // Changed to String
 
   String? label;
 
@@ -162,10 +162,10 @@ class GraphEdge {
   late int vaultId;
 
   @Index()
-  late int fromNoteId;
+  late String fromNoteId; // Changed to String
 
   @Index()
-  late int toNoteId;
+  late String toNoteId; // Changed to String
 
   @Index()
   late DateTime createdAt;

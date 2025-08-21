@@ -235,7 +235,7 @@ void main() {
 
         final notes = await isar.collection<NoteModel>().where().findAll();
         expect(notes.length, 1);
-        expect(notes.first.name, 'TestNote');
+        expect(notes.first.title, 'TestNote');
       },
       skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
     );
