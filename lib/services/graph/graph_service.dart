@@ -13,8 +13,8 @@ class GraphService {
   /// Delete all edges between two notes within a vault.
   Future<void> deleteEdgesBetween({
     required int vaultId,
-    required int fromNoteId,
-    required int toNoteId,
+    required String fromNoteId,
+    required String toNoteId,
   }) async {
     final isar = await IsarDb.instance.open();
     await isar.writeTxn(() async {

@@ -27,19 +27,34 @@ class LinkService {
     normalized.assertValid();
 
     final isar = await IsarDb.instance.open();
+
+    final sourceNote = await isar.collection<NoteModel>().get(sourceNoteId);
+    if (sourceNote == null) {
+      throw IsarError('Source note with id $sourceNoteId not found');
+    }
+
+    // Fetch source page to get a stable string identifier.
+    // For now, we'll use its Isar ID as a string.
+    final sourcePage = await isar.collection<Page>().get(sourcePageId);
+    if (sourcePage == null) {
+      throw IsarError('Source page with id $sourcePageId not found');
+    }
+    final sourcePageIdStr = sourcePage.id.toString();
+
     final effectiveLabel = await _ensureUniqueLabelWithinSource(
       isar: isar,
       vaultId: vaultId,
-      sourceNoteId: sourceNoteId,
-      sourcePageId: sourcePageId,
+      sourceNoteId: sourceNote.noteId,
+      sourcePageId: sourcePageIdStr,
       desired: label?.trim().isEmpty ?? true ? '링크' : label!.trim(),
     );
 
     // 기본 페이지 설정은 도메인 기본값 사용(A4/portrait, pageIndex 0)
     final link = await NoteDbService.instance.createLinkAndTargetNote(
       vaultId: vaultId,
-      sourceNoteId: sourceNoteId,
-      sourcePageId: sourcePageId,
+      folderId: sourceNote.folderId,
+      sourceNoteId: sourceNote.noteId,
+      sourcePageId: sourcePageIdStr,
       x0: normalized.x0,
       y0: normalized.y0,
       x1: normalized.x1,
@@ -50,7 +65,7 @@ class LinkService {
       initialPageIndex: 0,
     );
 
-    final created = await isar.collection<NoteModel>().get(link.targetNoteId!);
+    final created = await isar.collection<NoteModel>().filter().noteIdEqualTo(link.targetNoteId!).findFirst();
     if (created == null) {
       throw IsarError('Linked note not found after creation');
     }
@@ -66,7 +81,7 @@ class LinkService {
         return;
       }
 
-      final int? toNoteId = link.targetNoteId;
+      final String? toNoteId = link.targetNoteId;
       if (toNoteId != null) {
         await GraphService.instance.deleteEdgesBetween(
           vaultId: link.vaultId,
@@ -82,8 +97,8 @@ class LinkService {
   Future<String> _ensureUniqueLabelWithinSource({
     required Isar isar,
     required int vaultId,
-    required int sourceNoteId,
-    required int sourcePageId,
+    required String sourceNoteId,
+    required String sourcePageId,
     required String desired,
   }) async {
     // 동일 sourceNoteId+sourcePageId 내 라벨 유니크 보장
