@@ -16,7 +16,7 @@ class LinkService {
   /// 링크 영역에서 새 노트를 생성하고 Link + GraphEdge 를 동기화합니다.
   ///
   /// 계약: 시그니처 변경 금지.
-  Future<Note> createLinkedNoteFromRegion({
+  Future<NoteModel> createLinkedNoteFromRegion({
     required int vaultId,
     required int sourceNoteId,
     required int sourcePageId,
@@ -50,7 +50,7 @@ class LinkService {
       initialPageIndex: 0,
     );
 
-    final created = await isar.collection<Note>().get(link.targetNoteId!);
+    final created = await isar.collection<NoteModel>().get(link.targetNoteId!);
     if (created == null) {
       throw IsarError('Linked note not found after creation');
     }
