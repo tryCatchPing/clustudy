@@ -53,7 +53,7 @@ class DomainNoteService {
       initialPageIndex: initialPageIndex,
     );
     final isar = await IsarDb.instance.open();
-    final note = await isar.collection<NoteModel>().get(link.targetNoteId!);
+    final note = await isar.collection<NoteModel>().filter().noteIdEqualTo(link.targetNoteId!).findFirst();
     if (note == null) {
       throw IsarError('Linked note not found after creation');
     }
@@ -162,15 +162,15 @@ class DomainNoteService {
     if (existing == null) {
       return <NoteModel>[];
     }
-    List<int> ids;
+    List<String> ids;
     try {
-      ids = (jsonDecode(existing.noteIdsJson) as List).map((e) => e as int).toList();
+      ids = (jsonDecode(existing.noteIdsJson) as List).map((e) => e as String).toList();
     } catch (_) {
       ids = <int>[];
     }
     final result = <NoteModel>[];
     for (final id in ids) {
-      final n = await isar.collection<NoteModel>().get(id);
+      final n = await isar.collection<NoteModel>().filter().noteIdEqualTo(id).findFirst();
       if (n != null && n.deletedAt == null) {
         result.add(n);
       }
