@@ -218,8 +218,8 @@ class NotePageModel {
 
   /// 새 값으로 일부 필드를 교체한 복제본을 반환합니다.
   NotePageModel copyWith({
-    String? noteId,
-    String? pageId,
+    int? noteId,
+    int? pageId,
     int? pageNumber,
     String? jsonData,
     PageBackgroundType? backgroundType,
@@ -233,9 +233,9 @@ class NotePageModel {
   }) {
     final copy = NotePageModel();
     copy.id = id;
-    copy.noteId = noteId;
-    copy.pageId = pageId;
-    copy.pageNumber = pageNumber;
+    copy.noteId = noteId ?? this.noteId;
+    copy.pageId = pageId ?? this.pageId;
+    copy.pageNumber = pageNumber ?? this.pageNumber;
     copy.jsonData = jsonData ?? this.jsonData;
     copy.backgroundType = backgroundType ?? this.backgroundType;
     copy.backgroundPdfPath = backgroundPdfPath ?? this.backgroundPdfPath;
@@ -244,7 +244,11 @@ class NotePageModel {
     copy.backgroundHeight = backgroundHeight ?? this.backgroundHeight;
     copy.preRenderedImagePath = preRenderedImagePath ?? this.preRenderedImagePath;
     copy.showBackgroundImage = showBackgroundImage ?? this.showBackgroundImage;
-    copy.linkerRectangles = linkerRectangles ?? this.linkerRectangles;
+    if (linkerRectangles != null) {
+      copy.linkerRectangles = linkerRectangles;
+    } else {
+      copy.linkerRectangles = this.linkerRectangles;
+    }
     return copy;
   }
 }
