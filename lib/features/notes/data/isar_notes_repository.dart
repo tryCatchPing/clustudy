@@ -4,9 +4,9 @@ import 'dart:async';
 import 'dart:io'; // TODO(web): Replace File API usage with platform-appropriate implementation
 
 import 'package:isar/isar.dart';
+
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
-import 'package:it_contest/features/db/models/vault_models.dart';
 import 'package:it_contest/features/db/services/note_db_service.dart';
 import 'package:it_contest/features/notes/data/notes_repository.dart';
 import 'package:it_contest/features/notes/models/note_model.dart';
@@ -37,7 +37,7 @@ class IsarNotesRepository implements NotesRepository {
   StreamSubscription<void>? _canvasWatch;
 
   // 개별 노트 스트림 캐싱 (메모리 효율성)
-  final Map<String, StreamController<NoteModel?>> _noteStreams = {};
+  final Map<int, StreamController<NoteModel?>> _noteStreams = {};
 
   Future<Isar> _open() async {
     _isar ??= await IsarDb.instance.open();
@@ -170,55 +170,13 @@ class IsarNotesRepository implements NotesRepository {
   }
 
   /// 개별 노트에 대한 변경 감지 스트림 초기화
-  Future<void> _initializeNoteWatch(String noteId, StreamController<NoteModel?> controller) async {
+  Future<void> _initializeNoteWatch(int noteId, StreamController<NoteModel?> controller) async {
     final isar = await _open();
-    final intId = int.tryParse(noteId);
-
-    if (intId == null) {
-      // UUID 등 숫자가 아니면 매칭 불가
-      controller.add(null);
-      return;
-    }
-
-    Future<void> emitNote() async {
-      try {
-        final note = await isar.collection<NoteModel>().get(intId);
-        if (note == null || note.deletedAt != null) {
-          controller.add(null);
-          return;
-        }
-        final noteModel = await _mapNote(isar, note);
-        controller.add(noteModel);
-      } catch (e) {
-        controller.addError(e);
-      }
-    }
-
-    // 각 관련 데이터의 변경을 감지
-    final subscriptions = <StreamSubscription<void>>[
-      isar.collection<NoteModel>().watchObject(intId, fireImmediately: true).listen((_) => emitNote()),
-      isar.pages.filter().noteIdEqualTo(intId).watchLazy().listen((_) => emitNote()),
-      isar.canvasDatas.filter().noteIdEqualTo(intId).watchLazy().listen((_) => emitNote()),
-    ];
-
-    // 컨트롤러가 닫힐 때 구독 정리 및 리소스 해제
-    controller.onCancel = () async {
-      for (final sub in subscriptions) {
-        await sub.cancel();
-      }
-      _noteStreams.remove(noteId);
-      await controller.close();
-    };
-  }
 
   @override
   Future<NoteModel?> getNoteById(String noteId) async {
     final isar = await _open();
-    final intId = int.tryParse(noteId);
-    if (intId == null) {
-      return null;
-    }
-    final n = await isar.collection<NoteModel>().get(intId);
+    final n = await isar.collection<NoteModel>().filter().noteIdEqualTo(noteId).findFirst();
     if (n == null || n.deletedAt != null) {
       return null;
     }
@@ -227,11 +185,12 @@ class IsarNotesRepository implements NotesRepository {
 
   @override
   Future<void> upsert(NoteModel note) async {
-    final intId = int.tryParse(note.noteId);
+    final isar = await _open();
+    final existingNote = await isar.collection<NoteModel>().filter().noteIdEqualTo(note.noteId).findFirst();
 
-    if (intId != null) {
+    if (existingNote != null) {
       // 기존 노트 업데이트
-      await _updateExistingNote(intId, note);
+      await _updateExistingNote(note.noteId, note);
     } else {
       // 새 노트 생성
       await _createNewNote(note, vaultId: note.vaultId, folderId: note.folderId);
@@ -251,7 +210,7 @@ class IsarNotesRepository implements NotesRepository {
   }
 
   /// 새 노트 생성
-  Future<NoteModel> _createNewNote(NoteModel noteModel, {required int vaultId, int? folderId}) async {
+  Future<NoteModel> _createNewNote(NoteModel noteModel, {required int vaultId, required int folderId}) async {
     // NoteDbService를 사용하여 일관된 노트 생성
     final note = await NoteDbService.instance.createNote(
       vaultId: vaultId,
@@ -649,7 +608,7 @@ class IsarNotesRepository implements NotesRepository {
     final backupData = <int, String>{};
 
     // Isar Link를 활용한 효율적 조회
-    final note = await isar.notes.get(noteId);
+    final note = await isar.noteModels.get(noteId);
     if (note == null) {
       return backupData;
     }
