@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'features/canvas/providers/note_editor_provider.dart';
 import 'features/canvas/routing/canvas_routes.dart';
 import 'features/home/routing/home_routes.dart';
 import 'features/notes/routing/notes_routes.dart';
@@ -23,13 +24,19 @@ final _router = GoRouter(
   debugLogDiagnostics: true,
 );
 
+/// 전역 GoRouter 인스턴스 접근용 (Provider에서 사용)
+GoRouter get globalRouter => _router;
+
 /// 애플리케이션의 메인 위젯입니다.
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   /// [MyApp]의 생성자.
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // GoRouter 기반 자동 세션 관리 Observer 활성화
+    ref.watch(noteSessionObserverProvider);
+    
     return MaterialApp.router(
       routerConfig: _router,
     );

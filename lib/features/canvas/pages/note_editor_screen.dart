@@ -32,6 +32,18 @@ class NoteEditorScreen extends ConsumerStatefulWidget {
 class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
   @override
   Widget build(BuildContext context) {
+    // 임시 해결책: build 메서드에서 세션 Observer 활성화
+    ref.watch(noteSessionObserverProvider);
+    
+    // 추가적인 안전장치: 현재 화면에서 직접 세션 확인 및 시작
+    final currentSession = ref.watch(noteSessionProvider);
+    if (currentSession != widget.noteId) {
+      // Widget tree building 중 provider 수정 방지를 위해 Future로 지연
+      Future(() {
+        ref.read(noteSessionProvider.notifier).enterNote(widget.noteId);
+      });
+    }
+    
     final noteAsync = ref.watch(noteProvider(widget.noteId));
     final note = noteAsync.value;
     final noteTitle = note?.title ?? widget.noteId;
