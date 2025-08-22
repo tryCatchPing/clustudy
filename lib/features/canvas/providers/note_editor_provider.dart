@@ -2,11 +2,15 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../main.dart';
 import '../../../shared/services/page_thumbnail_service.dart';
 import '../../notes/data/derived_note_providers.dart';
 import '../../notes/data/notes_repository_provider.dart';
+import '../../notes/models/note_model.dart';
+import '../../notes/models/note_page_model.dart';
 import '../constants/note_editor_constant.dart';
 import '../models/tool_mode.dart';
 import '../notifiers/custom_scribble_notifier.dart';
@@ -15,6 +19,97 @@ import 'tool_settings_provider.dart';
 part 'note_editor_provider.g.dart';
 
 // fvm dart run build_runner watch 명령어로 코드 변경 시 자동으로 빌드됨
+
+// ========================================================================
+// GoRouter 기반 자동 세션 관리 Provider들
+// ========================================================================
+
+/// 노트 세션 상태 관리 (기존 CanvasSession에서 개명)
+@riverpod
+class NoteSession extends _$NoteSession {
+  @override
+  String? build() => null; // 현재 활성 noteId
+  
+  void enterNote(String noteId) => state = noteId;
+  void exitNote() => state = null;
+}
+
+/// GoRouter 인스턴스 접근을 위한 Provider
+@riverpod
+GoRouter goRouter(Ref ref) {
+  return globalRouter;
+}
+
+/// 현재 라우트 경로를 감지하는 Provider
+@riverpod
+class CurrentPath extends _$CurrentPath {
+  @override
+  String? build() {
+    final router = ref.read(goRouterProvider);
+    
+    // 현재 경로 가져오기
+    final currentLocation = router.routerDelegate.currentConfiguration.uri.path;
+    
+    // GoRouter delegate에 listener 추가하여 경로 변경 감지
+    router.routerDelegate.addListener(_onRouteChanged);
+    
+    // Provider dispose시 listener 제거
+    ref.onDispose(() {
+      router.routerDelegate.removeListener(_onRouteChanged);
+    });
+    
+    return currentLocation;
+  }
+  
+  void _onRouteChanged() {
+    final router = ref.read(goRouterProvider);
+    final newLocation = router.routerDelegate.currentConfiguration.uri.path;
+    // 경로가 실제로 변경된 경우에만 state 업데이트
+    if (state != newLocation) {
+      // Widget tree building 중 provider 수정을 방지하기 위해 Future로 지연
+      Future(() {
+        state = newLocation;
+      });
+    }
+  }
+}
+
+/// 핵심 세션 관리 Observer - 경로 변경을 감지하여 자동 세션 관리
+@riverpod
+void noteSessionObserver(Ref ref) {
+  // 현재 경로 변경을 감지
+  final currentPath = ref.watch(currentPathProvider);
+  
+  if (currentPath == null) return;
+  
+  // /notes/{noteId}/edit 패턴 매칭
+  final noteEditPattern = RegExp(r'^/notes/([^/]+)/edit$');
+  final match = noteEditPattern.firstMatch(currentPath);
+  
+  if (match != null) {
+    // 노트 편집 화면 진입 - 세션 시작
+    final noteId = match.group(1)!;
+    // 다른 provider를 수정하기 전에 현재 상태 확인
+    final currentSession = ref.read(noteSessionProvider);
+    if (currentSession != noteId) {
+      ref.read(noteSessionProvider.notifier).enterNote(noteId);
+    }
+  } else {
+    // 다른 화면 이동 - 세션 종료
+    final currentSession = ref.read(noteSessionProvider);
+    if (currentSession != null) {
+      ref.read(noteSessionProvider.notifier).exitNote();
+    }
+  }
+}
+
+// ========================================================================
+// 기존 Canvas 관련 Provider들 (noteSessionProvider 참조로 수정)
+// ========================================================================
+
+/// 기존 CanvasSession Provider 호환성을 위한 alias
+@Deprecated('Use noteSessionProvider instead')
+final canvasSessionProvider = noteSessionProvider;
 
 /// 현재 페이지 인덱스 관리
 /// noteId(String)로 노트별 독립 관리 (family provider)
@@ -41,15 +136,87 @@ class SimulatePressure extends _$SimulatePressure {
   void setValue(bool value) => state = value;
 }
 
-/// 노트별 CustomScribbleNotifier 관리
-/// noteId(String)로 노트별로 독립적으로 관리 (family provider)
+/// 세션 기반 페이지별 CustomScribbleNotifier 관리
 @riverpod
-class CustomScribbleNotifiers extends _$CustomScribbleNotifiers {
-  // 페이지 ID 기반 캐시로 페이지 추가/삭제/재정렬에도 개별 히스토리 유지
-  Map<String, CustomScribbleNotifier>? _cacheByPageId;
-  bool _simulatePressureListenerAttached = false;
-  bool _toolSettingsListenerAttached = false;
-
+CustomScribbleNotifier canvasPageNotifier(Ref ref, String pageId) {
+  // 세션 확인 - 활성 노트가 없으면 에러
+  final activeNoteId = ref.watch(noteSessionProvider);
+  if (activeNoteId == null) {
+    throw StateError('No note session for pageId: $pageId');
+  }
+  
+  // 세션 내에서 영구 보존
+  ref.keepAlive();
+  
+  // 페이지 정보 조회
+  final allNotesAsync = ref.watch(notesProvider);
+  
+  NotePageModel? targetPage;
+  
+  allNotesAsync.whenData((List<NoteModel> notes) {
+    for (final note in notes) {
+      if (note.noteId == activeNoteId) {
+        for (final page in note.pages) {
+          if (page.pageId == pageId) {
+            targetPage = page;
+            return;
+          }
+        }
+      }
+    }
+  });
+  
+  if (targetPage == null) {
+      // 페이지를 찾을 수 없는 경우 no-op notifier
+      return CustomScribbleNotifier(
+        toolMode: ToolMode.pen,
+        page: null,
+        simulatePressure: false,
+        maxHistoryLength: NoteEditorConstants.maxHistoryLength,
+      );
+    }
+    
+  // 도구 설정 및 필압 시뮬레이션 상태 가져오기
+  final toolSettings = ref.read(toolSettingsNotifierProvider(activeNoteId));
+    final simulatePressure = ref.read(simulatePressureProvider);
+    
+    // CustomScribbleNotifier 생성
+    final notifier = CustomScribbleNotifier(
+      toolMode: toolSettings.toolMode,
+      page: targetPage,
+      simulatePressure: simulatePressure,
+      maxHistoryLength: NoteEditorConstants.maxHistoryLength,
+    )
+      ..setSimulatePressureEnabled(simulatePressure)
+      ..setSketch(
+        sketch: targetPage!.toSketch(),
+        addToUndoHistory: false,
+      );
+    
+    // 초기 도구 설정 적용
+    _applyToolSettings(notifier, toolSettings);
+    
+  // 도구 설정 변경 리스너
+  ref.listen<ToolSettings>(
+    toolSettingsNotifierProvider(activeNoteId),
+    (ToolSettings? prev, ToolSettings next) {
+      _applyToolSettings(notifier, next);
+    },
+  );
+    
+    // 필압 시뮬레이션 변경 리스너
+    ref.listen<bool>(simulatePressureProvider, (bool? prev, bool next) {
+      notifier.setSimulatePressureEnabled(next);
+    });
+    
+    // dispose 시 정리
+    ref.onDispose(() {
+      notifier.dispose();
+    });
+    
+  return notifier;
+}
+  
   void _applyToolSettings(
     CustomScribbleNotifier notifier,
     ToolSettings settings,
@@ -67,168 +234,39 @@ class CustomScribbleNotifiers extends _$CustomScribbleNotifiers {
           ..setStrokeWidth(settings.highlighterWidth);
         break;
       case ToolMode.eraser:
-        // 지우개는 색상 없음: setColor 호출 금지
         notifier.setStrokeWidth(settings.eraserWidth);
         break;
       case ToolMode.linker:
-        // 링크 모드는 Scribble 상태 변경 없음
         break;
     }
+}
+
+/// 특정 노트의 페이지 ID 목록을 반환
+@riverpod
+List<String> notePageIds(Ref ref, String noteId) {
+  final noteAsync = ref.watch(noteProvider(noteId));
+  return noteAsync.when(
+    data: (note) => note?.pages.map((p) => p.pageId).toList() ?? [],
+    error: (_, __) => [],
+    loading: () => [],
+  );
+}
+
+/// 노트의 모든 페이지 notifier들을 맵으로 반환 (기존 API 호환성)
+@riverpod
+Map<String, CustomScribbleNotifier> notePageNotifiers(Ref ref, String noteId) {
+  final pageIds = ref.watch(notePageIdsProvider(noteId));
+  final result = <String, CustomScribbleNotifier>{};
+  
+  for (final pageId in pageIds) {
+    final notifier = ref.watch(canvasPageNotifierProvider(pageId));
+    result[pageId] = notifier;
   }
-
-  @override
-  Map<String, CustomScribbleNotifier> build(String noteId) {
-    final noteAsync = ref.watch(noteProvider(noteId));
-    // 재생성 트리거가 되지 않도록 listen으로만 처리
-    final simulatePressure = ref.read(simulatePressureProvider);
-    final toolSettings = ref.read(toolSettingsNotifierProvider(noteId));
-
-    return noteAsync.maybeWhen(
-      data: (note) {
-        if (note == null) {
-          // 노트를 찾지 못한 경우: 기존 캐시가 있으면 유지, 없으면 빈 맵
-          return _cacheByPageId ?? <String, CustomScribbleNotifier>{};
-        }
-
-        // 증분 동기화: 삭제/추가만 적용
-        final map = _cacheByPageId ?? <String, CustomScribbleNotifier>{};
-        final currentIds = map.keys.toSet();
-        final nextIds = note.pages.map((p) => p.pageId).toSet();
-
-        print('🔍 [CustomScribbleNotifiers] 기존 pageIds: $currentIds');
-        print('🔍 [CustomScribbleNotifiers] 새로운 pageIds: $nextIds');
-        print(
-          '🔍 [CustomScribbleNotifiers] 삭제될 pageIds: ${currentIds.difference(nextIds)}',
-        );
-        print(
-          '🔍 [CustomScribbleNotifiers] _toolSettingsListenerAttached: $_toolSettingsListenerAttached',
-        );
-
-        // 삭제된 페이지 정리
-        for (final removedId in currentIds.difference(nextIds)) {
-          print('🗑️ [CustomScribbleNotifiers] 페이지 삭제: $removedId');
-          map.remove(removedId)?.dispose();
-        }
-
-        // 새 페이지 추가 생성
-        for (final page in note.pages) {
-          if (!map.containsKey(page.pageId)) {
-            print('➕ [CustomScribbleNotifiers] 새 페이지 추가: ${page.pageId}');
-            final notifier =
-                CustomScribbleNotifier(
-                    toolMode: toolSettings.toolMode,
-                    page: page,
-                    simulatePressure: simulatePressure,
-                    maxHistoryLength: NoteEditorConstants.maxHistoryLength,
-                  )
-                  ..setSimulatePressureEnabled(simulatePressure)
-                  ..setSketch(
-                    sketch: page.toSketch(),
-                    addToUndoHistory: false,
-                  );
-            _applyToolSettings(notifier, toolSettings);
-
-            map[page.pageId] = notifier;
-          } else {
-            print('♻️ [CustomScribbleNotifiers] 기존 페이지 재사용: ${page.pageId}');
-          }
-        }
-
-        _cacheByPageId = map;
-        print('🎯 [CustomScribbleNotifiers] 최종 캐시 pageIds: ${map.keys}');
-
-        // simulatePressure 변경을 기존 CSN 인스턴스에 주입하여 히스토리를 보존합니다.
-        if (!_simulatePressureListenerAttached) {
-          _simulatePressureListenerAttached = true;
-          ref.listen<bool>(simulatePressureProvider, (prev, next) {
-            final m = _cacheByPageId;
-            if (m == null) {
-              return;
-            }
-            for (final notifier in m.values) {
-              notifier.setSimulatePressureEnabled(next);
-            }
-          });
-        }
-
-        // tool settings 변경 주입 (재생성 금지)
-        // 🚨 핵심 수정: 캐시가 비어있으면 listener를 다시 연결
-        if (!_toolSettingsListenerAttached || currentIds.isEmpty) {
-          if (currentIds.isEmpty) {
-            print('🔄 [CustomScribbleNotifiers] 캐시가 비어있어서 listener 재연결');
-            _toolSettingsListenerAttached = false;
-          }
-
-          if (!_toolSettingsListenerAttached) {
-            _toolSettingsListenerAttached = true;
-            print('🔗 [CustomScribbleNotifiers] Tool settings listener 연결');
-            ref.listen<ToolSettings>(
-              toolSettingsNotifierProvider(noteId),
-              (prev, next) {
-                print(
-                  '🛠️ [CustomScribbleNotifiers] Tool settings 변경: ${prev?.toolMode} -> ${next.toolMode}',
-                );
-                final m = _cacheByPageId;
-                if (m == null) {
-                  print(
-                    '❌ [CustomScribbleNotifiers] 캐시가 null이므로 tool settings 적용 불가',
-                  );
-                  return;
-                }
-                print(
-                  '🎯 [CustomScribbleNotifiers] ${m.length}개 notifier에 tool settings 적용',
-                );
-                for (final entry in m.entries) {
-                  final pageId = entry.key;
-                  final notifier = entry.value;
-                  print(
-                    '🔧 [CustomScribbleNotifiers] $pageId에 tool settings 적용',
-                  );
-
-                  notifier.setTool(next.toolMode);
-                  switch (next.toolMode) {
-                    case ToolMode.pen:
-                      notifier
-                        ..setColor(next.penColor)
-                        ..setStrokeWidth(next.penWidth);
-                      break;
-                    case ToolMode.highlighter:
-                      notifier
-                        ..setColor(next.highlighterColor)
-                        ..setStrokeWidth(next.highlighterWidth);
-                      break;
-                    case ToolMode.eraser:
-                      // 지우개는 색상 없음: setColor 호출 금지
-                      notifier.setStrokeWidth(next.eraserWidth);
-                      break;
-                    case ToolMode.linker:
-                      // 링크 모드는 Scribble 상태 변경 없음
-                      break;
-                  }
-                }
-              },
-            );
-          }
-        }
-
-        ref.onDispose(() {
-          if (_cacheByPageId != null) {
-            for (final notifier in _cacheByPageId!.values) {
-              notifier.dispose();
-            }
-            _cacheByPageId = null;
-          }
-        });
-
-        return map;
-      },
-      orElse: () => <String, CustomScribbleNotifier>{},
-    );
-  }
+  
+  return result;
 }
 
 /// 현재 페이지 인덱스에 해당하는 CustomScribbleNotifier 반환
-/// 단순한 함수로 구현 (노트별로 독립적인 관리 필요 없음)
 @riverpod
 CustomScribbleNotifier currentNotifier(
   Ref ref,
@@ -239,12 +277,8 @@ CustomScribbleNotifier currentNotifier(
   final toolSettings = ref.watch(toolSettingsNotifierProvider(noteId));
   final simulatePressure = ref.read(simulatePressureProvider);
 
-  print('🎯 [currentNotifier] noteId: $noteId, currentIndex: $currentIndex');
-  print('🎯 [currentNotifier] toolSettings: ${toolSettings.toolMode}');
-
-  if (note == null || note.pages.isEmpty) {
-    print('❌ [currentNotifier] 노트가 없거나 페이지가 비어있음 - no-op notifier 반환');
-    // 노트가 없거나 페이지가 없는 경우에는 no-op Notifier를 반환하여 예외를 방지합니다.
+  if (note == null || note.pages.isEmpty || currentIndex >= note.pages.length) {
+    // 노트가 없거나 페이지가 없는 경우에는 no-op Notifier를 반환
     return CustomScribbleNotifier(
       toolMode: toolSettings.toolMode,
       page: null,
@@ -254,26 +288,7 @@ CustomScribbleNotifier currentNotifier(
   }
 
   final page = note.pages[currentIndex];
-  final notifiers = ref.watch(customScribbleNotifiersProvider(noteId));
-
-  print('🎯 [currentNotifier] 현재 페이지: ${page.pageId}');
-  print('🎯 [currentNotifier] 사용 가능한 notifiers: ${notifiers.keys}');
-
-  final notifier = notifiers[page.pageId];
-  if (notifier != null) {
-    print('✅ [currentNotifier] 기존 notifier 반환: ${page.pageId}');
-    return notifier;
-  } else {
-    print(
-      '❌ [currentNotifier] notifier를 찾을 수 없음 - no-op notifier 반환: ${page.pageId}',
-    );
-    return CustomScribbleNotifier(
-      toolMode: toolSettings.toolMode,
-      page: null,
-      simulatePressure: simulatePressure,
-      maxHistoryLength: NoteEditorConstants.maxHistoryLength,
-    );
-  }
+  return ref.watch(canvasPageNotifierProvider(page.pageId));
 }
 
 @riverpod
@@ -286,7 +301,7 @@ CustomScribbleNotifier pageNotifier(
   final toolSettings = ref.watch(toolSettingsNotifierProvider(noteId));
   final simulatePressure = ref.read(simulatePressureProvider);
 
-  if (note == null || note.pages.length <= pageIndex) {
+  if (note == null || note.pages.length <= pageIndex || pageIndex < 0) {
     // 유효하지 않은 페이지 접근에도 no-op Notifier 반환
     return CustomScribbleNotifier(
       toolMode: toolSettings.toolMode,
@@ -297,14 +312,16 @@ CustomScribbleNotifier pageNotifier(
   }
 
   final page = note.pages[pageIndex];
-  final notifiers = ref.watch(customScribbleNotifiersProvider(noteId));
-  return notifiers[page.pageId] ??
-      CustomScribbleNotifier(
-        toolMode: toolSettings.toolMode,
-        page: null,
-        simulatePressure: simulatePressure,
-        maxHistoryLength: NoteEditorConstants.maxHistoryLength,
-      );
+  return ref.watch(canvasPageNotifierProvider(page.pageId));
+}
+
+/// 기존 API 호환성을 위한 customScribbleNotifiers provider
+@riverpod
+Map<String, CustomScribbleNotifier> customScribbleNotifiers(
+  Ref ref,
+  String noteId,
+) {
+  return ref.watch(notePageNotifiersProvider(noteId));
 }
 
 /// PageController
