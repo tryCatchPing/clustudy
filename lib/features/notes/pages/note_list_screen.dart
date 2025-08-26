@@ -229,11 +229,33 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                           debugPrint(
                                             '📝 노트 편집: ${notes[i].noteId}',
                                           );
+                                          debugPrint(
+                                            '🚀 [Navigation] Starting navigation to note edit',
+                                          );
+                                          debugPrint(
+                                            '🚀 [Navigation] Route name: ${AppRoutes.noteEditName}',
+                                          );
+                                          debugPrint(
+                                            '🚀 [Navigation] Path parameters: {noteId: ${notes[i].noteId}}',
+                                          );
+
+                                          final routePath =
+                                              AppRoutes.noteEditRoute(
+                                                notes[i].noteId,
+                                              );
+                                          debugPrint(
+                                            '🚀 [Navigation] Generated path: $routePath',
+                                          );
+
                                           context.pushNamed(
                                             AppRoutes.noteEditName,
                                             pathParameters: {
                                               'noteId': notes[i].noteId,
                                             },
+                                          );
+
+                                          debugPrint(
+                                            '🚀 [Navigation] pushNamed called, waiting for navigation',
                                           );
                                         },
                                       ),
