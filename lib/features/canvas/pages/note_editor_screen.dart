@@ -34,17 +34,6 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
   Widget build(BuildContext context) {
     debugPrint('📝 [NoteEditorScreen] Building for noteId: ${widget.noteId}');
 
-    // GoRouter 기반 세션 Observer 활성화
-    debugPrint('📝 [NoteEditorScreen] Watching noteSessionObserverProvider...');
-    ref.watch(noteSessionObserverProvider);
-    debugPrint(
-      '📝 [NoteEditorScreen] noteSessionObserverProvider watch completed',
-    );
-
-    debugPrint(
-      '📝 [NoteEditorScreen] Session is ready for noteId: ${widget.noteId}',
-    );
-
     final noteAsync = ref.watch(noteProvider(widget.noteId));
     final note = noteAsync.value;
     final noteTitle = note?.title ?? widget.noteId;
@@ -74,3 +63,4 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
     );
   }
 }
+
