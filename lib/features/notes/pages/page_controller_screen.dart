@@ -29,7 +29,10 @@ class PageControllerScreen extends ConsumerStatefulWidget {
     await showDialog<void>(
       context: context,
       barrierDismissible: false, // 배경 탭으로 닫기 방지
-      builder: (context) => PageControllerScreen(noteId: noteId),
+      builder: (context) => ProviderScope(
+        parent: ProviderScope.containerOf(context),
+        child: PageControllerScreen(noteId: noteId),
+      ),
     );
   }
 

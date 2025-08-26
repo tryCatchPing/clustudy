@@ -32,23 +32,28 @@ class NoteEditorScreen extends ConsumerStatefulWidget {
 class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
   @override
   Widget build(BuildContext context) {
-    // 임시 해결책: build 메서드에서 세션 Observer 활성화
+    debugPrint('📝 [NoteEditorScreen] Building for noteId: ${widget.noteId}');
+
+    // GoRouter 기반 세션 Observer 활성화
+    debugPrint('📝 [NoteEditorScreen] Watching noteSessionObserverProvider...');
     ref.watch(noteSessionObserverProvider);
-    
-    // 추가적인 안전장치: 현재 화면에서 직접 세션 확인 및 시작
-    final currentSession = ref.watch(noteSessionProvider);
-    if (currentSession != widget.noteId) {
-      // Widget tree building 중 provider 수정 방지를 위해 Future로 지연
-      Future(() {
-        ref.read(noteSessionProvider.notifier).enterNote(widget.noteId);
-      });
-    }
-    
+    debugPrint(
+      '📝 [NoteEditorScreen] noteSessionObserverProvider watch completed',
+    );
+
+    debugPrint(
+      '📝 [NoteEditorScreen] Session is ready for noteId: ${widget.noteId}',
+    );
+
     final noteAsync = ref.watch(noteProvider(widget.noteId));
     final note = noteAsync.value;
     final noteTitle = note?.title ?? widget.noteId;
     final notePagesCount = ref.watch(notePagesCountProvider(widget.noteId));
     final currentIndex = ref.watch(currentPageIndexProvider(widget.noteId));
+
+    debugPrint('📝 [NoteEditorScreen] Note async value: $note');
+    debugPrint('📝 [NoteEditorScreen] Note pages count: $notePagesCount');
+    debugPrint('📝 [NoteEditorScreen] Current page index: $currentIndex');
 
     // 노트가 사라진 경우(삭제 직후 등) 즉시 빈 화면 처리하여 BadState 방지
     if (note == null || notePagesCount == 0) {

@@ -17,11 +17,21 @@ class NoteEditorPointerMode extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    debugPrint('🎨 [NoteEditorPointerMode] Building for noteId: $noteId');
+
     final totalPages = ref.watch(notePagesCountProvider(noteId));
+    debugPrint('🎨 [NoteEditorPointerMode] Total pages: $totalPages');
+
     if (totalPages == 0) {
+      debugPrint(
+        '🎨 [NoteEditorPointerMode] No pages, returning SizedBox.shrink',
+      );
       return const SizedBox.shrink();
     }
+
+    debugPrint('🎨 [NoteEditorPointerMode] Watching currentNotifierProvider');
     final notifier = ref.watch(currentNotifierProvider(noteId));
+    debugPrint('🎨 [NoteEditorPointerMode] Got notifier successfully');
 
     return ValueListenableBuilder<ScribbleState>(
       valueListenable: notifier,
