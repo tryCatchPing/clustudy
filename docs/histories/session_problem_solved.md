@@ -26,7 +26,7 @@
   설정하도록 변경했습니다.
 - 결과: 아키텍처상 올바른 수정이었음에도 불구하고, 다시 최초의 Bad state: No note session 오류가 발생했습니다.
 
-4. 최종 원인 규명 및 해결: Provider의 autoDispose 동작
+4. 4차 원인 규명 및 해결: Provider의 autoDispose 동작
 
 - 기술적 분석: 로그를 통해 onTap에서 세션이 분명히 설정되었음에도, 다음 화면에서는 그 값이 null이 되는 미스터리한 현상을 확인했습니다. 이는 Riverpod
   Provider의 `autoDispose` 기본 동작 때문이었습니다.
@@ -38,4 +38,16 @@
 - 최종 해결: note_editor_provider.dart 파일에서 noteSessionProvider의 어노테이션을 @riverpod에서 `@Riverpod(keepAlive: true)`로 수정했습니다. 이 설정은
   Provider의 구독 여부와 관계없이 앱이 실행되는 동안 상태를 계속 유지하도록 하여, 화면 전환 중에도 세션 정보가 파기되지 않도록 보장합니다.
 
-이 수정을 통해 마침내 문제가 해결되었습니다.
+5. 5차 문제 발생 및 해결: 화면 종료 시 StateError
+
+- 현상: 노트 편집 화면에서 나갈 때, `onExit` 콜백에서 세션을 `null`로 변경하자 다시 `Bad state: No note session` 오류가 발생했습니다.
+- 기술적 분석: 화면이 완전히 소멸되기 전에 세션이 먼저 `null`로 변경되자, 아직 화면에 남아있는 위젯들이 의존하던 `canvasPageNotifier`가 이 변경을 감지하고 재빌드되면서 `null`인 세션에 접근하여 오류를 발생시켰습니다.
+- 해결: `canvasPageNotifier`가 세션이 `null`일 경우 오류를 발생시키는 대신, 비어있는 더미(dummy) notifier를 반환하도록 수정하여 Provider 자체의 안정성을 높였습니다. 또한 이 과정에서 불필요한 `ref.keepAlive()`를 제거하여 메모리 누수 가능성을 차단했습니다.
+
+6. 최종 안정화: 화면 종료 시 TypeError
+
+- 현상: 5차 문제 해결 후, 화면 종료 시 `TypeError: Unexpected null value` 오류가 `NotePageViewItem` 위젯에서 발생했습니다.
+- 기술적 분석: 이전 단계의 수정으로 `canvasPageNotifier`가 더미 notifier를 반환하게 되자, 이 notifier를 사용하던 UI 위젯(`NotePageViewItem`)이 더미 notifier의 `page` 속성이 `null`인 경우를 처리하지 못해 오류가 발생했습니다.
+- 해결: `NotePageViewItem` 위젯의 `build` 메서드에 `notifier.page == null`인지 확인하는 방어 코드를 추가하여, 위젯이 더미 notifier를 받더라도 안전하게 빈 위젯을 렌더링하고 종료되도록 수정했습니다.
+
+이 수정을 통해 마침내 모든 세션 관련 문제가 해결되었습니다.

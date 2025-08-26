@@ -144,6 +144,11 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
       pageNotifierProvider(widget.noteId, widget.pageIndex),
     );
 
+    // 화면 종료 과정에서 notifier가 비어있을 수 있으므로 null 체크 추가
+    if (notifier.page == null) {
+      return const SizedBox.shrink();
+    }
+
     final drawingWidth = notifier.page!.drawingAreaWidth;
     final drawingHeight = notifier.page!.drawingAreaHeight;
     final isLinkerMode = notifier.toolMode.isLinker;
