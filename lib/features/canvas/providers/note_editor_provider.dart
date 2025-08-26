@@ -83,13 +83,21 @@ CustomScribbleNotifier canvasPageNotifier(Ref ref, String pageId) {
 
   // 세션 확인 - 활성 노트가 없으면 에러
   final activeNoteId = ref.watch(noteSessionProvider);
-  debugPrint(
-      '🎨 [canvasPageNotifier] Active session check: $activeNoteId');
+  debugPrint('🎨 [canvasPageNotifier] Active session check: $activeNoteId');
 
+  // 화면 전환 중 session이 먼저 exit되어 null이 될 수 있음.
+  // 이 경우 provider가 재빌드되면서 에러를 발생시키므로,
+  // 비어있는 notifier를 반환하여 안전하게 처리한다.
   if (activeNoteId == null) {
     debugPrint(
-        '🎨 [canvasPageNotifier] ERROR: No active session for pageId: $pageId');
-    throw StateError('No note session for pageId: $pageId');
+      '🎨 [canvasPageNotifier] No active session, returning no-op notifier.',
+    );
+    return CustomScribbleNotifier(
+      toolMode: ToolMode.pen,
+      page: null,
+      simulatePressure: false,
+      maxHistoryLength: NoteEditorConstants.maxHistoryLength,
+    );
   }
 
   // 세션 내에서 영구 보존
@@ -115,7 +123,8 @@ CustomScribbleNotifier canvasPageNotifier(Ref ref, String pageId) {
 
   if (targetPage == null) {
     debugPrint(
-        '🎨 [canvasPageNotifier] Page not found, returning no-op notifier.');
+      '🎨 [canvasPageNotifier] Page not found, returning no-op notifier.',
+    );
     // 페이지를 찾을 수 없는 경우 no-op notifier
     return CustomScribbleNotifier(
       toolMode: ToolMode.pen,
@@ -124,7 +133,9 @@ CustomScribbleNotifier canvasPageNotifier(Ref ref, String pageId) {
       maxHistoryLength: NoteEditorConstants.maxHistoryLength,
     );
   }
-  debugPrint('🎨 [canvasPageNotifier] Found target page: ${targetPage!.pageId}');
+  debugPrint(
+    '🎨 [canvasPageNotifier] Found target page: ${targetPage!.pageId}',
+  );
 
   // 도구 설정 및 필압 시뮬레이션 상태 가져오기
   final toolSettings = ref.read(toolSettingsNotifierProvider(activeNoteId));
@@ -143,7 +154,7 @@ CustomScribbleNotifier canvasPageNotifier(Ref ref, String pageId) {
           sketch: targetPage!.toSketch(),
           addToUndoHistory: false,
         );
-  debugPrint('🎨 [canvasPageNotifier] Notifier created for page: ${pageId}');
+  debugPrint('🎨 [canvasPageNotifier] Notifier created for page: $pageId');
 
   // 초기 도구 설정 적용
   _applyToolSettings(notifier, toolSettings);
@@ -163,7 +174,7 @@ CustomScribbleNotifier canvasPageNotifier(Ref ref, String pageId) {
 
   // dispose 시 정리
   ref.onDispose(() {
-    debugPrint('🎨 [canvasPageNotifier] Disposing notifier for page: ${pageId}');
+    debugPrint('🎨 [canvasPageNotifier] Disposing notifier for page: $pageId');
     notifier.dispose();
   });
 
