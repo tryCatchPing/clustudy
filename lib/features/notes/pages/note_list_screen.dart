@@ -6,6 +6,7 @@ import '../../../shared/routing/app_routes.dart';
 import '../../../shared/services/note_deletion_service.dart';
 import '../../../shared/services/note_service.dart';
 import '../../../shared/widgets/navigation_card.dart';
+import '../../canvas/providers/note_editor_provider.dart';
 import '../data/derived_note_providers.dart';
 import '../data/notes_repository_provider.dart';
 
@@ -122,7 +123,8 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
           ),
         );
       }
-    } finally {
+    }
+ finally {
       if (mounted) {
         setState(() => _isImporting = false);
       }
@@ -226,36 +228,17 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                             '${notes[i].pages.length} 페이지',
                                         color: const Color(0xFF6750A4),
                                         onTap: () {
-                                          debugPrint(
-                                            '📝 노트 편집: ${notes[i].noteId}',
-                                          );
-                                          debugPrint(
-                                            '🚀 [Navigation] Starting navigation to note edit',
-                                          );
-                                          debugPrint(
-                                            '🚀 [Navigation] Route name: ${AppRoutes.noteEditName}',
-                                          );
-                                          debugPrint(
-                                            '🚀 [Navigation] Path parameters: {noteId: ${notes[i].noteId}}',
-                                          );
+                                          // 세션을 먼저 설정
+                                          ref
+                                              .read(noteSessionProvider.notifier)
+                                              .enterNote(notes[i].noteId);
 
-                                          final routePath =
-                                              AppRoutes.noteEditRoute(
-                                                notes[i].noteId,
-                                              );
-                                          debugPrint(
-                                            '🚀 [Navigation] Generated path: $routePath',
-                                          );
-
+                                          // 그 다음 화면으로 이동
                                           context.pushNamed(
                                             AppRoutes.noteEditName,
                                             pathParameters: {
                                               'noteId': notes[i].noteId,
                                             },
-                                          );
-
-                                          debugPrint(
-                                            '🚀 [Navigation] pushNamed called, waiting for navigation',
                                           );
                                         },
                                       ),

@@ -2,10 +2,8 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../main.dart';
 import '../../../shared/services/page_thumbnail_service.dart';
 import '../../notes/data/derived_note_providers.dart';
 import '../../notes/data/notes_repository_provider.dart';
@@ -25,140 +23,21 @@ part 'note_editor_provider.g.dart';
 // ========================================================================
 
 /// 노트 세션 상태 관리 (기존 CanvasSession에서 개명)
-@riverpod
+@Riverpod(keepAlive: true)
 class NoteSession extends _$NoteSession {
   @override
   String? build() => null; // 현재 활성 noteId
 
-  void enterNote(String noteId) => state = noteId;
-  void exitNote() => state = null;
-}
-
-/// GoRouter 인스턴스 접근을 위한 Provider
-@riverpod
-GoRouter goRouter(Ref ref) {
-  return globalRouter;
-}
-
-/// 세션 생성 및 전환 과정을 로깅하는 헬퍼 함수
-void _logSessionEvent(String message, {String? noteId, String? path}) {
-  debugPrint(
-    '🔄 [SessionManager] $message'
-    '${noteId != null ? ' (noteId: $noteId)' : ''}'
-    '${path != null ? ' (path: $path)' : ''}',
-  );
-}
-
-/// 현재 라우트 경로를 감지하는 Provider
-@riverpod
-class CurrentPath extends _$CurrentPath {
-  @override
-  String? build() {
-    final router = ref.read(goRouterProvider);
-
-    // 현재 경로 가져오기
-    final currentLocation = router.routerDelegate.currentConfiguration.uri.path;
-    final currentUri = router.routerDelegate.currentConfiguration.uri
-        .toString();
-
-    debugPrint('🏁 [CurrentPath] Provider build called');
-    debugPrint('🏁 [CurrentPath] Initial location: $currentLocation');
-    debugPrint('🏁 [CurrentPath] Initial URI: $currentUri');
-    debugPrint('🏁 [CurrentPath] Setting up route change listener...');
-
-    // GoRouter delegate에 listener 추가하여 경로 변경 감지
-    router.routerDelegate.addListener(_onRouteChanged);
-    debugPrint('🏁 [CurrentPath] Route change listener added');
-
-    // Provider dispose시 listener 제거
-    ref.onDispose(() {
-      debugPrint('🏁 [CurrentPath] Provider disposing, removing listener...');
-      router.routerDelegate.removeListener(_onRouteChanged);
-      debugPrint('🏁 [CurrentPath] Listener removed successfully');
-    });
-
-    debugPrint(
-      '🏁 [CurrentPath] Provider build completed, returning: $currentLocation',
-    );
-    return currentLocation;
+  void enterNote(String noteId) {
+    debugPrint('🔄 [SessionManager] Entering note session for: $noteId');
+    state = noteId;
+    debugPrint('🔄 [SessionManager] Session entered successfully for: $noteId');
   }
 
-  void _onRouteChanged() {
-    final router = ref.read(goRouterProvider);
-    final newLocation = router.routerDelegate.currentConfiguration.uri.path;
-    final fullUri = router.routerDelegate.currentConfiguration.uri.toString();
-
-    debugPrint('🛣️ [CurrentPath] _onRouteChanged called');
-    debugPrint('🛣️ [CurrentPath] Current state: $state');
-    debugPrint('🛣️ [CurrentPath] New location (path): $newLocation');
-    debugPrint('🛣️ [CurrentPath] Full URI: $fullUri');
-
-    // 경로가 실제로 변경된 경우에만 state 업데이트
-    if (state != newLocation) {
-      debugPrint('🛣️ [CurrentPath] Path changed, updating state with Future');
-      // Widget tree building 중 provider 수정을 방지하기 위해 Future로 지연
-      Future(() {
-        debugPrint('🛣️ [CurrentPath] Executing Future, updating state');
-        state = newLocation;
-        debugPrint('🛣️ [CurrentPath] State updated to: $newLocation');
-      });
-    } else {
-      debugPrint('🛣️ [CurrentPath] Path unchanged: $state');
-    }
-  }
-}
-
-/// 핵심 세션 관리 Observer - 경로 변경을 감지하여 자동 세션 관리
-@riverpod
-void noteSessionObserver(Ref ref) {
-  final currentPath = ref.watch(currentPathProvider);
-
-  if (currentPath == null) {
-    _logSessionEvent('Current path is null, skipping session management');
-    return;
-  }
-
-  debugPrint(
-    '🔄 [SessionManager] Session observer triggered (path: $currentPath)',
-  );
-
-  _logSessionEvent('Session observer triggered', path: currentPath);
-
-  // 더 엄격한 패턴 매칭: /notes/{noteId}/edit
-  final noteEditPattern = RegExp(r'^/notes/([a-zA-Z0-9_-]+)/edit$');
-  final match = noteEditPattern.firstMatch(currentPath);
-
-  final currentSession = ref.read(noteSessionProvider);
-  debugPrint('🔄 [SessionManager] Current session state: $currentSession');
-
-  _logSessionEvent('Current session state', noteId: currentSession);
-
-  if (match != null) {
-    // 노트 편집 화면 진입 - 세션 시작
-    final noteId = match.group(1)!;
-    debugPrint(
-      '🔄 [SessionManager] Matched note edit pattern, noteId: $noteId',
-    );
-
-    if (currentSession != noteId) {
-      debugPrint('🔄 [SessionManager] Entering note session for: $noteId');
-      _logSessionEvent('Entering note session', noteId: noteId);
-      ref.read(noteSessionProvider.notifier).enterNote(noteId);
-      _logSessionEvent('Session entered successfully', noteId: noteId);
-      debugPrint(
-        '🔄 [SessionManager] Session entered successfully for: $noteId',
-      );
-    } else {
-      debugPrint('🔄 [SessionManager] Already in correct session: $noteId');
-      _logSessionEvent('Already in correct session', noteId: noteId);
-    }
-  } else {
-    // 다른 화면 이동 - 세션 종료
-    if (currentSession != null) {
-      debugPrint('🔄 [SessionManager] Exiting note session: $currentSession');
-      _logSessionEvent('Exiting note session', noteId: currentSession);
-      ref.read(noteSessionProvider.notifier).exitNote();
-      _logSessionEvent('Session exited successfully');
+  void exitNote() {
+    if (state != null) {
+      debugPrint('🔄 [SessionManager] Exiting note session: $state');
+      state = null;
       debugPrint('🔄 [SessionManager] Session exited successfully');
     }
   }
@@ -200,26 +79,16 @@ class SimulatePressure extends _$SimulatePressure {
 /// 세션 기반 페이지별 CustomScribbleNotifier 관리
 @riverpod
 CustomScribbleNotifier canvasPageNotifier(Ref ref, String pageId) {
-  debugPrint('🔄 [SessionManager] canvasPageNotifier called (path: $pageId)');
-
-  _logSessionEvent('canvasPageNotifier called', path: pageId);
+  debugPrint('🎨 [canvasPageNotifier] Provider called for pageId: $pageId');
 
   // 세션 확인 - 활성 노트가 없으면 에러
   final activeNoteId = ref.watch(noteSessionProvider);
   debugPrint(
-    '🔄 [SessionManager] Active session check in canvasPageNotifier: $activeNoteId',
-  );
-
-  _logSessionEvent(
-    'Active session check in canvasPageNotifier',
-    noteId: activeNoteId,
-  );
+      '🎨 [canvasPageNotifier] Active session check: $activeNoteId');
 
   if (activeNoteId == null) {
     debugPrint(
-      '🔄 [SessionManager] ERROR: No active session for pageId: $pageId',
-    );
-    _logSessionEvent('ERROR: No active session for pageId', path: pageId);
+        '🎨 [canvasPageNotifier] ERROR: No active session for pageId: $pageId');
     throw StateError('No note session for pageId: $pageId');
   }
 
@@ -245,6 +114,8 @@ CustomScribbleNotifier canvasPageNotifier(Ref ref, String pageId) {
   });
 
   if (targetPage == null) {
+    debugPrint(
+        '🎨 [canvasPageNotifier] Page not found, returning no-op notifier.');
     // 페이지를 찾을 수 없는 경우 no-op notifier
     return CustomScribbleNotifier(
       toolMode: ToolMode.pen,
@@ -253,6 +124,7 @@ CustomScribbleNotifier canvasPageNotifier(Ref ref, String pageId) {
       maxHistoryLength: NoteEditorConstants.maxHistoryLength,
     );
   }
+  debugPrint('🎨 [canvasPageNotifier] Found target page: ${targetPage!.pageId}');
 
   // 도구 설정 및 필압 시뮬레이션 상태 가져오기
   final toolSettings = ref.read(toolSettingsNotifierProvider(activeNoteId));
@@ -271,6 +143,7 @@ CustomScribbleNotifier canvasPageNotifier(Ref ref, String pageId) {
           sketch: targetPage!.toSketch(),
           addToUndoHistory: false,
         );
+  debugPrint('🎨 [canvasPageNotifier] Notifier created for page: ${pageId}');
 
   // 초기 도구 설정 적용
   _applyToolSettings(notifier, toolSettings);
@@ -290,6 +163,7 @@ CustomScribbleNotifier canvasPageNotifier(Ref ref, String pageId) {
 
   // dispose 시 정리
   ref.onDispose(() {
+    debugPrint('🎨 [canvasPageNotifier] Disposing notifier for page: ${pageId}');
     notifier.dispose();
   });
 

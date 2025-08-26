@@ -16,22 +16,8 @@ class CanvasRoutes {
       name: AppRoutes.noteEditName,
       builder: (context, state) {
         final noteId = state.pathParameters['noteId']!;
-        final fullPath = state.uri.path;
-        final queryParams = state.uri.queryParameters;
-        final pathParams = state.pathParameters;
-
-        debugPrint('🏠 [CanvasRoutes] Route builder called');
-        debugPrint('🏠 [CanvasRoutes] Full URI: ${state.uri}');
-        debugPrint('🏠 [CanvasRoutes] Path: $fullPath');
-        debugPrint('🏠 [CanvasRoutes] Path parameters: $pathParams');
-        debugPrint('🏠 [CanvasRoutes] Query parameters: $queryParams');
         debugPrint('📝 노트 편집 페이지: noteId = $noteId');
-
-        debugPrint('🏠 [CanvasRoutes] Creating NoteEditorScreen...');
-        final screen = NoteEditorScreen(noteId: noteId);
-        debugPrint('🏠 [CanvasRoutes] NoteEditorScreen created successfully');
-
-        return screen;
+        return NoteEditorScreen(noteId: noteId);
       },
     ),
   ];

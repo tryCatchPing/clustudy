@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'design_system/routing/design_system_routes.dart';
-import 'features/canvas/providers/note_editor_provider.dart';
 import 'features/canvas/routing/canvas_routes.dart';
 import 'features/home/routing/home_routes.dart';
 import 'features/notes/routing/notes_routes.dart';
@@ -35,11 +34,6 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     debugPrint('🎯 [MyApp] Building MyApp...');
-
-    // GoRouter 기반 자동 세션 관리 Observer 활성화
-    debugPrint('🎯 [MyApp] Watching noteSessionObserverProvider...');
-    ref.watch(noteSessionObserverProvider);
-    debugPrint('🎯 [MyApp] noteSessionObserverProvider watch completed');
 
     debugPrint('🎯 [MyApp] Creating MaterialApp.router...');
     final app = MaterialApp.router(
