@@ -1,7 +1,7 @@
 import 'package:isar/isar.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
-import 'package:it_contest/features/db/models/vault_models.dart';
+
 
 /// Utilities for enforcing unique lower-cased names and generating
 /// collision-free labels for Notes and Folders.
@@ -40,7 +40,7 @@ class NameUtils {
   ) async {
     final isar = await IsarDb.instance.open();
     final normalized = lower.toLowerCase();
-    final int? scopedFolderId = folderId > 0 ? folderId : null;
+    final int scopedFolderId = folderId > 0 ? folderId : 0;
 
     final NoteModel? found = await isar.noteModels
         .filter()
