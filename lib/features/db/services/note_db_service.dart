@@ -164,7 +164,7 @@ class NoteDbService {
       }
       // NoteModel에는 folderId와 vaultId가 없으므로 임시로 처리
       // TODO(jidam): NoteModel에 vaultId와 folderId 필드 추가 필요
-      final int? fromFolderId = null; // 임시
+      const int? fromFolderId = null; // 임시
       int targetVaultId = 1; // 임시, 기본 vault ID
       if (toFolderId != null) {
         final targetFolder = await isar.folders.get(toFolderId);
