@@ -82,9 +82,14 @@ void main() {
 
         // Create test data
         final vault = await NoteDbService.instance.createVault(name: 'TestVault');
+        final folder = await NoteDbService.instance.createFolder(
+          vaultId: vault.id,
+          name: 'TestFolderForNote',
+        );
         await NoteDbService.instance.createNote(
           vaultId: vault.id,
-          name: 'TestNote',
+          folderId: folder.id,
+          title: 'TestNote',
           pageSize: 'A4',
           pageOrientation: 'portrait',
         );
@@ -124,7 +129,7 @@ void main() {
         final note = await NoteDbService.instance.createNote(
           vaultId: vault.id,
           folderId: folder.id,
-          name: 'TestNote',
+          title: 'TestNote',
           pageSize: 'A4',
           pageOrientation: 'portrait',
         );
@@ -159,9 +164,14 @@ void main() {
 
         // Create test data
         final vault = await NoteDbService.instance.createVault(name: 'TestVault');
+        final folder = await NoteDbService.instance.createFolder(
+          vaultId: vault.id,
+          name: 'TestFolderForNote',
+        );
         await NoteDbService.instance.createNote(
           vaultId: vault.id,
-          name: 'TestNote',
+          folderId: folder.id,
+          title: 'TestNote',
           pageSize: 'A4',
           pageOrientation: 'portrait',
         );
@@ -193,9 +203,14 @@ void main() {
       () async {
         // Create initial data
         final vault = await NoteDbService.instance.createVault(name: 'OriginalVault');
+        final folder = await NoteDbService.instance.createFolder(
+          vaultId: vault.id,
+          name: 'TestFolderForNote',
+        );
         await NoteDbService.instance.createNote(
           vaultId: vault.id,
-          name: 'OriginalNote',
+          folderId: folder.id,
+          title: 'OriginalNote',
           pageSize: 'A4',
           pageOrientation: 'portrait',
         );
@@ -226,7 +241,7 @@ void main() {
 
         final restoredNotes = await isar.collection<NoteModel>().where().anyId().findAll();
         expect(restoredNotes.length, 1);
-        expect(restoredNotes.first.name, 'OriginalNote');
+        expect(restoredNotes.first.title, 'OriginalNote');
       },
       skip: 'Requires native Isar runtime; run as integration test on device/desktop.',
     );
@@ -236,9 +251,14 @@ void main() {
       () async {
         // Create test data
         final vault = await NoteDbService.instance.createVault(name: 'TestVault');
+        final folder = await NoteDbService.instance.createFolder(
+          vaultId: vault.id,
+          name: 'TestFolderForNote',
+        );
         await NoteDbService.instance.createNote(
           vaultId: vault.id,
-          name: 'TestNote',
+          folderId: folder.id,
+          title: 'TestNote',
           pageSize: 'A4',
           pageOrientation: 'portrait',
         );
@@ -372,9 +392,14 @@ void main() {
       () async {
         // Create test data
         final vault = await NoteDbService.instance.createVault(name: 'TestVault');
+        final folder = await NoteDbService.instance.createFolder(
+          vaultId: vault.id,
+          name: 'TestFolderForNote',
+        );
         await NoteDbService.instance.createNote(
           vaultId: vault.id,
-          name: 'TestNote',
+          folderId: folder.id,
+          title: 'TestNote',
           pageSize: 'A4',
           pageOrientation: 'portrait',
         );
