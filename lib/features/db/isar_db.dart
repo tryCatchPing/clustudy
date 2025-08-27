@@ -1,14 +1,10 @@
 import 'dart:async';
 
-import 'package:isar/isar.dart';
-import 'package:path_provider/path_provider.dart';
-
 import 'package:it_contest/features/db/isar/db_schemas.dart';
 import 'package:it_contest/features/db/models/models.dart';
-import 'package:it_contest/features/db/models/vault_models.dart';
-import 'package:it_contest/features/notes/models/note_model.dart';
-import 'package:it_contest/features/pdf_cache/models/pdf_cache_meta_model.dart';
 import 'package:it_contest/shared/services/crypto_key_service.dart';
+import 'package:isar/isar.dart';
+import 'package:path_provider/path_provider.dart';
 
 /// Centralized Isar database lifecycle manager.
 ///
