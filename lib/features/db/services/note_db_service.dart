@@ -6,7 +6,7 @@ import 'dart:convert';
 import 'package:isar/isar.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
-import 'package:it_contest/features/notes/models/note_model.dart';
+
 import 'package:it_contest/search/search_service.dart';
 import 'package:it_contest/shared/models/rect_norm.dart';
 
@@ -165,7 +165,7 @@ class NoteDbService {
       // NoteModel에는 folderId와 vaultId가 없으므로 임시로 처리
       // TODO(jidam): NoteModel에 vaultId와 folderId 필드 추가 필요
       final int? fromFolderId = null; // 임시
-      int? targetVaultId = 1; // 임시, 기본 vault ID
+      int targetVaultId = 1; // 임시, 기본 vault ID
       if (toFolderId != null) {
         final targetFolder = await isar.folders.get(toFolderId);
         if (targetFolder == null) {
@@ -177,8 +177,8 @@ class NoteDbService {
       note.updatedAt = DateTime.now();
       await isar.collection<NoteModel>().put(note);
       // Compact both source and destination folders
-      await compactSortIndexWithinFolder(vaultId: targetVaultId ?? 1, folderId: fromFolderId);
-      await compactSortIndexWithinFolder(vaultId: targetVaultId ?? 1, folderId: toFolderId);
+      await compactSortIndexWithinFolder(vaultId: targetVaultId, folderId: fromFolderId);
+      await compactSortIndexWithinFolder(vaultId: targetVaultId, folderId: toFolderId);
     });
   }
 
@@ -290,11 +290,9 @@ class NoteDbService {
           .filter()
           .deletedAtIsNull()
           .findAll();
-      int current = startAt;
       for (final n in notes) {
         // NoteModel에는 sortIndex가 없으므로 건너뜀
         n.updatedAt = DateTime.now();
-        current += step;
       }
       await isar.collection<NoteModel>().putAll(notes);
     });

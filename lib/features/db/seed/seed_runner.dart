@@ -1,7 +1,9 @@
 import 'package:isar/isar.dart';
 import 'package:it_contest/features/db/isar_db.dart';
 import 'package:it_contest/features/db/models/models.dart';
-import 'package:it_contest/features/db/models/vault_models.dart';
+import 'package:it_contest/features/notes/models/note_model.dart';
+import 'package:uuid/uuid.dart';
+
 
 /// 초기 데이터(시드)를 보장하는 러너입니다.
 class SeedRunner {
@@ -33,20 +35,18 @@ class SeedRunner {
         ..createdAt = now
         ..updatedAt = now;
       final folderId = await isar.collection<Folder>().put(folder);
-      final note = NoteModel()
-        ..vaultId = vaultId
-        ..folderId = folderId
-        ..name = 'Welcome'
-        ..nameLowerForParentUnique = 'welcome'
-        ..pageSize = 'A4'
-        ..pageOrientation = 'portrait'
-        ..sortIndex = 1000
-        ..createdAt = now
-        ..updatedAt = now
-        ..nameLowerForSearch = 'welcome';
-      final noteId = await isar.collection<NoteModel>().put(note);
+      final note = NoteModel.create(
+        noteId: const Uuid().v4(),
+        title: 'Welcome',
+        vaultId: vaultId,
+        folderId: folderId,
+        sortIndex: 1000,
+        createdAt: now,
+        updatedAt: now,
+      );
+      await isar.collection<NoteModel>().put(note);
       final page = Page()
-        ..noteId = noteId
+        ..noteId = note.noteId
         ..index = 0
         ..widthPx = 2480
         ..heightPx = 3508
