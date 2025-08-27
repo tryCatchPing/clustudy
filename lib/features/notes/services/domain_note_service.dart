@@ -29,8 +29,8 @@ class DomainNoteService {
   Future<NoteModel> createLinkedNoteFromRegion({
     required int vaultId,
     required int folderId,
-    required int sourceNoteId,
-    required int sourcePageId,
+    required String sourceNoteId,
+    required String sourcePageId,
     required RectNorm region,
     String? label,
     String pageSize = 'A4',
@@ -41,8 +41,8 @@ class DomainNoteService {
     final link = await NoteDbService.instance.createLinkAndTargetNote(
       vaultId: vaultId,
       folderId: folderId,
-      sourceNoteId: sourceNoteId.toString(),
-      sourcePageId: sourcePageId.toString(),
+      sourceNoteId: sourceNoteId,
+      sourcePageId: sourcePageId,
       x0: region.x0,
       y0: region.y0,
       x1: region.x1,
@@ -138,17 +138,17 @@ class DomainNoteService {
   }
 
   /// 소프트 삭제
-  Future<void> softDeleteNote(int noteId) async {
+  Future<void> softDeleteNote(String noteId) async {
     await NoteDbService.instance.softDeleteNote(noteId);
   }
 
   /// 복원 (원위치 존재하지 않으면 루트로 복원)
-  Future<void> restoreNote(int noteId) async {
+  Future<void> restoreNote(String noteId) async {
     await NoteDbService.instance.restoreNote(noteId);
   }
 
   /// RecentTabs: 링크로 생성된 새 노트 push (LRU 10 유지)
-  Future<void> pushRecentTabForNewLinkedNote(int noteId) async {
+  Future<void> pushRecentTabForNewLinkedNote(String noteId) async {
     final isar = await IsarDb.instance.open();
     await isar.writeTxn(() async {
       await _pushRecentLinkedNote(isar: isar, noteId: noteId);
@@ -164,9 +164,9 @@ class DomainNoteService {
     }
     List<String> ids;
     try {
-      ids = (jsonDecode(existing.noteIdsJson) as List).map((e) => e as String).toList();
+      ids = (jsonDecode(existing.noteIdsJson) as List).map((e) => e.toString()).toList();
     } catch (_) {
-      ids = <int>[];
+      ids = <String>[];
     }
     final result = <NoteModel>[];
     for (final id in ids) {
@@ -219,14 +219,14 @@ class DomainNoteService {
 
   // A 유틸 사용으로 내부 컴팩션은 제거
 
-  Future<void> _pushRecentLinkedNote({required Isar isar, required int noteId}) async {
+  Future<void> _pushRecentLinkedNote({required Isar isar, required String noteId}) async {
     const String userId = 'local';
     final now = DateTime.now();
     final existing = await isar.collection<RecentTabs>().where().anyId().findFirst();
-    List<int> list;
+    List<String> list;
     late RecentTabs tabs;
     if (existing == null) {
-      list = <int>[noteId];
+      list = <String>[noteId];
       tabs = RecentTabs()
         ..userId = userId
         ..noteIdsJson = jsonEncode(list)
@@ -235,9 +235,9 @@ class DomainNoteService {
       tabs = existing;
       try {
         final decoded = jsonDecode(tabs.noteIdsJson);
-        list = (decoded as List).map((e) => e as int).toList();
+        list = (decoded as List).map((e) => e.toString()).toList();
       } catch (_) {
-        list = <int>[];
+        list = <String>[];
       }
       list.remove(noteId);
       list.insert(0, noteId);
