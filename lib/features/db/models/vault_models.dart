@@ -60,6 +60,10 @@ class Folder {
 class Page {
   Id id = Isar.autoIncrement;
 
+  @Index(unique: true)
+  late String pageId;
+
+  @Index()
   late String noteId; // Changed to String
 
   @Index()
