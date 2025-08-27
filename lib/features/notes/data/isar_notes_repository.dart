@@ -1,12 +1,11 @@
 // ignore_for_file: public_member_api_docs
 
 import 'dart:async';
-import 'dart:convert';
+
 import 'dart:io'; // TODO(web): Replace File API usage with platform-appropriate implementation
 
 import 'package:isar/isar.dart';
-import 'package:it_contest/features/db/models/note_model.dart';
-import 'package:it_contest/features/notes/models/note_page_model.dart';
+
 
 
 import 'package:it_contest/features/db/isar_db.dart';
@@ -24,9 +23,7 @@ import 'package:it_contest/features/notes/data/notes_repository.dart';
 class IsarNotesRepository implements NotesRepository {
   IsarNotesRepository({
     int? defaultVaultId,
-  }) : _defaultVaultId = defaultVaultId ?? 1;
-
-  final int _defaultVaultId;
+  });
   Isar? _isar;
 
   // 브로드캐스트 스트림으로 여러 구독자 지원
@@ -280,7 +277,7 @@ class IsarNotesRepository implements NotesRepository {
       if (pagesToDelete.isNotEmpty) {
         await isar.pages.deleteAll(pagesToDelete);
         final pageIdsToDelete = existingPageMap.values.map((p) => p.pageId).toList();
-        final canvasToDelete = await isar.canvasDatas.filter().anyOf(pageIdsToDelete, (q, String pageId) => q.pageIdEqualTo(pageId)).findAll();
+                final canvasToDelete = await isar.canvasDatas.filter().anyOf<String, QueryBuilder<CanvasData, CanvasData, QAfterFilterCondition>>(pageIdsToDelete, (q, String pageId) => q.pageIdEqualTo(pageId)).findAll();
         await isar.canvasDatas.deleteAll(canvasToDelete.map((c) => c.id).toList());
       }
     });
@@ -325,7 +322,7 @@ class IsarNotesRepository implements NotesRepository {
 
   Future<NoteModel?> _mapNote(Isar isar, NoteModel note) async {
     final pages =
-        await isar.pages.filter().noteIdEqualTo(note.noteId).and().deletedAtIsNull().sortByIndex().findAll();
+        await isar.pages.filter().equalTo(r'noteId', note.noteId).and().deletedAtIsNull().sortByIndex().findAll();
 
     final pageModels = <NotePageModel>[];
     for (final p in pages) {
@@ -358,7 +355,6 @@ class IsarNotesRepository implements NotesRepository {
     return note;
   }
 
-  @override
   Future<void> upsertBatch(List<NoteModel> notes) async {
     final isar = await _open();
     await isar.writeTxn(() async {
@@ -368,7 +364,6 @@ class IsarNotesRepository implements NotesRepository {
     });
   }
 
-  @override
   Future<void> deleteBatch(List<String> noteIds) async {
     final isar = await _open();
     if (noteIds.isEmpty) return;
@@ -385,7 +380,6 @@ class IsarNotesRepository implements NotesRepository {
     });
   }
 
-  @override
   Future<Map<String, int>> getStatistics() async {
     final isar = await _open();
     final allNotes = isar.noteModels.filter().deletedAtIsNull();
@@ -402,7 +396,6 @@ class IsarNotesRepository implements NotesRepository {
     };
   }
 
-  @override
   Future<void> invalidateCache() async {
     final isar = await _open();
     final notes = await _loadAllNotes(isar);
@@ -425,13 +418,10 @@ class IsarNotesRepository implements NotesRepository {
     }
   }
 
-  @override
   bool get isInitialized => _isar != null;
 
-  @override
   int get activeStreamCount => _noteStreams.length;
 
-  @override
   Future<void> updatePageImagePath({
     required String noteId,
     required String pageId,
@@ -449,7 +439,6 @@ class IsarNotesRepository implements NotesRepository {
     });
   }
 
-  @override
   Future<void> updatePageCanvasData({
     required String pageId,
     required String jsonData,
@@ -466,7 +455,6 @@ class IsarNotesRepository implements NotesRepository {
     });
   }
 
-  @override
   Future<void> updateBackgroundVisibility({
     required String noteId,
     required bool showBackground,
@@ -477,7 +465,6 @@ class IsarNotesRepository implements NotesRepository {
     // For now, this method will be a no-op.
   }
 
-  @override
   Future<Map<String, String>> backupPageCanvasData({required String noteId}) async {
     final isar = await _open();
     final backupData = <String, String>{};
@@ -493,7 +480,6 @@ class IsarNotesRepository implements NotesRepository {
     return backupData;
   }
 
-  @override
   Future<void> restorePageCanvasData({required Map<String, String> backupData}) async {
     if (backupData.isEmpty) return;
     final isar = await _open();
@@ -512,7 +498,6 @@ class IsarNotesRepository implements NotesRepository {
     });
   }
 
-  @override
   Future<void> updatePageMetadata({
     required String pageId,
     required double width,
@@ -535,16 +520,9 @@ class IsarNotesRepository implements NotesRepository {
     });
   }
 
-  @override
   Future<List<PdfPageInfo>> getPdfPagesInfo({required String noteId}) async {
     final isar = await _open();
-    final pages = await isar.pages
-        .filter()
-        .noteIdEqualTo(noteId)
-        .and()
-        .pdfOriginalPathIsNotNull()
-        .sortByIndex()
-        .findAll();
+    final pages = await isar.pages.filter().noteIdEqualTo(noteId).and().pdfOriginalPathIsNotNull().sortByIndex().findAll();
     return pages
         .map((p) => PdfPageInfo(
               pageId: p.pageId,
@@ -557,7 +535,6 @@ class IsarNotesRepository implements NotesRepository {
         .toList();
   }
 
-  @override
   Future<List<CorruptedPageInfo>> detectCorruptedPages({required String noteId}) async {
     final isar = await _open();
     final pages = await isar.pages.filter().noteIdEqualTo(noteId).findAll();
