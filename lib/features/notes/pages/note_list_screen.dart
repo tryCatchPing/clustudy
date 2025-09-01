@@ -123,8 +123,7 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
           ),
         );
       }
-    }
- finally {
+    } finally {
       if (mounted) {
         setState(() => _isImporting = false);
       }
@@ -230,7 +229,9 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                         onTap: () {
                                           // 세션을 먼저 설정
                                           ref
-                                              .read(noteSessionProvider.notifier)
+                                              .read(
+                                                noteSessionProvider.notifier,
+                                              )
                                               .enterNote(notes[i].noteId);
 
                                           // 그 다음 화면으로 이동

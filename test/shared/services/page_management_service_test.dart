@@ -62,31 +62,34 @@ void main() {
     });
 
     group('addPage', () {
-      test('should add page to the end when no insertIndex is provided', () async {
-        // Arrange
-        await repository.upsert(testNote);
-        final newPage = NotePageModel(
-          noteId: 'test-note-1',
-          pageId: 'page-4',
-          pageNumber: 4,
-          jsonData: '{"lines":[]}',
-          backgroundType: PageBackgroundType.blank,
-        );
+      test(
+        'should add page to the end when no insertIndex is provided',
+        () async {
+          // Arrange
+          await repository.upsert(testNote);
+          final newPage = NotePageModel(
+            noteId: 'test-note-1',
+            pageId: 'page-4',
+            pageNumber: 4,
+            jsonData: '{"lines":[]}',
+            backgroundType: PageBackgroundType.blank,
+          );
 
-        // Act
-        await PageManagementService.addPage(
-          'test-note-1',
-          newPage,
-          repository,
-        );
+          // Act
+          await PageManagementService.addPage(
+            'test-note-1',
+            newPage,
+            repository,
+          );
 
-        // Assert
-        final updatedNote = await repository.getNoteById('test-note-1');
-        expect(updatedNote, isNotNull);
-        expect(updatedNote!.pages.length, equals(4));
-        expect(updatedNote.pages.last.pageId, equals('page-4'));
-        expect(updatedNote.pages.last.pageNumber, equals(4));
-      });
+          // Assert
+          final updatedNote = await repository.getNoteById('test-note-1');
+          expect(updatedNote, isNotNull);
+          expect(updatedNote!.pages.length, equals(4));
+          expect(updatedNote.pages.last.pageId, equals('page-4'));
+          expect(updatedNote.pages.last.pageNumber, equals(4));
+        },
+      );
 
       test('should add page at specified index', () async {
         // Arrange

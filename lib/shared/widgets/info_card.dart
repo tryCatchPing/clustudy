@@ -74,10 +74,10 @@ class InfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveBackgroundColor = backgroundColor ??
-        color.withAlpha((255 * 0.08).round());
-    final effectiveBorderColor = borderColor ??
-        color.withAlpha((255 * 0.2).round());
+    final effectiveBackgroundColor =
+        backgroundColor ?? color.withAlpha((255 * 0.08).round());
+    final effectiveBorderColor =
+        borderColor ?? color.withAlpha((255 * 0.2).round());
     final effectiveTextColor = color.withAlpha((255 * 0.85).round());
 
     return Container(

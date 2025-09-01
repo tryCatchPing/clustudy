@@ -25,15 +25,17 @@ class ColorPalette extends StatelessWidget {
   Widget build(BuildContext context) {
     return ToolbarSection(
       width: width,
-      children: colors.map((color) => 
-        ColorCircle(
-          color: color,
-          isSelected: color == selectedColor,
-          size: colorSize,
-          borderColor: AppColors.toolbarBorder,
-          onTap: () => onColorSelected(color),
-        ),
-      ).toList(),
+      children: colors
+          .map(
+            (color) => ColorCircle(
+              color: color,
+              isSelected: color == selectedColor,
+              size: colorSize,
+              borderColor: AppColors.toolbarBorder,
+              onTap: () => onColorSelected(color),
+            ),
+          )
+          .toList(),
     );
   }
 }
@@ -68,15 +70,17 @@ class PenColorPalette extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: penColors.map((color) => 
-          ColorCircle(
-            color: color,
-            isSelected: color == selectedColor,
-            size: 32,
-            borderColor: AppColors.toolbarBorder,
-            onTap: () => onColorSelected(color),
-          ),
-        ).toList(),
+        children: penColors
+            .map(
+              (color) => ColorCircle(
+                color: color,
+                isSelected: color == selectedColor,
+                size: 32,
+                borderColor: AppColors.toolbarBorder,
+                onTap: () => onColorSelected(color),
+              ),
+            )
+            .toList(),
       ),
     );
   }

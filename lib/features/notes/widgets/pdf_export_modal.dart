@@ -52,13 +52,13 @@ class _PdfExportModalState extends State<PdfExportModal> {
   ExportRangeType _selectedRangeType = ExportRangeType.all;
   int _rangeStart = 1;
   int _rangeEnd = 1;
-  
+
   // 진행상태
   bool _isExporting = false;
   double _progress = 0.0;
   String _progressMessage = '';
   String? _errorMessage;
-  
+
   @override
   void initState() {
     super.initState();
@@ -96,7 +96,7 @@ class _PdfExportModalState extends State<PdfExportModal> {
             ] else ...[
               _buildProgressSection(),
             ],
-            
+
             if (_errorMessage != null) ...[
               const SizedBox(height: 16),
               _buildErrorSection(),
@@ -121,11 +121,13 @@ class _PdfExportModalState extends State<PdfExportModal> {
           return RadioListTile<ExportQuality>(
             value: quality,
             groupValue: _selectedQuality,
-            onChanged: _isExporting ? null : (value) {
-              setState(() {
-                _selectedQuality = value!;
-              });
-            },
+            onChanged: _isExporting
+                ? null
+                : (value) {
+                    setState(() {
+                      _selectedQuality = value!;
+                    });
+                  },
             title: Text(quality.displayName),
             subtitle: Text(
               quality.description,
@@ -150,46 +152,52 @@ class _PdfExportModalState extends State<PdfExportModal> {
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
-        
+
         // 전체 페이지
         RadioListTile<ExportRangeType>(
           value: ExportRangeType.all,
           groupValue: _selectedRangeType,
-          onChanged: _isExporting ? null : (value) {
-            setState(() {
-              _selectedRangeType = value!;
-            });
-          },
+          onChanged: _isExporting
+              ? null
+              : (value) {
+                  setState(() {
+                    _selectedRangeType = value!;
+                  });
+                },
           title: Text('전체 페이지 (${widget.note.pages.length}페이지)'),
           dense: true,
         ),
-        
+
         // 현재 페이지
         RadioListTile<ExportRangeType>(
           value: ExportRangeType.current,
           groupValue: _selectedRangeType,
-          onChanged: _isExporting ? null : (value) {
-            setState(() {
-              _selectedRangeType = value!;
-            });
-          },
+          onChanged: _isExporting
+              ? null
+              : (value) {
+                  setState(() {
+                    _selectedRangeType = value!;
+                  });
+                },
           title: Text('현재 페이지 (${widget.initialCurrentPageIndex + 1}페이지)'),
           dense: true,
         ),
-        
+
         // 범위 지정
         RadioListTile<ExportRangeType>(
           value: ExportRangeType.range,
           groupValue: _selectedRangeType,
-          onChanged: _isExporting ? null : (value) {
-            setState(() {
-              _selectedRangeType = value!;
-            });
-          },
+          onChanged: _isExporting
+              ? null
+              : (value) {
+                  setState(() {
+                    _selectedRangeType = value!;
+                  });
+                },
           title: const Text('범위 지정'),
           dense: true,
         ),
-        
+
         // 범위 입력 필드
         if (_selectedRangeType == ExportRangeType.range)
           Padding(
@@ -209,7 +217,9 @@ class _PdfExportModalState extends State<PdfExportModal> {
                     ),
                     onChanged: (value) {
                       final num = int.tryParse(value);
-                      if (num != null && num >= 1 && num <= widget.note.pages.length) {
+                      if (num != null &&
+                          num >= 1 &&
+                          num <= widget.note.pages.length) {
                         setState(() {
                           _rangeStart = num;
                           if (_rangeStart > _rangeEnd) {
@@ -236,7 +246,9 @@ class _PdfExportModalState extends State<PdfExportModal> {
                     ),
                     onChanged: (value) {
                       final num = int.tryParse(value);
-                      if (num != null && num >= _rangeStart && num <= widget.note.pages.length) {
+                      if (num != null &&
+                          num >= _rangeStart &&
+                          num <= widget.note.pages.length) {
                         setState(() {
                           _rangeEnd = num;
                         });
@@ -262,7 +274,7 @@ class _PdfExportModalState extends State<PdfExportModal> {
   Widget _buildSummarySection() {
     final pageCount = _getSelectedPageCount();
     final estimatedSize = _getEstimatedFileSize(pageCount);
-    
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -374,7 +386,7 @@ class _PdfExportModalState extends State<PdfExportModal> {
       ExportQuality.high: 1.5,
       ExportQuality.ultra: 3.0,
     };
-    
+
     final estimatedMB = pageCount * baseSizePerPage[_selectedQuality]!;
     return estimatedMB.toStringAsFixed(1);
   }
@@ -424,7 +436,7 @@ class _PdfExportModalState extends State<PdfExportModal> {
         if (result.success) {
           // 성공 시 모달 닫기
           Navigator.of(context).pop();
-          
+
           // 성공 스낵바 표시
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

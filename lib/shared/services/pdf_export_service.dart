@@ -51,7 +51,9 @@ class PdfExportService {
     int? pageNumber,
   }) {
     try {
-      debugPrint('📄 PDF 페이지 생성: ${pageNumber ?? '알 수 없음'} (${pageWidth ?? 'A4'}x${pageHeight ?? 'A4'})');
+      debugPrint(
+        '📄 PDF 페이지 생성: ${pageNumber ?? '알 수 없음'} (${pageWidth ?? 'A4'}x${pageHeight ?? 'A4'})',
+      );
 
       // 페이지 크기가 지정된 경우 해당 크기로, 없으면 A4 기본값 사용
       final pageFormat = (pageWidth != null && pageHeight != null)
@@ -127,17 +129,19 @@ class PdfExportService {
       for (int i = 0; i < pageImages.length; i++) {
         final pageImage = pageImages[i];
         final originalPage = pagesToExport[i];
-        
+
         // 캔버스 크기를 PDF 포인트 단위로 변환 (1픽셀 = 0.75포인트)
         final pageWidthPoints = originalPage.drawingAreaWidth * 0.75;
         final pageHeightPoints = originalPage.drawingAreaHeight * 0.75;
-        
-        pdf.addPage(createPdfPage(
-          pageImage,
-          pageWidth: pageWidthPoints,
-          pageHeight: pageHeightPoints,
-          pageNumber: originalPage.pageNumber,
-        ));
+
+        pdf.addPage(
+          createPdfPage(
+            pageImage,
+            pageWidth: pageWidthPoints,
+            pageHeight: pageHeightPoints,
+            pageNumber: originalPage.pageNumber,
+          ),
+        );
 
         final pageProgress = 0.8 + ((i + 1) / pageImages.length * 0.15);
         onProgress?.call(
@@ -176,7 +180,7 @@ class PdfExportService {
 
       // 임시 디렉토리 사용
       final directory = await getTemporaryDirectory();
-      final filePath = path.join(directory.path, '${fileName}.pdf');
+      final filePath = path.join(directory.path, '$fileName.pdf');
 
       // 파일 저장
       final file = File(filePath);
@@ -269,7 +273,7 @@ class PdfExportService {
   }) async {
     final exportOptions = options ?? const PdfExportOptions();
     final startTime = DateTime.now();
-    
+
     try {
       debugPrint('🚀 PDF 내보내기 및 공유 시작: ${note.title}');
 
@@ -289,7 +293,7 @@ class PdfExportService {
       // 3. 파일 공유
       if (exportOptions.autoShare) {
         await sharePdf(filePath, shareText: exportOptions.shareText);
-        
+
         // 공유 후 임시 파일 삭제
         try {
           final tempFile = File(filePath);
@@ -348,7 +352,7 @@ class PdfExportService {
   }) async {
     final exportOptions = options ?? const PdfExportOptions();
     final startTime = DateTime.now();
-    
+
     try {
       debugPrint('💾 PDF 내보내기 및 저장 시작: ${note.title}');
 
@@ -435,8 +439,10 @@ class PdfExportService {
       case ExportRangeType.range:
         final startIndex = (pageRange.startPage ?? 1) - 1;
         final endIndex = (pageRange.endPage ?? allPages.length) - 1;
-        
-        if (startIndex >= 0 && endIndex < allPages.length && startIndex <= endIndex) {
+
+        if (startIndex >= 0 &&
+            endIndex < allPages.length &&
+            startIndex <= endIndex) {
           return allPages.sublist(startIndex, endIndex + 1);
         }
         return allPages;
@@ -450,14 +456,14 @@ class PdfExportService {
   /// 파일명을 생성합니다.
   static String _generateFileName(String noteTitle, ExportQuality quality) {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final qualitySuffix = quality == ExportQuality.ultra 
-        ? '_ultra' 
-        : quality == ExportQuality.high 
-            ? '_high' 
-            : '';
-    
+    final qualitySuffix = quality == ExportQuality.ultra
+        ? '_ultra'
+        : quality == ExportQuality.high
+        ? '_high'
+        : '';
+
     final cleanTitle = _cleanFileName(noteTitle);
-    return '${cleanTitle}_${timestamp}$qualitySuffix';
+    return '${cleanTitle}_$timestamp$qualitySuffix';
   }
 
   /// 파일명에 사용할 수 없는 문자를 제거합니다.
@@ -501,12 +507,12 @@ class ExportPageRange {
   });
 
   const ExportPageRange.all() : this(type: ExportRangeType.all);
-  
-  const ExportPageRange.current(int pageIndex) 
-      : this(type: ExportRangeType.current, currentPageIndex: pageIndex);
-  
-  const ExportPageRange.range(int start, int end) 
-      : this(type: ExportRangeType.range, startPage: start, endPage: end);
+
+  const ExportPageRange.current(int pageIndex)
+    : this(type: ExportRangeType.current, currentPageIndex: pageIndex);
+
+  const ExportPageRange.range(int start, int end)
+    : this(type: ExportRangeType.range, startPage: start, endPage: end);
 
   final ExportRangeType type;
   final int? currentPageIndex;

@@ -9,8 +9,10 @@ class AppRoutes {
   // 📍 라우트 경로 상수들
   /// 홈 화면 라우트 경로.
   static const String home = '/';
+
   /// 노트 목록 화면 라우트 경로.
   static const String noteList = '/notes';
+
   /// 노트 편집 화면 라우트 경로. `:noteId`는 동적 세그먼트입니다.
   static const String noteEdit = '/notes/:noteId/edit'; // 더 명확한 경로
   /// PDF 캔버스 화면 라우트 경로.
@@ -19,10 +21,13 @@ class AppRoutes {
   // 🎯 라우트 이름 상수들 (GoRouter name 속성용)
   /// 홈 화면 라우트 이름.
   static const String homeName = 'home';
+
   /// 노트 목록 화면 라우트 이름.
   static const String noteListName = 'noteList';
+
   /// 노트 편집 화면 라우트 이름.
   static const String noteEditName = 'noteEdit';
+
   /// PDF 캔버스 화면 라우트 이름.
   static const String pdfCanvasName = 'pdfCanvas';
 

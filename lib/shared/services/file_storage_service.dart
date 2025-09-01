@@ -245,7 +245,9 @@ class FileStorageService {
     try {
       debugPrint('🧹 썸네일 캐시 정리 시작: $noteId');
 
-      final thumbnailsDir = Directory(await getThumbnailCacheDirectoryPath(noteId));
+      final thumbnailsDir = Directory(
+        await getThumbnailCacheDirectoryPath(noteId),
+      );
 
       if (await thumbnailsDir.exists()) {
         await thumbnailsDir.delete(recursive: true);
@@ -270,7 +272,9 @@ class FileStorageService {
         await for (final entity in notesRootDir.list()) {
           if (entity is Directory) {
             final noteId = path.basename(entity.path);
-            final thumbnailsDir = Directory(await getThumbnailCacheDirectoryPath(noteId));
+            final thumbnailsDir = Directory(
+              await getThumbnailCacheDirectoryPath(noteId),
+            );
 
             if (await thumbnailsDir.exists()) {
               await thumbnailsDir.delete(recursive: true);
@@ -322,7 +326,9 @@ class FileStorageService {
   /// Returns: 썸네일 캐시 크기 정보
   static Future<ThumbnailCacheInfo> getThumbnailCacheInfo(String noteId) async {
     try {
-      final thumbnailsDir = Directory(await getThumbnailCacheDirectoryPath(noteId));
+      final thumbnailsDir = Directory(
+        await getThumbnailCacheDirectoryPath(noteId),
+      );
 
       if (!await thumbnailsDir.exists()) {
         return const ThumbnailCacheInfo(
@@ -372,11 +378,14 @@ class FileStorageService {
         await for (final entity in notesRootDir.list()) {
           if (entity is Directory) {
             final noteId = path.basename(entity.path);
-            final thumbnailsDir = Directory(await getThumbnailCacheDirectoryPath(noteId));
+            final thumbnailsDir = Directory(
+              await getThumbnailCacheDirectoryPath(noteId),
+            );
 
             if (await thumbnailsDir.exists()) {
               await for (final thumbnailEntity in thumbnailsDir.list()) {
-                if (thumbnailEntity is File && thumbnailEntity.path.endsWith('.jpg')) {
+                if (thumbnailEntity is File &&
+                    thumbnailEntity.path.endsWith('.jpg')) {
                   final stat = await thumbnailEntity.stat();
                   if (stat.accessed.isBefore(cutoffTime)) {
                     await thumbnailEntity.delete();

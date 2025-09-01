@@ -219,19 +219,21 @@ class PageManagementService {
 
       if (page.pageNumber != newPageNumber) {
         // pageNumber가 다르면 새로운 객체 생성
-        remappedPages.add(NotePageModel(
-          noteId: page.noteId,
-          pageId: page.pageId,
-          pageNumber: newPageNumber,
-          jsonData: page.jsonData,
-          backgroundType: page.backgroundType,
-          backgroundPdfPath: page.backgroundPdfPath,
-          backgroundPdfPageNumber: page.backgroundPdfPageNumber,
-          backgroundWidth: page.backgroundWidth,
-          backgroundHeight: page.backgroundHeight,
-          preRenderedImagePath: page.preRenderedImagePath,
-          showBackgroundImage: page.showBackgroundImage,
-        ));
+        remappedPages.add(
+          NotePageModel(
+            noteId: page.noteId,
+            pageId: page.pageId,
+            pageNumber: newPageNumber,
+            jsonData: page.jsonData,
+            backgroundType: page.backgroundType,
+            backgroundPdfPath: page.backgroundPdfPath,
+            backgroundPdfPageNumber: page.backgroundPdfPageNumber,
+            backgroundWidth: page.backgroundWidth,
+            backgroundHeight: page.backgroundHeight,
+            preRenderedImagePath: page.preRenderedImagePath,
+            showBackgroundImage: page.showBackgroundImage,
+          ),
+        );
       } else {
         // pageNumber가 같으면 기존 객체 사용
         remappedPages.add(page);

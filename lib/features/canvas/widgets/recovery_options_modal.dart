@@ -312,7 +312,7 @@ class RecoveryOptionsModal extends StatelessWidget {
         buttons.add(
           ElevatedButton.icon(
             onPressed: () {
-             context.pop();
+              context.pop();
               onSketchOnly();
             },
             icon: const Icon(Icons.visibility_off),
