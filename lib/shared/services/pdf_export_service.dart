@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -130,18 +131,41 @@ class PdfExportService {
         final pageImage = pageImages[i];
         final originalPage = pagesToExport[i];
 
+        debugPrint(
+          '${'-' * 10} Adding Page ${originalPage.pageNumber} to PDF ${'-' * 10}',
+        );
+        try {
+          final codec = await ui.instantiateImageCodec(pageImage);
+          final frame = await codec.getNextFrame();
+          debugPrint(
+            '  - Pre-add Sanity Check: Page image is valid (${frame.image.width}x${frame.image.height})',
+          );
+          frame.image.dispose();
+        } catch (e) {
+          debugPrint(
+            '  - 🚨 Pre-add Sanity Check FAILED: Page image is invalid! Error: $e',
+          );
+        }
+
         // 캔버스 크기를 PDF 포인트 단위로 변환 (1픽셀 = 0.75포인트)
         final pageWidthPoints = originalPage.drawingAreaWidth * 0.75;
         final pageHeightPoints = originalPage.drawingAreaHeight * 0.75;
-
-        pdf.addPage(
-          createPdfPage(
-            pageImage,
-            pageWidth: pageWidthPoints,
-            pageHeight: pageHeightPoints,
-            pageNumber: originalPage.pageNumber,
-          ),
+        debugPrint(
+          '  - PDF Page Dimensions: ${pageWidthPoints.toStringAsFixed(2)}x${pageHeightPoints.toStringAsFixed(2)} pt',
         );
+
+        try {
+          pdf.addPage(
+            createPdfPage(
+              pageImage,
+              pageWidth: pageWidthPoints,
+              pageHeight: pageHeightPoints,
+              pageNumber: originalPage.pageNumber,
+            ),
+          );
+        } catch (e) {
+          debugPrint('  - ❌ pdf.addPage() FAILED. Error: $e');
+        }
 
         final pageProgress = 0.8 + ((i + 1) / pageImages.length * 0.15);
         onProgress?.call(
@@ -154,6 +178,7 @@ class PdfExportService {
       onProgress?.call(0.95, 'PDF 파일 생성 중...');
       final pdfBytes = await pdf.save();
 
+      debugPrint('  - Final PDF Size: ${pdfBytes.length} bytes');
       onProgress?.call(1.0, 'PDF 내보내기 완료!');
       debugPrint('✅ PDF 내보내기 완료: ${pdfBytes.length} bytes');
 
