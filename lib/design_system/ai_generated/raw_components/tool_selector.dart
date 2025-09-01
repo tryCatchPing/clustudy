@@ -25,7 +25,7 @@ class ToolSelector extends StatelessWidget {
       children: tools.asMap().entries.map((entry) {
         int index = entry.key;
         ToolOption tool = entry.value;
-        
+
         return ToolbarButton(
           isSelected: index == selectedTool,
           icon: tool.icon,
@@ -156,7 +156,7 @@ class PenThicknessSelector extends StatelessWidget {
 
 class _ThicknessIndicator extends StatelessWidget {
   const _ThicknessIndicator({required this.size});
-  
+
   final double size;
 
   @override

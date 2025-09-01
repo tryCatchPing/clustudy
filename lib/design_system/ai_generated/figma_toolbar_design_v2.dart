@@ -25,25 +25,25 @@ class FigmaVaultManageV2 extends StatelessWidget {
               children: [
                 // Navigation toggle (horizontal)
                 _buildNavigationSection(),
-                
+
                 // Pen color selector (horizontal)
                 _buildColorSection(),
-                
+
                 // Pen type selector (horizontal)
                 _buildPenTypeSection(),
-                
+
                 // Pen thickness selector (horizontal)
                 _buildPenThicknessSection(),
-                
+
                 // Undo/Redo controls (horizontal)
                 _buildUndoRedoSection(),
-                
+
                 // Settings menu (horizontal)
                 _buildSettingsSection(),
               ],
             ),
           ),
-          
+
           // Main content area with two note pages
           Expanded(
             child: Row(
@@ -114,7 +114,10 @@ class FigmaVaultManageV2 extends StatelessWidget {
           ),
           // Plus button
           const Center(
-            child: Text('+', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+            child: Text(
+              '+',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
@@ -240,7 +243,10 @@ class FigmaVaultManageV2 extends StatelessWidget {
         shape: BoxShape.circle,
       ),
       child: Center(
-        child: Text(icon, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+        child: Text(
+          icon,
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }

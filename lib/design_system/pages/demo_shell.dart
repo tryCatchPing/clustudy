@@ -4,7 +4,7 @@ import '../routing/design_system_routes.dart';
 import '../tokens/app_colors.dart';
 
 /// 🏗️ 디자인 시스템 데모 셸
-/// 
+///
 /// 좌측 네비게이션과 우측 컨텐츠 영역으로 구성된 데모 환경
 /// 디자이너와 개발자가 컴포넌트를 쉽게 탐색하고 테스트할 수 있는 인터페이스
 class DemoShell extends StatelessWidget {
@@ -92,7 +92,10 @@ class DemoShell extends StatelessWidget {
                         title: 'Note Editor',
                         subtitle: 'Complete note editing interface',
                         route: DesignSystemRoutes.noteEditorDemo,
-                        isActive: _isCurrentRoute(context, DesignSystemRoutes.noteEditorDemo),
+                        isActive: _isCurrentRoute(
+                          context,
+                          DesignSystemRoutes.noteEditorDemo,
+                        ),
                       ),
 
                       const SizedBox(height: 16),
@@ -103,7 +106,10 @@ class DemoShell extends StatelessWidget {
                         title: 'Toolbar Components',
                         subtitle: 'Color picker, tools, controls',
                         route: DesignSystemRoutes.toolbarDemo,
-                        isActive: _isCurrentRoute(context, DesignSystemRoutes.toolbarDemo),
+                        isActive: _isCurrentRoute(
+                          context,
+                          DesignSystemRoutes.toolbarDemo,
+                        ),
                       ),
                       _buildNavItem(
                         context,
@@ -111,7 +117,10 @@ class DemoShell extends StatelessWidget {
                         title: 'Atomic Components',
                         subtitle: 'Buttons, circles, basic elements',
                         route: DesignSystemRoutes.atomsDemo,
-                        isActive: _isCurrentRoute(context, DesignSystemRoutes.atomsDemo),
+                        isActive: _isCurrentRoute(
+                          context,
+                          DesignSystemRoutes.atomsDemo,
+                        ),
                       ),
 
                       const SizedBox(height: 16),
@@ -213,9 +222,12 @@ class DemoShell extends StatelessWidget {
           decoration: BoxDecoration(
             color: isActive ? AppColors.primary.withOpacity(0.1) : null,
             borderRadius: BorderRadius.circular(8),
-            border: isActive 
-              ? Border.all(color: AppColors.primary.withOpacity(0.3), width: 1)
-              : null,
+            border: isActive
+                ? Border.all(
+                    color: AppColors.primary.withOpacity(0.3),
+                    width: 1,
+                  )
+                : null,
           ),
           child: Row(
             children: [
@@ -233,7 +245,9 @@ class DemoShell extends StatelessWidget {
                       title,
                       style: TextStyle(
                         fontSize: 14,
-                        fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                        fontWeight: isActive
+                            ? FontWeight.w600
+                            : FontWeight.w500,
                         color: isActive ? AppColors.primary : Colors.grey[900],
                       ),
                     ),

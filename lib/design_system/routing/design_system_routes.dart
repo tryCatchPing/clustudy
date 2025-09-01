@@ -5,7 +5,7 @@ import '../pages/component_showcase/toolbar_demo.dart';
 import '../pages/component_showcase/atoms_demo.dart';
 
 /// 🎨 디자인 시스템 데모 라우트 정의
-/// 
+///
 /// 컴포넌트 테스트, Figma 디자인 재현, 팀 협업을 위한 라우팅 시스템
 class DesignSystemRoutes {
   DesignSystemRoutes._();
@@ -13,13 +13,13 @@ class DesignSystemRoutes {
   // ================== Route Paths ==================
   /// 디자인 시스템 메인 경로
   static const String designSystem = '/design-system';
-  
+
   /// 툴바 컴포넌트 데모
   static const String toolbarDemo = '/design-system/toolbar';
-  
+
   /// 아토믹 컴포넌트들 데모
   static const String atomsDemo = '/design-system/atoms';
-  
+
   /// Figma 노트 에디터 페이지 재현
   static const String noteEditorDemo = '/design-system/note-editor';
 

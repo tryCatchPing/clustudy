@@ -177,10 +177,11 @@ void main() {
       expect(updatedNote.pages[2].backgroundPdfPageNumber, equals(2));
 
       // 업데이트된 사용 가능한 PDF 페이지 확인
-      final updatedAvailablePages = await PageManagementService.getAvailablePdfPages(
-        'pdf-workflow-test',
-        repository,
-      );
+      final updatedAvailablePages =
+          await PageManagementService.getAvailablePdfPages(
+            'pdf-workflow-test',
+            repository,
+          );
       expect(updatedAvailablePages, equals([4, 5]));
     });
 

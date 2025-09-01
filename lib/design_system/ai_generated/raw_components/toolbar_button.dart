@@ -31,21 +31,25 @@ class ToolbarButton extends StatelessWidget {
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: isSelected 
-            ? (backgroundColor ?? AppColors.penBlack)
-            : backgroundColor,
+          color: isSelected
+              ? (backgroundColor ?? AppColors.penBlack)
+              : backgroundColor,
           border: Border.all(
             color: borderColor ?? AppColors.toolbarBorder,
           ),
           shape: BoxShape.circle,
         ),
-        child: child ?? (icon != null 
-          ? Icon(
-              icon,
-              color: isSelected ? AppColors.noteBackground : AppColors.penBlack,
-              size: 16,
-            )
-          : null),
+        child:
+            child ??
+            (icon != null
+                ? Icon(
+                    icon,
+                    color: isSelected
+                        ? AppColors.noteBackground
+                        : AppColors.penBlack,
+                    size: 16,
+                  )
+                : null),
       ),
     );
   }

@@ -31,16 +31,16 @@ class ColorCircle extends StatelessWidget {
           color: color,
           shape: BoxShape.circle,
           border: isSelected && borderColor != null
-            ? Border.all(color: borderColor!, width: borderWidth)
-            : null,
+              ? Border.all(color: borderColor!, width: borderWidth)
+              : null,
         ),
         child: isSelected
-          ? Icon(
-              Icons.check,
-              color: _getContrastColor(color),
-              size: size * 0.5,
-            )
-          : null,
+            ? Icon(
+                Icons.check,
+                color: _getContrastColor(color),
+                size: size * 0.5,
+              )
+            : null,
       ),
     );
   }

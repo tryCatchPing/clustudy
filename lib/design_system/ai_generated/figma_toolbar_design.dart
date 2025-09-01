@@ -25,25 +25,25 @@ class FigmaVaultManage extends StatelessWidget {
               children: [
                 // Navigation toggle
                 _buildNavigationToggle(),
-                
+
                 // Pen color selector
                 _buildPenColorSelector(),
-                
+
                 // Pen type selector
                 _buildPenTypeSelector(),
-                
+
                 // Pen thickness selector
                 _buildPenThicknessSelector(),
-                
+
                 // Undo/Redo controls
                 _buildUndoRedoControls(),
-                
+
                 // Settings toggle
                 _buildSettingsToggle(),
               ],
             ),
           ),
-          
+
           // Main content area with two note pages
           Expanded(
             child: Row(

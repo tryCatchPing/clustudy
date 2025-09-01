@@ -3,7 +3,7 @@ import '../../ai_generated/raw_components/canvas_toolbar.dart';
 import '../../tokens/app_colors.dart';
 
 /// 📋 Figma 노트 에디터 디자인 재현 페이지
-/// 
+///
 /// 원본 Figma 디자인: https://www.figma.com/design/MtvaMAiatLnIYEilnFKB2F/design-duplicated?node-id=21-1697&m=dev
 /// 이 페이지는 디자이너와 개발자가 실제 동작을 확인하고 피드백할 수 있는 living documentation 역할
 class NoteEditorDemo extends StatefulWidget {
@@ -47,7 +47,10 @@ class _NoteEditorDemoState extends State<NoteEditorDemo> {
       // 실제 앱에서는 실제 undo 로직 실행
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Undo performed'), duration: Duration(seconds: 1)),
+      const SnackBar(
+        content: Text('Undo performed'),
+        duration: Duration(seconds: 1),
+      ),
     );
   }
 
@@ -57,7 +60,10 @@ class _NoteEditorDemoState extends State<NoteEditorDemo> {
       // 실제 앱에서는 실제 redo 로직 실행
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Redo performed'), duration: Duration(seconds: 1)),
+      const SnackBar(
+        content: Text('Redo performed'),
+        duration: Duration(seconds: 1),
+      ),
     );
   }
 
@@ -66,37 +72,55 @@ class _NoteEditorDemoState extends State<NoteEditorDemo> {
       currentNoteName = 'New Note ${DateTime.now().millisecond}';
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Created: $currentNoteName'), duration: const Duration(seconds: 1)),
+      SnackBar(
+        content: Text('Created: $currentNoteName'),
+        duration: const Duration(seconds: 1),
+      ),
     );
   }
 
   void _onNoteSelect() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Note selection opened'), duration: Duration(seconds: 1)),
+      const SnackBar(
+        content: Text('Note selection opened'),
+        duration: Duration(seconds: 1),
+      ),
     );
   }
 
   void _onSettings() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Settings opened'), duration: Duration(seconds: 1)),
+      const SnackBar(
+        content: Text('Settings opened'),
+        duration: Duration(seconds: 1),
+      ),
     );
   }
 
   void _onPage() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Page options opened'), duration: Duration(seconds: 1)),
+      const SnackBar(
+        content: Text('Page options opened'),
+        duration: Duration(seconds: 1),
+      ),
     );
   }
 
   void _onLinks() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Links panel opened'), duration: Duration(seconds: 1)),
+      const SnackBar(
+        content: Text('Links panel opened'),
+        duration: Duration(seconds: 1),
+      ),
     );
   }
 
   void _onAddElement() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Add element panel opened'), duration: Duration(seconds: 1)),
+      const SnackBar(
+        content: Text('Add element panel opened'),
+        duration: Duration(seconds: 1),
+      ),
     );
   }
 
@@ -181,7 +205,6 @@ class _NoteEditorDemoState extends State<NoteEditorDemo> {
                   ),
 
                   const SizedBox(width: 100), // Gap between pages
-
                   // Right Note Page
                   Container(
                     width: 477.5,

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 /// 🌑 앱 전체에서 사용할 그림자 시스템
-/// 
+///
 /// Figma 디자인 시스템을 기반으로 한 그림자 토큰입니다.
 /// BoxDecoration에서 하드코딩된 그림자 대신 이 클래스를 사용해주세요.
-/// 
+///
 /// 예시:
 /// ```dart
 /// Container(
@@ -245,11 +245,13 @@ class AppShadows {
   /// 투명도를 조절한 그림자 생성
   static List<BoxShadow> withOpacity(List<BoxShadow> shadows, double opacity) {
     return shadows
-        .map((shadow) => shadow.copyWith(
-              color: shadow.color.withOpacity(
-                shadow.color.opacity * opacity,
-              ),
-            ))
+        .map(
+          (shadow) => shadow.copyWith(
+            color: shadow.color.withOpacity(
+              shadow.color.opacity * opacity,
+            ),
+          ),
+        )
         .toList();
   }
 }
@@ -258,7 +260,7 @@ class AppShadows {
 class AppShadowsDark {
   // Private constructor
   AppShadowsDark._();
-  
+
   // 다크 모드에서는 그림자가 더 밝게 나타나야 함
   static const List<BoxShadow> medium = [
     BoxShadow(
@@ -267,6 +269,6 @@ class AppShadowsDark {
       offset: Offset(0, 4),
     ),
   ];
-  
+
   // TODO: 다크 모드 그림자 완전 구현
 }
