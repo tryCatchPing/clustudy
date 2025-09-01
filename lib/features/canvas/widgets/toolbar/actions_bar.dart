@@ -25,7 +25,7 @@ class NoteEditorActionsBar extends ConsumerWidget {
 
     final notifier = ref.watch(currentNotifierProvider(noteId));
     final note = ref.watch(noteProvider(noteId)).value;
-    final currentPageIndex = ref.watch(currentPageIndexProvider(noteId));
+    // final currentPageIndex = ref.watch(currentPageIndexProvider(noteId));
 
     return Row(
       children: [
