@@ -1,0 +1,244 @@
+import 'dart:async';
+
+import '../../../shared/repositories/link_repository.dart';
+import '../../canvas/models/link_model.dart';
+
+/// 간단한 인메모리 LinkRepository 구현.
+///
+/// - 앱 실행 중 메모리에만 유지됩니다.
+/// - 키 단위(Stream per key)로 변화를 브로드캐스트합니다.
+class MemoryLinkRepository implements LinkRepository {
+  // 저장소
+  final Map<String, LinkModel> _links = <String, LinkModel>{};
+
+  // 인덱스: 소스 페이지별
+  final Map<String, List<LinkModel>> _bySourcePage =
+      <String, List<LinkModel>>{};
+
+  // 인덱스: 타깃 노트별 백링크
+  final Map<String, Set<String>> _byTargetNote =
+      <String, Set<String>>{}; // linkIds
+
+  // 인덱스: 타깃 페이지별 백링크
+  final Map<String, Set<String>> _byTargetPage =
+      <String, Set<String>>{}; // linkIds
+
+  // 스트림 컨트롤러: 페이지 Outgoing
+  final Map<String, StreamController<List<LinkModel>>> _pageControllers =
+      <String, StreamController<List<LinkModel>>>{};
+
+  // 스트림 컨트롤러: 페이지 Backlinks
+  final Map<String, StreamController<List<LinkModel>>>
+  _backlinksPageControllers = <String, StreamController<List<LinkModel>>>{};
+
+  // 스트림 컨트롤러: 노트 Backlinks
+  final Map<String, StreamController<List<LinkModel>>>
+  _backlinksNoteControllers = <String, StreamController<List<LinkModel>>>{};
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Watchers
+  //////////////////////////////////////////////////////////////////////////////
+  @override
+  Stream<List<LinkModel>> watchByPage(String pageId) async* {
+    // 초깃값 방출
+    yield List<LinkModel>.unmodifiable(
+      _bySourcePage[pageId] ?? const <LinkModel>[],
+    );
+    // 이후 변경 스트림 연결
+    yield* _ensurePageController(pageId).stream;
+  }
+
+  @override
+  Stream<List<LinkModel>> watchBacklinksToPage(String pageId) async* {
+    yield _collectByTargetPage(pageId);
+    yield* _ensureBacklinksPageController(pageId).stream;
+  }
+
+  @override
+  Stream<List<LinkModel>> watchBacklinksToNote(String noteId) async* {
+    yield _collectByTargetNote(noteId);
+    yield* _ensureBacklinksNoteController(noteId).stream;
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Mutations
+  //////////////////////////////////////////////////////////////////////////////
+  @override
+  Future<void> create(LinkModel link) async {
+    // 삽입
+    _links[link.id] = link;
+
+    // 소스 페이지 인덱스 추가
+    final pageList = _bySourcePage.putIfAbsent(
+      link.sourcePageId,
+      () => <LinkModel>[],
+    );
+    // 동일 id 중복 방지 후 추가
+    pageList.removeWhere((e) => e.id == link.id);
+    pageList.add(link);
+
+    // 타깃 인덱스 추가
+    _byTargetNote.putIfAbsent(link.targetNoteId, () => <String>{}).add(link.id);
+    if (link.targetPageId != null) {
+      _byTargetPage
+          .putIfAbsent(link.targetPageId!, () => <String>{})
+          .add(link.id);
+    }
+
+    // 영향 받은 키들에 대해 방출
+    _emitForSourcePage(link.sourcePageId);
+    _emitForTargetNote(link.targetNoteId);
+    if (link.targetPageId != null) {
+      _emitForTargetPage(link.targetPageId!);
+    }
+  }
+
+  @override
+  Future<void> update(LinkModel link) async {
+    final old = _links[link.id];
+    if (old == null) {
+      // 없으면 create로 처리
+      await create(link);
+      return;
+    }
+
+    // 기존 인덱스에서 제거
+    final oldList = _bySourcePage[old.sourcePageId];
+    oldList?.removeWhere((e) => e.id == old.id);
+    _byTargetNote[old.targetNoteId]?.remove(old.id);
+    if (old.targetPageId != null) {
+      _byTargetPage[old.targetPageId!]?.remove(old.id);
+    }
+
+    // 새로운 값으로 삽입
+    _links[link.id] = link;
+    final newList = _bySourcePage.putIfAbsent(
+      link.sourcePageId,
+      () => <LinkModel>[],
+    );
+    newList.removeWhere((e) => e.id == link.id);
+    newList.add(link);
+    _byTargetNote.putIfAbsent(link.targetNoteId, () => <String>{}).add(link.id);
+    if (link.targetPageId != null) {
+      _byTargetPage
+          .putIfAbsent(link.targetPageId!, () => <String>{})
+          .add(link.id);
+    }
+
+    // 영향 받은 키들 방출 (old/new 모두)
+    _emitForSourcePage(old.sourcePageId);
+    _emitForTargetNote(old.targetNoteId);
+    if (old.targetPageId != null) {
+      _emitForTargetPage(old.targetPageId!);
+    }
+
+    _emitForSourcePage(link.sourcePageId);
+    _emitForTargetNote(link.targetNoteId);
+    if (link.targetPageId != null) {
+      _emitForTargetPage(link.targetPageId!);
+    }
+  }
+
+  @override
+  Future<void> delete(String linkId) async {
+    final old = _links.remove(linkId);
+    if (old == null) return;
+
+    _bySourcePage[old.sourcePageId]?.removeWhere((e) => e.id == linkId);
+    _byTargetNote[old.targetNoteId]?.remove(linkId);
+    if (old.targetPageId != null) {
+      _byTargetPage[old.targetPageId!]?.remove(linkId);
+    }
+
+    _emitForSourcePage(old.sourcePageId);
+    _emitForTargetNote(old.targetNoteId);
+    if (old.targetPageId != null) {
+      _emitForTargetPage(old.targetPageId!);
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final c in _pageControllers.values) {
+      if (!c.isClosed) c.close();
+    }
+    for (final c in _backlinksPageControllers.values) {
+      if (!c.isClosed) c.close();
+    }
+    for (final c in _backlinksNoteControllers.values) {
+      if (!c.isClosed) c.close();
+    }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Helpers
+  //////////////////////////////////////////////////////////////////////////////
+  StreamController<List<LinkModel>> _ensurePageController(String pageId) {
+    return _pageControllers.putIfAbsent(
+      pageId,
+      () => StreamController<List<LinkModel>>.broadcast(),
+    );
+  }
+
+  StreamController<List<LinkModel>> _ensureBacklinksPageController(
+    String pageId,
+  ) {
+    return _backlinksPageControllers.putIfAbsent(
+      pageId,
+      () => StreamController<List<LinkModel>>.broadcast(),
+    );
+  }
+
+  StreamController<List<LinkModel>> _ensureBacklinksNoteController(
+    String noteId,
+  ) {
+    return _backlinksNoteControllers.putIfAbsent(
+      noteId,
+      () => StreamController<List<LinkModel>>.broadcast(),
+    );
+  }
+
+  void _emitForSourcePage(String pageId) {
+    final list = List<LinkModel>.unmodifiable(
+      _bySourcePage[pageId] ?? const <LinkModel>[],
+    );
+    final c = _ensurePageController(pageId);
+    if (!c.isClosed) c.add(list);
+  }
+
+  void _emitForTargetNote(String noteId) {
+    final list = _collectByTargetNote(noteId);
+    final c = _ensureBacklinksNoteController(noteId);
+    if (!c.isClosed) c.add(list);
+  }
+
+  void _emitForTargetPage(String pageId) {
+    final list = _collectByTargetPage(pageId);
+    final c = _ensureBacklinksPageController(pageId);
+    if (!c.isClosed) c.add(list);
+  }
+
+  List<LinkModel> _collectByTargetNote(String noteId) {
+    final ids = _byTargetNote[noteId];
+    if (ids == null || ids.isEmpty) return const <LinkModel>[];
+    return List<LinkModel>.unmodifiable(
+      ids
+          .map((id) => _links[id])
+          .where((e) => e != null)
+          .cast<LinkModel>()
+          .toList(),
+    );
+  }
+
+  List<LinkModel> _collectByTargetPage(String pageId) {
+    final ids = _byTargetPage[pageId];
+    if (ids == null || ids.isEmpty) return const <LinkModel>[];
+    return List<LinkModel>.unmodifiable(
+      ids
+          .map((id) => _links[id])
+          .where((e) => e != null)
+          .cast<LinkModel>()
+          .toList(),
+    );
+  }
+}

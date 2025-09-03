@@ -9,6 +9,7 @@ import '../../notes/data/derived_note_providers.dart';
 import '../constants/note_editor_constant.dart'; // NoteEditorConstants 정의 필요
 import '../notifiers/custom_scribble_notifier.dart';
 import '../providers/note_editor_provider.dart';
+import '../providers/tool_settings_provider.dart';
 import '../providers/transformation_controller_provider.dart';
 import 'canvas_background_widget.dart'; // CanvasBackgroundWidget 정의 필요
 import 'linker_gesture_layer.dart';
@@ -193,8 +194,9 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                   child: ValueListenableBuilder<ScribbleState>(
                     valueListenable: notifier,
                     builder: (context, scribbleState, child) {
-                      final currentToolMode =
-                          notifier.toolMode; // notifier에서 직접 toolMode 가져오기
+                      final currentToolMode = ref
+                          .read(toolSettingsNotifierProvider(widget.noteId))
+                          .toolMode;
                       return Stack(
                         children: [
                           // 배경 레이어
