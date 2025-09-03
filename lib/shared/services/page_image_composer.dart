@@ -28,7 +28,9 @@ class PageImageComposer {
       debugPrint('✅ 스케치 이미지 추출 완료 (크기: ${bytes.length} bytes)');
       return bytes;
     } catch (e) {
-      debugPrint('  - ❌ renderImage() FAILED (pixelRatio: $pixelRatio). Error: $e');
+      debugPrint(
+        '  - ❌ renderImage() FAILED (pixelRatio: $pixelRatio). Error: $e',
+      );
       debugPrint('❌ 스케치 이미지 추출 실패: $e');
       return null;
     }
@@ -53,7 +55,9 @@ class PageImageComposer {
       }
 
       final fileBytes = imageFile.lengthSync();
-      debugPrint('  - BG File Exists: ${page.preRenderedImagePath} (${fileBytes} bytes)');
+      debugPrint(
+        '  - BG File Exists: ${page.preRenderedImagePath} (${fileBytes} bytes)',
+      );
 
       final imageBytes = await imageFile.readAsBytes();
       final codec = await ui.instantiateImageCodec(
@@ -62,7 +66,9 @@ class PageImageComposer {
         targetHeight: targetHeight?.toInt(),
       );
       final frame = await codec.getNextFrame();
-      debugPrint('  - BG Decode Success: ${frame.image.width}x${frame.image.height}');
+      debugPrint(
+        '  - BG Decode Success: ${frame.image.width}x${frame.image.height}',
+      );
       debugPrint('✅ PDF 배경 로드 완료: ${frame.image.width}x${frame.image.height}');
       return frame.image;
     } catch (e) {
@@ -81,7 +87,8 @@ class PageImageComposer {
       final pageWidth = page.drawingAreaWidth;
       final pageHeight = page.drawingAreaHeight;
       final finalWidth = (pageWidth * pixelRatio / _defaultPixelRatio).toInt();
-      final finalHeight = (pageHeight * pixelRatio / _defaultPixelRatio).toInt();
+      final finalHeight = (pageHeight * pixelRatio / _defaultPixelRatio)
+          .toInt();
 
       debugPrint(
         '📐 캔버스 크기: ${pageWidth}x$pageHeight, 출력 크기: ${finalWidth}x$finalHeight',
@@ -109,10 +116,14 @@ class PageImageComposer {
         try {
           final codec = await ui.instantiateImageCodec(bytes);
           final frame = await codec.getNextFrame();
-          debugPrint('  - Sanity Check: Composed PNG is valid (${frame.image.width}x${frame.image.height})');
+          debugPrint(
+            '  - Sanity Check: Composed PNG is valid (${frame.image.width}x${frame.image.height})',
+          );
           frame.image.dispose();
         } catch (e) {
-          debugPrint('  - 🚨 Sanity Check FAILED: Composed PNG is invalid! Error: $e');
+          debugPrint(
+            '  - 🚨 Sanity Check FAILED: Composed PNG is invalid! Error: $e',
+          );
         }
         return bytes;
       } else {
@@ -139,9 +150,13 @@ class PageImageComposer {
       final page = pages[i];
       final notifier = notifiers[page.pageId];
 
-      debugPrint('==================== Processing Page ${page.pageNumber} ====================');
+      debugPrint(
+        '==================== Processing Page ${page.pageNumber} ====================',
+      );
       debugPrint('  - Page ID: ${page.pageId}');
-      debugPrint('  - Drawing Area: ${page.drawingAreaWidth}x${page.drawingAreaHeight}');
+      debugPrint(
+        '  - Drawing Area: ${page.drawingAreaWidth}x${page.drawingAreaHeight}',
+      );
       debugPrint('  - Has PDF BG: ${page.hasPdfBackground}');
       debugPrint('  - Has Prerendered: ${page.hasPreRenderedImage}');
       debugPrint('  - Prerendered Path: ${page.preRenderedImagePath}');
@@ -255,8 +270,7 @@ class PageImageComposer {
       } else {
         debugPrint('⚠️ 스케치 이미지 추출 실패, 배경만 처리');
       }
-    }
-    catch (e) {
+    } catch (e) {
       debugPrint('❌ 스케치 오버레이 실패: $e');
     }
   }
