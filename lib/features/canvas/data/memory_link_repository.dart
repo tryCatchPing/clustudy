@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 
 import '../../../shared/repositories/link_repository.dart';
 import '../../canvas/models/link_model.dart';
@@ -40,6 +41,9 @@ class MemoryLinkRepository implements LinkRepository {
   //////////////////////////////////////////////////////////////////////////////
   @override
   Stream<List<LinkModel>> watchByPage(String pageId) async* {
+    // 구독 시작 로그
+    // ignore: avoid_print
+    debugPrint('[MemoryLinkRepository] watchByPage subscribe page=$pageId');
     // 초깃값 방출
     yield List<LinkModel>.unmodifiable(
       _bySourcePage[pageId] ?? const <LinkModel>[],
@@ -50,12 +54,14 @@ class MemoryLinkRepository implements LinkRepository {
 
   @override
   Stream<List<LinkModel>> watchBacklinksToPage(String pageId) async* {
+    debugPrint('[MemoryLinkRepository] watchBacklinksToPage subscribe page=$pageId');
     yield _collectByTargetPage(pageId);
     yield* _ensureBacklinksPageController(pageId).stream;
   }
 
   @override
   Stream<List<LinkModel>> watchBacklinksToNote(String noteId) async* {
+    debugPrint('[MemoryLinkRepository] watchBacklinksToNote subscribe note=$noteId');
     yield _collectByTargetNote(noteId);
     yield* _ensureBacklinksNoteController(noteId).stream;
   }
@@ -65,6 +71,9 @@ class MemoryLinkRepository implements LinkRepository {
   //////////////////////////////////////////////////////////////////////////////
   @override
   Future<void> create(LinkModel link) async {
+    debugPrint('[MemoryLinkRepository] create id=${link.id} '
+        'src=${link.sourceNoteId}/${link.sourcePageId} '
+        'tgt=${link.targetNoteId}/${link.targetPageId ?? '-'}');
     // 삽입
     _links[link.id] = link;
 
@@ -95,6 +104,7 @@ class MemoryLinkRepository implements LinkRepository {
 
   @override
   Future<void> update(LinkModel link) async {
+    debugPrint('[MemoryLinkRepository] update id=${link.id}');
     final old = _links[link.id];
     if (old == null) {
       // 없으면 create로 처리
@@ -141,6 +151,7 @@ class MemoryLinkRepository implements LinkRepository {
 
   @override
   Future<void> delete(String linkId) async {
+    debugPrint('[MemoryLinkRepository] delete id=$linkId');
     final old = _links.remove(linkId);
     if (old == null) return;
 
@@ -202,18 +213,21 @@ class MemoryLinkRepository implements LinkRepository {
     final list = List<LinkModel>.unmodifiable(
       _bySourcePage[pageId] ?? const <LinkModel>[],
     );
+    debugPrint('[MemoryLinkRepository] emit sourcePage=$pageId count=${list.length}');
     final c = _ensurePageController(pageId);
     if (!c.isClosed) c.add(list);
   }
 
   void _emitForTargetNote(String noteId) {
     final list = _collectByTargetNote(noteId);
+    debugPrint('[MemoryLinkRepository] emit targetNote=$noteId count=${list.length}');
     final c = _ensureBacklinksNoteController(noteId);
     if (!c.isClosed) c.add(list);
   }
 
   void _emitForTargetPage(String pageId) {
     final list = _collectByTargetPage(pageId);
+    debugPrint('[MemoryLinkRepository] emit targetPage=$pageId count=${list.length}');
     final c = _ensureBacklinksPageController(pageId);
     if (!c.isClosed) c.add(list);
   }

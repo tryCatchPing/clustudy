@@ -1,4 +1,5 @@
 import 'dart:ui' show Rect, Offset;
+import 'package:flutter/foundation.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -23,6 +24,7 @@ final linkRepositoryProvider = Provider<LinkRepository>((ref) {
 /// 특정 페이지의 Outgoing 링크 목록을 스트림으로 제공합니다.
 @riverpod
 Stream<List<LinkModel>> linksByPage(Ref ref, String pageId) {
+  debugPrint('[linksByPageProvider] page=$pageId');
   final repo = ref.watch(linkRepositoryProvider);
   return repo.watchByPage(pageId);
 }
@@ -33,6 +35,7 @@ Stream<List<LinkModel>> backlinksToPage(
   Ref ref,
   String pageId,
 ) {
+  debugPrint('[backlinksToPageProvider] page=$pageId');
   final repo = ref.watch(linkRepositoryProvider);
   return repo.watchBacklinksToPage(pageId);
 }
@@ -43,6 +46,7 @@ Stream<List<LinkModel>> backlinksToNote(
   Ref ref,
   String noteId,
 ) {
+  debugPrint('[backlinksToNoteProvider] note=$noteId');
   final repo = ref.watch(linkRepositoryProvider);
   return repo.watchBacklinksToNote(noteId);
 }
@@ -52,7 +56,9 @@ Stream<List<LinkModel>> backlinksToNote(
 List<Rect> linkRectsByPage(Ref ref, String pageId) {
   final linksAsync = ref.watch(linksByPageProvider(pageId));
   return linksAsync.when(
-    data: (links) => links
+    data: (links) {
+      debugPrint('[linkRectsByPageProvider] page=$pageId links=${links.length}');
+      return links
         .map(
           (l) => Rect.fromLTWH(
             l.bboxLeft,
@@ -61,7 +67,8 @@ List<Rect> linkRectsByPage(Ref ref, String pageId) {
             l.bboxHeight,
           ),
         )
-        .toList(growable: false),
+        .toList(growable: false);
+    },
     error: (_, __) => const <Rect>[],
     loading: () => const <Rect>[],
   );
@@ -77,6 +84,10 @@ LinkModel? linkAtPoint(
   final linksAsync = ref.watch(linksByPageProvider(pageId));
   return linksAsync.when(
     data: (links) {
+      debugPrint('[linkAtPointProvider] page=$pageId test='
+          '${localPoint.dx.toStringAsFixed(1)},'
+          '${localPoint.dy.toStringAsFixed(1)} '
+          'candidates=${links.length}');
       for (final l in links) {
         final r = Rect.fromLTWH(
           l.bboxLeft,

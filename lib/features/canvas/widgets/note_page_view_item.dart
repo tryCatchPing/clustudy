@@ -8,11 +8,13 @@ import 'package:scribble/scribble.dart';
 import '../../notes/data/derived_note_providers.dart';
 import '../constants/note_editor_constant.dart'; // NoteEditorConstants 정의 필요
 import '../notifiers/custom_scribble_notifier.dart';
+import '../providers/link_providers.dart';
 import '../providers/note_editor_provider.dart';
 import '../providers/tool_settings_provider.dart';
 import '../providers/transformation_controller_provider.dart';
 import 'canvas_background_widget.dart'; // CanvasBackgroundWidget 정의 필요
 import 'linker_gesture_layer.dart';
+import 'saved_links_layer.dart';
 
 /// Note 편집 화면의 단일 페이지 뷰 아이템입니다.
 class NotePageViewItem extends ConsumerStatefulWidget {
@@ -34,7 +36,7 @@ class NotePageViewItem extends ConsumerStatefulWidget {
 class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
   Timer? _debounceTimer;
   double _lastScale = 1.0;
-  List<Rect> _currentLinkerRectangles = []; // LinkerGestureLayer로부터 받은 링커 목록
+  // 임시 드래그 상태는 LinkerGestureLayer 내부에서만 관리되므로 상태 제거
 
   // 비-build 컨텍스트에서 현재 노트의 notifier 접근용
   CustomScribbleNotifier get _currentNotifier =>
@@ -94,11 +96,8 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
     }
   }
 
-  /// 링커 옵션 다이얼로그를 표시합니다.
-  ///
-  /// [context]는 빌드 컨텍스트입니다.
-  /// [tappedRect]는 탭된 링커의 사각형 정보입니다.
-  void _showLinkerOptions(BuildContext context, Rect tappedRect) {
+  /// 저장된 링크를 탭했을 때 옵션을 표시합니다.
+  void _showSavedLinkOptions(BuildContext context) {
     // 바텀 시트 표시 로직 (구현 생략)
     showModalBottomSheet<void>(
       context: context,
@@ -154,6 +153,12 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
     final drawingHeight = notifier.page!.drawingAreaHeight;
     final isLinkerMode = notifier.toolMode.isLinker;
 
+    debugPrint('[NotePageViewItem] build: '
+        'noteId=${widget.noteId}, pageId=${notifier.page!.pageId}, '
+        'tool=${notifier.toolMode}, '
+        'linkerMode=$isLinkerMode, '
+        'drawing=${drawingWidth.toStringAsFixed(0)}x${drawingHeight.toStringAsFixed(0)}');
+
     // -- NotePageViewItem의 build 메서드 내부--
     if (!isLinkerMode) {
       debugPrint('렌더링: Scribble 위젯');
@@ -177,8 +182,8 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
             minScale: 0.3,
             maxScale: 3.0,
             constrained: false,
-            // 패닝 활성화: 비-스타일러스 입력은 InteractiveViewer가 처리
-            panEnabled: true,
+            // 링커 모드에서는 패닝을 비활성화하여 제스처 레이어가 드래그를 선점하도록 함
+            panEnabled: !isLinkerMode,
             scaleEnabled: true,
             onInteractionEnd: (details) {
               _debounceTimer?.cancel();
@@ -205,17 +210,14 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                             width: drawingWidth,
                             height: drawingHeight,
                           ),
-                          // 링커 직사각형을 항상 그리는 레이어 추가
-                          CustomPaint(
-                            painter: _LinkerRectanglePainter(
-                              _currentLinkerRectangles,
-                              fillColor: Colors.pinkAccent.withAlpha(
-                                (255 * 0.3).round(),
-                              ),
-                              borderColor: Colors.pinkAccent,
-                              borderWidth: 2.0,
+                          // 저장된 링크 레이어 (Provider 기반)
+                          SavedLinksLayer(
+                            pageId: notifier.page!.pageId,
+                            fillColor: Colors.pinkAccent.withAlpha(
+                              (255 * 0.3).round(),
                             ),
-                            child: Container(),
+                            borderColor: Colors.pinkAccent,
+                            borderWidth: 2.0,
                           ),
                           // 필기 레이어 (링커 모드가 아닐 때만 활성화)
                           IgnorePointer(
@@ -235,23 +237,34 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                           Positioned.fill(
                             child: LinkerGestureLayer(
                               toolMode: currentToolMode,
-                              allowMouseForLinker:
+                              pointerMode:
                                   scribbleState.allowedPointersMode ==
-                                  ScribblePointerMode.all,
-                              onLinkerRectanglesChanged: (rects) {
-                                setState(() {
-                                  _currentLinkerRectangles = rects;
-                                });
+                                          ScribblePointerMode.all
+                                      ? LinkerPointerMode.all
+                                      : LinkerPointerMode.stylusOnly,
+                              onRectCompleted: (rect) {
+                                debugPrint('[NotePageViewItem] onRectCompleted: '
+                                    '(${rect.left.toStringAsFixed(1)},'
+                                    '${rect.top.toStringAsFixed(1)},'
+                                    '${rect.width.toStringAsFixed(1)}x'
+                                    '${rect.height.toStringAsFixed(1)})');
+                                // TODO: 링크 생성 다이얼로그 호출 후 저장
                               },
-                              onLinkerTapped: (tappedRect) {
-                                _showLinkerOptions(context, tappedRect);
+                              onTapAt: (localPoint) {
+                                final pageId = notifier.page!.pageId;
+                                debugPrint('[NotePageViewItem] onTapAt '
+                                    '${localPoint.dx.toStringAsFixed(1)},'
+                                    '${localPoint.dy.toStringAsFixed(1)}');
+                                final link = ref.read(
+                                  linkAtPointProvider(pageId, localPoint),
+                                );
+                                if (link != null) {
+                                  debugPrint('[NotePageViewItem] hit saved link: '
+                                      '${link.id}');
+                                  _showSavedLinkOptions(context);
+                                }
                               },
                               minLinkerRectangleSize: 16.0,
-                              linkerFillColor: Colors.pinkAccent.withAlpha(
-                                (255 * 0.3).round(),
-                              ),
-                              linkerBorderColor: Colors.pinkAccent,
-                              linkerBorderWidth: 2.0,
                               currentLinkerFillColor: Colors.pinkAccent
                                   .withAlpha((255 * 0.15).round()),
                               currentLinkerBorderColor: Colors.pinkAccent,
@@ -269,58 +282,5 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
         ),
       ),
     );
-  }
-}
-
-/// 링커 직사각형을 그리는 CustomPainter
-class _LinkerRectanglePainter extends CustomPainter {
-  /// [rectangles]는 그릴 사각형 목록입니다.
-  final List<Rect> rectangles;
-
-  /// 채우기 색상.
-  final Color fillColor;
-
-  /// 테두리 색상.
-  final Color borderColor;
-
-  /// 테두리 두께.
-  final double borderWidth;
-
-  /// [_LinkerRectanglePainter]의 생성자.
-  ///
-  /// [rectangles]는 그릴 사각형 목록입니다.
-  /// [fillColor]는 채우기 색상입니다.
-  /// [borderColor]는 테두리 색상입니다.
-  /// [borderWidth]는 테두리 두께입니다.
-  _LinkerRectanglePainter(
-    this.rectangles, {
-    required this.fillColor,
-    required this.borderColor,
-    required this.borderWidth,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final fillPaint = Paint()
-      ..color = fillColor
-      ..style = PaintingStyle.fill;
-
-    final borderPaint = Paint()
-      ..color = borderColor
-      ..strokeWidth = borderWidth
-      ..style = PaintingStyle.stroke;
-
-    for (final rect in rectangles) {
-      canvas.drawRect(rect, fillPaint);
-      canvas.drawRect(rect, borderPaint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _LinkerRectanglePainter oldDelegate) {
-    return oldDelegate.rectangles != rectangles ||
-        oldDelegate.fillColor != fillColor ||
-        oldDelegate.borderColor != borderColor ||
-        oldDelegate.borderWidth != borderWidth;
   }
 }
