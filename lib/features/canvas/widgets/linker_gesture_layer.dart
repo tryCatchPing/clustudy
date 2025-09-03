@@ -3,7 +3,16 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 import '../models/tool_mode.dart'; // ToolMode 정의 필요
-import 'rectangle_linker_painter.dart';
+import 'link_drag_overlay_painter.dart';
+
+/// 링커 입력 포인터 정책
+enum LinkerPointerMode {
+  /// 모든 입력 허용(손가락/펜/마우스/트랙패드)
+  all,
+
+  /// 펜(스타일러스)만 드래그 허용. 탭은 손가락/펜 모두 허용.
+  stylusOnly,
+}
 
 /// 링커 생성 및 상호작용 제스처를 처리하고 링커 목록을 관리하는 위젯입니다.
 /// [toolMode]에 따라 드래그 제스처 활성화 여부를 결정하며, 탭 제스처는 항상 활성화됩니다.
@@ -11,23 +20,17 @@ class LinkerGestureLayer extends StatefulWidget {
   /// 현재 도구 모드.
   final ToolMode toolMode;
 
-  /// 링커 목록이 변경될 때 호출되는 콜백 함수.
-  final ValueChanged<List<Rect>> onLinkerRectanglesChanged;
+  /// 포인터 정책(전체/펜 전용)
+  final LinkerPointerMode pointerMode;
 
-  /// 링커가 탭될 때 호출되는 콜백 함수.
-  final ValueChanged<Rect> onLinkerTapped;
+  /// 드래그 완료 시 사각형을 전달합니다.
+  final ValueChanged<Rect> onRectCompleted;
+
+  /// 탭 좌표를 부모로 전달합니다(저장된 링크에 대한 히트 테스트는 부모/Provider에서 수행).
+  final ValueChanged<Offset> onTapAt;
 
   /// 유효한 링커로 인식될 최소 크기.
   final double minLinkerRectangleSize;
-
-  /// 기존 링커의 채우기 색상.
-  final Color linkerFillColor;
-
-  /// 기존 링커의 테두리 색상.
-  final Color linkerBorderColor;
-
-  /// 기존 링커의 테두리 두께.
-  final double linkerBorderWidth;
 
   /// 현재 드래그 중인 링커의 채우기 색상.
   final Color currentLinkerFillColor;
@@ -38,30 +41,24 @@ class LinkerGestureLayer extends StatefulWidget {
   /// 현재 드래그 중인 링커의 테두리 두께.
   final double currentLinkerBorderWidth;
 
-  /// all 모드에서 마우스로도 링커 드래그를 허용할지 여부
-  final bool allowMouseForLinker;
-
   /// [LinkerGestureLayer]의 생성자.
   ///
   /// [toolMode]는 현재 도구 모드입니다.
-  /// [onLinkerRectanglesChanged]는 링커 목록이 변경될 때 호출됩니다.
-  /// [onLinkerTapped]는 링커가 탭될 때 호출됩니다.
+  /// [pointerMode]는 입력 포인터 정책입니다.
+  /// [onRectCompleted]는 드래그 완료 시 바운딩 박스를 전달합니다.
+  /// [onTapAt]은 탭 좌표를 부모로 전달합니다.
   /// [minLinkerRectangleSize]는 유효한 링커로 인식될 최소 크기입니다.
-  /// [linkerFillColor], [linkerBorderColor], [linkerBorderWidth]는 기존 링커의 스타일을 정의합니다.
   /// [currentLinkerFillColor], [currentLinkerBorderColor], [currentLinkerBorderWidth]는 현재 드래그 중인 링커의 스타일을 정의합니다.
   const LinkerGestureLayer({
     super.key,
     required this.toolMode,
-    required this.onLinkerRectanglesChanged,
-    required this.onLinkerTapped,
+    required this.pointerMode,
+    required this.onRectCompleted,
+    required this.onTapAt,
     this.minLinkerRectangleSize = 5.0,
-    this.linkerFillColor = Colors.pinkAccent,
-    this.linkerBorderColor = Colors.pinkAccent,
-    this.linkerBorderWidth = 2.0,
     this.currentLinkerFillColor = Colors.green,
     this.currentLinkerBorderColor = Colors.green,
     this.currentLinkerBorderWidth = 2.0,
-    this.allowMouseForLinker = false,
   });
 
   @override
@@ -71,10 +68,15 @@ class LinkerGestureLayer extends StatefulWidget {
 class _LinkerGestureLayerState extends State<LinkerGestureLayer> {
   Offset? _currentDragStart;
   Offset? _currentDragEnd;
-  final List<Rect> _linkerRectangles = []; // 내부적으로 링커 목록 관리
 
   /// 드래그 시작 시 호출
   void _onDragStart(DragStartDetails details) {
+    debugPrint(
+      '[LinkerGestureLayer] onDragStart at '
+      '${details.localPosition.dx.toStringAsFixed(1)},'
+      '${details.localPosition.dy.toStringAsFixed(1)} '
+      '(tool=${widget.toolMode})',
+    );
     setState(() {
       _currentDragStart = details.localPosition;
       _currentDragEnd = details.localPosition;
@@ -83,6 +85,11 @@ class _LinkerGestureLayerState extends State<LinkerGestureLayer> {
 
   /// 드래그 중 호출
   void _onDragUpdate(DragUpdateDetails details) {
+    // debugPrint(
+    //   '[LinkerGestureLayer] onDragUpdate at '
+    //   '${details.localPosition.dx.toStringAsFixed(1)},'
+    //   '${details.localPosition.dy.toStringAsFixed(1)}',
+    // );
     setState(() {
       _currentDragEnd = details.localPosition;
     });
@@ -90,13 +97,23 @@ class _LinkerGestureLayerState extends State<LinkerGestureLayer> {
 
   /// 드래그 종료 시 호출
   void _onDragEnd(DragEndDetails details) {
+    debugPrint(
+      '[LinkerGestureLayer] onDragEnd. '
+      'start=$_currentDragStart end=$_currentDragEnd',
+    );
     setState(() {
       if (_currentDragStart != null && _currentDragEnd != null) {
         final rect = Rect.fromPoints(_currentDragStart!, _currentDragEnd!);
+        debugPrint(
+          '[LinkerGestureLayer] completed rect '
+          '(${rect.left.toStringAsFixed(1)},'
+          '${rect.top.toStringAsFixed(1)},'
+          '${rect.width.toStringAsFixed(1)}x'
+          '${rect.height.toStringAsFixed(1)})',
+        );
         if (rect.width.abs() > widget.minLinkerRectangleSize &&
             rect.height.abs() > widget.minLinkerRectangleSize) {
-          _linkerRectangles.add(rect);
-          widget.onLinkerRectanglesChanged(_linkerRectangles); // 콜백 호출
+          widget.onRectCompleted(rect);
         }
       }
       _currentDragStart = null;
@@ -106,13 +123,12 @@ class _LinkerGestureLayerState extends State<LinkerGestureLayer> {
 
   /// 탭 업(손가락 떼는) 시 호출
   void _onTapUp(TapUpDetails details) {
-    final tapPosition = details.localPosition;
-    for (final rect in _linkerRectangles) {
-      if (rect.contains(tapPosition)) {
-        widget.onLinkerTapped(rect); // 탭된 링커의 위치를 전달
-        break;
-      }
-    }
+    debugPrint(
+      '[LinkerGestureLayer] onTapUp at '
+      '${details.localPosition.dx.toStringAsFixed(1)},'
+      '${details.localPosition.dy.toStringAsFixed(1)}',
+    );
+    widget.onTapAt(details.localPosition);
   }
 
   @override
@@ -122,36 +138,73 @@ class _LinkerGestureLayerState extends State<LinkerGestureLayer> {
       return Container(); // 링커 모드가 아니면 아무것도 렌더링하지 않음
     }
 
-    final devices = <ui.PointerDeviceKind>{
+    // 드래그 허용 포인터
+    final dragDevices = <ui.PointerDeviceKind>{
       ui.PointerDeviceKind.stylus,
       ui.PointerDeviceKind.invertedStylus,
     };
-    if (widget.allowMouseForLinker) {
-      devices.add(ui.PointerDeviceKind.mouse);
+    if (widget.pointerMode == LinkerPointerMode.all) {
+      dragDevices
+        ..add(ui.PointerDeviceKind.touch)
+        ..add(ui.PointerDeviceKind.mouse)
+        ..add(ui.PointerDeviceKind.trackpad);
     }
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      supportedDevices: devices,
-      onPanDown: (_) {}, // 제스처 선점 도움
-      onPanStart: _onDragStart,
-      onPanUpdate: _onDragUpdate,
-      onPanEnd: _onDragEnd,
-      onTapUp: _onTapUp,
-      child: CustomPaint(
-        size: Size.infinite, // CustomPaint가 전체 영역을 차지하도록 설정
-        painter: RectangleLinkerPainter(
-          currentDragStart: _currentDragStart,
-          currentDragEnd: _currentDragEnd,
-          existingRectangles: _linkerRectangles,
-          fillColor: widget.linkerFillColor,
-          borderColor: widget.linkerBorderColor,
-          borderWidth: widget.linkerBorderWidth,
-          currentFillColor: widget.currentLinkerFillColor,
-          currentBorderColor: widget.currentLinkerBorderColor,
-          currentBorderWidth: widget.currentLinkerBorderWidth,
+    // 탭 허용 포인터(두 모드 모두 손가락 탭으로 링크 확인 허용)
+    final tapDevices = <ui.PointerDeviceKind>{
+      ui.PointerDeviceKind.stylus,
+      ui.PointerDeviceKind.invertedStylus,
+      ui.PointerDeviceKind.touch,
+    };
+    if (widget.pointerMode == LinkerPointerMode.all) {
+      tapDevices
+        ..add(ui.PointerDeviceKind.mouse)
+        ..add(ui.PointerDeviceKind.trackpad);
+    }
+
+    debugPrint(
+      '[LinkerGestureLayer] active (tool=${widget.toolMode}), '
+      'pointerMode=${widget.pointerMode}, drag=$dragDevices tap=$tapDevices',
+    );
+
+    // 탭과 드래그를 서로 다른 supportedDevices로 분리 처리
+    return Listener(
+      onPointerDown: (event) {
+        debugPrint(
+          '[LinkerGestureLayer] raw PointerDown kind=${event.kind} '
+          'pos=${event.position.dx.toStringAsFixed(1)},'
+          '${event.position.dy.toStringAsFixed(1)}',
+        );
+      },
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        supportedDevices: tapDevices,
+        onTapUp: _onTapUp,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          supportedDevices: dragDevices,
+          onPanDown: (details) {
+            debugPrint(
+              '[LinkerGestureLayer] onPanDown at '
+              '${details.localPosition.dx.toStringAsFixed(1)},'
+              '${details.localPosition.dy.toStringAsFixed(1)}',
+            );
+          },
+          onPanStart: _onDragStart,
+          onPanUpdate: _onDragUpdate,
+          onPanEnd: _onDragEnd,
+          child: CustomPaint(
+            size: Size.infinite, // CustomPaint가 전체 영역을 차지하도록 설정
+            painter: LinkDragOverlayPainter(
+              currentDragStart: _currentDragStart,
+              currentDragEnd: _currentDragEnd,
+              currentFillColor: widget.currentLinkerFillColor,
+              currentBorderColor: widget.currentLinkerBorderColor,
+              currentBorderWidth: widget.currentLinkerBorderWidth,
+            ),
+            child: Container(), // GestureDetector가 전체 영역을 감지하도록 함
+          ),
         ),
-        child: Container(), // GestureDetector가 전체 영역을 감지하도록 함
       ),
     );
   }
