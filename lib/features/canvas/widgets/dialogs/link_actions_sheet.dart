@@ -28,8 +28,10 @@ class LinkActionsSheet extends ConsumerWidget {
             leading: const Icon(Icons.open_in_new),
             title: const Text('링크로 이동'),
             onTap: () {
-              debugPrint('[LinkActionSheet] navigate linkId=${link.id} '
-                  'tgtNote=${link.targetNoteId}');
+              debugPrint(
+                '[LinkActionSheet] navigate linkId=${link.id} '
+                'tgtNote=${link.targetNoteId}',
+              );
               Navigator.of(context).pop(LinkAction.navigate);
             },
           ),

@@ -10,6 +10,9 @@ import '../models/link_model.dart';
 
 part 'link_providers.g.dart';
 
+// Debug verbosity for link providers
+const bool _kLinkProvidersVerbose = false;
+
 /// LinkRepository 주입용 Provider. 실제 구현체는 앱 구성 단계에서 override 가능.
 @Riverpod(keepAlive: true)
 LinkRepository linkRepository(Ref ref) {
@@ -21,7 +24,9 @@ LinkRepository linkRepository(Ref ref) {
 /// 특정 페이지의 Outgoing 링크 목록을 스트림으로 제공합니다.
 @riverpod
 Stream<List<LinkModel>> linksByPage(Ref ref, String pageId) {
-  debugPrint('[linksByPageProvider] page=$pageId');
+  if (_kLinkProvidersVerbose) {
+    debugPrint('[linksByPageProvider] page=$pageId');
+  }
   final repo = ref.watch(linkRepositoryProvider);
   return repo.watchByPage(pageId);
 }
@@ -29,7 +34,9 @@ Stream<List<LinkModel>> linksByPage(Ref ref, String pageId) {
 /// 특정 노트로 들어오는 Backlinks 목록을 스트림으로 제공합니다.
 @riverpod
 Stream<List<LinkModel>> backlinksToNote(Ref ref, String noteId) {
-  debugPrint('[backlinksToNoteProvider] note=$noteId');
+  if (_kLinkProvidersVerbose) {
+    debugPrint('[backlinksToNoteProvider] note=$noteId');
+  }
   final repo = ref.watch(linkRepositoryProvider);
   return repo.watchBacklinksToNote(noteId);
 }
@@ -40,9 +47,9 @@ List<Rect> linkRectsByPage(Ref ref, String pageId) {
   final linksAsync = ref.watch(linksByPageProvider(pageId));
   return linksAsync.when(
     data: (links) {
-      debugPrint(
-        '[linkRectsByPageProvider] page=$pageId links=${links.length}',
-      );
+      if (_kLinkProvidersVerbose) {
+        debugPrint('[linkRectsByPageProvider] page=$pageId links=${links.length}');
+      }
       return links
           .map(
             (l) =>
@@ -61,11 +68,11 @@ LinkModel? linkAtPoint(Ref ref, String pageId, Offset localPoint) {
   final linksAsync = ref.watch(linksByPageProvider(pageId));
   return linksAsync.when(
     data: (links) {
-      debugPrint(
-        '[linkAtPointProvider] page=$pageId test='
-        '${localPoint.dx.toStringAsFixed(1)},'
-        '${localPoint.dy.toStringAsFixed(1)} candidates=${links.length}',
-      );
+      if (_kLinkProvidersVerbose) {
+        debugPrint('[linkAtPointProvider] page=$pageId test='
+            '${localPoint.dx.toStringAsFixed(1)},'
+            '${localPoint.dy.toStringAsFixed(1)} candidates=${links.length}');
+      }
       for (final l in links) {
         final r = Rect.fromLTWH(
           l.bboxLeft,
