@@ -4,6 +4,8 @@ import 'package:scribble/scribble.dart';
 
 import '../../providers/note_editor_provider.dart';
 
+// TOOD(xodnd): provider 제공 -> NotePageViewItem에서 Linker와 연결 필요
+
 /// 포인터 모드 (모든 터치, 펜 전용)를 선택하는 위젯입니다.
 class NoteEditorPointerMode extends ConsumerWidget {
   /// [NoteEditorPointerMode]의 생성자.

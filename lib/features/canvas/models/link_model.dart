@@ -1,6 +1,6 @@
 /// 노트 페이지 내 특정 영역이 다른 노트/페이지로 연결되는 링크 모델입니다.
 ///
-/// 소스는 항상 노트의 한 페이지이며, 대상은 노트 전체 또는 특정 페이지가 될 수 있습니다.
+/// 소스는 항상 노트의 한 페이지이며, 대상 또한 노트의 특정 페이지만 지원합니다.
 class LinkModel {
   /// 링크의 고유 ID(UUID v4 권장).
   final String id;
@@ -11,7 +11,6 @@ class LinkModel {
 
   /// 대상 타입 및 대상 식별자.
   final String targetNoteId;
-  final String? targetPageId; // targetType == page 일 때 필수, 그 외 null
 
   /// 페이지 로컬 좌표계의 바운딩 박스.
   final double bboxLeft;
@@ -34,7 +33,6 @@ class LinkModel {
     required this.sourceNoteId,
     required this.sourcePageId,
     required this.targetNoteId,
-    this.targetPageId,
     required this.bboxLeft,
     required this.bboxTop,
     required this.bboxWidth,
@@ -53,7 +51,6 @@ class LinkModel {
     String? sourceNoteId,
     String? sourcePageId,
     String? targetNoteId,
-    String? targetPageId,
     double? bboxLeft,
     double? bboxTop,
     double? bboxWidth,
@@ -68,7 +65,6 @@ class LinkModel {
       sourceNoteId: sourceNoteId ?? this.sourceNoteId,
       sourcePageId: sourcePageId ?? this.sourcePageId,
       targetNoteId: targetNoteId ?? this.targetNoteId,
-      targetPageId: targetPageId ?? this.targetPageId,
       bboxLeft: bboxLeft ?? this.bboxLeft,
       bboxTop: bboxTop ?? this.bboxTop,
       bboxWidth: bboxWidth ?? this.bboxWidth,
@@ -85,7 +81,6 @@ class LinkModel {
     'sourceNoteId': sourceNoteId,
     'sourcePageId': sourcePageId,
     'targetNoteId': targetNoteId,
-    'targetPageId': targetPageId,
     'bboxLeft': bboxLeft,
     'bboxTop': bboxTop,
     'bboxWidth': bboxWidth,
@@ -102,7 +97,6 @@ class LinkModel {
       sourceNoteId: map['sourceNoteId'] as String,
       sourcePageId: map['sourcePageId'] as String,
       targetNoteId: map['targetNoteId'] as String,
-      targetPageId: map['targetPageId'] as String?,
       bboxLeft: (map['bboxLeft'] as num).toDouble(),
       bboxTop: (map['bboxTop'] as num).toDouble(),
       bboxWidth: (map['bboxWidth'] as num).toDouble(),
@@ -118,7 +112,7 @@ class LinkModel {
   String toString() {
     return 'LinkModel(id: '
         '$id, source: $sourceNoteId/$sourcePageId, target: '
-        '$targetNoteId/${targetPageId ?? '-'} '
+        '$targetNoteId'
         'bbox: ($bboxLeft,$bboxTop,$bboxWidth,$bboxHeight))';
   }
 }

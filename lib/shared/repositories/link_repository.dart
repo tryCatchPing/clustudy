@@ -8,9 +8,6 @@ abstract class LinkRepository {
   /// 특정 페이지에서 나가는(Outgoing) 링크 목록을 스트림으로 관찰합니다.
   Stream<List<LinkModel>> watchByPage(String pageId);
 
-  /// 특정 페이지로 들어오는(Backlink) 링크 목록을 스트림으로 관찰합니다.
-  Stream<List<LinkModel>> watchBacklinksToPage(String pageId);
-
   /// 특정 노트로 들어오는(Backlink) 링크 목록을 스트림으로 관찰합니다.
   Stream<List<LinkModel>> watchBacklinksToNote(String noteId);
 

@@ -21,6 +21,10 @@ class SavedLinksLayer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final rects = ref.watch(linkRectsByPageProvider(pageId));
+    // Debug: report current rect count for this page
+    // ignore: avoid_print
+    // Use debugPrint to respect Flutter's debug filtering
+    debugPrint('[SavedLinksLayer] pageId=$pageId rects=${rects.length}');
     return CustomPaint(
       painter: _SavedLinksPainter(
         rects,
@@ -70,4 +74,3 @@ class _SavedLinksPainter extends CustomPainter {
         oldDelegate.borderWidth != borderWidth;
   }
 }
-

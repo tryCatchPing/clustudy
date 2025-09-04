@@ -5,14 +5,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:scribble/scribble.dart';
 
+import '../../../shared/routing/app_routes.dart';
 import '../../notes/data/derived_note_providers.dart';
 import '../constants/note_editor_constant.dart'; // NoteEditorConstants 정의 필요
 import '../notifiers/custom_scribble_notifier.dart';
+import '../providers/link_creation_controller.dart';
 import '../providers/link_providers.dart';
 import '../providers/note_editor_provider.dart';
 import '../providers/tool_settings_provider.dart';
 import '../providers/transformation_controller_provider.dart';
 import 'canvas_background_widget.dart'; // CanvasBackgroundWidget 정의 필요
+import 'dialogs/link_actions_sheet.dart';
+import 'dialogs/link_creation_dialog.dart';
 import 'linker_gesture_layer.dart';
 import 'saved_links_layer.dart';
 
@@ -96,42 +100,6 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
     }
   }
 
-  /// 저장된 링크를 탭했을 때 옵션을 표시합니다.
-  void _showSavedLinkOptions(BuildContext context) {
-    // 바텀 시트 표시 로직 (구현 생략)
-    showModalBottomSheet<void>(
-      context: context,
-      builder: (BuildContext bc) {
-        return SafeArea(
-          child: Wrap(
-            children: <Widget>[
-              ListTile(
-                leading: const Icon(Icons.search),
-                title: const Text('링크 찾기'),
-                onTap: () {
-                  context.pop(); // 바텀 시트 닫기
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('링크 찾기 선택됨')),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.add_link),
-                title: const Text('링크 생성'),
-                onTap: () {
-                  context.pop(); // 바텀 시트 닫기
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('링크 생성 선택됨')),
-                  );
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     // 노트/페이지가 유효하지 않으면 즉시 비표시 처리하여 삭제 직후 레이스를 방지
@@ -153,11 +121,13 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
     final drawingHeight = notifier.page!.drawingAreaHeight;
     final isLinkerMode = notifier.toolMode.isLinker;
 
-    debugPrint('[NotePageViewItem] build: '
-        'noteId=${widget.noteId}, pageId=${notifier.page!.pageId}, '
-        'tool=${notifier.toolMode}, '
-        'linkerMode=$isLinkerMode, '
-        'drawing=${drawingWidth.toStringAsFixed(0)}x${drawingHeight.toStringAsFixed(0)}');
+    debugPrint(
+      '[NotePageViewItem] build: '
+      'noteId=${widget.noteId}, pageId=${notifier.page!.pageId}, '
+      'tool=${notifier.toolMode}, '
+      'linkerMode=$isLinkerMode, '
+      'drawing=${drawingWidth.toStringAsFixed(0)}x${drawingHeight.toStringAsFixed(0)}',
+    );
 
     // -- NotePageViewItem의 build 메서드 내부--
     if (!isLinkerMode) {
@@ -237,31 +207,114 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                           Positioned.fill(
                             child: LinkerGestureLayer(
                               toolMode: currentToolMode,
+                              // provider 도입 이후 수정
                               pointerMode:
                                   scribbleState.allowedPointersMode ==
-                                          ScribblePointerMode.all
-                                      ? LinkerPointerMode.all
-                                      : LinkerPointerMode.stylusOnly,
-                              onRectCompleted: (rect) {
-                                debugPrint('[NotePageViewItem] onRectCompleted: '
-                                    '(${rect.left.toStringAsFixed(1)},'
-                                    '${rect.top.toStringAsFixed(1)},'
-                                    '${rect.width.toStringAsFixed(1)}x'
-                                    '${rect.height.toStringAsFixed(1)})');
-                                // TODO: 링크 생성 다이얼로그 호출 후 저장
+                                      ScribblePointerMode.all
+                                  ? LinkerPointerMode.all
+                                  : LinkerPointerMode.stylusOnly,
+                              onRectCompleted: (rect) async {
+                                debugPrint(
+                                  '[NotePageViewItem] onRectCompleted: '
+                                  '(${rect.left.toStringAsFixed(1)},'
+                                  '${rect.top.toStringAsFixed(1)},'
+                                  '${rect.width.toStringAsFixed(1)}x'
+                                  '${rect.height.toStringAsFixed(1)})',
+                                );
+                                final res = await LinkCreationDialog.show(
+                                  context,
+                                );
+                                if (res == null) return; // 취소
+                                final page = notifier.page!;
+                                try {
+                                  await ref
+                                      .read(linkCreationControllerProvider)
+                                      .createFromRect(
+                                        sourceNoteId: page.noteId,
+                                        sourcePageId: page.pageId,
+                                        rect: rect,
+                                        targetNoteId: res.targetNoteId,
+                                        targetTitle: res.targetTitle,
+                                      );
+                                  if (!mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('링크를 생성했습니다.'),
+                                    ),
+                                  );
+                                } catch (e) {
+                                  if (!mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('링크 생성 실패: $e')),
+                                  );
+                                }
                               },
-                              onTapAt: (localPoint) {
+                              // 링크 찾아서 모달 표시 (링크 이동 / 링크 수정 / 링크 삭제)
+                              onTapAt: (localPoint) async {
+                                // provider 로 수정필요
                                 final pageId = notifier.page!.pageId;
-                                debugPrint('[NotePageViewItem] onTapAt '
-                                    '${localPoint.dx.toStringAsFixed(1)},'
-                                    '${localPoint.dy.toStringAsFixed(1)}');
+                                debugPrint(
+                                  '[NotePageViewItem] onTapAt '
+                                  '${localPoint.dx.toStringAsFixed(1)},'
+                                  '${localPoint.dy.toStringAsFixed(1)}',
+                                );
                                 final link = ref.read(
                                   linkAtPointProvider(pageId, localPoint),
                                 );
                                 if (link != null) {
-                                  debugPrint('[NotePageViewItem] hit saved link: '
-                                      '${link.id}');
-                                  _showSavedLinkOptions(context);
+                                  debugPrint(
+                                    '[NotePageViewItem] hit saved link: '
+                                    '${link.id}',
+                                  );
+                                  final action = await LinkActionsSheet.show(
+                                    context,
+                                    link,
+                                  );
+                                  if (!mounted || action == null) return;
+                                  switch (action) {
+                                    case LinkAction.navigate:
+                                      {
+                                        final prevSession = ref.read(
+                                          noteSessionProvider,
+                                        );
+                                        debugPrint(
+                                          '[LinkNav] navigate: prevSession=$prevSession → target=${link.targetNoteId}',
+                                        );
+                                        ref
+                                            .read(noteSessionProvider.notifier)
+                                            .enterNote(link.targetNoteId);
+                                        context.pushNamed(
+                                          AppRoutes.noteEditName,
+                                          pathParameters: {
+                                            'noteId': link.targetNoteId,
+                                          },
+                                        );
+                                        debugPrint(
+                                          '[LinkNav] pushed to noteId=${link.targetNoteId}',
+                                        );
+                                        break;
+                                      }
+                                    case LinkAction.edit:
+                                      // TODO: 링크 수정 모달 연결
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('링크 수정 준비 중'),
+                                        ),
+                                      );
+                                      break;
+                                    case LinkAction.delete:
+                                      // TODO: LinkRepository.delete(link.id) 연결
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('링크 삭제 준비 중'),
+                                        ),
+                                      );
+                                      break;
+                                  }
                                 }
                               },
                               minLinkerRectangleSize: 16.0,
