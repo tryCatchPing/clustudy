@@ -18,6 +18,9 @@ part 'note_editor_provider.g.dart';
 
 // fvm dart run build_runner watch 명령어로 코드 변경 시 자동으로 빌드됨
 
+// Debug verbosity flags (set to true only when diagnosing)
+const bool _kCanvasProviderVerbose = false;
+
 // ========================================================================
 // GoRouter 기반 자동 세션 관리 Provider들
 // ========================================================================
@@ -79,19 +82,25 @@ class SimulatePressure extends _$SimulatePressure {
 /// 세션 기반 페이지별 CustomScribbleNotifier 관리
 @riverpod
 CustomScribbleNotifier canvasPageNotifier(Ref ref, String pageId) {
-  debugPrint('🎨 [canvasPageNotifier] Provider called for pageId: $pageId');
+  if (_kCanvasProviderVerbose) {
+    debugPrint('🎨 [canvasPageNotifier] Provider called for pageId: $pageId');
+  }
 
   // 세션 확인 - 활성 노트가 없으면 에러
   final activeNoteId = ref.watch(noteSessionProvider);
-  debugPrint('🎨 [canvasPageNotifier] Active session check: $activeNoteId');
+  if (_kCanvasProviderVerbose) {
+    debugPrint('🎨 [canvasPageNotifier] Active session check: $activeNoteId');
+  }
 
   // 화면 전환 중 session이 먼저 exit되어 null이 될 수 있음.
   // 이 경우 provider가 재빌드되면서 에러를 발생시키므로,
   // 비어있는 notifier를 반환하여 안전하게 처리한다.
   if (activeNoteId == null) {
-    debugPrint(
-      '🎨 [canvasPageNotifier] No active session, returning no-op notifier.',
-    );
+    if (_kCanvasProviderVerbose) {
+      debugPrint(
+        '🎨 [canvasPageNotifier] No active session, returning no-op notifier.',
+      );
+    }
     return CustomScribbleNotifier(
       toolMode: ToolMode.pen,
       page: null,
@@ -122,9 +131,7 @@ CustomScribbleNotifier canvasPageNotifier(Ref ref, String pageId) {
   });
 
   if (targetPage == null) {
-    debugPrint(
-      '🎨 [canvasPageNotifier] Page not found, returning no-op notifier.',
-    );
+    // Common during route transitions: ignore noisy logs
     // 페이지를 찾을 수 없는 경우 no-op notifier
     return CustomScribbleNotifier(
       toolMode: ToolMode.pen,
@@ -133,9 +140,11 @@ CustomScribbleNotifier canvasPageNotifier(Ref ref, String pageId) {
       maxHistoryLength: NoteEditorConstants.maxHistoryLength,
     );
   }
-  debugPrint(
-    '🎨 [canvasPageNotifier] Found target page: ${targetPage!.pageId}',
-  );
+  if (_kCanvasProviderVerbose) {
+    debugPrint(
+      '🎨 [canvasPageNotifier] Found target page: ${targetPage!.pageId}',
+    );
+  }
 
   // 도구 설정 및 필압 시뮬레이션 상태 가져오기
   final toolSettings = ref.read(toolSettingsNotifierProvider(activeNoteId));
@@ -154,7 +163,9 @@ CustomScribbleNotifier canvasPageNotifier(Ref ref, String pageId) {
           sketch: targetPage!.toSketch(),
           addToUndoHistory: false,
         );
-  debugPrint('🎨 [canvasPageNotifier] Notifier created for page: $pageId');
+  if (_kCanvasProviderVerbose) {
+    debugPrint('🎨 [canvasPageNotifier] Notifier created for page: $pageId');
+  }
 
   // 초기 도구 설정 적용
   _applyToolSettings(notifier, toolSettings);
@@ -174,7 +185,9 @@ CustomScribbleNotifier canvasPageNotifier(Ref ref, String pageId) {
 
   // dispose 시 정리
   ref.onDispose(() {
-    debugPrint('🎨 [canvasPageNotifier] Disposing notifier for page: $pageId');
+    if (_kCanvasProviderVerbose) {
+      debugPrint('🎨 [canvasPageNotifier] Disposing notifier for page: $pageId');
+    }
     notifier.dispose();
   });
 

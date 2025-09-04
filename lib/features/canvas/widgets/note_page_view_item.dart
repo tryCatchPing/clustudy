@@ -273,27 +273,19 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                                   if (!mounted || action == null) return;
                                   switch (action) {
                                     case LinkAction.navigate:
-                                      {
-                                        final prevSession = ref.read(
-                                          noteSessionProvider,
-                                        );
-                                        debugPrint(
-                                          '[LinkNav] navigate: prevSession=$prevSession → target=${link.targetNoteId}',
-                                        );
-                                        ref
-                                            .read(noteSessionProvider.notifier)
-                                            .enterNote(link.targetNoteId);
-                                        context.pushNamed(
-                                          AppRoutes.noteEditName,
-                                          pathParameters: {
-                                            'noteId': link.targetNoteId,
-                                          },
-                                        );
-                                        debugPrint(
-                                          '[LinkNav] pushed to noteId=${link.targetNoteId}',
-                                        );
-                                        break;
-                                      }
+                                      debugPrint(
+                                        '[LinkNav] navigate: target=${link.targetNoteId} (RouteAware will manage session)',
+                                      );
+                                      context.pushNamed(
+                                        AppRoutes.noteEditName,
+                                        pathParameters: {
+                                          'noteId': link.targetNoteId,
+                                        },
+                                      );
+                                      debugPrint(
+                                        '[LinkNav] pushed to noteId=${link.targetNoteId}',
+                                      );
+                                      break;
                                     case LinkAction.edit:
                                       // TODO: 링크 수정 모달 연결
                                       ScaffoldMessenger.of(

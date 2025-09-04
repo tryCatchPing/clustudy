@@ -91,7 +91,15 @@ class LinkCreationController {
       }
     }
 
-    // 2) LinkModel 생성 (현재 정책: 페이지 → 노트 링크)
+    // 2) 동일 노트 링크 방지
+    if (targetNote.noteId == sourceNoteId) {
+      debugPrint(
+        '[LinkCreate] blocked: self-link attempted to noteId=${targetNote.noteId}',
+      );
+      throw StateError('동일 노트로는 링크를 생성할 수 없습니다.');
+    }
+
+    // 3) LinkModel 생성 (현재 정책: 페이지 → 노트 링크)
     final normalized = Rect.fromLTWH(
       rect.left,
       rect.top,
@@ -114,7 +122,7 @@ class LinkCreationController {
       updatedAt: now,
     );
 
-    // 3) 저장
+    // 4) 저장
     await linkRepo.create(link);
     debugPrint(
       '[LinkCreate] saved link id=${link.id} '

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/routing/route_observer.dart';
 import '../../notes/data/derived_note_providers.dart';
 import '../providers/note_editor_provider.dart';
 import '../widgets/note_editor_canvas.dart';
@@ -29,7 +30,82 @@ class NoteEditorScreen extends ConsumerStatefulWidget {
   ConsumerState<NoteEditorScreen> createState() => _NoteEditorScreenState();
 }
 
-class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
+class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
+    with RouteAware {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null) {
+      appRouteObserver.subscribe(this, route);
+      debugPrint('🧭 [RouteAware] subscribe noteId=${widget.noteId}');
+    }
+  }
+
+  @override
+  void dispose() {
+    appRouteObserver.unsubscribe(this);
+    debugPrint('🧭 [RouteAware] unsubscribe noteId=${widget.noteId}');
+    super.dispose();
+  }
+
+  @override
+  void didPush() {
+    debugPrint(
+      '🧭 [RouteAware] didPush noteId=${widget.noteId} → schedule enter session',
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(noteSessionProvider.notifier).enterNote(widget.noteId);
+    });
+  }
+
+  @override
+  void didPopNext() {
+    final route = ModalRoute.of(context);
+    final isCurrent = route?.isCurrent ?? false;
+    debugPrint('🧭 [RouteAware] didPopNext noteId=${widget.noteId} (isCurrent=$isCurrent)');
+    if (!isCurrent) {
+      debugPrint('🧭 [RouteAware] didPopNext skipped re-enter (route not current)');
+      return;
+    }
+    // Ensure re-enter runs one frame AFTER didPop's exit to avoid final null.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final route2 = ModalRoute.of(context);
+      if (route2?.isCurrent != true) {
+        debugPrint('🧭 [RouteAware] re-enter skipped (route lost current)');
+        return;
+      }
+      WidgetsBinding.instance.addPostFrameCallback((__) {
+        if (!mounted) return;
+        final route3 = ModalRoute.of(context);
+        if (route3?.isCurrent != true) {
+          debugPrint('🧭 [RouteAware] re-enter skipped (route lost current, 2nd frame)');
+          return;
+        }
+        debugPrint('🧭 [RouteAware] re-enter session noteId=${widget.noteId}');
+        ref.read(noteSessionProvider.notifier).enterNote(widget.noteId);
+      });
+    });
+  }
+
+  @override
+  void didPushNext() {
+    debugPrint('🧭 [RouteAware] didPushNext noteId=${widget.noteId} (no-op)');
+  }
+
+  @override
+  void didPop() {
+    debugPrint(
+      '🧭 [RouteAware] didPop noteId=${widget.noteId} → schedule exit session',
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(noteSessionProvider.notifier).exitNote();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     debugPrint('📝 [NoteEditorScreen] Building for noteId: ${widget.noteId}');
