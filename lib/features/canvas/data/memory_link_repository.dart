@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../../../shared/repositories/link_repository.dart';
@@ -18,10 +19,6 @@ class MemoryLinkRepository implements LinkRepository {
 
   // 인덱스: 타깃 노트별 백링크
   final Map<String, Set<String>> _byTargetNote =
-      <String, Set<String>>{}; // linkIds
-
-  // 인덱스: 타깃 페이지별 백링크
-  final Map<String, Set<String>> _byTargetPage =
       <String, Set<String>>{}; // linkIds
 
   // 스트림 컨트롤러: 페이지 Outgoing
@@ -53,15 +50,10 @@ class MemoryLinkRepository implements LinkRepository {
   }
 
   @override
-  Stream<List<LinkModel>> watchBacklinksToPage(String pageId) async* {
-    debugPrint('[MemoryLinkRepository] watchBacklinksToPage subscribe page=$pageId');
-    yield _collectByTargetPage(pageId);
-    yield* _ensureBacklinksPageController(pageId).stream;
-  }
-
-  @override
   Stream<List<LinkModel>> watchBacklinksToNote(String noteId) async* {
-    debugPrint('[MemoryLinkRepository] watchBacklinksToNote subscribe note=$noteId');
+    debugPrint(
+      '[MemoryLinkRepository] watchBacklinksToNote subscribe note=$noteId',
+    );
     yield _collectByTargetNote(noteId);
     yield* _ensureBacklinksNoteController(noteId).stream;
   }
@@ -71,9 +63,11 @@ class MemoryLinkRepository implements LinkRepository {
   //////////////////////////////////////////////////////////////////////////////
   @override
   Future<void> create(LinkModel link) async {
-    debugPrint('[MemoryLinkRepository] create id=${link.id} '
-        'src=${link.sourceNoteId}/${link.sourcePageId} '
-        'tgt=${link.targetNoteId}/${link.targetPageId ?? '-'}');
+    debugPrint(
+      '[MemoryLinkRepository] create id=${link.id} '
+      'src=${link.sourceNoteId}/${link.sourcePageId} '
+      'tgt=${link.targetNoteId}',
+    );
     // 삽입
     _links[link.id] = link;
 
@@ -88,18 +82,10 @@ class MemoryLinkRepository implements LinkRepository {
 
     // 타깃 인덱스 추가
     _byTargetNote.putIfAbsent(link.targetNoteId, () => <String>{}).add(link.id);
-    if (link.targetPageId != null) {
-      _byTargetPage
-          .putIfAbsent(link.targetPageId!, () => <String>{})
-          .add(link.id);
-    }
 
     // 영향 받은 키들에 대해 방출
     _emitForSourcePage(link.sourcePageId);
     _emitForTargetNote(link.targetNoteId);
-    if (link.targetPageId != null) {
-      _emitForTargetPage(link.targetPageId!);
-    }
   }
 
   @override
@@ -116,9 +102,6 @@ class MemoryLinkRepository implements LinkRepository {
     final oldList = _bySourcePage[old.sourcePageId];
     oldList?.removeWhere((e) => e.id == old.id);
     _byTargetNote[old.targetNoteId]?.remove(old.id);
-    if (old.targetPageId != null) {
-      _byTargetPage[old.targetPageId!]?.remove(old.id);
-    }
 
     // 새로운 값으로 삽입
     _links[link.id] = link;
@@ -129,24 +112,13 @@ class MemoryLinkRepository implements LinkRepository {
     newList.removeWhere((e) => e.id == link.id);
     newList.add(link);
     _byTargetNote.putIfAbsent(link.targetNoteId, () => <String>{}).add(link.id);
-    if (link.targetPageId != null) {
-      _byTargetPage
-          .putIfAbsent(link.targetPageId!, () => <String>{})
-          .add(link.id);
-    }
 
     // 영향 받은 키들 방출 (old/new 모두)
     _emitForSourcePage(old.sourcePageId);
     _emitForTargetNote(old.targetNoteId);
-    if (old.targetPageId != null) {
-      _emitForTargetPage(old.targetPageId!);
-    }
 
     _emitForSourcePage(link.sourcePageId);
     _emitForTargetNote(link.targetNoteId);
-    if (link.targetPageId != null) {
-      _emitForTargetPage(link.targetPageId!);
-    }
   }
 
   @override
@@ -157,19 +129,14 @@ class MemoryLinkRepository implements LinkRepository {
 
     _bySourcePage[old.sourcePageId]?.removeWhere((e) => e.id == linkId);
     _byTargetNote[old.targetNoteId]?.remove(linkId);
-    if (old.targetPageId != null) {
-      _byTargetPage[old.targetPageId!]?.remove(linkId);
-    }
 
     _emitForSourcePage(old.sourcePageId);
     _emitForTargetNote(old.targetNoteId);
-    if (old.targetPageId != null) {
-      _emitForTargetPage(old.targetPageId!);
-    }
   }
 
   @override
   void dispose() {
+    debugPrint('[MemoryLinkRepository] dispose: closing controllers');
     for (final c in _pageControllers.values) {
       if (!c.isClosed) c.close();
     }
@@ -213,39 +180,24 @@ class MemoryLinkRepository implements LinkRepository {
     final list = List<LinkModel>.unmodifiable(
       _bySourcePage[pageId] ?? const <LinkModel>[],
     );
-    debugPrint('[MemoryLinkRepository] emit sourcePage=$pageId count=${list.length}');
+    debugPrint(
+      '[MemoryLinkRepository] emit sourcePage=$pageId count=${list.length}',
+    );
     final c = _ensurePageController(pageId);
     if (!c.isClosed) c.add(list);
   }
 
   void _emitForTargetNote(String noteId) {
     final list = _collectByTargetNote(noteId);
-    debugPrint('[MemoryLinkRepository] emit targetNote=$noteId count=${list.length}');
+    debugPrint(
+      '[MemoryLinkRepository] emit targetNote=$noteId count=${list.length}',
+    );
     final c = _ensureBacklinksNoteController(noteId);
-    if (!c.isClosed) c.add(list);
-  }
-
-  void _emitForTargetPage(String pageId) {
-    final list = _collectByTargetPage(pageId);
-    debugPrint('[MemoryLinkRepository] emit targetPage=$pageId count=${list.length}');
-    final c = _ensureBacklinksPageController(pageId);
     if (!c.isClosed) c.add(list);
   }
 
   List<LinkModel> _collectByTargetNote(String noteId) {
     final ids = _byTargetNote[noteId];
-    if (ids == null || ids.isEmpty) return const <LinkModel>[];
-    return List<LinkModel>.unmodifiable(
-      ids
-          .map((id) => _links[id])
-          .where((e) => e != null)
-          .cast<LinkModel>()
-          .toList(),
-    );
-  }
-
-  List<LinkModel> _collectByTargetPage(String pageId) {
-    final ids = _byTargetPage[pageId];
     if (ids == null || ids.isEmpty) return const <LinkModel>[];
     return List<LinkModel>.unmodifiable(
       ids
