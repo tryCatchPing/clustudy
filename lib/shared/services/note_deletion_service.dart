@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../features/notes/data/notes_repository.dart';
+import '../../shared/repositories/link_repository.dart';
 import 'file_storage_service.dart';
 
 /// 노트 삭제를 담당하는 서비스
@@ -18,6 +19,7 @@ class NoteDeletionService {
   static Future<bool> deleteNoteCompletely(
     String noteId, {
     required NotesRepository repo,
+    required LinkRepository linkRepo,
   }) async {
     try {
       debugPrint('🗑️ [NoteDeletion] 노트 완전 삭제 시작: $noteId');
@@ -25,7 +27,26 @@ class NoteDeletionService {
       // 1. 파일 시스템 정리
       await FileStorageService.deleteNoteFiles(noteId);
 
-      // 2. 저장소에서 제거
+      // 2. 링크 정리 (outgoing + incoming)
+      final note = await repo.getNoteById(noteId);
+      if (note != null) {
+        // Outgoing: all pages of this note
+        final pageIds = note.pages.map((p) => p.pageId).toList();
+        var outCount = 0;
+        for (final pid in pageIds) {
+          outCount += await linkRepo.deleteBySourcePage(pid);
+        }
+        debugPrint(
+          '🧹 [LinkCascade] Outgoing deleted: $outCount from ${pageIds.length} page(s)',
+        );
+      }
+      // Incoming to this note
+      final inCount = await linkRepo.deleteByTargetNote(noteId);
+      debugPrint(
+        '🧹 [LinkCascade] Incoming deleted: $inCount for note $noteId',
+      );
+
+      // 3. 저장소에서 노트 제거
       await repo.delete(noteId);
 
       debugPrint('✅ [NoteDeletion] 노트 완전 삭제 완료: $noteId');

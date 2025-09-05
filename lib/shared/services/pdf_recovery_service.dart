@@ -6,6 +6,7 @@ import 'package:path/path.dart' as path;
 import 'package:pdfx/pdfx.dart';
 
 import '../../features/notes/data/notes_repository.dart';
+import '../repositories/link_repository.dart';
 import '../../features/notes/models/note_page_model.dart';
 import 'file_storage_service.dart';
 import 'note_deletion_service.dart';
@@ -217,8 +218,13 @@ class PdfRecoveryService {
   static Future<bool> deleteNoteCompletely(
     String noteId, {
     required NotesRepository repo,
+    required LinkRepository linkRepo,
   }) async {
-    return NoteDeletionService.deleteNoteCompletely(noteId, repo: repo);
+    return NoteDeletionService.deleteNoteCompletely(
+      noteId,
+      repo: repo,
+      linkRepo: linkRepo,
+    );
   }
 
   /// PDF 페이지들을 재렌더링합니다.

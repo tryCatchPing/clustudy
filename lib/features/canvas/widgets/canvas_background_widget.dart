@@ -8,6 +8,7 @@ import '../../../features/notes/data/notes_repository_provider.dart';
 import '../../../shared/routing/app_routes.dart';
 import '../../../shared/services/file_storage_service.dart';
 import '../../../shared/services/note_deletion_service.dart';
+import '../../canvas/providers/link_providers.dart';
 import '../../../shared/services/pdf_recovery_service.dart';
 import '../../notes/models/note_page_model.dart';
 import 'recovery_options_modal.dart';
@@ -310,6 +311,7 @@ class _CanvasBackgroundWidgetState
       final success = await NoteDeletionService.deleteNoteCompletely(
         widget.page.noteId,
         repo: repo,
+        linkRepo: ref.read(linkRepositoryProvider),
       );
 
       if (success && mounted) {
@@ -386,6 +388,7 @@ class _CanvasBackgroundWidgetState
       final success = await NoteDeletionService.deleteNoteCompletely(
         widget.page.noteId,
         repo: repo,
+        linkRepo: ref.read(linkRepositoryProvider),
       );
 
       if (success && mounted) {

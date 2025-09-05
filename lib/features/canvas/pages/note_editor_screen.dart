@@ -64,9 +64,13 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
   void didPopNext() {
     final route = ModalRoute.of(context);
     final isCurrent = route?.isCurrent ?? false;
-    debugPrint('🧭 [RouteAware] didPopNext noteId=${widget.noteId} (isCurrent=$isCurrent)');
+    debugPrint(
+      '🧭 [RouteAware] didPopNext noteId=${widget.noteId} (isCurrent=$isCurrent)',
+    );
     if (!isCurrent) {
-      debugPrint('🧭 [RouteAware] didPopNext skipped re-enter (route not current)');
+      debugPrint(
+        '🧭 [RouteAware] didPopNext skipped re-enter (route not current)',
+      );
       return;
     }
     // Ensure re-enter runs one frame AFTER didPop's exit to avoid final null.
@@ -81,7 +85,9 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
         if (!mounted) return;
         final route3 = ModalRoute.of(context);
         if (route3?.isCurrent != true) {
-          debugPrint('🧭 [RouteAware] re-enter skipped (route lost current, 2nd frame)');
+          debugPrint(
+            '🧭 [RouteAware] re-enter skipped (route lost current, 2nd frame)',
+          );
           return;
         }
         debugPrint('🧭 [RouteAware] re-enter session noteId=${widget.noteId}');

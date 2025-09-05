@@ -1,6 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../shared/services/page_management_service.dart';
+import '../../canvas/providers/link_providers.dart';
 import '../data/notes_repository_provider.dart';
 import '../models/note_page_model.dart';
 
@@ -82,6 +83,7 @@ class PageControllerScreenNotifier extends _$PageControllerScreenNotifier {
         noteId,
         page.pageId,
         repository,
+        linkRepo: ref.read(linkRepositoryProvider),
       );
 
       state = state.copyWith(

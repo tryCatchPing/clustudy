@@ -130,6 +130,86 @@ class LinkCreationController {
     );
     return link;
   }
+
+  /// 기존 링크의 타깃(노트/라벨)을 수정합니다.
+  /// - [link]: 수정할 기존 링크 (id/소스/바운딩 박스 유지)
+  /// - 타깃 지정은 둘 중 하나로 제공합니다.
+  ///   - [targetNoteId] (명시)
+  ///   - [targetTitle] (제목으로 노트 조회, 없으면 새 노트 생성)
+  /// - [label]: 지정하면 라벨을 갱신, 미지정이면 기존 라벨 유지
+  Future<LinkModel> updateTargetLink(
+    LinkModel link, {
+    String? targetNoteId,
+    String? targetTitle,
+    String? label,
+  }) async {
+    debugPrint(
+      '[LinkEdit] start: linkId=${link.id} '
+      'src=${link.sourceNoteId}/${link.sourcePageId} '
+      'oldTarget=${link.targetNoteId} newTargetId=$targetNoteId newTitle=$targetTitle',
+    );
+
+    final notesRepo = ref.read(notesRepositoryProvider);
+    final linkRepo = ref.read(linkRepositoryProvider);
+
+    // 1) 타깃 노트 결정
+    NoteModel targetNote;
+    if (targetNoteId != null) {
+      final found = await notesRepo.getNoteById(targetNoteId);
+      if (found == null) {
+        throw StateError('Target note not found: $targetNoteId');
+      }
+      targetNote = found;
+    } else {
+      final currentNotes = await notesRepo.watchNotes().first;
+      final normalizedTitle = (targetTitle ?? '').trim().toLowerCase();
+      NoteModel? match;
+      for (final n in currentNotes) {
+        if (n.title.trim().toLowerCase() == normalizedTitle) {
+          match = n;
+          break;
+        }
+      }
+      if (match != null) {
+        targetNote = match;
+      } else {
+        final created = await NoteService.instance.createBlankNote(
+          title: targetTitle?.trim().isEmpty == false
+              ? targetTitle!.trim()
+              : null,
+          initialPageCount: 1,
+        );
+        if (created == null) {
+          throw StateError('Failed to create target note');
+        }
+        await notesRepo.upsert(created);
+        targetNote = created;
+      }
+    }
+
+    // 2) 동일 노트 링크 방지
+    if (targetNote.noteId == link.sourceNoteId) {
+      debugPrint(
+        '[LinkEdit] blocked: self-link attempted to noteId=${targetNote.noteId}',
+      );
+      throw StateError('동일 노트로는 링크를 수정할 수 없습니다.');
+    }
+
+    // 3) 업데이트 모델 생성 (id/소스/바운딩 박스 유지, 타깃/라벨 갱신)
+    final updated = link.copyWith(
+      targetNoteId: targetNote.noteId,
+      label: label ?? link.label,
+      updatedAt: DateTime.now(),
+    );
+
+    // 4) 저장
+    await linkRepo.update(updated);
+    debugPrint(
+      '[LinkEdit] updated link id=${link.id} '
+      'oldTarget=${link.targetNoteId} newTarget=${updated.targetNoteId}',
+    );
+    return updated;
+  }
 }
 
 final linkCreationControllerProvider =

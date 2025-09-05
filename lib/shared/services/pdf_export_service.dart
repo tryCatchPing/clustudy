@@ -473,7 +473,6 @@ class PdfExportService {
         return allPages;
 
       case ExportRangeType.all:
-      default:
         return allPages;
     }
   }

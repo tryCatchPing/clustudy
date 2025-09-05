@@ -1,4 +1,5 @@
 import '../../features/notes/data/notes_repository.dart';
+import '../repositories/link_repository.dart';
 import '../../features/notes/models/note_model.dart';
 import '../../features/notes/models/note_page_model.dart';
 import 'note_service.dart';
@@ -121,8 +122,9 @@ class PageManagementService {
   static Future<void> deletePage(
     String noteId,
     String pageId,
-    NotesRepository repo,
-  ) async {
+    NotesRepository repo, {
+    LinkRepository? linkRepo,
+  }) async {
     try {
       // 현재 노트 조회
       final note = await repo.getNoteById(noteId);
@@ -133,6 +135,11 @@ class PageManagementService {
       // 삭제 가능 여부 검사
       if (!canDeletePage(note, pageId)) {
         throw Exception('Cannot delete the last page of a note');
+      }
+
+      // 먼저 해당 페이지에서 나가는 링크를 삭제 (있으면)
+      if (linkRepo != null) {
+        await linkRepo.deleteBySourcePage(pageId);
       }
 
       // Repository를 통해 페이지 삭제

@@ -186,7 +186,9 @@ CustomScribbleNotifier canvasPageNotifier(Ref ref, String pageId) {
   // dispose 시 정리
   ref.onDispose(() {
     if (_kCanvasProviderVerbose) {
-      debugPrint('🎨 [canvasPageNotifier] Disposing notifier for page: $pageId');
+      debugPrint(
+        '🎨 [canvasPageNotifier] Disposing notifier for page: $pageId',
+      );
     }
     notifier.dispose();
   });
