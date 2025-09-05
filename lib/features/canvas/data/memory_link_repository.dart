@@ -122,6 +122,94 @@ class MemoryLinkRepository implements LinkRepository {
   }
 
   @override
+  Future<int> deleteBySourcePage(String pageId) async {
+    final list = _bySourcePage[pageId];
+    if (list == null || list.isEmpty) {
+      // Still emit to clear any stale consumers
+      _emitForSourcePage(pageId);
+      return 0;
+    }
+    final affectedTargets = <String>{};
+    for (final link in List<LinkModel>.from(list)) {
+      _links.remove(link.id);
+      _byTargetNote[link.targetNoteId]?.remove(link.id);
+      affectedTargets.add(link.targetNoteId);
+    }
+    _bySourcePage.remove(pageId);
+    _emitForSourcePage(pageId);
+    for (final t in affectedTargets) {
+      _emitForTargetNote(t);
+    }
+    debugPrint(
+      '🧹 [LinkRepo] deleteBySourcePage page=$pageId deleted=${list.length}',
+    );
+    return list.length;
+  }
+
+  @override
+  Future<int> deleteByTargetNote(String noteId) async {
+    final ids = _byTargetNote[noteId];
+    if (ids == null || ids.isEmpty) {
+      // Still emit to clear any stale consumers
+      _emitForTargetNote(noteId);
+      return 0;
+    }
+    final affectedSources = <String>{};
+    for (final id in List<String>.from(ids)) {
+      final link = _links.remove(id);
+      if (link != null) {
+        final pageList = _bySourcePage[link.sourcePageId];
+        pageList?.removeWhere((e) => e.id == id);
+        affectedSources.add(link.sourcePageId);
+      }
+    }
+    _byTargetNote.remove(noteId);
+    _emitForTargetNote(noteId);
+    for (final s in affectedSources) {
+      _emitForSourcePage(s);
+    }
+    debugPrint(
+      '🧹 [LinkRepo] deleteByTargetNote note=$noteId deleted=${ids.length}',
+    );
+    return ids.length;
+  }
+
+  @override
+  Future<int> deleteBySourcePages(List<String> pageIds) async {
+    if (pageIds.isEmpty) return 0;
+    final uniquePages = pageIds.toSet();
+    final affectedTargets = <String>{};
+    var total = 0;
+
+    // Remove links from all source pages without emitting inside the loop
+    for (final pageId in uniquePages) {
+      final list = _bySourcePage[pageId];
+      if (list == null || list.isEmpty) {
+        continue;
+      }
+      total += list.length;
+      for (final link in List<LinkModel>.from(list)) {
+        _links.remove(link.id);
+        _byTargetNote[link.targetNoteId]?.remove(link.id);
+        affectedTargets.add(link.targetNoteId);
+      }
+      _bySourcePage.remove(pageId);
+    }
+
+    // Emit once per affected key
+    for (final pageId in uniquePages) {
+      _emitForSourcePage(pageId);
+    }
+    for (final t in affectedTargets) {
+      _emitForTargetNote(t);
+    }
+    debugPrint(
+      '🧹 [LinkRepo] deleteBySourcePages pages=${uniquePages.length} deleted=$total',
+    );
+    return total;
+  }
+
+  @override
   void dispose() {
     for (final c in _pageControllers.values) {
       if (!c.isClosed) c.close();

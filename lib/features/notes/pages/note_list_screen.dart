@@ -6,7 +6,7 @@ import '../../../shared/routing/app_routes.dart';
 import '../../../shared/services/note_deletion_service.dart';
 import '../../../shared/services/note_service.dart';
 import '../../../shared/widgets/navigation_card.dart';
-import '../../canvas/providers/note_editor_provider.dart';
+import '../../canvas/providers/link_providers.dart';
 import '../data/derived_note_providers.dart';
 import '../data/notes_repository_provider.dart';
 
@@ -64,6 +64,7 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
       final success = await NoteDeletionService.deleteNoteCompletely(
         noteId,
         repo: repo,
+        linkRepo: ref.read(linkRepositoryProvider),
       );
       if (!mounted) return;
       if (success) {

@@ -287,24 +287,115 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                                       );
                                       break;
                                     case LinkAction.edit:
-                                      // TODO: 링크 수정 모달 연결
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('링크 수정 준비 중'),
-                                        ),
-                                      );
+                                      // 링크 수정: 타깃 노트 선택(기존 생성 다이얼로그 재사용)
+                                      final editRes =
+                                          await LinkCreationDialog.show(
+                                            context,
+                                          );
+                                      if (editRes == null) break;
+                                      try {
+                                        debugPrint(
+                                          '[LinkEdit/UI] update linkId=${link.id} '
+                                          'oldTarget=${link.targetNoteId} '
+                                          'newTargetId=${editRes.targetNoteId} '
+                                          'newTitle=${editRes.targetTitle}',
+                                        );
+                                        await ref
+                                            .read(
+                                              linkCreationControllerProvider,
+                                            )
+                                            .updateTargetLink(
+                                              link,
+                                              targetNoteId:
+                                                  editRes.targetNoteId,
+                                              targetTitle: editRes.targetTitle,
+                                            );
+                                        if (!mounted) return;
+                                        debugPrint(
+                                          '[LinkEdit/UI] updated linkId=${link.id}',
+                                        );
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('링크를 수정했습니다.'),
+                                          ),
+                                        );
+                                      } catch (e) {
+                                        if (!mounted) return;
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text('링크 수정 실패: $e'),
+                                          ),
+                                        );
+                                      }
                                       break;
                                     case LinkAction.delete:
-                                      // TODO: LinkRepository.delete(link.id) 연결
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('링크 삭제 준비 중'),
-                                        ),
-                                      );
+                                      final shouldDelete =
+                                          await showDialog<bool>(
+                                            context: context,
+                                            builder: (ctx) => AlertDialog(
+                                              title: const Text('링크 삭제'),
+                                              content: const Text(
+                                                '이 링크를 삭제할까요?',
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () => Navigator.of(
+                                                    ctx,
+                                                  ).pop(false),
+                                                  child: const Text('취소'),
+                                                ),
+                                                ElevatedButton(
+                                                  onPressed: () => Navigator.of(
+                                                    ctx,
+                                                  ).pop(true),
+                                                  style:
+                                                      ElevatedButton.styleFrom(
+                                                        backgroundColor:
+                                                            Colors.red,
+                                                        foregroundColor:
+                                                            Colors.white,
+                                                      ),
+                                                  child: const Text('삭제'),
+                                                ),
+                                              ],
+                                            ),
+                                          ) ??
+                                          false;
+                                      if (!shouldDelete) break;
+                                      try {
+                                        debugPrint(
+                                          '[LinkDelete/UI] delete linkId=${link.id} '
+                                          'src=${link.sourceNoteId}/${link.sourcePageId} '
+                                          'tgt=${link.targetNoteId}',
+                                        );
+                                        await ref
+                                            .read(linkRepositoryProvider)
+                                            .delete(link.id);
+                                        if (!mounted) return;
+                                        debugPrint(
+                                          '[LinkDelete/UI] deleted linkId=${link.id}',
+                                        );
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('링크를 삭제했습니다.'),
+                                          ),
+                                        );
+                                      } catch (e) {
+                                        if (!mounted) return;
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text('링크 삭제 실패: $e'),
+                                          ),
+                                        );
+                                      }
                                       break;
                                   }
                                 }

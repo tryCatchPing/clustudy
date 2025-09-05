@@ -48,7 +48,9 @@ List<Rect> linkRectsByPage(Ref ref, String pageId) {
   return linksAsync.when(
     data: (links) {
       if (_kLinkProvidersVerbose) {
-        debugPrint('[linkRectsByPageProvider] page=$pageId links=${links.length}');
+        debugPrint(
+          '[linkRectsByPageProvider] page=$pageId links=${links.length}',
+        );
       }
       return links
           .map(
@@ -69,9 +71,11 @@ LinkModel? linkAtPoint(Ref ref, String pageId, Offset localPoint) {
   return linksAsync.when(
     data: (links) {
       if (_kLinkProvidersVerbose) {
-        debugPrint('[linkAtPointProvider] page=$pageId test='
-            '${localPoint.dx.toStringAsFixed(1)},'
-            '${localPoint.dy.toStringAsFixed(1)} candidates=${links.length}');
+        debugPrint(
+          '[linkAtPointProvider] page=$pageId test='
+          '${localPoint.dx.toStringAsFixed(1)},'
+          '${localPoint.dy.toStringAsFixed(1)} candidates=${links.length}',
+        );
       }
       for (final l in links) {
         final r = Rect.fromLTWH(
