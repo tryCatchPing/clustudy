@@ -7,25 +7,29 @@ import '../../../design_system/tokens/app_spacing.dart';
 import '../../../design_system/tokens/app_typography.dart';
 
 enum AppTextFieldStyle { search, underline, none }
-enum AppTextFieldSize  { sm, md, lg }
+
+enum AppTextFieldSize { sm, md, lg }
 
 class AppTextField extends StatelessWidget {
+  // 필수
   final TextEditingController controller;
-  final String? hintText;
   final AppTextFieldStyle style;
-  final AppTextFieldSize size;
 
-  /// (underline/none에서만 사용) 텍스트 스타일 직접 지정
-  final TextStyle? textStyle;
-
-  /// (search/textIcon에서 사용)
-  final String? svgPrefixIconPath; // e.g. 'assets/icons/search.svg'
-  final String? svgClearIconPath;  // e.g. 'assets/icons/close.svg'
-
+  // 공통 옵션
+  final String? hintText;
+  final TextStyle? textStyle;            // underline/none에서 주로 사용
   final ValueChanged<String>? onSubmitted;
   final ValueChanged<String>? onChanged;
   final bool enabled;
-  final double? width; // underline 전용 고정폭 옵션 (없으면 부모 제약)
+  final AppTextFieldSize size;
+  final double? width;                   // underline에서 고정폭이 필요할 때
+  final FocusNode? focusNode;            // NEW
+  final bool autofocus;                  // NEW
+  final TextAlign? textAlign;            // NEW
+
+  // search 전용(아이콘)
+  final String? svgPrefixIconPath;
+  final String? svgClearIconPath;
 
   const AppTextField({
     super.key,
@@ -35,11 +39,14 @@ class AppTextField extends StatelessWidget {
     this.textStyle,
     this.onSubmitted,
     this.onChanged,
-    this.size = AppTextFieldSize.md,
     this.enabled = true,
+    this.size = AppTextFieldSize.md,
     this.width,
-  })  : svgPrefixIconPath = null,
-        svgClearIconPath = null;
+    this.focusNode,
+    this.autofocus = false,
+    this.textAlign,
+  }) : svgPrefixIconPath = null,
+       svgClearIconPath = null;
 
   const AppTextField.search({
     super.key,
@@ -49,15 +56,18 @@ class AppTextField extends StatelessWidget {
     this.svgClearIconPath,
     this.onSubmitted,
     this.onChanged,
-    this.size = AppTextFieldSize.md,
     this.enabled = true,
-  })  : style = AppTextFieldStyle.search,
-        textStyle = null,
-        width = null;
+    this.size = AppTextFieldSize.md,
+    this.focusNode,
+    this.autofocus = false,
+    this.textAlign,
+  }) : style = AppTextFieldStyle.search,
+       textStyle = null,
+       width = null;
 
   @override
   Widget build(BuildContext context) {
-    final field = ValueListenableBuilder<TextEditingValue>(
+    return ValueListenableBuilder<TextEditingValue>(
       valueListenable: controller,
       builder: (_, value, __) {
         final _style = _resolveTextStyle();
@@ -66,12 +76,18 @@ class AppTextField extends StatelessWidget {
         final textField = TextField(
           controller: controller,
           enabled: enabled,
+          focusNode: focusNode,
+          autofocus: autofocus,
           style: _style,
           decoration: _decoration,
           cursorColor: AppColors.primary,
-          textAlign: style == AppTextFieldStyle.underline ? TextAlign.center : TextAlign.start,
+          textAlign: textAlign ?? (style == AppTextFieldStyle.underline
+            ? TextAlign.center
+            : TextAlign.start),
           maxLines: style == AppTextFieldStyle.search ? 1 : null,
-          textInputAction: style == AppTextFieldStyle.search ? TextInputAction.search : TextInputAction.done,
+          textInputAction: style == AppTextFieldStyle.search
+              ? TextInputAction.search
+              : TextInputAction.done,
           keyboardType: TextInputType.text,
           onSubmitted: onSubmitted,
           onChanged: onChanged,
@@ -83,18 +99,21 @@ class AppTextField extends StatelessWidget {
         return textField;
       },
     );
-
-    return field;
   }
 
   // ===== helpers =====
   TextStyle _resolveTextStyle() {
     switch (style) {
       case AppTextFieldStyle.search:
-        return AppTypography.body3.copyWith(color: AppColors.gray50, height: AppTypography.body3.height);
+        return AppTypography.body3.copyWith(
+          color: AppColors.gray50,
+          height: AppTypography.body3.height,
+        );
       case AppTextFieldStyle.underline:
       case AppTextFieldStyle.none:
-        return (textStyle ?? AppTypography.body3).copyWith(height: (textStyle?.height ?? AppTypography.body3.height));
+        return (textStyle ?? AppTypography.body3).copyWith(
+          height: (textStyle?.height ?? AppTypography.body3.height),
+        );
     }
   }
 
@@ -106,12 +125,15 @@ class AppTextField extends StatelessWidget {
     };
 
     final contentPadding = switch (style) {
-      AppTextFieldStyle.search =>
-        const EdgeInsets.symmetric(vertical: AppSpacing.medium, horizontal: AppSpacing.small),
-      AppTextFieldStyle.underline =>
-        const EdgeInsets.symmetric(vertical: 4, horizontal: 0),
-      AppTextFieldStyle.none =>
-        EdgeInsets.zero,
+      AppTextFieldStyle.search => const EdgeInsets.symmetric(
+        vertical: AppSpacing.medium,
+        horizontal: AppSpacing.small,
+      ),
+      AppTextFieldStyle.underline => const EdgeInsets.symmetric(
+        vertical: 4,
+        horizontal: 0,
+      ),
+      AppTextFieldStyle.none => EdgeInsets.zero,
     };
 
     final borderRadius = BorderRadius.circular(
@@ -136,12 +158,19 @@ class AppTextField extends StatelessWidget {
                   padding: const EdgeInsets.all(12.0),
                   child: SvgPicture.asset(
                     svgPrefixIconPath!,
-                    width: iconSize, height: iconSize,
-                    colorFilter: const ColorFilter.mode(AppColors.gray40, BlendMode.srcIn),
+                    width: iconSize,
+                    height: iconSize,
+                    colorFilter: const ColorFilter.mode(
+                      AppColors.gray40,
+                      BlendMode.srcIn,
+                    ),
                   ),
                 )
               : null,
-          prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+          prefixIconConstraints: const BoxConstraints(
+            minWidth: 0,
+            minHeight: 0,
+          ),
 
           suffixIcon: (value.text.isNotEmpty && svgClearIconPath != null)
               ? IconButton(
@@ -149,14 +178,24 @@ class AppTextField extends StatelessWidget {
                   padding: const EdgeInsets.all(12.0),
                   icon: SvgPicture.asset(
                     svgClearIconPath!,
-                    width: iconSize, height: iconSize,
-                    colorFilter: const ColorFilter.mode(AppColors.gray40, BlendMode.srcIn),
+                    width: iconSize,
+                    height: iconSize,
+                    colorFilter: const ColorFilter.mode(
+                      AppColors.gray40,
+                      BlendMode.srcIn,
+                    ),
                   ),
-                  onPressed: controller.clear,
+                  onPressed: () {
+                    controller.clear();
+                    onChanged?.call('');
+                  },
                   tooltip: '지우기',
                 )
               : null,
-          suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+          suffixIconConstraints: const BoxConstraints(
+            minWidth: 0,
+            minHeight: 0,
+          ),
 
           enabledBorder: OutlineInputBorder(
             borderRadius: borderRadius,
@@ -174,7 +213,9 @@ class AppTextField extends StatelessWidget {
           isCollapsed: true, // 정확한 수직 높이
           contentPadding: contentPadding,
           hintText: hintText,
-          hintStyle: (textStyle ?? AppTypography.body3).copyWith(color: AppColors.gray30),
+          hintStyle: (textStyle ?? AppTypography.body3).copyWith(
+            color: AppColors.gray30,
+          ),
           enabledBorder: const UnderlineInputBorder(
             borderSide: BorderSide(color: AppColors.background, width: 1.0),
           ),
