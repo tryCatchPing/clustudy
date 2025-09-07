@@ -93,16 +93,16 @@ class _AppCardState extends State<AppCard> {
               borderRadius: BorderRadius.circular(AppSpacing.small),
               child: Image.memory(
                 widget.previewImage!,
-                width: 88,
-                height: 120,
+                width: AppSpacing.cardPreviewWidth,
+                height: AppSpacing.cardPreviewHeight,
                 fit: BoxFit.cover,
               ),
             ),
           )
         : SvgPicture.asset(
             widget.svgIconPath!,
-            width: 144,
-            height: 136,
+            width: AppSpacing.cardFolderIconWidth,
+            height: AppSpacing.cardFolderIconHeight,
             colorFilter: const ColorFilter.mode(AppColors.primary, BlendMode.srcIn),
           );
 
@@ -156,7 +156,7 @@ class _AppCardState extends State<AppCard> {
       child: InkWell(
         onTap: _isEditing ? null : widget.onTap,
         onLongPress: _isEditing ? null : _enterEdit,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppSpacing.cardBorderRadius),
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.medium), // ← 16px 패딩
           child: body,

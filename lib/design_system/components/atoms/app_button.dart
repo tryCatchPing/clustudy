@@ -207,7 +207,7 @@ class AppButton extends StatelessWidget {
   Size get _minSize {
     switch (size) {
       case AppButtonSize.sm:
-        return const Size(40, 36); // 터치 타겟 보장
+        return const Size(AppSpacing.touchTargetMd, AppSpacing.touchTargetSm); // 터치 타겟 보장
       case AppButtonSize.md:
         return const Size(48, 40);
       case AppButtonSize.lg:
