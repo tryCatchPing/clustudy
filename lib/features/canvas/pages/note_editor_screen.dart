@@ -117,6 +117,22 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
   Widget build(BuildContext context) {
     debugPrint('📝 [NoteEditorScreen] Building for noteId: ${widget.noteId}');
 
+    // Guard: When using maintainState=false, this screen is recreated when
+    // returning from the next route, so didPopNext won't fire on the old
+    // (disposed) instance. Ensure session re-entry on first visible frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final route = ModalRoute.of(context);
+      final isCurrent = route?.isCurrent ?? false;
+      final active = ref.read(noteSessionProvider);
+      if (isCurrent && active != widget.noteId) {
+        debugPrint(
+          '🧭 [RouteAware] build-guard enter session noteId=${widget.noteId}',
+        );
+        ref.read(noteSessionProvider.notifier).enterNote(widget.noteId);
+      }
+    });
+
     final noteAsync = ref.watch(noteProvider(widget.noteId));
     final note = noteAsync.value;
     final noteTitle = note?.title ?? widget.noteId;
