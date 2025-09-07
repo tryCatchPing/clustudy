@@ -7,23 +7,39 @@ import '../../../design_system/tokens/app_spacing.dart';
 import '../../../design_system/tokens/app_typography.dart';
 
 enum AppTextFieldStyle { search, underline, none }
+enum AppTextFieldSize  { sm, md, lg }
 
-class AppTextField extends StatefulWidget {
+class AppTextField extends StatelessWidget {
   final TextEditingController controller;
   final String? hintText;
   final AppTextFieldStyle style;
-  final TextStyle? textStyle; // 텍스트 스타일을 직접 받도록 수정
-  final String? svgPrefixIconPath; // SVG 아이콘 경로
-  final String? svgClearIconPath; // SVG 'x' 아이콘 경로
+  final AppTextFieldSize size;
+
+  /// (underline/none에서만 사용) 텍스트 스타일 직접 지정
+  final TextStyle? textStyle;
+
+  /// (search/textIcon에서 사용)
+  final String? svgPrefixIconPath; // e.g. 'assets/icons/search.svg'
+  final String? svgClearIconPath;  // e.g. 'assets/icons/close.svg'
+
+  final ValueChanged<String>? onSubmitted;
+  final ValueChanged<String>? onChanged;
+  final bool enabled;
+  final double? width; // underline 전용 고정폭 옵션 (없으면 부모 제약)
 
   const AppTextField({
     super.key,
     required this.controller,
-    required this.style, // 스타일을 필수로 받도록 변경
+    required this.style,
     this.hintText,
     this.textStyle,
-  }) : svgPrefixIconPath = null,
-       svgClearIconPath = null;
+    this.onSubmitted,
+    this.onChanged,
+    this.size = AppTextFieldSize.md,
+    this.enabled = true,
+    this.width,
+  })  : svgPrefixIconPath = null,
+        svgClearIconPath = null;
 
   const AppTextField.search({
     super.key,
@@ -31,116 +47,149 @@ class AppTextField extends StatefulWidget {
     this.hintText,
     this.svgPrefixIconPath,
     this.svgClearIconPath,
-  }) : style = AppTextFieldStyle.search,
-       textStyle = null; // search 스타일은 내부에서 정의
-
-  @override
-  State<AppTextField> createState() => _AppTextFieldState();
-}
-
-class _AppTextFieldState extends State<AppTextField> {
-  @override
-  void initState() {
-    super.initState();
-    widget.controller.addListener(() => setState(() {}));
-  }
+    this.onSubmitted,
+    this.onChanged,
+    this.size = AppTextFieldSize.md,
+    this.enabled = true,
+  })  : style = AppTextFieldStyle.search,
+        textStyle = null,
+        width = null;
 
   @override
   Widget build(BuildContext context) {
-    // search 스타일일 경우 입력 시 스타일, 아닐 경우 외부에서 받은 스타일 적용
-    final inputTextStyle = widget.style == AppTextFieldStyle.search
-        ? AppTypography.body3.copyWith(color: AppColors.gray50)
-        : widget.textStyle;
+    final field = ValueListenableBuilder<TextEditingValue>(
+      valueListenable: controller,
+      builder: (_, value, __) {
+        final _style = _resolveTextStyle();
+        final _decoration = _buildDecoration(value);
 
-    // TextField 위젯 생성
-    final textField = TextField(
-      controller: widget.controller,
-      style: inputTextStyle,
-      decoration: _buildDecoration(),
-      textAlign: widget.style == AppTextFieldStyle.underline
-          ? TextAlign.center
-          : TextAlign.start, // underline일때 중앙 정렬
+        final textField = TextField(
+          controller: controller,
+          enabled: enabled,
+          style: _style,
+          decoration: _decoration,
+          cursorColor: AppColors.primary,
+          textAlign: style == AppTextFieldStyle.underline ? TextAlign.center : TextAlign.start,
+          maxLines: style == AppTextFieldStyle.search ? 1 : null,
+          textInputAction: style == AppTextFieldStyle.search ? TextInputAction.search : TextInputAction.done,
+          keyboardType: TextInputType.text,
+          onSubmitted: onSubmitted,
+          onChanged: onChanged,
+        );
+
+        if (style == AppTextFieldStyle.underline && width != null) {
+          return SizedBox(width: width, child: textField);
+        }
+        return textField;
+      },
     );
 
-    // underline 스타일일 경우에만 Container로 감싸서 너비 고정
-    if (widget.style == AppTextFieldStyle.underline) {
-      return SizedBox(
-        width: 200, // 가로 200px 너비 고정
-        child: textField,
-      );
-    }
-
-    return textField; // 나머지 스타일은 전체 너비 사용
+    return field;
   }
 
-  InputDecoration _buildDecoration() {
-    switch (widget.style) {
+  // ===== helpers =====
+  TextStyle _resolveTextStyle() {
+    switch (style) {
+      case AppTextFieldStyle.search:
+        return AppTypography.body3.copyWith(color: AppColors.gray50, height: AppTypography.body3.height);
+      case AppTextFieldStyle.underline:
+      case AppTextFieldStyle.none:
+        return (textStyle ?? AppTypography.body3).copyWith(height: (textStyle?.height ?? AppTypography.body3.height));
+    }
+  }
+
+  InputDecoration _buildDecoration(TextEditingValue value) {
+    final iconSize = switch (size) {
+      AppTextFieldSize.sm => 18.0,
+      AppTextFieldSize.md => 20.0,
+      AppTextFieldSize.lg => 24.0,
+    };
+
+    final contentPadding = switch (style) {
+      AppTextFieldStyle.search =>
+        const EdgeInsets.symmetric(vertical: AppSpacing.medium, horizontal: AppSpacing.small),
+      AppTextFieldStyle.underline =>
+        const EdgeInsets.symmetric(vertical: 4, horizontal: 0),
+      AppTextFieldStyle.none =>
+        EdgeInsets.zero,
+    };
+
+    final borderRadius = BorderRadius.circular(
+      switch (size) {
+        AppTextFieldSize.sm => 6.0,
+        AppTextFieldSize.md => AppSpacing.small, // 8
+        AppTextFieldSize.lg => 12.0,
+      },
+    );
+
+    switch (style) {
       case AppTextFieldStyle.search:
         return InputDecoration(
-          // 1. 배경색 추가
+          isDense: true,
           filled: true,
           fillColor: AppColors.gray10,
-
-          // 2. 내부 패딩(여백) 추가
-          contentPadding: const EdgeInsets.symmetric(
-            vertical: AppSpacing.medium, // 위아래 16px
-            horizontal: AppSpacing.small, // 좌우 8px
-          ),
-
-          // --- 기존 코드 ---
-          hintText: widget.hintText,
+          contentPadding: contentPadding,
+          hintText: hintText,
           hintStyle: AppTypography.body3.copyWith(color: AppColors.gray40),
-          prefixIcon: widget.svgPrefixIconPath != null
+          prefixIcon: svgPrefixIconPath != null
               ? Padding(
                   padding: const EdgeInsets.all(12.0),
-                  child: SvgPicture.asset(widget.svgPrefixIconPath!),
+                  child: SvgPicture.asset(
+                    svgPrefixIconPath!,
+                    width: iconSize, height: iconSize,
+                    colorFilter: const ColorFilter.mode(AppColors.gray40, BlendMode.srcIn),
+                  ),
                 )
               : null,
-          suffixIcon:
-              widget.controller.text.isNotEmpty &&
-                  widget.svgClearIconPath != null
-              ? IconButton(
-                  icon: SvgPicture.asset(widget.svgClearIconPath!),
-                  onPressed: () => widget.controller.clear(),
-                )
-              : null,
+          prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
 
-          // 3. 테두리 스타일 수정 (배경색이 있으므로 평소에는 테두리 숨김)
+          suffixIcon: (value.text.isNotEmpty && svgClearIconPath != null)
+              ? IconButton(
+                  splashRadius: 18,
+                  padding: const EdgeInsets.all(12.0),
+                  icon: SvgPicture.asset(
+                    svgClearIconPath!,
+                    width: iconSize, height: iconSize,
+                    colorFilter: const ColorFilter.mode(AppColors.gray40, BlendMode.srcIn),
+                  ),
+                  onPressed: controller.clear,
+                  tooltip: '지우기',
+                )
+              : null,
+          suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppSpacing.small),
-            borderSide: BorderSide.none, // 평소에는 테두리 없음
+            borderRadius: borderRadius,
+            borderSide: BorderSide.none,
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppSpacing.small),
-            borderSide: const BorderSide(
-              // 포커스될 때만 Primary 색상 테두리 표시
-              color: AppColors.primary,
-              width: 1.5,
-            ),
-          ),
-        );
-      case AppTextFieldStyle.underline: // 생성용 스타일
-        return InputDecoration(
-          hintText: widget.hintText,
-          hintStyle: widget.textStyle?.copyWith(color: AppColors.gray30),
-          enabledBorder: const UnderlineInputBorder(
-            borderSide: BorderSide(
-              color: AppColors.background, // Background 컬러
-              width: 1.0, // 세로 1px
-            ),
-          ),
-          focusedBorder: const UnderlineInputBorder(
-            borderSide: BorderSide(
-              color: AppColors.background, // 포커스 시에도 동일
-              width: 1.5, // 살짝 두껍게
-            ),
+            borderRadius: borderRadius,
+            borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
           ),
         );
 
-      case AppTextFieldStyle.none: // 수정용 스타일
+      case AppTextFieldStyle.underline:
+        return InputDecoration(
+          isDense: true,
+          isCollapsed: true, // 정확한 수직 높이
+          contentPadding: contentPadding,
+          hintText: hintText,
+          hintStyle: (textStyle ?? AppTypography.body3).copyWith(color: AppColors.gray30),
+          enabledBorder: const UnderlineInputBorder(
+            borderSide: BorderSide(color: AppColors.background, width: 1.0),
+          ),
+          focusedBorder: const UnderlineInputBorder(
+            borderSide: BorderSide(color: AppColors.background, width: 1.5),
+          ),
+        );
+
+      case AppTextFieldStyle.none:
         return const InputDecoration(
-          border: InputBorder.none, // 모든 테두리 제거
-          focusedBorder: InputBorder.none, // 포커스 시에도 테두리 없음
+          isDense: true,
+          isCollapsed: true,
+          contentPadding: EdgeInsets.zero,
+          border: InputBorder.none,
+          focusedBorder: InputBorder.none,
           enabledBorder: InputBorder.none,
         );
     }
