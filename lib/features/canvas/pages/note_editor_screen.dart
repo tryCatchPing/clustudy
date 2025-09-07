@@ -5,6 +5,7 @@ import '../../../shared/routing/route_observer.dart';
 import '../../notes/data/derived_note_providers.dart';
 import '../providers/note_editor_provider.dart';
 import '../widgets/note_editor_canvas.dart';
+import '../widgets/panels/backlinks_panel.dart';
 import '../widgets/toolbar/actions_bar.dart';
 
 /// 노트 편집 화면을 구성하는 위젯입니다.
@@ -141,6 +142,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
         ),
         actions: [NoteEditorActionsBar(noteId: widget.noteId)],
       ),
+      endDrawer: BacklinksPanel(noteId: widget.noteId),
       body: NoteEditorCanvas(noteId: widget.noteId),
     );
   }

@@ -77,6 +77,11 @@ class NoteEditorActionsBar extends ConsumerWidget {
           tooltip: 'PDF 내보내기',
           onPressed: note == null ? null : () => _onPdfExport(context, ref),
         ),
+        IconButton(
+          icon: const Icon(Icons.link),
+          tooltip: 'Links panel',
+          onPressed: () => Scaffold.maybeOf(context)?.openEndDrawer(),
+        ),
       ],
     );
   }
