@@ -1,5 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
 import '../models/note_model.dart';
 import '../models/note_page_model.dart';
 import '../models/thumbnail_metadata.dart';
@@ -148,6 +151,40 @@ class MemoryNotesRepository implements NotesRepository {
       _notes[noteIndex] = updatedNote;
       _emit();
     }
+  }
+
+  @override
+  Future<void> updatePageJson(
+    String noteId,
+    String pageId,
+    String json,
+  ) async {
+    debugPrint(
+      '🗄️ [NotesRepo] updatePageJson(noteId=$noteId, pageId=$pageId, bytes=${json.length})',
+    );
+    final noteIndex = _notes.indexWhere((n) => n.noteId == noteId);
+    if (noteIndex < 0) {
+      debugPrint('🗄️ [NotesRepo] note not found: $noteId');
+      return;
+    }
+
+    final note = _notes[noteIndex];
+    final pages = List<NotePageModel>.from(note.pages);
+    final idx = pages.indexWhere((p) => p.pageId == pageId);
+    if (idx < 0) {
+      debugPrint('🗄️ [NotesRepo] page not found: $pageId');
+      return;
+    }
+
+    pages[idx] = pages[idx].copyWith(jsonData: json);
+
+    final updatedNote = note.copyWith(
+      pages: pages,
+      updatedAt: DateTime.now(),
+    );
+    _notes[noteIndex] = updatedNote;
+    _emit();
+    debugPrint('🗄️ [NotesRepo] page json updated & emitted');
   }
 
   @override

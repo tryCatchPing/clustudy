@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../shared/services/sketch_persist_service.dart';
 import '../../../notes/data/derived_note_providers.dart';
 import '../../../notes/pages/page_controller_screen.dart';
 import '../../../notes/widgets/pdf_export_modal.dart';
@@ -65,7 +66,12 @@ class NoteEditorActionsBar extends ConsumerWidget {
         IconButton(
           icon: const Icon(Icons.save),
           tooltip: 'Save',
-          onPressed: () => notifier.saveSketch(),
+          onPressed: () async {
+            await SketchPersistService.saveCurrentPage(ref, noteId);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('페이지를 저장했습니다.')),
+            );
+          },
         ),
         IconButton(
           icon: const Icon(Icons.view_agenda),

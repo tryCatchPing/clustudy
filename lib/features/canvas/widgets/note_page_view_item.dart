@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:scribble/scribble.dart';
 
 import '../../../shared/routing/app_routes.dart';
+import '../../../shared/services/sketch_persist_service.dart';
 import '../../notes/data/derived_note_providers.dart';
 import '../constants/note_editor_constant.dart'; // NoteEditorConstants 정의 필요
 import '../notifiers/custom_scribble_notifier.dart';
@@ -275,6 +276,11 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                                     case LinkAction.navigate:
                                       debugPrint(
                                         '[LinkNav] navigate: target=${link.targetNoteId} (RouteAware will manage session)',
+                                      );
+                                      // Save current page before navigating to the target note
+                                      await SketchPersistService.saveCurrentPage(
+                                        ref,
+                                        widget.noteId,
                                       );
                                       context.pushNamed(
                                         AppRoutes.noteEditName,

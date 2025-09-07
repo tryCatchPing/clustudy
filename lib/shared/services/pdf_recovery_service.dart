@@ -6,8 +6,8 @@ import 'package:path/path.dart' as path;
 import 'package:pdfx/pdfx.dart';
 
 import '../../features/notes/data/notes_repository.dart';
-import '../repositories/link_repository.dart';
 import '../../features/notes/models/note_page_model.dart';
+import '../repositories/link_repository.dart';
 import 'file_storage_service.dart';
 import 'note_deletion_service.dart';
 
@@ -169,13 +169,17 @@ class PdfRecoveryService {
         throw Exception('노트를 찾을 수 없습니다: $noteId');
       }
 
-      for (final page in note.pages) {
-        if (backupData.containsKey(page.pageId)) {
-          page.jsonData = backupData[page.pageId]!;
-        }
-      }
+      final newPages = note.pages
+          .map(
+            (p) => backupData.containsKey(p.pageId)
+                ? p.copyWith(jsonData: backupData[p.pageId]!)
+                : p,
+          )
+          .toList(growable: false);
 
-      await repo.upsert(note);
+      await repo.upsert(
+        note.copyWith(pages: newPages, updatedAt: DateTime.now()),
+      );
 
       debugPrint('✅ 필기 데이터 복원 완료');
     } catch (e) {
@@ -199,13 +203,17 @@ class PdfRecoveryService {
         throw Exception('노트를 찾을 수 없습니다: $noteId');
       }
 
-      for (final page in note.pages) {
-        if (page.backgroundType == PageBackgroundType.pdf) {
-          page.showBackgroundImage = false;
-        }
-      }
+      final newPages = note.pages
+          .map(
+            (p) => p.backgroundType == PageBackgroundType.pdf
+                ? p.copyWith(showBackgroundImage: false)
+                : p,
+          )
+          .toList(growable: false);
 
-      await repo.upsert(note);
+      await repo.upsert(
+        note.copyWith(pages: newPages, updatedAt: DateTime.now()),
+      );
 
       debugPrint('✅ 필기만 보기 모드 활성화 완료');
     } catch (e) {
@@ -455,13 +463,17 @@ class PdfRecoveryService {
         throw Exception('노트를 찾을 수 없습니다: $noteId');
       }
 
-      for (final page in note.pages) {
-        if (page.backgroundType == PageBackgroundType.pdf) {
-          page.showBackgroundImage = true;
-        }
-      }
+      final newPages = note.pages
+          .map(
+            (p) => p.backgroundType == PageBackgroundType.pdf
+                ? p.copyWith(showBackgroundImage: true)
+                : p,
+          )
+          .toList(growable: false);
 
-      await repo.upsert(note);
+      await repo.upsert(
+        note.copyWith(pages: newPages, updatedAt: DateTime.now()),
+      );
 
       debugPrint('✅ 배경 이미지 표시 복원 완료');
     } catch (e) {

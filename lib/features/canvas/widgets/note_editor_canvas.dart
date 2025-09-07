@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/services/sketch_persist_service.dart';
 import '../constants/note_editor_constant.dart';
 import '../providers/note_editor_provider.dart';
 import 'note_page_view_item.dart';
@@ -49,6 +52,26 @@ class NoteEditorCanvas extends ConsumerWidget {
               controller: pageController,
               itemCount: notePagesCount,
               onPageChanged: (index) {
+                // Save sketch of the previous page (before switching)
+                final prevIndex = ref.read(currentPageIndexProvider(noteId));
+                if (prevIndex != index && prevIndex >= 0) {
+                  debugPrint(
+                    '💾 [SketchPersist] onPageChanged: prev=$prevIndex → next=$index '
+                    '(saving prev page)',
+                  );
+                  // Best-effort save; ignore errors
+                  // No debounce per current policy
+                  // Persist previous page before switching
+                  // Use microtask to avoid blocking page switch animations
+                  scheduleMicrotask(() async {
+                    await SketchPersistService.savePageByIndex(
+                      ref,
+                      noteId,
+                      prevIndex,
+                    );
+                  });
+                }
+
                 ref
                     .read(
                       currentPageIndexProvider(noteId).notifier,
