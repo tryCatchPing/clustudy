@@ -37,6 +37,19 @@ class AppSpacing {
 
   /// 버튼 내부 패딩 (세로)
   static const double buttonVertical = 8.0;
+
+  static const double touchTargetSm = 36.0;
+  static const double touchTargetMd = 40.0;
+
+  static const double cardPreviewWidth = 88.0;
+  static const double cardPreviewHeight = 120.0;
+  static const double cardFolderIconWidth = 144.0;
+  static const double cardFolderIconHeight = 136.0;
+  static const double cardBorderRadius = 12.0;
+
+  static const double pageCardWidth = 88.0;
+  static const double pageCardHeight = 120.0;
+  static const double selectedBorderWidth = 2.0;
 }
 
 /// 📏 사전 정의된 EdgeInsets 패턴
