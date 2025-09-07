@@ -70,6 +70,17 @@ abstract class NotesRepository {
     List<NotePageModel> pages,
   );
 
+  /// 단일 페이지의 스케치(JSON)를 업데이트합니다.
+  ///
+  /// [noteId]: 대상 노트 ID
+  /// [pageId]: 대상 페이지 ID
+  /// [json]: 직렬화된 Sketch JSON 문자열
+  Future<void> updatePageJson(
+    String noteId,
+    String pageId,
+    String json,
+  );
+
   /// 썸네일 메타데이터를 저장합니다 (향후 Isar DB에서 활용).
   ///
   /// [pageId]는 페이지 ID이고, [metadata]는 저장할 썸네일 메타데이터입니다.

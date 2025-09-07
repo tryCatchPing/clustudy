@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/routing/route_observer.dart';
+import '../../../shared/services/sketch_persist_service.dart';
 import '../../notes/data/derived_note_providers.dart';
 import '../providers/note_editor_provider.dart';
 import '../widgets/note_editor_canvas.dart';
@@ -99,7 +100,12 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
 
   @override
   void didPushNext() {
-    debugPrint('🧭 [RouteAware] didPushNext noteId=${widget.noteId} (no-op)');
+    debugPrint(
+      '🧭 [RouteAware] didPushNext noteId=${widget.noteId} (save & no-op)',
+    );
+    // Save current page sketch when another route is pushed above
+    // Fire-and-forget; errors are logged inside the service
+    SketchPersistService.saveCurrentPage(ref, widget.noteId);
   }
 
   @override
@@ -107,6 +113,8 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
     debugPrint(
       '🧭 [RouteAware] didPop noteId=${widget.noteId} → schedule exit session',
     );
+    // Save current page when leaving editor via back
+    SketchPersistService.saveCurrentPage(ref, widget.noteId);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       ref.read(noteSessionProvider.notifier).exitNote();

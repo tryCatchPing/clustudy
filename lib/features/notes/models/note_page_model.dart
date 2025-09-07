@@ -27,7 +27,7 @@ class NotePageModel {
   final int pageNumber;
 
   /// 스케치 데이터가 포함된 JSON 문자열.
-  String jsonData;
+  final String jsonData;
 
   /// 페이지 배경의 타입.
   final PageBackgroundType backgroundType;
@@ -48,7 +48,8 @@ class NotePageModel {
   final String? preRenderedImagePath;
 
   /// 배경 이미지 표시 여부 (필기만 보기 모드 지원).
-  bool showBackgroundImage;
+  // TODO: 수정 필요
+  final bool showBackgroundImage;
 
   /// [NotePageModel]의 생성자.
   ///
@@ -80,12 +81,7 @@ class NotePageModel {
   /// JSON 데이터에서 [Sketch] 객체로 변환합니다.
   Sketch toSketch() => Sketch.fromJson(jsonDecode(jsonData));
 
-  /// [Sketch] 객체에서 JSON 데이터로 업데이트합니다.
-  ///
-  /// [sketch]는 업데이트할 스케치 객체입니다.
-  void updateFromSketch(Sketch sketch) {
-    jsonData = jsonEncode(sketch.toJson());
-  }
+  // JSON 데이터 변경은 Repository 경유로 처리합니다 (모델은 불변).
 
   /// PDF 배경이 있는지 여부를 반환합니다.
   bool get hasPdfBackground =>

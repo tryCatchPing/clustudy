@@ -4,13 +4,11 @@ import 'package:scribble/scribble.dart';
 
 import '../../notes/models/note_page_model.dart' as page_model;
 import '../models/tool_mode.dart';
-import 'auto_save_mixin.dart';
 import 'tool_management_mixin.dart';
 
 /// 캔버스에서 스케치 및 도구 관리를 담당하는 Notifier.
-/// [ScribbleNotifier], [AutoSaveMixin], [ToolManagementMixin]을 조합하여 사용합니다.
-class CustomScribbleNotifier extends ScribbleNotifier
-    with AutoSaveMixin, ToolManagementMixin {
+/// [ScribbleNotifier], [ToolManagementMixin]을 조합하여 사용합니다.
+class CustomScribbleNotifier extends ScribbleNotifier with ToolManagementMixin {
   /// [CustomScribbleNotifier]의 생성자.
   ///
   /// [sketch]는 초기 스케치 데이터입니다.
@@ -41,7 +39,7 @@ class CustomScribbleNotifier extends ScribbleNotifier
   @override
   ToolMode toolMode;
 
-  /// 현재 노트 페이지 모델.
+  /// 현재 노트 페이지 모델 (초기 스케치 로딩용 스냅샷; 불변 모델 사용).
   @override
   final page_model.NotePageModel? page;
 

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/routing/app_routes.dart';
+import '../../../../shared/services/sketch_persist_service.dart';
 import '../../../notes/data/derived_note_providers.dart';
 import '../../../notes/models/note_model.dart';
 import '../../providers/link_providers.dart';
@@ -153,6 +154,8 @@ class _OutgoingList extends ConsumerWidget {
               onTap: () {
                 // Close drawer then navigate
                 Navigator.of(context).maybePop();
+                // Persist current page of the current note before navigating
+                SketchPersistService.saveCurrentPage(ref, noteId);
                 context.pushNamed(
                   AppRoutes.noteEditName,
                   pathParameters: {'noteId': link.targetNoteId},
@@ -219,6 +222,8 @@ class _BacklinksList extends ConsumerWidget {
               onTap: () async {
                 // Close drawer
                 Navigator.of(context).maybePop();
+                // Persist current page of the current note before navigating
+                SketchPersistService.saveCurrentPage(ref, noteId);
                 // Navigate to source note
                 context.pushNamed(
                   AppRoutes.noteEditName,
