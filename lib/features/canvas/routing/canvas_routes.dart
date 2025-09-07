@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../shared/routing/app_routes.dart';
@@ -14,10 +15,17 @@ class CanvasRoutes {
     GoRoute(
       path: AppRoutes.noteEdit,
       name: AppRoutes.noteEditName,
-      builder: (context, state) {
+      pageBuilder: (context, state) {
         final noteId = state.pathParameters['noteId']!;
         debugPrint('📝 노트 편집 페이지: noteId = $noteId');
-        return NoteEditorScreen(noteId: noteId);
+        // Use GoRouter-provided unique pageKey to avoid duplicate
+        // keys when the same noteId is pushed multiple times.
+        return MaterialPage(
+          key: state.pageKey,
+          name: AppRoutes.noteEditName,
+          maintainState: false,
+          child: NoteEditorScreen(noteId: noteId),
+        );
       },
     ),
   ];
