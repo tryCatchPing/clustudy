@@ -52,17 +52,24 @@ class NoteEditorCanvas extends ConsumerWidget {
               controller: pageController,
               itemCount: notePagesCount,
               onPageChanged: (index) {
+                // Ignore spurious callbacks during programmatic jumps
+                final jumpTarget = ref.read(pageJumpTargetProvider(noteId));
+                if (jumpTarget != null && index != jumpTarget) {
+                  debugPrint(
+                    '🧭 [PageCtrl] onPageChanged ignored (index=$index, target=$jumpTarget)',
+                  );
+                  return;
+                }
+                if (jumpTarget != null && index == jumpTarget) {
+                  ref.read(pageJumpTargetProvider(noteId).notifier).clear();
+                }
+
                 // Save sketch of the previous page (before switching)
                 final prevIndex = ref.read(currentPageIndexProvider(noteId));
                 if (prevIndex != index && prevIndex >= 0) {
                   debugPrint(
-                    '💾 [SketchPersist] onPageChanged: prev=$prevIndex → next=$index '
-                    '(saving prev page)',
+                    '💾 [SketchPersist] onPageChanged: prev=$prevIndex → next=$index (saving prev page)',
                   );
-                  // Best-effort save; ignore errors
-                  // No debounce per current policy
-                  // Persist previous page before switching
-                  // Use microtask to avoid blocking page switch animations
                   scheduleMicrotask(() async {
                     await SketchPersistService.savePageByIndex(
                       ref,
