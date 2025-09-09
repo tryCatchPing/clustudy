@@ -7,6 +7,7 @@ import 'package:scribble/scribble.dart';
 
 import '../../../shared/routing/app_routes.dart';
 import '../../../shared/services/sketch_persist_service.dart';
+import '../../canvas/providers/pointer_policy_provider.dart';
 import '../../notes/data/derived_note_providers.dart';
 import '../constants/note_editor_constant.dart'; // NoteEditorConstants 정의 필요
 import '../notifiers/custom_scribble_notifier.dart';
@@ -173,6 +174,7 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                       final currentToolMode = ref
                           .read(toolSettingsNotifierProvider(widget.noteId))
                           .toolMode;
+                      final pointerPolicy = ref.watch(pointerPolicyProvider);
                       return Stack(
                         children: [
                           // 배경 레이어
@@ -208,10 +210,9 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                           Positioned.fill(
                             child: LinkerGestureLayer(
                               toolMode: currentToolMode,
-                              // provider 도입 이후 수정
+                              // Use global pointer policy
                               pointerMode:
-                                  scribbleState.allowedPointersMode ==
-                                      ScribblePointerMode.all
+                                  pointerPolicy == ScribblePointerMode.all
                                   ? LinkerPointerMode.all
                                   : LinkerPointerMode.stylusOnly,
                               onRectCompleted: (rect) async {
