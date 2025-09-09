@@ -29,10 +29,7 @@ class PageControllerScreen extends ConsumerStatefulWidget {
     await showDialog<void>(
       context: context,
       barrierDismissible: false, // 배경 탭으로 닫기 방지
-      builder: (context) => ProviderScope(
-        parent: ProviderScope.containerOf(context),
-        child: PageControllerScreen(noteId: noteId),
-      ),
+      builder: (context) => PageControllerScreen(noteId: noteId),
     );
   }
 
@@ -359,19 +356,32 @@ class _PageControllerScreenState extends ConsumerState<PageControllerScreen> {
     debugPrint('🧭 [PageCtrlModal] tap page=${page.pageNumber} (idx=$index)');
 
     // 1) 먼저 PageController에 직접 점프를 시도 (현재 프레임에서 반영)
-    final controller = ref.read(pageControllerProvider(widget.noteId));
-    if (controller.hasClients) {
-      debugPrint('🧭 [PageCtrlModal] jumpToPage → $index (direct)');
-      controller.jumpToPage(index);
+    final routeId = ref.read(noteRouteIdProvider(widget.noteId));
+    if (routeId != null) {
+      final controller = ref.read(
+        pageControllerProvider(widget.noteId, routeId),
+      );
+      if (controller.hasClients) {
+        debugPrint('🧭 [PageCtrlModal] jumpToPage → $index (direct)');
+        controller.jumpToPage(index);
+      } else {
+        debugPrint(
+          '🧭 [PageCtrlModal] controller has no clients; schedule jump',
+        );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final rid = ref.read(noteRouteIdProvider(widget.noteId));
+          if (rid == null) return;
+          final ctrl = ref.read(pageControllerProvider(widget.noteId, rid));
+          if (ctrl.hasClients) {
+            debugPrint('🧭 [PageCtrlModal] jumpToPage → $index (scheduled)');
+            ctrl.jumpToPage(index);
+          }
+        });
+      }
     } else {
-      debugPrint('🧭 [PageCtrlModal] controller has no clients; schedule jump');
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final ctrl = ref.read(pageControllerProvider(widget.noteId));
-        if (ctrl.hasClients) {
-          debugPrint('🧭 [PageCtrlModal] jumpToPage → $index (scheduled)');
-          ctrl.jumpToPage(index);
-        }
-      });
+      debugPrint(
+        '🧭 [PageCtrlModal] no active routeId; fallback to provider update only',
+      );
     }
 
     // 2) Provider 상태를 업데이트하여 동기화 보장

@@ -283,19 +283,30 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                                         ref,
                                         widget.noteId,
                                       );
-                                      // Store resume index for the current note so we can restore when coming back
-                                      // (editor uses maintainState=false, so we need cross-route memory).
+                                      // Store per-route resume index for this editor instance
                                       final idx = ref.read(
                                         currentPageIndexProvider(widget.noteId),
                                       );
+                                      final routeId = ref.read(
+                                        noteRouteIdProvider(widget.noteId),
+                                      );
+                                      if (routeId != null) {
+                                        ref
+                                            .read(
+                                              resumePageIndexMapProvider(
+                                                widget.noteId,
+                                              ).notifier,
+                                            )
+                                            .save(routeId, idx);
+                                      }
+                                      // Update last known index as well
                                       ref
-                                              .read(
-                                                resumePageIndexProvider(
-                                                  widget.noteId,
-                                                ).notifier,
-                                              )
-                                              .state =
-                                          idx;
+                                          .read(
+                                            lastKnownPageIndexProvider(
+                                              widget.noteId,
+                                            ).notifier,
+                                          )
+                                          .setValue(idx);
                                       context.pushNamed(
                                         AppRoutes.noteEditName,
                                         pathParameters: {

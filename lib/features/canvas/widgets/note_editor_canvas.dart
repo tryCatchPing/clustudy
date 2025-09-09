@@ -27,10 +27,14 @@ class NoteEditorCanvas extends ConsumerWidget {
   const NoteEditorCanvas({
     super.key,
     required this.noteId,
+    required this.routeId,
   });
 
   /// 현재 편집중인 노트 모델
   final String noteId;
+
+  /// 라우트 인스턴스 식별자
+  final String routeId;
 
   // 캔버스 크기 상수
   static const double _canvasWidth = NoteEditorConstants.canvasWidth;
@@ -39,7 +43,7 @@ class NoteEditorCanvas extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Provider에서 상태 읽기
-    final pageController = ref.watch(pageControllerProvider(noteId));
+    final pageController = ref.watch(pageControllerProvider(noteId, routeId));
     final notePagesCount = ref.watch(notePagesCountProvider(noteId));
 
     return Padding(

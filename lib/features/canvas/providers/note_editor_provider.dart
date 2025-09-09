@@ -50,35 +50,60 @@ class NoteSession extends _$NoteSession {
   }
 }
 
-/// Per-note resume page index storage (kept alive across route disposals).
-///
-/// Why:
-/// - Editor pages are created with `maintainState=false`, so when navigating
-///   away the screen is disposed. A fresh screen starts at page index 0 unless
-///   we explicitly restore the last page the user saw.
-///
-/// What:
-/// - We keep the last visited page index for each note in this provider so
-///   that a future visit can restore the correct page.
-///
-/// When written:
-/// - Right before pushing another route to a different note (user taps a
-///   link/backlink), and after a back-pop (post-frame) to remember where the
-///   user left off for next time.
-///
-/// When read:
-/// - On the first visible frame of a newly-mounted editor screen to set
-///   `currentPageIndexProvider(noteId)` and then clear this stored value.
-final resumePageIndexProvider = StateProvider.autoDispose.family<int?, String>((
-  ref,
-  noteId,
-) {
-  // Convert to a keep-alive provider by acquiring a keepAlive link and not
-  // closing it. This ensures the stored index persists across route
-  // disposals/re-creations even without active listeners.
-  ref.keepAlive();
-  return null; // null = no resume target stored
-});
+// ========================================================================
+// Per-route resume memory and helpers
+// ========================================================================
+
+/// Stores the currently active routeId for a given note.
+@Riverpod(keepAlive: true)
+class NoteRouteId extends _$NoteRouteId {
+  @override
+  String? build(String noteId) => null;
+
+  void enter(String routeId) => state = routeId;
+  void exit() => state = null;
+}
+
+/// Per-note map of routeId -> last page index for 1-shot resume when returning
+/// to that specific route instance.
+@Riverpod(keepAlive: true)
+class ResumePageIndexMap extends _$ResumePageIndexMap {
+  @override
+  Map<String, int> build(String noteId) => <String, int>{};
+
+  void save(String routeId, int index) {
+    final next = Map<String, int>.from(state);
+    next[routeId] = index;
+    state = next;
+  }
+
+  int? peek(String routeId) => state[routeId];
+
+  int? take(String routeId) {
+    if (!state.containsKey(routeId)) return null;
+    final next = Map<String, int>.from(state);
+    final value = next.remove(routeId);
+    state = next;
+    return value;
+  }
+
+  void remove(String routeId) {
+    if (!state.containsKey(routeId)) return;
+    final next = Map<String, int>.from(state);
+    next.remove(routeId);
+    state = next;
+  }
+}
+
+/// Optional: last known page index for a note (for cold re-open scenarios).
+@Riverpod(keepAlive: true)
+class LastKnownPageIndex extends _$LastKnownPageIndex {
+  @override
+  int? build(String noteId) => null;
+
+  void setValue(int index) => state = index;
+  void clear() => state = null;
+}
 
 // ========================================================================
 // 기존 Canvas 관련 Provider들 (noteSessionProvider 참조로 수정)
@@ -371,9 +396,35 @@ class PageJumpTarget extends _$PageJumpTarget {
 PageController pageController(
   Ref ref,
   String noteId,
+  String routeId,
 ) {
-  // Initialize controller with the latest known index to reduce jumps.
-  final initialIndex = ref.read(currentPageIndexProvider(noteId));
+  // Determine the initial index eagerly so the first frame is correct.
+  final pageCount = ref.read(notePagesCountProvider(noteId));
+  int initialIndex = 0;
+  // 1) Prefer per-route resume (1-shot)
+  final resumeMap = ref.read(resumePageIndexMapProvider(noteId).notifier);
+  final resume = resumeMap.peek(routeId);
+  if (resume != null && pageCount > 0) {
+    var idx = resume;
+    if (idx < 0) idx = 0;
+    if (idx >= pageCount) idx = pageCount - 1;
+    initialIndex = idx;
+    // Do not modify providers during initialization; screen will sync later.
+  } else {
+    // 2) Fallback to lastKnown if available
+    final lastKnown = ref.read(lastKnownPageIndexProvider(noteId));
+    if (lastKnown != null && pageCount > 0) {
+      var idx = lastKnown;
+      if (idx < 0) idx = 0;
+      if (idx >= pageCount) idx = pageCount - 1;
+      initialIndex = idx;
+      // Do not modify providers during initialization; screen will sync later.
+    } else {
+      // 3) Use current provider value
+      initialIndex = ref.read(currentPageIndexProvider(noteId));
+    }
+  }
+
   final controller = PageController(initialPage: initialIndex);
 
   // Provider가 dispose될 때 controller도 정리
