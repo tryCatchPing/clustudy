@@ -51,10 +51,6 @@ class NoteSession extends _$NoteSession {
 // 기존 Canvas 관련 Provider들 (noteSessionProvider 참조로 수정)
 // ========================================================================
 
-/// 기존 CanvasSession Provider 호환성을 위한 alias
-@Deprecated('Use noteSessionProvider instead')
-final canvasSessionProvider = noteSessionProvider;
-
 /// 현재 페이지 인덱스 관리
 /// noteId(String)로 노트별 독립 관리 (family provider)
 @riverpod

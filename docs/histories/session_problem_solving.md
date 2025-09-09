@@ -1,5 +1,7 @@
 # Session Problem Solving History
 
+> Update (2025-09-09): The legacy `canvasSessionProvider` alias has been removed from the codebase. Please use `noteSessionProvider` instead. This document remains unchanged for historical context; the scope and sequence described still apply conceptually to the new provider name.
+
 ## Problem Summary
 
 The Flutter/Riverpod note-taking application faced two critical issues:
