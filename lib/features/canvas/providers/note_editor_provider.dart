@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:scribble/scribble.dart';
 
 import '../../../shared/services/page_thumbnail_service.dart';
 import '../../notes/data/derived_note_providers.dart';
@@ -11,6 +12,7 @@ import '../../notes/models/note_page_model.dart';
 import '../constants/note_editor_constant.dart';
 import '../models/tool_mode.dart';
 import '../notifiers/custom_scribble_notifier.dart';
+import 'pointer_policy_provider.dart';
 import 'tool_settings_provider.dart';
 
 part 'note_editor_provider.g.dart';
@@ -168,6 +170,10 @@ CustomScribbleNotifier canvasPageNotifier(Ref ref, String pageId) {
   // 초기 도구 설정 적용
   _applyToolSettings(notifier, toolSettings);
 
+  // 초기 포인터 정책 적용 (전역)
+  final pointerPolicy = ref.read(pointerPolicyProvider);
+  notifier.setAllowedPointersMode(pointerPolicy);
+
   // 도구 설정 변경 리스너
   ref.listen<ToolSettings>(
     toolSettingsNotifierProvider(activeNoteId),
@@ -179,6 +185,14 @@ CustomScribbleNotifier canvasPageNotifier(Ref ref, String pageId) {
   // 필압 시뮬레이션 변경 리스너
   ref.listen<bool>(simulatePressureProvider, (bool? prev, bool next) {
     notifier.setSimulatePressureEnabled(next);
+  });
+
+  // 포인터 정책 변경 리스너 (전역 → 각 페이지 CSN에 전파)
+  ref.listen<ScribblePointerMode>(pointerPolicyProvider, (
+    ScribblePointerMode? prev,
+    ScribblePointerMode next,
+  ) {
+    notifier.setAllowedPointersMode(next);
   });
 
   // dispose 시 정리
