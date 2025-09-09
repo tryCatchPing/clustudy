@@ -283,6 +283,19 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                                         ref,
                                         widget.noteId,
                                       );
+                                      // Store resume index for the current note so we can restore when coming back
+                                      // (editor uses maintainState=false, so we need cross-route memory).
+                                      final idx = ref.read(
+                                        currentPageIndexProvider(widget.noteId),
+                                      );
+                                      ref
+                                              .read(
+                                                resumePageIndexProvider(
+                                                  widget.noteId,
+                                                ).notifier,
+                                              )
+                                              .state =
+                                          idx;
                                       context.pushNamed(
                                         AppRoutes.noteEditName,
                                         pathParameters: {
