@@ -27,22 +27,25 @@ const bool _kCanvasProviderVerbose = false;
 // ========================================================================
 
 /// 노트 세션 상태 관리 (기존 CanvasSession에서 개명)
+/// - 현재 활성 노트 ID 를 전역으로 보관
+/// - 모든 캔버스 관련 provider 가 '어떤 노트 컨텍스트' 인지 확인
+/// - 아무것도 watch 안 함
 @Riverpod(keepAlive: true)
 class NoteSession extends _$NoteSession {
   @override
   String? build() => null; // 현재 활성 noteId
 
   void enterNote(String noteId) {
-    debugPrint('🔄 [SessionManager] Entering note session for: $noteId');
+    debugPrint('🔄 [SessionManager] Entering for: $noteId');
     state = noteId;
-    debugPrint('🔄 [SessionManager] Session entered successfully for: $noteId');
+    debugPrint('🔄 [SessionManager] Entered for: $noteId');
   }
 
   void exitNote() {
     if (state != null) {
-      debugPrint('🔄 [SessionManager] Exiting note session: $state');
+      debugPrint('🔄 [SessionManager] Exiting: $state');
       state = null;
-      debugPrint('🔄 [SessionManager] Session exited successfully');
+      debugPrint('🔄 [SessionManager] Exited');
     }
   }
 }
@@ -52,13 +55,14 @@ class NoteSession extends _$NoteSession {
 // ========================================================================
 
 /// 현재 페이지 인덱스 관리
-/// noteId(String)로 노트별 독립 관리 (family provider)
+/// noteId(String)로 노트별 독립 관리 (family)
 @riverpod
 class CurrentPageIndex extends _$CurrentPageIndex {
+  /// 노트별로 독립적인 현재 페이지 인덱스
   @override
-  int build(String noteId) => 0; // 노트별로 독립적인 현재 페이지 인덱스
+  int build(String noteId) => 0;
 
-  /// 페이지 인덱스를 설정합니다.
+  /// 페이지 인덱스 설정
   void setPage(int newIndex) => state = newIndex;
 }
 
@@ -253,19 +257,24 @@ Map<String, CustomScribbleNotifier> notePageNotifiers(Ref ref, String noteId) {
   return result;
 }
 
-/// 현재 페이지 인덱스에 해당하는 CustomScribbleNotifier 반환
+/// CSN for current page index of a note (minimal dependencies)
+///
+/// Purpose: Return the CSN of the currently visible page, without reacting
+/// to JSON/content changes (structure-only dependencies).
+/// Watches:
+/// - currentPageIndexProvider(noteId)
+/// - notePageIdsProvider(noteId) (structure only)
 @riverpod
 CustomScribbleNotifier currentNotifier(
   Ref ref,
   String noteId,
 ) {
   final currentIndex = ref.watch(currentPageIndexProvider(noteId));
-  final note = ref.watch(noteProvider(noteId)).value;
-  final toolSettings = ref.watch(toolSettingsNotifierProvider(noteId));
-  final simulatePressure = ref.read(simulatePressureProvider);
+  final pageIds = ref.watch(notePageIdsProvider(noteId));
 
-  if (note == null || note.pages.isEmpty || currentIndex >= note.pages.length) {
-    // 노트가 없거나 페이지가 없는 경우에는 no-op Notifier를 반환
+  if (pageIds.isEmpty || currentIndex < 0 || currentIndex >= pageIds.length) {
+    final toolSettings = ref.read(toolSettingsNotifierProvider(noteId));
+    final simulatePressure = ref.read(simulatePressureProvider);
     return CustomScribbleNotifier(
       toolMode: toolSettings.toolMode,
       page: null,
@@ -274,22 +283,24 @@ CustomScribbleNotifier currentNotifier(
     );
   }
 
-  final page = note.pages[currentIndex];
-  return ref.watch(canvasPageNotifierProvider(page.pageId));
+  final pageId = pageIds[currentIndex];
+  return ref.watch(canvasPageNotifierProvider(pageId));
 }
 
+/// CSN for a specific page index of a note (minimal dependencies)
+///
+/// Watches:
+/// - notePageIdsProvider(noteId) (structure only)
 @riverpod
 CustomScribbleNotifier pageNotifier(
   Ref ref,
   String noteId,
   int pageIndex,
 ) {
-  final note = ref.watch(noteProvider(noteId)).value;
-  final toolSettings = ref.watch(toolSettingsNotifierProvider(noteId));
-  final simulatePressure = ref.read(simulatePressureProvider);
-
-  if (note == null || note.pages.length <= pageIndex || pageIndex < 0) {
-    // 유효하지 않은 페이지 접근에도 no-op Notifier 반환
+  final pageIds = ref.watch(notePageIdsProvider(noteId));
+  if (pageIndex < 0 || pageIndex >= pageIds.length) {
+    final toolSettings = ref.read(toolSettingsNotifierProvider(noteId));
+    final simulatePressure = ref.read(simulatePressureProvider);
     return CustomScribbleNotifier(
       toolMode: toolSettings.toolMode,
       page: null,
@@ -297,9 +308,8 @@ CustomScribbleNotifier pageNotifier(
       maxHistoryLength: NoteEditorConstants.maxHistoryLength,
     );
   }
-
-  final page = note.pages[pageIndex];
-  return ref.watch(canvasPageNotifierProvider(page.pageId));
+  final pageId = pageIds[pageIndex];
+  return ref.watch(canvasPageNotifierProvider(pageId));
 }
 
 /// 기존 API 호환성을 위한 customScribbleNotifiers provider
@@ -321,12 +331,13 @@ class PageJumpTarget extends _$PageJumpTarget {
   void clear() => state = null;
 }
 
-/// PageController
-/// 노트별로 독립적으로 관리 (family provider)
-/// 화면 이탈 시 해제되어 재입장 시 0페이지부터 시작
-/// PageController
-/// 노트별로 독립적으로 관리 (family provider)
-/// 화면 이탈 시 해제되어 재입장 시 0페이지부터 시작
+/// PageController per note
+///
+/// Purpose: Synchronize PageView with currentPageIndex and support
+/// programmatic jumps reliably (handling no-clients and itemCount races).
+/// Listens:
+/// - currentPageIndexProvider(noteId) (jumpToPage)
+/// - notePagesCountProvider(noteId) (retry pending jump)
 @riverpod
 PageController pageController(
   Ref ref,
