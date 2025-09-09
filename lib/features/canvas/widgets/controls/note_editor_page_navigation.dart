@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../shared/services/sketch_persist_service.dart';
 import '../../providers/note_editor_provider.dart';
 
 /// 📄 페이지 네비게이션 컨트롤 위젯
@@ -30,6 +31,11 @@ class NoteEditorPageNavigation extends ConsumerWidget {
 
     if (currentPageIndex > 0) {
       final targetPage = currentPageIndex - 1;
+      debugPrint(
+        '💾 [ToolbarNav] save before prev: current=$currentPageIndex → target=$targetPage',
+      );
+      // Save current page before switching via toolbar
+      SketchPersistService.saveCurrentPage(ref, noteId);
       ref.read(currentPageIndexProvider(noteId).notifier).setPage(targetPage);
     }
   }
@@ -41,6 +47,11 @@ class NoteEditorPageNavigation extends ConsumerWidget {
 
     if (currentPageIndex < totalPages - 1) {
       final targetPage = currentPageIndex + 1;
+      debugPrint(
+        '💾 [ToolbarNav] save before next: current=$currentPageIndex → target=$targetPage',
+      );
+      // Save current page before switching via toolbar
+      SketchPersistService.saveCurrentPage(ref, noteId);
       ref.read(currentPageIndexProvider(noteId).notifier).setPage(targetPage);
     }
   }
@@ -50,6 +61,12 @@ class NoteEditorPageNavigation extends ConsumerWidget {
     final totalPages = ref.read(notePagesCountProvider(noteId));
 
     if (pageIndex >= 0 && pageIndex < totalPages) {
+      final currentPageIndex = ref.read(currentPageIndexProvider(noteId));
+      debugPrint(
+        '💾 [ToolbarNav] save before jump: current=$currentPageIndex → target=$pageIndex',
+      );
+      // Save current page before switching via selector
+      SketchPersistService.saveCurrentPage(ref, noteId);
       ref.read(currentPageIndexProvider(noteId).notifier).setPage(pageIndex);
     }
   }
