@@ -356,11 +356,31 @@ class _PageControllerScreenState extends ConsumerState<PageControllerScreen> {
 
   /// 페이지 탭을 처리합니다.
   void _handlePageTap(NotePageModel page, int index) {
-    // 페이지 탭 시 해당 페이지로 이동하고 모달 닫기
-    // 현재 페이지 인덱스를 업데이트
+    debugPrint('🧭 [PageCtrlModal] tap page=${page.pageNumber} (idx=$index)');
+
+    // 1) 먼저 PageController에 직접 점프를 시도 (현재 프레임에서 반영)
+    final controller = ref.read(pageControllerProvider(widget.noteId));
+    if (controller.hasClients) {
+      debugPrint('🧭 [PageCtrlModal] jumpToPage → $index (direct)');
+      controller.jumpToPage(index);
+    } else {
+      debugPrint('🧭 [PageCtrlModal] controller has no clients; schedule jump');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final ctrl = ref.read(pageControllerProvider(widget.noteId));
+        if (ctrl.hasClients) {
+          debugPrint('🧭 [PageCtrlModal] jumpToPage → $index (scheduled)');
+          ctrl.jumpToPage(index);
+        }
+      });
+    }
+
+    // 2) Provider 상태를 업데이트하여 동기화 보장
     ref.read(currentPageIndexProvider(widget.noteId).notifier).setPage(index);
 
-    Navigator.of(context).pop();
+    // 3) 모달 닫기 (다음 프레임에 닫아 점프 반영 여지 확보)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) Navigator.of(context).pop();
+    });
   }
 
   /// 페이지 순서 변경 완료를 처리합니다.

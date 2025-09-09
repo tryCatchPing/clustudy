@@ -7,7 +7,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../shared/services/page_thumbnail_service.dart';
 import '../../notes/data/derived_note_providers.dart';
 import '../../notes/data/notes_repository_provider.dart';
-import '../../notes/models/note_model.dart';
 import '../../notes/models/note_page_model.dart';
 import '../constants/note_editor_constant.dart';
 import '../models/tool_mode.dart';
@@ -141,7 +140,7 @@ CustomScribbleNotifier canvasPageNotifier(Ref ref, String pageId) {
   }
   if (_kCanvasProviderVerbose) {
     debugPrint(
-      '🎨 [canvasPageNotifier] Found target page: ${targetPage!.pageId}',
+      '🎨 [canvasPageNotifier] Found target page: ${targetPage.pageId}',
     );
   }
 
@@ -159,7 +158,7 @@ CustomScribbleNotifier canvasPageNotifier(Ref ref, String pageId) {
         )
         ..setSimulatePressureEnabled(simulatePressure)
         ..setSketch(
-          sketch: targetPage!.toSketch(),
+          sketch: targetPage.toSketch(),
           addToUndoHistory: false,
         );
   if (_kCanvasProviderVerbose) {
@@ -302,6 +301,16 @@ Map<String, CustomScribbleNotifier> customScribbleNotifiers(
   return ref.watch(notePageNotifiersProvider(noteId));
 }
 
+/// Programmatic jump target flag for PageView synchronization.
+@riverpod
+class PageJumpTarget extends _$PageJumpTarget {
+  @override
+  int? build(String noteId) => null;
+
+  void setTarget(int target) => state = target;
+  void clear() => state = null;
+}
+
 /// PageController
 /// 노트별로 독립적으로 관리 (family provider)
 /// 화면 이탈 시 해제되어 재입장 시 0페이지부터 시작
@@ -313,21 +322,61 @@ PageController pageController(
   Ref ref,
   String noteId,
 ) {
-  final controller = PageController(initialPage: 0);
+  // Initialize controller with the latest known index to reduce jumps.
+  final initialIndex = ref.read(currentPageIndexProvider(noteId));
+  final controller = PageController(initialPage: initialIndex);
 
   // Provider가 dispose될 때 controller도 정리
   ref.onDispose(() {
     controller.dispose();
   });
 
+  // Handle provider-driven jumps even when the controller isn't attached yet.
+  int? pendingJump;
+  void tryJump() {
+    if (pendingJump == null) return;
+    if (controller.hasClients) {
+      final target = pendingJump!;
+      // Ensure target is within current itemCount bounds
+      final pageCount = ref.read(notePagesCountProvider(noteId));
+      if (target < 0 || target >= pageCount) {
+        // Wait until pages are available (e.g., just added)
+        WidgetsBinding.instance.addPostFrameCallback((_) => tryJump());
+        return;
+      }
+      final current = controller.page?.round();
+      if (current != target) {
+        debugPrint('🧭 [PageCtrl] jumpToPage → $target (pending resolved)');
+        ref.read(pageJumpTargetProvider(noteId).notifier).setTarget(target);
+        controller.jumpToPage(target);
+      }
+      pendingJump = null;
+    } else {
+      // Retry next frame until controller gets clients
+      WidgetsBinding.instance.addPostFrameCallback((_) => tryJump());
+    }
+  }
+
   // currentPageIndex가 변경되면 PageController도 동기화 (노트별)
   ref.listen<int>(currentPageIndexProvider(noteId), (previous, next) {
-    if (controller.hasClients && previous != next) {
-      controller.animateToPage(
-        next,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+    if (previous == next) return;
+    if (controller.hasClients) {
+      final currentPage = controller.page?.round();
+      if (currentPage == next) return; // already in sync (e.g., user swipe)
+      debugPrint('🧭 [PageCtrl] jumpToPage → $next (immediate)');
+      ref.read(pageJumpTargetProvider(noteId).notifier).setTarget(next);
+      controller.jumpToPage(next);
+    } else {
+      debugPrint('🧭 [PageCtrl] schedule jumpToPage → $next (no clients yet)');
+      pendingJump = next;
+      tryJump();
+    }
+  });
+
+  // If page count changes (e.g., after adding a page), retry pending jump.
+  ref.listen<int>(notePagesCountProvider(noteId), (prev, next) {
+    if (pendingJump != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => tryJump());
     }
   });
 
