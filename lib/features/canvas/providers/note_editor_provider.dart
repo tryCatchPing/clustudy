@@ -112,23 +112,22 @@ CustomScribbleNotifier canvasPageNotifier(Ref ref, String pageId) {
   // 세션 내에서 영구 보존
   ref.keepAlive();
 
-  // 페이지 정보 조회
-  final allNotesAsync = ref.watch(notesProvider);
+  // 초기 데이터 준비 여부만 관찰(초기 로드 시 1회 재빌드). JSON 저장 emit에는 반응하지 않음.
+  ref.watch(
+    noteProvider(activeNoteId).select((async) => async.hasValue),
+  );
 
+  // 페이지 정보 스냅샷 읽기 (현재 시점 값). 리액티브 의존 제거로 노티파이어 재생성 방지.
   NotePageModel? targetPage;
-
-  allNotesAsync.whenData((List<NoteModel> notes) {
-    for (final note in notes) {
-      if (note.noteId == activeNoteId) {
-        for (final page in note.pages) {
-          if (page.pageId == pageId) {
-            targetPage = page;
-            return;
-          }
-        }
+  final noteSnapshot = ref.read(noteProvider(activeNoteId)).value;
+  if (noteSnapshot != null) {
+    for (final page in noteSnapshot.pages) {
+      if (page.pageId == pageId) {
+        targetPage = page;
+        break;
       }
     }
-  });
+  }
 
   if (targetPage == null) {
     // Common during route transitions: ignore noisy logs
