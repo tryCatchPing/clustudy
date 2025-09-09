@@ -157,10 +157,18 @@ class _OutgoingList extends ConsumerWidget {
                 // Persist current page of the current note before navigating
                 // so the ongoing page's edits are saved.
                 SketchPersistService.saveCurrentPage(ref, noteId);
-                // Store resume index for the current note so we can restore when coming back
-                // (editor uses maintainState=false, so we need cross-route memory).
+                // Store per-route resume index for this editor instance
                 final idx = ref.read(currentPageIndexProvider(noteId));
-                ref.read(resumePageIndexProvider(noteId).notifier).state = idx;
+                final routeId = ref.read(noteRouteIdProvider(noteId));
+                if (routeId != null) {
+                  ref
+                      .read(resumePageIndexMapProvider(noteId).notifier)
+                      .save(routeId, idx);
+                }
+                // Update last known index as well
+                ref
+                    .read(lastKnownPageIndexProvider(noteId).notifier)
+                    .setValue(idx);
                 context.pushNamed(
                   AppRoutes.noteEditName,
                   pathParameters: {'noteId': link.targetNoteId},
@@ -229,10 +237,18 @@ class _BacklinksList extends ConsumerWidget {
                 Navigator.of(context).maybePop();
                 // Persist current page of the current note before navigating
                 SketchPersistService.saveCurrentPage(ref, noteId);
-                // Store resume index for the current note so we can restore when coming back
-                // (editor uses maintainState=false, so we need cross-route memory).
+                // Store per-route resume index for this editor instance
                 final idx = ref.read(currentPageIndexProvider(noteId));
-                ref.read(resumePageIndexProvider(noteId).notifier).state = idx;
+                final routeId = ref.read(noteRouteIdProvider(noteId));
+                if (routeId != null) {
+                  ref
+                      .read(resumePageIndexMapProvider(noteId).notifier)
+                      .save(routeId, idx);
+                }
+                // Update last known index as well
+                ref
+                    .read(lastKnownPageIndexProvider(noteId).notifier)
+                    .setValue(idx);
                 // Navigate to source note
                 context.pushNamed(
                   AppRoutes.noteEditName,

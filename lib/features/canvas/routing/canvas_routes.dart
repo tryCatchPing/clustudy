@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -24,7 +23,12 @@ class CanvasRoutes {
           key: state.pageKey,
           name: AppRoutes.noteEditName,
           maintainState: false,
-          child: NoteEditorScreen(noteId: noteId),
+          child: NoteEditorScreen(
+            noteId: noteId,
+            routeId: state.pageKey is ValueKey<String>
+                ? (state.pageKey).value
+                : state.pageKey.toString(),
+          ),
         );
       },
     ),
