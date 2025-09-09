@@ -7,6 +7,7 @@ import '../../../design_system/tokens/app_spacing.dart';
 import '../../../design_system/tokens/app_typography.dart';
 
 enum AppButtonType { elevated, text, textIcon }
+enum AppButtonLayout { horizontal, vertical }
 enum AppButtonStyle { primary, secondary }
 enum AppButtonSize  { sm, md, lg }
 
@@ -25,6 +26,9 @@ class AppButton extends StatelessWidget {
   // textIcon 전용
   final String? svgIconPath;
   final double? iconGap; // 아이콘-라벨 간격
+  final AppButtonLayout layout;
+  final EdgeInsetsGeometry? padding;
+  final double? iconSize;
 
   /// 1) Elevated CTA (기본)
   const AppButton({
@@ -35,6 +39,9 @@ class AppButton extends StatelessWidget {
     this.size = AppButtonSize.md,
     this.fullWidth = false,
     this.loading = false,
+    this.layout = AppButtonLayout.horizontal,
+    this.padding,
+    this.iconSize,
   })  : type = AppButtonType.elevated,
         svgIconPath = null,
         iconGap = null;
@@ -48,6 +55,9 @@ class AppButton extends StatelessWidget {
     this.size = AppButtonSize.md,
     this.fullWidth = false,
     this.loading = false,
+    this.layout = AppButtonLayout.horizontal,
+    this.padding,
+    this.iconSize,
   })  : type = AppButtonType.text,
         svgIconPath = null,
         iconGap = null;
@@ -63,6 +73,9 @@ class AppButton extends StatelessWidget {
     this.iconGap = 8,
     this.fullWidth = false,
     this.loading = false,
+    this.layout = AppButtonLayout.horizontal,
+    this.padding,
+    this.iconSize,
   }) : type = AppButtonType.textIcon;
 
   @override
@@ -73,7 +86,7 @@ class AppButton extends StatelessWidget {
       assert(svgIconPath != null, 'svgIconPath is required for textIcon');
     }
 
-    final child = _buildChild();
+    final child = _buildChild() ;
 
     final btn = switch (type) {
       AppButtonType.elevated => ElevatedButton(
@@ -101,10 +114,9 @@ class AppButton extends StatelessWidget {
 
   Widget _buildChild() {
     // 라벨 스타일: 네 스펙 유지
-    final labelStyle = switch (type) {
-      AppButtonType.textIcon => AppTypography.caption,   // 네 기존 코드 유지
-      _ => AppTypography.subtitle1,
-    };
+    final labelStyle = (type == AppButtonType.textIcon)
+      ? AppTypography.caption                                // 도크 요구: caption
+      : AppTypography.subtitle1;
 
     // 로딩 스피너
     final spinnerSize = switch (size) {
@@ -127,22 +139,44 @@ class AppButton extends StatelessWidget {
     }
 
     // textIcon
-    final iconSize = switch (size) {
+    final sz = iconSize ?? switch (size) {
       AppButtonSize.sm => 18.0,
       AppButtonSize.md => 20.0,
       AppButtonSize.lg => 24.0,
     };
 
+    Color _resolvedFg() {
+      final isPrimary = style == AppButtonStyle.primary;
+      return switch (type) {
+        AppButtonType.elevated => isPrimary ? AppColors.white : AppColors.primary,
+        AppButtonType.text     => isPrimary ? AppColors.primary : AppColors.gray50,
+        AppButtonType.textIcon => isPrimary ? AppColors.primary : AppColors.gray50,
+      };
+    }
+    final fg = _resolvedFg();
+
+    final icon = SvgPicture.asset(
+      svgIconPath!,
+      width: sz,
+      height: sz,
+      colorFilter: ColorFilter.mode(fg, BlendMode.srcIn),
+    );
+
+    if (layout == AppButtonLayout.vertical) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          icon,
+          if ((iconGap ?? 0) > 0) SizedBox(height: iconGap),
+          Text(text!, style: labelStyle),
+        ],
+      );
+    }
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        SvgPicture.asset(
-          svgIconPath!,
-          width: iconSize,
-          height: iconSize,
-          // 색상은 ButtonStyle.foregroundColor가 먹도록, 여기선 tint를 주지 않음
-          // (필요 시 MaterialState를 읽어와 ColorFilter 주는 고급 패턴 가능)
-        ),
+        icon,
         SizedBox(width: iconGap ?? 8),
         Text(text!, style: labelStyle),
       ],
@@ -182,7 +216,7 @@ class AppButton extends StatelessWidget {
     return TextButton.styleFrom(
       foregroundColor: fg,
       disabledForegroundColor: AppColors.gray30,
-      padding: _padding,
+      padding: padding ?? _padding,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSpacing.small),
       ),
