@@ -59,7 +59,7 @@ class NoteEditorToolbar extends ConsumerWidget {
               spacing: 10,
               runSpacing: 10,
               children: [
-                if (totalPages > 1) NoteEditorPageNavigation(noteId: noteId),
+                NoteEditorPageNavigation(noteId: noteId),
                 // 필압 토글 컨트롤
                 // TODO(xodnd): simplify 0 으로 수정 필요
                 const NoteEditorPressureToggle(),
