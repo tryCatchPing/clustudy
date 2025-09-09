@@ -52,6 +52,12 @@ class NoteEditorCanvas extends ConsumerWidget {
               controller: pageController,
               itemCount: notePagesCount,
               onPageChanged: (index) {
+                // Page change contract:
+                // 1) Ignore spurious callbacks during programmatic jumps
+                //    (we set a temporary jump target when calling jumpToPage).
+                // 2) Persist the sketch of the page we are leaving.
+                // 3) Update the live page index provider so the controller and
+                //    toolbar stay in sync.
                 // Ignore spurious callbacks during programmatic jumps
                 final jumpTarget = ref.read(pageJumpTargetProvider(noteId));
                 if (jumpTarget != null && index != jumpTarget) {

@@ -34,6 +34,50 @@ class NoteEditorScreen extends ConsumerStatefulWidget {
 
 class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
     with RouteAware {
+  /// Restores the last visited page for this note after a route transition.
+  ///
+  /// Context:
+  /// - Editor routes use `maintainState=false`, so returning creates a new
+  ///   screen instance which would otherwise start at page 0.
+  /// - We therefore read `resumePageIndexProvider(noteId)` on the first
+  ///   visible frame, clamp to bounds, write into
+  ///   `currentPageIndexProvider(noteId)`, and then clear the resume value.
+  void _scheduleRestoreResumeIndexIfAny() {
+    // Attempt to restore the stored resume page index safely after the route becomes current
+    // and note data is available. Clears the stored value after applying.
+    void attempt() {
+      if (!mounted) return;
+      final route = ModalRoute.of(context);
+      if (route?.isCurrent != true) return;
+
+      final resume = ref.read(resumePageIndexProvider(widget.noteId));
+      if (resume == null) return; // nothing to restore
+
+      final note = ref.read(noteProvider(widget.noteId)).value;
+      if (note == null) {
+        // Note not loaded yet, try next frame
+        WidgetsBinding.instance.addPostFrameCallback((_) => attempt());
+        return;
+      }
+      if (note.pages.isEmpty) {
+        // No pages to restore, clear stored value and stop
+        ref.read(resumePageIndexProvider(widget.noteId).notifier).state = null;
+        return;
+      }
+
+      var idx = resume;
+      if (idx < 0) idx = 0;
+      if (idx >= note.pages.length) idx = note.pages.length - 1;
+
+      ref.read(currentPageIndexProvider(widget.noteId).notifier).setPage(idx);
+
+      // Clear after applying to avoid repeated jumps
+      ref.read(resumePageIndexProvider(widget.noteId).notifier).state = null;
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => attempt());
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -59,6 +103,12 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       ref.read(noteSessionProvider.notifier).enterNote(widget.noteId);
+      // After session enter, restore page if a resume index is stored.
+      // We schedule it for the next frame to avoid provider writes during the
+      // same build cycle as the route transition.
+      WidgetsBinding.instance.addPostFrameCallback((__) {
+        _scheduleRestoreResumeIndexIfAny();
+      });
     });
   }
 
@@ -115,6 +165,14 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
     );
     // Save current page when leaving editor via back
     SketchPersistService.saveCurrentPage(ref, widget.noteId);
+    // Store resume page index for potential future returns to this note
+    // Delay to avoid modifying providers during route pop build phase
+    // 라우트 업데이트 중 provider 수정 방지
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final idx = ref.read(currentPageIndexProvider(widget.noteId));
+      ref.read(resumePageIndexProvider(widget.noteId).notifier).state = idx;
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       ref.read(noteSessionProvider.notifier).exitNote();
@@ -138,6 +196,10 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
           '🧭 [RouteAware] build-guard enter session noteId=${widget.noteId}',
         );
         ref.read(noteSessionProvider.notifier).enterNote(widget.noteId);
+        // After entering session, attempt to restore resume index
+        WidgetsBinding.instance.addPostFrameCallback((__) {
+          _scheduleRestoreResumeIndexIfAny();
+        });
       }
     });
 

@@ -50,6 +50,36 @@ class NoteSession extends _$NoteSession {
   }
 }
 
+/// Per-note resume page index storage (kept alive across route disposals).
+///
+/// Why:
+/// - Editor pages are created with `maintainState=false`, so when navigating
+///   away the screen is disposed. A fresh screen starts at page index 0 unless
+///   we explicitly restore the last page the user saw.
+///
+/// What:
+/// - We keep the last visited page index for each note in this provider so
+///   that a future visit can restore the correct page.
+///
+/// When written:
+/// - Right before pushing another route to a different note (user taps a
+///   link/backlink), and after a back-pop (post-frame) to remember where the
+///   user left off for next time.
+///
+/// When read:
+/// - On the first visible frame of a newly-mounted editor screen to set
+///   `currentPageIndexProvider(noteId)` and then clear this stored value.
+final resumePageIndexProvider = StateProvider.autoDispose.family<int?, String>((
+  ref,
+  noteId,
+) {
+  // Convert to a keep-alive provider by acquiring a keepAlive link and not
+  // closing it. This ensures the stored index persists across route
+  // disposals/re-creations even without active listeners.
+  ref.keepAlive();
+  return null; // null = no resume target stored
+});
+
 // ========================================================================
 // 기존 Canvas 관련 Provider들 (noteSessionProvider 참조로 수정)
 // ========================================================================
@@ -81,7 +111,7 @@ class SimulatePressure extends _$SimulatePressure {
 }
 
 /// 세션 기반 페이지별 CustomScribbleNotifier 관리
-@riverpod
+@Riverpod(keepAlive: true)
 CustomScribbleNotifier canvasPageNotifier(Ref ref, String pageId) {
   if (_kCanvasProviderVerbose) {
     debugPrint('🎨 [canvasPageNotifier] Provider called for pageId: $pageId');
@@ -111,7 +141,6 @@ CustomScribbleNotifier canvasPageNotifier(Ref ref, String pageId) {
   }
 
   // 세션 내에서 영구 보존
-  ref.keepAlive();
 
   // 초기 데이터 준비 여부만 관찰(초기 로드 시 1회 재빌드). JSON 저장 emit에는 반응하지 않음.
   ref.watch(
@@ -379,6 +408,10 @@ PageController pageController(
   }
 
   // currentPageIndex가 변경되면 PageController도 동기화 (노트별)
+  // Contract:
+  // - When programmatically jumping, set a temporary jump target so
+  //   `onPageChanged` can ignore spurious callbacks while the controller
+  //   settles. This prevents index drift.
   ref.listen<int>(currentPageIndexProvider(noteId), (previous, next) {
     if (previous == next) return;
     if (controller.hasClients) {

@@ -155,7 +155,12 @@ class _OutgoingList extends ConsumerWidget {
                 // Close drawer then navigate
                 Navigator.of(context).maybePop();
                 // Persist current page of the current note before navigating
+                // so the ongoing page's edits are saved.
                 SketchPersistService.saveCurrentPage(ref, noteId);
+                // Store resume index for the current note so we can restore when coming back
+                // (editor uses maintainState=false, so we need cross-route memory).
+                final idx = ref.read(currentPageIndexProvider(noteId));
+                ref.read(resumePageIndexProvider(noteId).notifier).state = idx;
                 context.pushNamed(
                   AppRoutes.noteEditName,
                   pathParameters: {'noteId': link.targetNoteId},
@@ -224,6 +229,10 @@ class _BacklinksList extends ConsumerWidget {
                 Navigator.of(context).maybePop();
                 // Persist current page of the current note before navigating
                 SketchPersistService.saveCurrentPage(ref, noteId);
+                // Store resume index for the current note so we can restore when coming back
+                // (editor uses maintainState=false, so we need cross-route memory).
+                final idx = ref.read(currentPageIndexProvider(noteId));
+                ref.read(resumePageIndexProvider(noteId).notifier).state = idx;
                 // Navigate to source note
                 context.pushNamed(
                   AppRoutes.noteEditName,
