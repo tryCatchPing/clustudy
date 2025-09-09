@@ -71,12 +71,6 @@ class _LinkerGestureLayerState extends State<LinkerGestureLayer> {
 
   /// 드래그 시작 시 호출
   void _onDragStart(DragStartDetails details) {
-    debugPrint(
-      '[LinkerGestureLayer] onDragStart at '
-      '${details.localPosition.dx.toStringAsFixed(1)},'
-      '${details.localPosition.dy.toStringAsFixed(1)} '
-      '(tool=${widget.toolMode})',
-    );
     setState(() {
       _currentDragStart = details.localPosition;
       _currentDragEnd = details.localPosition;
@@ -85,11 +79,6 @@ class _LinkerGestureLayerState extends State<LinkerGestureLayer> {
 
   /// 드래그 중 호출
   void _onDragUpdate(DragUpdateDetails details) {
-    // debugPrint(
-    //   '[LinkerGestureLayer] onDragUpdate at '
-    //   '${details.localPosition.dx.toStringAsFixed(1)},'
-    //   '${details.localPosition.dy.toStringAsFixed(1)}',
-    // );
     setState(() {
       _currentDragEnd = details.localPosition;
     });
@@ -161,11 +150,6 @@ class _LinkerGestureLayerState extends State<LinkerGestureLayer> {
         ..add(ui.PointerDeviceKind.mouse)
         ..add(ui.PointerDeviceKind.trackpad);
     }
-
-    debugPrint(
-      '[LinkerGestureLayer] active (tool=${widget.toolMode}), '
-      'pointerMode=${widget.pointerMode}, drag=$dragDevices tap=$tapDevices',
-    );
 
     // 탭과 드래그를 서로 다른 supportedDevices로 분리 처리
     return Listener(
