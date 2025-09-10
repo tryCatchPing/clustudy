@@ -7,9 +7,12 @@ import '../../../design_system/tokens/app_spacing.dart';
 import '../../../design_system/tokens/app_typography.dart';
 
 enum AppButtonType { elevated, text, textIcon }
+
 enum AppButtonLayout { horizontal, vertical }
+
 enum AppButtonStyle { primary, secondary }
-enum AppButtonSize  { sm, md, lg }
+
+enum AppButtonSize { sm, md, lg }
 
 class AppButton extends StatelessWidget {
   // 공통
@@ -42,9 +45,9 @@ class AppButton extends StatelessWidget {
     this.layout = AppButtonLayout.horizontal,
     this.padding,
     this.iconSize,
-  })  : type = AppButtonType.elevated,
-        svgIconPath = null,
-        iconGap = null;
+  }) : type = AppButtonType.elevated,
+       svgIconPath = null,
+       iconGap = null;
 
   /// 2) 텍스트 버튼
   const AppButton.text({
@@ -58,9 +61,9 @@ class AppButton extends StatelessWidget {
     this.layout = AppButtonLayout.horizontal,
     this.padding,
     this.iconSize,
-  })  : type = AppButtonType.text,
-        svgIconPath = null,
-        iconGap = null;
+  }) : type = AppButtonType.text,
+       svgIconPath = null,
+       iconGap = null;
 
   /// 3) 아이콘 + 텍스트 버튼
   const AppButton.textIcon({
@@ -86,7 +89,7 @@ class AppButton extends StatelessWidget {
       assert(svgIconPath != null, 'svgIconPath is required for textIcon');
     }
 
-    final child = _buildChild() ;
+    final child = _buildChild();
 
     final btn = switch (type) {
       AppButtonType.elevated => ElevatedButton(
@@ -115,8 +118,9 @@ class AppButton extends StatelessWidget {
   Widget _buildChild() {
     // 라벨 스타일: 네 스펙 유지
     final labelStyle = (type == AppButtonType.textIcon)
-      ? AppTypography.caption                                // 도크 요구: caption
-      : AppTypography.subtitle1;
+        ? AppTypography
+              .caption // 도크 요구: caption
+        : AppTypography.subtitle1;
 
     // 로딩 스피너
     final spinnerSize = switch (size) {
@@ -139,21 +143,26 @@ class AppButton extends StatelessWidget {
     }
 
     // textIcon
-    final sz = iconSize ?? switch (size) {
-      AppButtonSize.sm => 18.0,
-      AppButtonSize.md => 20.0,
-      AppButtonSize.lg => 24.0,
-    };
+    final sz =
+        iconSize ??
+        switch (size) {
+          AppButtonSize.sm => 18.0,
+          AppButtonSize.md => 20.0,
+          AppButtonSize.lg => 24.0,
+        };
 
-    Color _resolvedFg() {
+    Color resolvedFg() {
       final isPrimary = style == AppButtonStyle.primary;
       return switch (type) {
-        AppButtonType.elevated => isPrimary ? AppColors.white : AppColors.primary,
-        AppButtonType.text     => isPrimary ? AppColors.primary : AppColors.gray50,
-        AppButtonType.textIcon => isPrimary ? AppColors.primary : AppColors.gray50,
+        AppButtonType.elevated =>
+          isPrimary ? AppColors.white : AppColors.primary,
+        AppButtonType.text => isPrimary ? AppColors.primary : AppColors.gray50,
+        AppButtonType.textIcon =>
+          isPrimary ? AppColors.primary : AppColors.gray50,
       };
     }
-    final fg = _resolvedFg();
+
+    final fg = resolvedFg();
 
     final icon = SvgPicture.asset(
       svgIconPath!,
@@ -187,7 +196,7 @@ class AppButton extends StatelessWidget {
     final isPrimary = style == AppButtonStyle.primary;
 
     final bg = isPrimary ? AppColors.primary : AppColors.background;
-    final fg = isPrimary ? AppColors.white   : AppColors.primary;
+    final fg = isPrimary ? AppColors.white : AppColors.primary;
     final side = isPrimary
         ? BorderSide.none
         : const BorderSide(color: AppColors.primary, width: 1);
@@ -241,7 +250,10 @@ class AppButton extends StatelessWidget {
   Size get _minSize {
     switch (size) {
       case AppButtonSize.sm:
-        return const Size(AppSpacing.touchTargetMd, AppSpacing.touchTargetSm); // 터치 타겟 보장
+        return const Size(
+          AppSpacing.touchTargetMd,
+          AppSpacing.touchTargetSm,
+        ); // 터치 타겟 보장
       case AppButtonSize.md:
         return const Size(48, 40);
       case AppButtonSize.lg:
@@ -249,11 +261,11 @@ class AppButton extends StatelessWidget {
     }
   }
 
-  MaterialStateProperty<Color?> _overlayColor(Color base) {
-    return MaterialStateProperty.resolveWith((states) {
-      if (states.contains(MaterialState.pressed)) return base.withOpacity(0.12);
-      if (states.contains(MaterialState.hovered))  return base.withOpacity(0.08);
-      if (states.contains(MaterialState.focused))  return base.withOpacity(0.12);
+  WidgetStateProperty<Color?> _overlayColor(Color base) {
+    return WidgetStateProperty.resolveWith((states) {
+      if (states.contains(WidgetState.pressed)) return base.withOpacity(0.12);
+      if (states.contains(WidgetState.hovered)) return base.withOpacity(0.08);
+      if (states.contains(WidgetState.focused)) return base.withOpacity(0.12);
       return null;
     });
   }

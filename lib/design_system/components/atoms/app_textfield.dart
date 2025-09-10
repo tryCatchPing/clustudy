@@ -146,16 +146,20 @@ class AppTextField extends StatelessWidget {
 
     switch (style) {
       case AppTextFieldStyle.search:
+      const double iconSize = 20;
         return InputDecoration(
           isDense: true,
           filled: true,
           fillColor: AppColors.gray10,
-          contentPadding: contentPadding,
+          contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.small,  // 8
+          vertical: AppSpacing.medium,   // 16
+          ),
           hintText: hintText,
           hintStyle: AppTypography.body3.copyWith(color: AppColors.gray40),
           prefixIcon: svgPrefixIconPath != null
               ? Padding(
-                  padding: const EdgeInsets.all(12.0),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.small),
                   child: SvgPicture.asset(
                     svgPrefixIconPath!,
                     width: iconSize,
@@ -174,35 +178,30 @@ class AppTextField extends StatelessWidget {
 
           suffixIcon: (value.text.isNotEmpty && svgClearIconPath != null)
               ? IconButton(
-                  splashRadius: 18,
-                  padding: const EdgeInsets.all(12.0),
-                  icon: SvgPicture.asset(
-                    svgClearIconPath!,
-                    width: iconSize,
-                    height: iconSize,
-                    colorFilter: const ColorFilter.mode(
-                      AppColors.gray40,
-                      BlendMode.srcIn,
-                    ),
-                  ),
-                  onPressed: () {
-                    controller.clear();
-                    onChanged?.call('');
-                  },
-                  tooltip: '지우기',
-                )
-              : null,
-          suffixIconConstraints: const BoxConstraints(
-            minWidth: 0,
-            minHeight: 0,
-          ),
+                tooltip: '지우기',
+                splashRadius: 18,
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.small), // 8
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                onPressed: controller.clear,
+                icon: SvgPicture.asset(
+                  svgClearIconPath!,
+                  width: iconSize,
+                  height: iconSize,
+                  colorFilter: const ColorFilter.mode(AppColors.gray40, BlendMode.srcIn),
+                ),
+              )
+            : null,
+              suffixIconConstraints: const BoxConstraints(
+                minWidth: 0,
+                minHeight: 0,
+              ),
 
           enabledBorder: OutlineInputBorder(
-            borderRadius: borderRadius,
+            borderRadius: BorderRadius.circular(AppSpacing.small),
             borderSide: BorderSide.none,
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: borderRadius,
+            borderRadius: BorderRadius.circular(AppSpacing.small),
             borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
           ),
         );
