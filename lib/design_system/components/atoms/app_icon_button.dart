@@ -13,6 +13,7 @@ class AppIconButton extends StatelessWidget {
     this.tooltip,
     this.semanticLabel,
     this.shape = const CircleBorder(), // 필요하면 RoundedRectangleBorder로
+    this.color,
   });
 
   final String svgPath;
@@ -21,6 +22,7 @@ class AppIconButton extends StatelessWidget {
   final String? tooltip;
   final String? semanticLabel;
   final OutlinedBorder shape;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
