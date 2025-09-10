@@ -1,10 +1,7 @@
 // lib/design_system/components/organisms/bottom_actions_dock_fixed.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../tokens/app_colors.dart';
-import '../../tokens/app_spacing.dart';
-import '../../tokens/app_typography.dart';
 import '../../../design_system/components/atoms/app_button.dart';
 
 class DockItem {
