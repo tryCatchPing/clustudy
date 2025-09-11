@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/vault_item.dart';
 import '../models/vault_model.dart';
-import 'vault_repository_provider.dart';
+import 'vault_tree_repository_provider.dart';
 
 /// 현재 활성 Vault (라우트/브라우저 컨텍스트)
 final currentVaultProvider = StateProvider<String?>((ref) => null);
@@ -14,7 +14,7 @@ final currentFolderProvider = StateProvider.family<String?, String>(
 
 /// Vault 목록 관찰
 final vaultsProvider = StreamProvider<List<VaultModel>>((ref) {
-  final repo = ref.watch(vaultRepositoryProvider);
+  final repo = ref.watch(vaultTreeRepositoryProvider);
   return repo.watchVaults();
 });
 
@@ -38,7 +38,7 @@ class FolderScope {
 /// 특정 폴더 하위 아이템(폴더+노트) 관찰. parentFolderId가 null이면 루트.
 final vaultItemsProvider = StreamProvider.family<List<VaultItem>, FolderScope>(
   (ref, scope) {
-    final repo = ref.watch(vaultRepositoryProvider);
+    final repo = ref.watch(vaultTreeRepositoryProvider);
     return repo.watchFolderChildren(
       scope.vaultId,
       parentFolderId: scope.parentFolderId,
