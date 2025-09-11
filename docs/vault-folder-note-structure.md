@@ -86,7 +86,7 @@
 ## Repository & Provider (책임 분리)
 
 - NotesRepository: 노트 “콘텐츠(페이지)” 전용(현행 유지)
-- VaultRepository(신규): Vault/Folder/Note 트리 관리(생성/이동/이름변경/삭제/조회)
+- VaultTreeRepository(신규): Vault/Folder/Note 배치(트리) 관리(생성/이동/이름변경/삭제/조회)
 - LinkRepository: 링크 영속/스트림. `vaultId` 필터·일괄 삭제 등 보조 API는 추후 확장
 - Provider
   - `currentVaultProvider`, `currentFolderProvider`
@@ -128,3 +128,117 @@
 ---
 
 문의/변경 제안 시 본 문서 버전을 갱신하세요. (현재 v0)
+
+## Responsibilities & Purpose (구조 재확인)
+
+- 목적: “트리(배치)와 콘텐츠(노트)”를 분리해 책임을 명확히 하고, UI/성능/데이터 일관성을 균형 있게 달성한다.
+- VaultTreeRepository(배치)
+  - Vault/Folder/Note 배치(위치/표시명) 관리: 생성/이름변경/이동/삭제/정렬/중복·사이클 검사
+  - 폴더 하위 아이템(폴더+노트) 관찰 스트림 제공, 기본 정렬 적용(폴더→노트, 케이스 비구분 이름 오름차순)
+  - 비책임: 노트 콘텐츠 CRUD, 링크 영속, 파일 I/O
+- NotesRepository(콘텐츠)
+  - NoteModel 중심: 페이지/스케치 JSON/PDF 메타/썸네일, 편집/저장 흐름 전담
+  - 비책임: 배치/정렬/중복/사이클/이동 검증(트리 책임)
+- Application Service(오케스트레이션)
+  - 두 레포를 하나의 유스케이스 단위로 묶는 상위 서비스(원자성/보상/검증/emit 타이밍 통제)
+  - 예: 노트 생성/삭제/이름변경/이동, 폴더 캐스케이드 삭제
+
+## Application Service (오케스트레이션)
+
+- 서비스 이름(예시): VaultNotesService
+- 책임
+  - 원자성 보장(가능한 범위): per‑vault 직렬화, 실패 시 보상(Saga)로 일관성 회복
+  - 교차‑레포 검증: cross‑vault 링크/이동 차단, 이름 정책 위반 사전 차단
+  - emit 타이밍 통제: “최종 상태”만 스트림에 반영되도록 순서/타이밍 제어
+- 주요 API (초안)
+  - createBlankInFolder(vaultId, {parentFolderId?, name?}) → NoteModel
+  - createPdfInFolder(vaultId, {parentFolderId?, name?}) → NoteModel
+  - renameNote(noteId, newName)
+  - moveNote(noteId, {newParentFolderId?})
+  - deleteNote(noteId)
+  - getPlacement(noteId) → NotePlacement 뷰(검증/표시용)
+- ID 흐름 제안
+  - 콘텐츠가 noteId 생성 → 트리에 “기존 noteId 등록(register)”(실패 시 등록 취소)
+  - 대안(추후): 트리에서 ID 생성 → 콘텐츠가 해당 ID로 생성(생성자 오버로드 필요)
+
+## Transactions & Consistency (일관성 전략)
+
+- 단기(메모리 구현)
+  - per‑vault Mutex로 유스케이스 직렬화
+  - 보상(Saga) 절차: 실패 단계별 역연산 준비(등록 취소/원복/재시도 큐)
+  - emit 타이밍: 성공 커밋 후에만 방출(가능하면 레포 내부 emit 지연/일괄 발행)
+- 중기(Isar 도입 전)
+  - 레포 내부 “변경 버퍼링” 후 커밋 시 일괄 emit
+  - 오케스트레이션에서 예외/롤백 일괄 처리
+- 장기(Isar 도입 시)
+  - 하나의 DB 트랜잭션으로 VaultTree/Notes 변경을 커밋
+  - 워처/스트림은 트랜잭션 커밋 시점에만 반영
+- 유스케이스별 순서 가이드
+  - 생성: (예약 등록) → 콘텐츠 생성 → 확정 등록(실패 시 예약 취소)
+  - 삭제: (소프트 삭제/숨김) → 링크 정리 → 콘텐츠 삭제 → 배치 삭제(실패 시 재시도)
+  - 이름변경: 배치 rename → 콘텐츠 title 동기화(실패 시 재시도 허용)
+  - 이동: 배치에서만 처리(콘텐츠 불변)
+  - 폴더 삭제: 하위 노트 수집 → 노트 삭제 시퀀스 반복(진행률/취소/재시도 고려)
+
+## UI & Routing Impact (구현 단계)
+
+- 브라우저(NoteList 대체/강화)
+  - 목록 데이터 소스: vaultsProvider + vaultItemsProvider(FolderScope)
+  - 컨텍스트 상태: currentVaultProvider, currentFolderProvider(vaultId)
+  - 폴더/노트 동시 렌더(폴더 우선 정렬), 노트 클릭 시 /notes/:noteId/edit 진입
+- 생성/삭제 버튼
+  - 생성: VaultNotesService.createBlankInFolder / createPdfInFolder 호출
+  - 삭제: VaultNotesService.deleteNote 호출(링크/콘텐츠/배치 일괄)
+- 링크 생성/편집
+  - 서제스트: “현 vault” 범위로 한정(트리에서 노트 집합 조회 후 제목 매칭)
+  - cross‑vault 차단: source/target 배치의 vaultId 비교 후 불일치 에러
+- 라우팅
+  - 브라우저: /vaults/:vaultId/browse/:folderId?
+  - 에디터: /notes/:noteId/edit (진입 시 해당 노트의 vault로 세션 동기화)
+
+## Providers & State (권장 사용)
+
+- currentVaultProvider: 현재 활성 vault
+- currentFolderProvider(vaultId): 현재 폴더(null=루트)
+- vaultsProvider: vault 목록 스트림
+- vaultItemsProvider(FolderScope): 특정 폴더 하위의 폴더+노트 스트림
+- 브라우저에서는 notesProvider 사용 금지(콘텐츠 무거움/경계 혼선 방지)
+
+## Repository API 확장 제안(최소)
+
+- VaultTreeRepository
+  - getNotePlacement(noteId) → NotePlacement(뷰 모델; vaultId, parentFolderId, name…)
+  - (선택) registerExistingNote(noteId, vaultId, {parentFolderId?, name}) — 콘텐츠가 선행 생성된 경우 트리에 등록
+  - (선택) listNotesInVault(vaultId) / searchNotesInVault(vaultId, query)
+- NotesRepository
+  - 현 구조 유지(콘텐츠 전용). 브라우저가 필요로 하는 쿼리는 트리에서 해결
+
+## Validation & Policies (추가/강화)
+
+- 이름 정책 강화(트리): 허용 문자 화이트리스트 + NFC 권장(현 구현은 금지문자 제거/축약만 반영)
+- 링크 정책: cross‑vault 금지(오케스트레이션에서 배치 조회로 검증)
+- 삭제 정책: 폴더 캐스케이드 시, 영향 요약 모달 + 진행률/취소/재시도
+- 정렬 정책: 폴더→노트, 케이스 비구분 이름 ASC(현행 유지)
+
+## Testing & Verification
+
+- 유스케이스별 성공/실패 시나리오(보상 동작) 테스트
+- emit 타이밍 테스트: 중간 상태가 소비자에게 보이지 않는지 확인
+- 링크 검증 테스트: cross‑vault 생성/수정 차단
+- 폴더 캐스케이드: 대량 삭제·재시도 테스트
+
+## Risks & Mitigations
+
+- 중간 실패로 인한 불일치: 보상(Saga) 및 재시도 큐로 수습, 소프트 삭제/예약 등록 활용
+- 이벤트 순서 혼선: 커밋 후 emit 원칙, 레포 내부 버퍼링 도입 검토
+- 모델 동기화 비용: 표시명 소스는 트리의 name, 콘텐츠 title은 미러(필요 시 동기화; 실패 허용 후 재시도)
+
+## Implementation Plan (Phase-by-Phase)
+
+1. 브라우저 전환: NoteList를 vaultItemsProvider 기반으로 교체, currentVault/currentFolder 도입
+2. 오케스트레이션 베이스: VaultNotesService 뼈대(생성/삭제 우선), per‑vault 직렬화 + 보상 최소 구현
+3. 링크 범위 적용: 링크 UI를 현 vault 한정 검색 + cross‑vault 차단
+4. 이름 정책 강화: 트리 정규화/화이트리스트/NFC(점진)
+5. 폴더 캐스케이드: 영향 요약 모달 + 진행률/취소/재시도 구현
+6. emit 개선: 메모리 구현에서 커밋 후 일괄 emit(가능 시)
+7. Isar 전환: DB 트랜잭션 기반으로 서비스 트랜잭션 단순화

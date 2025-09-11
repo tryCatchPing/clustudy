@@ -25,9 +25,7 @@ class CanvasRoutes {
           maintainState: false,
           child: NoteEditorScreen(
             noteId: noteId,
-            routeId: state.pageKey is ValueKey<String>
-                ? (state.pageKey).value
-                : state.pageKey.toString(),
+            routeId: (state.pageKey).value,
           ),
         );
       },
