@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../shared/repositories/vault_tree_repository.dart';
+import '../../../shared/services/name_normalizer.dart';
 import '../models/folder_model.dart';
 import '../models/note_placement.dart';
 import '../models/vault_item.dart';
@@ -47,7 +48,7 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
 
   @override
   Future<VaultModel> createVault(String name) async {
-    final normalized = _normalizeName(name);
+    final normalized = NameNormalizer.normalize(name);
     final id = _uuid.v4();
     final now = DateTime.now();
     final v = VaultModel(
@@ -66,7 +67,7 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
   Future<void> renameVault(String vaultId, String newName) async {
     final v = _vaults[vaultId];
     if (v == null) throw Exception('Vault not found: $vaultId');
-    final normalized = _normalizeName(newName);
+    final normalized = NameNormalizer.normalize(newName);
     _vaults[vaultId] = v.copyWith(name: normalized, updatedAt: DateTime.now());
     _emitVaults();
   }
@@ -112,7 +113,7 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
       _assertFolderExists(parentFolderId);
       _assertSameVaultFolder(parentFolderId, vaultId);
     }
-    final normalized = _normalizeName(name);
+    final normalized = NameNormalizer.normalize(name);
     _ensureUniqueFolderName(vaultId, parentFolderId, normalized);
     final id = _uuid.v4();
     final now = DateTime.now();
@@ -134,7 +135,7 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
   Future<void> renameFolder(String folderId, String newName) async {
     final f = _folders[folderId];
     if (f == null) throw Exception('Folder not found: $folderId');
-    final normalized = _normalizeName(newName);
+    final normalized = NameNormalizer.normalize(newName);
     _ensureUniqueFolderName(
       f.vaultId,
       f.parentFolderId,
@@ -243,7 +244,7 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
       _assertFolderExists(parentFolderId);
       _assertSameVaultFolder(parentFolderId, vaultId);
     }
-    final normalized = _normalizeName(name);
+    final normalized = NameNormalizer.normalize(name);
     _ensureUniqueNoteName(vaultId, parentFolderId, normalized);
     final id = _uuid.v4();
     final now = DateTime.now();
@@ -264,7 +265,7 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
   Future<void> renameNote(String noteId, String newName) async {
     final n = _notes[noteId];
     if (n == null) throw Exception('Note not found: $noteId');
-    final normalized = _normalizeName(newName);
+    final normalized = NameNormalizer.normalize(newName);
     _ensureUniqueNoteName(
       n.vaultId,
       n.parentFolderId,
@@ -333,7 +334,7 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
     if (_notes.containsKey(noteId)) {
       throw Exception('Note already exists: $noteId');
     }
-    final normalized = _normalizeName(name);
+    final normalized = NameNormalizer.normalize(name);
     _ensureUniqueNoteName(vaultId, parentFolderId, normalized);
     final now = DateTime.now();
     _notes[noteId] = NotePlacement(
@@ -383,7 +384,11 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
   List<VaultModel> _currentVaults() {
     final list = _vaults.values.toList();
     // 이름 오름차순
-    list.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    list.sort(
+      (a, b) => NameNormalizer.compareKey(
+        a.name,
+      ).compareTo(NameNormalizer.compareKey(b.name)),
+    );
     return List<VaultModel>.unmodifiable(list);
   }
 
@@ -440,7 +445,9 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
       final int typeA = a.type == VaultItemType.folder ? 0 : 1;
       final int typeB = b.type == VaultItemType.folder ? 0 : 1;
       if (typeA != typeB) return typeA - typeB;
-      return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+      return NameNormalizer.compareKey(
+        a.name,
+      ).compareTo(NameNormalizer.compareKey(b.name));
     });
     return List<VaultItem>.unmodifiable(items);
   }
@@ -492,13 +499,13 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
     String name, {
     String? excludeFolderId,
   }) {
-    final lower = name.toLowerCase();
+    final lower = NameNormalizer.compareKey(name);
     final exists = _folders.values.any(
       (f) =>
           f.vaultId == vaultId &&
           f.parentFolderId == parentFolderId &&
           f.folderId != excludeFolderId &&
-          f.name.toLowerCase() == lower,
+          NameNormalizer.compareKey(f.name) == lower,
     );
     if (exists) {
       throw Exception('Folder name already exists in this location');
@@ -511,38 +518,18 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
     String name, {
     String? excludeNoteId,
   }) {
-    final lower = name.toLowerCase();
+    final lower = NameNormalizer.compareKey(name);
     final exists = _notes.values.any(
       (n) =>
           n.vaultId == vaultId &&
           n.parentFolderId == parentFolderId &&
           n.noteId != excludeNoteId &&
-          n.name.toLowerCase() == lower,
+          NameNormalizer.compareKey(n.name) == lower,
     );
     if (exists) {
       throw Exception('Note name already exists in this location');
     }
   }
 
-  String _normalizeName(String input) {
-    var s = input.trim();
-    // collapse whitespace to single space
-    s = s.replaceAll(RegExp(r'\s+'), ' ');
-    // collapse repeated hyphens
-    s = s.replaceAll(RegExp(r'-{2,}'), '-');
-    // remove forbidden characters: / \ : * ? " < > |
-    s = s.replaceAll(RegExp(r'[/:*?"<>|\\]'), '');
-    // remove control chars
-    s = s.replaceAll(RegExp(r'[\x00-\x1F]'), '');
-    s = s.trim();
-    if (s.isEmpty) {
-      throw Exception('Name becomes empty after normalization');
-    }
-    if (s.length > 128) {
-      s = s.substring(0, 128);
-    }
-    return s;
-  }
+  // Name normalization moved to NameNormalizer (shared service).
 }
-
-// _NoteEntry 제거: 퍼블릭 NotePlacement 모델을 저장에 그대로 사용합니다.
