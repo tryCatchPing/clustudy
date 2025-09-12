@@ -46,6 +46,19 @@ abstract class LinkRepository {
     return total;
   }
 
+  /// 여러 소스 페이지 기준으로 현재 링크 목록을 조회합니다(일회성 스냅샷).
+  /// 기본 구현은 `watchByPage(id).first` 반복으로 구성됩니다.
+  Future<List<LinkModel>> listBySourcePages(List<String> pageIds) async {
+    if (pageIds.isEmpty) return const <LinkModel>[];
+    final unique = pageIds.toSet();
+    final result = <LinkModel>[];
+    for (final id in unique) {
+      final links = await watchByPage(id).first;
+      result.addAll(links);
+    }
+    return result;
+  }
+
   /// 리소스 정리용. 스트림 컨트롤러 등 내부 자원을 해제합니다.
   void dispose();
 }
