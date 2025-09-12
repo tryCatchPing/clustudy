@@ -10,8 +10,9 @@ import '../../features/vaults/models/note_placement.dart';
 import '../../features/vaults/models/vault_item.dart';
 import '../repositories/link_repository.dart';
 import '../repositories/vault_tree_repository.dart';
+import 'db_txn_runner.dart';
+import 'file_storage_service.dart';
 import 'name_normalizer.dart';
-import 'note_deletion_service.dart';
 import 'note_service.dart';
 
 /// Vault/Folder/Note 배치 트리와 노트 콘텐츠/링크를 오케스트레이션하는 서비스.
@@ -23,11 +24,13 @@ class VaultNotesService {
   final NotesRepository notesRepo;
   final LinkRepository linkRepo;
   final NoteService noteService;
+  final DbTxnRunner dbTxn;
 
   VaultNotesService({
     required this.vaultTree,
     required this.notesRepo,
     required this.linkRepo,
+    required this.dbTxn,
     NoteService? noteService,
   }) : noteService = noteService ?? NoteService.instance;
 
@@ -57,29 +60,28 @@ class VaultNotesService {
     final materialized = note.copyWith(title: finalTitle);
 
     try {
-      // 3) 배치 등록(중복/검증은 레포에서 수행)
-      await vaultTree.registerExistingNote(
-        noteId: materialized.noteId,
-        vaultId: vaultId,
-        parentFolderId: parentFolderId,
-        name: materialized.title,
-      );
-
-      // 4) 콘텐츠 업서트
-      await notesRepo.upsert(materialized);
-
+      // 3) 트랜잭션: 배치 등록 + 콘텐츠 업서트
+      await dbTxn.write(() async {
+        await vaultTree.registerExistingNote(
+          noteId: materialized.noteId,
+          vaultId: vaultId,
+          parentFolderId: parentFolderId,
+          name: materialized.title,
+        );
+        await notesRepo.upsert(materialized);
+      });
       return materialized;
     } catch (e) {
-      // 보상: 파일/산출물 정리(필요 시), 콘텐츠 제거 시도
+      // 보상: 배치/콘텐츠 정리 + 파일 정리(최소 영향)
       try {
-        await NoteDeletionService.deleteNoteCompletely(
-          materialized.noteId,
-          repo: notesRepo,
-          linkRepo: linkRepo,
-        );
-      } catch (_) {
-        // noop: best-effort cleanup
-      }
+        await notesRepo.delete(materialized.noteId);
+      } catch (_) {}
+      try {
+        await vaultTree.deleteNote(materialized.noteId);
+      } catch (_) {}
+      try {
+        await FileStorageService.deleteNoteFiles(materialized.noteId);
+      } catch (_) {}
       rethrow;
     }
   }
@@ -107,26 +109,27 @@ class VaultNotesService {
     final materialized = note.copyWith(title: finalTitle);
 
     try {
-      // 4) 배치 등록
-      await vaultTree.registerExistingNote(
-        noteId: materialized.noteId,
-        vaultId: vaultId,
-        parentFolderId: parentFolderId,
-        name: materialized.title,
-      );
-
-      // 5) 콘텐츠 업서트
-      await notesRepo.upsert(materialized);
-
+      // 4) 트랜잭션: 배치 등록 + 콘텐츠 업서트
+      await dbTxn.write(() async {
+        await vaultTree.registerExistingNote(
+          noteId: materialized.noteId,
+          vaultId: vaultId,
+          parentFolderId: parentFolderId,
+          name: materialized.title,
+        );
+        await notesRepo.upsert(materialized);
+      });
       return materialized;
     } catch (e) {
-      // 보상: 파일/산출물 정리 및 콘텐츠 제거 시도
+      // 보상: 콘텐츠/배치/파일 정리
       try {
-        await NoteDeletionService.deleteNoteCompletely(
-          materialized.noteId,
-          repo: notesRepo,
-          linkRepo: linkRepo,
-        );
+        await notesRepo.delete(materialized.noteId);
+      } catch (_) {}
+      try {
+        await vaultTree.deleteNote(materialized.noteId);
+      } catch (_) {}
+      try {
+        await FileStorageService.deleteNoteFiles(materialized.noteId);
       } catch (_) {}
       rethrow;
     }
@@ -135,33 +138,44 @@ class VaultNotesService {
   /// 노트 표시명을 변경하고 콘텐츠 제목을 동기화합니다.
   Future<void> renameNote(String noteId, String newName) async {
     final normalized = NameNormalizer.normalize(newName);
-    // 1) 트리 이름 변경(중복 검사 내장)
-    await vaultTree.renameNote(noteId, normalized);
-    // 2) 콘텐츠 제목 동기화(있을 때만)
-    final note = await notesRepo.getNoteById(noteId);
-    if (note != null) {
-      await notesRepo.upsert(note.copyWith(title: normalized));
-    }
+    await dbTxn.write(() async {
+      await vaultTree.renameNote(noteId, normalized);
+      final note = await notesRepo.getNoteById(noteId);
+      if (note != null) {
+        await notesRepo.upsert(note.copyWith(title: normalized));
+      }
+    });
   }
 
   /// 노트를 동일 Vault 내 다른 폴더로 이동합니다.
   Future<void> moveNote(String noteId, {String? newParentFolderId}) async {
-    await vaultTree.moveNote(
-      noteId: noteId,
-      newParentFolderId: newParentFolderId,
-    );
+    await dbTxn.write(() async {
+      await vaultTree.moveNote(
+        noteId: noteId,
+        newParentFolderId: newParentFolderId,
+      );
+    });
   }
 
   /// 노트를 완전히 제거합니다(링크/파일/콘텐츠/배치 순).
   Future<void> deleteNote(String noteId) async {
-    // 1) 링크/파일/콘텐츠 정리
-    await NoteDeletionService.deleteNoteCompletely(
-      noteId,
-      repo: notesRepo,
-      linkRepo: linkRepo,
-    );
-    // 2) 배치 삭제
-    await vaultTree.deleteNote(noteId);
+    // 1) 노트 조회(있으면 페이지 기반 링크 정리 준비)
+    final note = await notesRepo.getNoteById(noteId);
+    final pageIds =
+        note?.pages.map((p) => p.pageId).toList() ?? const <String>[];
+
+    // 2) DB 변경(링크/콘텐츠/배치) — 트랜잭션으로 묶기
+    await dbTxn.write(() async {
+      if (pageIds.isNotEmpty) {
+        await linkRepo.deleteBySourcePages(pageIds);
+      }
+      await linkRepo.deleteByTargetNote(noteId);
+      await notesRepo.delete(noteId);
+      await vaultTree.deleteNote(noteId);
+    });
+
+    // 3) 파일 삭제(트랜잭션 밖)
+    await FileStorageService.deleteNoteFiles(noteId);
   }
 
   /// 폴더와 그 하위 모든 노트/폴더를 안전하게 삭제합니다.
@@ -254,9 +268,11 @@ final vaultNotesServiceProvider = Provider<VaultNotesService>((ref) {
   final vaultTree = ref.watch(vaultTreeRepositoryProvider);
   final notesRepo = ref.watch(notesRepositoryProvider);
   final linkRepo = ref.watch(linkRepositoryProvider);
+  final dbTxn = ref.watch(dbTxnRunnerProvider);
   return VaultNotesService(
     vaultTree: vaultTree,
     notesRepo: notesRepo,
     linkRepo: linkRepo,
+    dbTxn: dbTxn,
   );
 });
