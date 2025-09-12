@@ -14,4 +14,14 @@ class AppIcons {
   static const folderAdd = 'assets/icons/folder_add.svg';
   static const download = 'assets/icons/download.svg';
   static const noteAdd = 'assets/icons/note_add.svg';
+
+  // note Toolbar
+  static const pen = 'assets/icons/pen.svg';
+  static const eraser = 'assets/icons/eraser.svg';
+  static const highlighter = 'assets/icons/highlighter.svg';
+  static const linkPen = 'assets/icons/link_create.svg';
+  static const undo = 'assets/icons/undo.svg';
+  static const redo = 'assets/icons/redo.svg';
+  static const pageManage = 'assets/icons/page_management.svg';
+  static const scale = 'assets/icons/scale.svg';
 }
