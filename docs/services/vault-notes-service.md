@@ -70,9 +70,7 @@
   3. 콘텐츠 생성: `NoteService.createBlankNote(title?, initialPageCount=1)`
      → NoteModel(Notes).
   4. 배치 등록: `vaultTree.registerExistingNote(noteId, vaultId,
-parentFolderId, normalizedName)`.
-     - 이유: noteId는 콘텐츠가 생성, “기존 ID 등록”이 자연스러움.
-     - 실패 시 보상: 멱등 `NotesRepository.delete(noteId)` 및 임시 파일 정리.
+parentFolderId, normalizedName)`. - 이유: noteId는 콘텐츠가 생성, “기존 ID 등록”이 자연스러움. - 실패 시 보상: 멱등 `NotesRepository.delete(noteId)` 및 임시 파일 정리.
   5. 콘텐츠 업서트: `NotesRepository.upsert(note)`.
   6. 커밋 이벤트: 서비스가 단일 커밋 이벤트를 방출.
 - 근거/이유: 트리 이름 정책을 적용한 후 ID 충돌/중복을 트리에서 차단, 콘텐츠와 배치를 분명히 구분
@@ -226,3 +224,7 @@ parentFolderId, normalizedName or note.title)`.
 - 작업 로그: Isar 컬렉션으로 영속화. 재시작 시 재개 로직 포함.
 - 인덱스: 링크 컬렉션에 `sourceNoteId`, `targetNoteId` 인덱스 추가.
 - API: 레포 인터페이스가 트랜잭션 컨텍스트를 선택적으로 수신하도록 확장.
+
+## 원자적 커밋 (트랜잭션)
+
+- 공용 트랜잭션 레이어 추가 후 메모리 구현, 이후 isar 도입 시 writeTxn 같은 명시적 트랜잭션 사용
