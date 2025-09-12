@@ -20,6 +20,7 @@ class NoteToolbarSecondary extends StatelessWidget {
     this.isEraserOn = false,
     this.isLinkPenOn = false,
     this.iconSize = 32,
+    this.centered = true,
   });
 
   final VoidCallback onUndo;
@@ -30,6 +31,7 @@ class NoteToolbarSecondary extends StatelessWidget {
   final VoidCallback onLinkPen;
   final VoidCallback onGraphView;
   final double iconSize;
+  final bool centered;
 
   /// 현재 선택된 펜/하이라이터 색
   final ToolAccent activePenColor;
@@ -41,52 +43,54 @@ class NoteToolbarSecondary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: AppColors.background,
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          ToolGlowIcon(svgPath: AppIcons.undo, onTap: onUndo),
-          const SizedBox(width: 16),
-          ToolGlowIcon(svgPath: AppIcons.redo, onTap: onRedo),
-          const _Divider(),
-          // 펜 (선택 시 하이라이트 색 발광)
-          ToolGlowIcon(
-            svgPath: AppIcons.pen,
-            onTap: onPen,
-            accent: activePenColor, // 다색 발광
-          ),
-          const SizedBox(width: 16),
-          ToolGlowIcon(
-            svgPath: AppIcons.highlighter,
-            onTap: onHighlighter,
-            accent: activeHighlighterColor,            // 다색 발광
-          ),
-          const SizedBox(width: 16),
-          ToolGlowIcon(
+    final content = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ToolGlowIcon(svgPath: AppIcons.undo, onTap: onUndo),
+        const SizedBox(width: 16),
+        ToolGlowIcon(svgPath: AppIcons.redo, onTap: onRedo),
+        const _Divider(),
+        // 펜 (선택 시 하이라이트 색 발광)
+        ToolGlowIcon(
+          svgPath: AppIcons.pen,
+          onTap: onPen,
+          accent: activePenColor, // 다색 발광
+        ),
+        const SizedBox(width: 16),
+        ToolGlowIcon(
+          svgPath: AppIcons.highlighter,
+          onTap: onHighlighter,
+          accent: activeHighlighterColor, // 다색 발광
+        ),
+        const SizedBox(width: 16),
+        ToolGlowIcon(
           svgPath: AppIcons.eraser,
           onTap: onEraser,
           glowColor: isEraserOn ? AppColors.primary : null,
           // glowOpacity: 0.48, // 원하면 톤 다운
-          ),
-          const _Divider(),
+        ),
+        const _Divider(),
 
-          ToolGlowIcon(
-            svgPath: AppIcons.linkPen,
-            onTap: onLinkPen,
-            glowColor: isLinkPenOn ? AppColors.primary : null,
-          ),
-          const SizedBox(width: 16),
-          AppIconButton(
-            svgPath: AppIcons.graphView,
-            onPressed: onGraphView,
-            tooltip: '그래프 뷰',
-            size: AppIconButtonSize.md,
-            color: AppColors.gray50,
-          ),
-        ],
-      ),
+        ToolGlowIcon(
+          svgPath: AppIcons.linkPen,
+          onTap: onLinkPen,
+          glowColor: isLinkPenOn ? AppColors.primary : null,
+        ),
+        const SizedBox(width: 16),
+        AppIconButton(
+          svgPath: AppIcons.graphView,
+          onPressed: onGraphView,
+          tooltip: '그래프 뷰',
+          size: AppIconButtonSize.md,
+          color: AppColors.gray50,
+        ),
+      ],
+    );
+    return Container(
+      color: AppColors.background,
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: centered? Center(child: content)
+      :content,
     );
   }
 }
