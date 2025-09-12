@@ -1,4 +1,5 @@
 import '../../features/vaults/models/folder_model.dart';
+import '../../features/vaults/models/note_placement.dart';
 import '../../features/vaults/models/vault_item.dart';
 import '../../features/vaults/models/vault_model.dart';
 
@@ -93,6 +94,22 @@ abstract class VaultTreeRepository {
 
   /// 노트 배치 삭제(콘텐츠/파일/링크 정리는 상위 서비스에서 오케스트레이션).
   Future<void> deleteNote(String noteId);
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Note Placement 조회/등록(옵션)
+  //////////////////////////////////////////////////////////////////////////////
+
+  /// 단일 노트의 배치 정보를 조회합니다. 없으면 null.
+  Future<NotePlacement?> getNotePlacement(String noteId);
+
+  /// 이미 생성된 noteId(콘텐츠 선생성)를 트리에 등록합니다.
+  /// 이름 정책/중복 검사는 트리 정책을 따릅니다.
+  Future<void> registerExistingNote({
+    required String noteId,
+    required String vaultId,
+    String? parentFolderId,
+    required String name,
+  });
 
   //////////////////////////////////////////////////////////////////////////////
   // Utilities

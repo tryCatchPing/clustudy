@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../shared/repositories/vault_tree_repository.dart';
 import '../models/folder_model.dart';
+import '../models/note_placement.dart';
 import '../models/vault_item.dart';
 import '../models/vault_model.dart';
 
@@ -16,11 +17,10 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
   final Map<String, VaultModel> _vaults = <String, VaultModel>{};
   final Map<String, FolderModel> _folders = <String, FolderModel>{};
 
-  /// 노트 배치(트리)용 경량 메타 저장소
-  final Map<String, _NoteEntry> _notes = <String, _NoteEntry>{};
+  /// 노트 배치(트리)용 경량 메타 저장소 (퍼블릭 NotePlacement 사용)
+  final Map<String, NotePlacement> _notes = <String, NotePlacement>{};
 
-  final _vaultsController =
-      StreamController<List<VaultModel>>.broadcast();
+  final _vaultsController = StreamController<List<VaultModel>>.broadcast();
 
   /// 폴더 자식(폴더+노트) 스트림 컨트롤러
   final Map<String, StreamController<List<VaultItem>>> _childrenControllers =
@@ -135,8 +135,12 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
     final f = _folders[folderId];
     if (f == null) throw Exception('Folder not found: $folderId');
     final normalized = _normalizeName(newName);
-    _ensureUniqueFolderName(f.vaultId, f.parentFolderId, normalized,
-        excludeFolderId: folderId);
+    _ensureUniqueFolderName(
+      f.vaultId,
+      f.parentFolderId,
+      normalized,
+      excludeFolderId: folderId,
+    );
     final updated = f.copyWith(name: normalized, updatedAt: DateTime.now());
     _folders[folderId] = updated;
     _emitChildren(updated.vaultId, updated.parentFolderId);
@@ -164,8 +168,12 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
     }
 
     // name uniqueness in new parent scope
-    _ensureUniqueFolderName(f.vaultId, newParentFolderId, f.name,
-        excludeFolderId: folderId);
+    _ensureUniqueFolderName(
+      f.vaultId,
+      newParentFolderId,
+      f.name,
+      excludeFolderId: folderId,
+    );
 
     final updated = f.copyWith(
       parentFolderId: newParentFolderId,
@@ -193,12 +201,16 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
         }
       }
     }
+
     dfs(folderId);
 
     // collect notes under these folders
     final noteIds = _notes.entries
-        .where((e) => e.value.vaultId == vaultId &&
-            toDeleteFolders.contains(e.value.parentFolderId))
+        .where(
+          (e) =>
+              e.value.vaultId == vaultId &&
+              toDeleteFolders.contains(e.value.parentFolderId),
+        )
         .map((e) => e.key)
         .toList();
 
@@ -235,7 +247,7 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
     _ensureUniqueNoteName(vaultId, parentFolderId, normalized);
     final id = _uuid.v4();
     final now = DateTime.now();
-    _notes[id] = _NoteEntry(
+    _notes[id] = NotePlacement(
       noteId: id,
       vaultId: vaultId,
       parentFolderId: parentFolderId,
@@ -253,8 +265,12 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
     final n = _notes[noteId];
     if (n == null) throw Exception('Note not found: $noteId');
     final normalized = _normalizeName(newName);
-    _ensureUniqueNoteName(n.vaultId, n.parentFolderId, normalized,
-        excludeNoteId: noteId);
+    _ensureUniqueNoteName(
+      n.vaultId,
+      n.parentFolderId,
+      normalized,
+      excludeNoteId: noteId,
+    );
     _notes[noteId] = n.copyWith(name: normalized, updatedAt: DateTime.now());
     _emitChildren(n.vaultId, n.parentFolderId);
   }
@@ -273,8 +289,12 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
       _assertSameVaultFolder(newParentFolderId, n.vaultId);
     }
     // uniqueness in target scope
-    _ensureUniqueNoteName(n.vaultId, newParentFolderId, n.name,
-        excludeNoteId: noteId);
+    _ensureUniqueNoteName(
+      n.vaultId,
+      newParentFolderId,
+      n.name,
+      excludeNoteId: noteId,
+    );
     _notes[noteId] = n.copyWith(
       parentFolderId: newParentFolderId,
       updatedAt: DateTime.now(),
@@ -288,6 +308,46 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
     final n = _notes.remove(noteId);
     if (n == null) return;
     _emitChildren(n.vaultId, n.parentFolderId);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Placement 조회/등록
+  //////////////////////////////////////////////////////////////////////////////
+  @override
+  Future<NotePlacement?> getNotePlacement(String noteId) async {
+    return _notes[noteId];
+  }
+
+  @override
+  Future<void> registerExistingNote({
+    required String noteId,
+    required String vaultId,
+    String? parentFolderId,
+    required String name,
+  }) async {
+    _assertVaultExists(vaultId);
+    if (parentFolderId != null) {
+      _assertFolderExists(parentFolderId);
+      _assertSameVaultFolder(parentFolderId, vaultId);
+    }
+    if (_notes.containsKey(noteId)) {
+      throw Exception('Note already exists: $noteId');
+    }
+    final normalized = _normalizeName(name);
+    _ensureUniqueNoteName(vaultId, parentFolderId, normalized);
+    final now = DateTime.now();
+    _notes[noteId] = NotePlacement(
+      noteId: noteId,
+      vaultId: vaultId,
+      parentFolderId: parentFolderId,
+      name: normalized,
+      createdAt: now,
+      updatedAt: now,
+    );
+    _emitChildren(vaultId, parentFolderId);
+    debugPrint(
+      '📝 [VaultRepo] registerExistingNote id=$noteId name=$normalized',
+    );
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -345,8 +405,9 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
 
   List<VaultItem> _collectChildren(String vaultId, String? parentFolderId) {
     final items = <VaultItem>[];
-    final nowFolders = _folders.values.where((f) =>
-        f.vaultId == vaultId && f.parentFolderId == parentFolderId);
+    final nowFolders = _folders.values.where(
+      (f) => f.vaultId == vaultId && f.parentFolderId == parentFolderId,
+    );
     for (final f in nowFolders) {
       items.add(
         VaultItem(
@@ -359,8 +420,9 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
         ),
       );
     }
-    final nowNotes = _notes.values.where((n) =>
-        n.vaultId == vaultId && n.parentFolderId == parentFolderId);
+    final nowNotes = _notes.values.where(
+      (n) => n.vaultId == vaultId && n.parentFolderId == parentFolderId,
+    );
     for (final n in nowNotes) {
       items.add(
         VaultItem(
@@ -375,8 +437,8 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
     }
     // sort: folder first, then note; by name asc (case-insensitive)
     items.sort((a, b) {
-      int typeA = a.type == VaultItemType.folder ? 0 : 1;
-      int typeB = b.type == VaultItemType.folder ? 0 : 1;
+      final int typeA = a.type == VaultItemType.folder ? 0 : 1;
+      final int typeB = b.type == VaultItemType.folder ? 0 : 1;
       if (typeA != typeB) return typeA - typeB;
       return a.name.toLowerCase().compareTo(b.name.toLowerCase());
     });
@@ -431,11 +493,13 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
     String? excludeFolderId,
   }) {
     final lower = name.toLowerCase();
-    final exists = _folders.values.any((f) =>
-        f.vaultId == vaultId &&
-        f.parentFolderId == parentFolderId &&
-        f.folderId != excludeFolderId &&
-        f.name.toLowerCase() == lower);
+    final exists = _folders.values.any(
+      (f) =>
+          f.vaultId == vaultId &&
+          f.parentFolderId == parentFolderId &&
+          f.folderId != excludeFolderId &&
+          f.name.toLowerCase() == lower,
+    );
     if (exists) {
       throw Exception('Folder name already exists in this location');
     }
@@ -448,11 +512,13 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
     String? excludeNoteId,
   }) {
     final lower = name.toLowerCase();
-    final exists = _notes.values.any((n) =>
-        n.vaultId == vaultId &&
-        n.parentFolderId == parentFolderId &&
-        n.noteId != excludeNoteId &&
-        n.name.toLowerCase() == lower);
+    final exists = _notes.values.any(
+      (n) =>
+          n.vaultId == vaultId &&
+          n.parentFolderId == parentFolderId &&
+          n.noteId != excludeNoteId &&
+          n.name.toLowerCase() == lower,
+    );
     if (exists) {
       throw Exception('Note name already exists in this location');
     }
@@ -479,38 +545,4 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
   }
 }
 
-class _NoteEntry {
-  final String noteId;
-  final String vaultId;
-  final String? parentFolderId;
-  final String name;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-
-  const _NoteEntry({
-    required this.noteId,
-    required this.vaultId,
-    required this.parentFolderId,
-    required this.name,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-
-  _NoteEntry copyWith({
-    String? noteId,
-    String? vaultId,
-    String? parentFolderId,
-    String? name,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-  }) {
-    return _NoteEntry(
-      noteId: noteId ?? this.noteId,
-      vaultId: vaultId ?? this.vaultId,
-      parentFolderId: parentFolderId ?? this.parentFolderId,
-      name: name ?? this.name,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-    );
-  }
-}
+// _NoteEntry 제거: 퍼블릭 NotePlacement 모델을 저장에 그대로 사용합니다.
