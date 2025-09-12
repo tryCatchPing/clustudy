@@ -222,6 +222,21 @@ class MemoryLinkRepository implements LinkRepository {
     }
   }
 
+  @override
+  Future<List<LinkModel>> listBySourcePages(List<String> pageIds) async {
+    if (pageIds.isEmpty) return const <LinkModel>[];
+    final unique = pageIds.toSet();
+    final out = <LinkModel>[];
+    for (final pid in unique) {
+      final list = _bySourcePage[pid];
+      if (list != null && list.isNotEmpty) {
+        out.addAll(list);
+      }
+    }
+    // Return a defensive copy
+    return List<LinkModel>.unmodifiable(out);
+  }
+
   //////////////////////////////////////////////////////////////////////////////
   // Helpers
   //////////////////////////////////////////////////////////////////////////////
