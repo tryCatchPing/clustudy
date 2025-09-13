@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -27,6 +29,11 @@ class NoteListScreen extends ConsumerStatefulWidget {
 
 class _NoteListScreenState extends ConsumerState<NoteListScreen> {
   bool _isImporting = false;
+  final TextEditingController _searchCtrl = TextEditingController();
+  Timer? _searchDebounce;
+  String _searchQuery = '';
+  List<NoteSearchResult> _searchResults = const <NoteSearchResult>[];
+  bool _searching = false;
 
   void _onVaultSelected(String vaultId) {
     ref.read(currentVaultProvider.notifier).state = vaultId;
@@ -164,6 +171,46 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
         );
       }
     }
+  }
+
+  void _onSearchChanged(String text) {
+    _searchQuery = text.trim();
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 250), () async {
+      await _runSearch();
+    });
+    setState(() {});
+  }
+
+  Future<void> _runSearch() async {
+    final query = _searchQuery;
+    final vaultId = ref.read(currentVaultProvider);
+    if (vaultId == null) return;
+    setState(() => _searching = true);
+    try {
+      final service = ref.read(vaultNotesServiceProvider);
+      final results = await service.searchNotesInVault(
+        vaultId,
+        query,
+        limit: 50,
+      );
+      if (!mounted) return;
+      setState(() {
+        _searchResults = results;
+        _searching = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _searching = false);
+    }
+  }
+
+  void _clearSearch() {
+    _searchCtrl.clear();
+    setState(() {
+      _searchQuery = '';
+      _searchResults = const <NoteSearchResult>[];
+    });
   }
 
   Future<FolderCascadeImpact> _computeCascadeImpact(
@@ -457,289 +504,390 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
 
                       const SizedBox(height: 12),
 
-                      // Placement 기반 브라우저 (vault/folder 컨텍스트)
-                      vaultsAsync.when(
-                        data: (vaults) {
-                          if (vaults.isEmpty) {
-                            return const Text('생성된 Vault가 없습니다.');
-                          }
-                          // Ensure current vault is set
-                          final currentVaultId = ref.watch(
-                            currentVaultProvider,
-                          );
-                          if (currentVaultId == null) {
-                            // pick the first vault
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              ref.read(currentVaultProvider.notifier).state =
-                                  vaults.first.vaultId;
-                              // Also reset folder scope for the selected vault
-                              ref
-                                      .read(
-                                        currentFolderProvider(
-                                          vaults.first.vaultId,
-                                        ).notifier,
-                                      )
-                                      .state =
-                                  null;
-                            });
-                            return const Center(
-                              child: CircularProgressIndicator(),
-                            );
-                          }
+                      // 노트 검색
+                      TextField(
+                        controller: _searchCtrl,
+                        decoration: InputDecoration(
+                          labelText: '노트 검색',
+                          hintText: '제목으로 검색',
+                          border: const OutlineInputBorder(),
+                          suffixIcon: _searchQuery.isEmpty
+                              ? null
+                              : IconButton(
+                                  onPressed: _clearSearch,
+                                  icon: const Icon(Icons.clear),
+                                ),
+                        ),
+                        onChanged: _onSearchChanged,
+                      ),
 
-                          final currentFolderId = ref.watch(
-                            currentFolderProvider(currentVaultId),
-                          );
-                          final itemsAsync = ref.watch(
-                            vaultItemsProvider(
-                              FolderScope(currentVaultId, currentFolderId),
-                            ),
-                          );
+                      const SizedBox(height: 12),
 
-                          return itemsAsync.when(
-                            data: (items) {
-                              final folders = items
-                                  .where(
-                                    (it) => it.type == VaultItemType.folder,
-                                  )
-                                  .toList();
-                              final notes = items
-                                  .where(
-                                    (it) => it.type == VaultItemType.note,
-                                  )
-                                  .toList();
-
-                              return Column(
-                                children: [
-                                  Align(
+                      // 검색 결과 또는 Placement 기반 브라우저
+                      _searchQuery.isNotEmpty
+                          ? Builder(
+                              builder: (_) {
+                                final currentVaultId = ref.watch(
+                                  currentVaultProvider,
+                                );
+                                if (currentVaultId == null) {
+                                  return const Center(
+                                    child: CircularProgressIndicator(),
+                                  );
+                                }
+                                if (_searching) {
+                                  return const Center(
+                                    child: CircularProgressIndicator(),
+                                  );
+                                }
+                                if (_searchResults.isEmpty) {
+                                  return const Align(
                                     alignment: Alignment.centerLeft,
-                                    child: TextButton.icon(
-                                      onPressed: () => _showCreateFolderDialog(
-                                        currentVaultId,
-                                        currentFolderId,
+                                    child: Text('검색 결과가 없습니다.'),
+                                  );
+                                }
+                                return Column(
+                                  children: [
+                                    for (final r in _searchResults) ...[
+                                      Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Expanded(
+                                            child: NavigationCard(
+                                              icon: Icons.brush,
+                                              title: r.title,
+                                              subtitle:
+                                                  r.parentFolderName ?? '루트',
+                                              color: const Color(0xFF6750A4),
+                                              onTap: () {
+                                                context.pushNamed(
+                                                  AppRoutes.noteEditName,
+                                                  pathParameters: {
+                                                    'noteId': r.noteId,
+                                                  },
+                                                );
+                                              },
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                      icon: const Icon(Icons.create_new_folder),
-                                      label: const Text('폴더 추가'),
+                                      const SizedBox(height: 12),
+                                    ],
+                                  ],
+                                );
+                              },
+                            )
+                          : vaultsAsync.when(
+                              data: (vaults) {
+                                if (vaults.isEmpty) {
+                                  return const Text('생성된 Vault가 없습니다.');
+                                }
+                                // Ensure current vault is set
+                                final currentVaultId = ref.watch(
+                                  currentVaultProvider,
+                                );
+                                if (currentVaultId == null) {
+                                  // pick the first vault
+                                  WidgetsBinding.instance.addPostFrameCallback((
+                                    _,
+                                  ) {
+                                    ref
+                                            .read(currentVaultProvider.notifier)
+                                            .state =
+                                        vaults.first.vaultId;
+                                    // Also reset folder scope for the selected vault
+                                    ref
+                                            .read(
+                                              currentFolderProvider(
+                                                vaults.first.vaultId,
+                                              ).notifier,
+                                            )
+                                            .state =
+                                        null;
+                                  });
+                                  return const Center(
+                                    child: CircularProgressIndicator(),
+                                  );
+                                }
+
+                                final currentFolderId = ref.watch(
+                                  currentFolderProvider(currentVaultId),
+                                );
+                                final itemsAsync = ref.watch(
+                                  vaultItemsProvider(
+                                    FolderScope(
+                                      currentVaultId,
+                                      currentFolderId,
                                     ),
                                   ),
-                                  const SizedBox(height: 8),
-                                  if (currentFolderId != null) ...[
-                                    Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: TextButton.icon(
-                                        onPressed: () async {
-                                          await _goUpOneLevel(
-                                            currentVaultId,
-                                            currentFolderId,
-                                          );
-                                        },
-                                        icon: const Icon(Icons.arrow_upward),
-                                        label: const Text('한 단계 위로'),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                  ],
+                                );
 
-                                  if (folders.isEmpty && notes.isEmpty)
-                                    const Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text('현재 위치에 항목이 없습니다.'),
-                                    ),
+                                return itemsAsync.when(
+                                  data: (items) {
+                                    final folders = items
+                                        .where(
+                                          (it) =>
+                                              it.type == VaultItemType.folder,
+                                        )
+                                        .toList();
+                                    final notes = items
+                                        .where(
+                                          (it) => it.type == VaultItemType.note,
+                                        )
+                                        .toList();
 
-                                  // Folders
-                                  for (final it in folders) ...[
-                                    Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                    return Column(
                                       children: [
-                                        Expanded(
-                                          child: NavigationCard(
-                                            icon: Icons.folder,
-                                            title: it.name,
-                                            subtitle: '폴더',
-                                            color: Colors.amber[700]!,
-                                            onTap: () {
-                                              ref
-                                                      .read(
-                                                        currentFolderProvider(
-                                                          currentVaultId,
-                                                        ).notifier,
-                                                      )
-                                                      .state =
-                                                  it.id;
-                                            },
+                                        Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: TextButton.icon(
+                                            onPressed: () =>
+                                                _showCreateFolderDialog(
+                                                  currentVaultId,
+                                                  currentFolderId,
+                                                ),
+                                            icon: const Icon(
+                                              Icons.create_new_folder,
+                                            ),
+                                            label: const Text('폴더 추가'),
                                           ),
                                         ),
-                                        const SizedBox(width: 8),
-                                        IconButton(
-                                          tooltip: '폴더 이름 변경',
-                                          onPressed: () async {
-                                            final name =
-                                                await showDialog<String>(
-                                                  context: context,
-                                                  builder: (context) =>
-                                                      const _NameInputDialog(
-                                                        title: '폴더 이름 변경',
-                                                        hintText: '새 이름',
-                                                        confirmLabel: '변경',
-                                                      ),
+                                        const SizedBox(height: 8),
+                                        if (currentFolderId != null) ...[
+                                          Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: TextButton.icon(
+                                              onPressed: () async {
+                                                await _goUpOneLevel(
+                                                  currentVaultId,
+                                                  currentFolderId,
                                                 );
-                                            final trimmed = name?.trim() ?? '';
-                                            if (trimmed.isEmpty) return;
-                                            final service = ref.read(
-                                              vaultNotesServiceProvider,
-                                            );
-                                            try {
-                                              await service.renameFolder(
-                                                it.id,
-                                                trimmed,
-                                              );
-                                              if (!mounted) return;
-                                              ScaffoldMessenger.of(
-                                                context,
-                                              ).showSnackBar(
-                                                const SnackBar(
-                                                  content: Text(
-                                                    '폴더 이름을 변경했습니다.',
-                                                  ),
-                                                ),
-                                              );
-                                            } catch (e) {
-                                              if (!mounted) return;
-                                              ScaffoldMessenger.of(
-                                                context,
-                                              ).showSnackBar(
-                                                SnackBar(
-                                                  content: Text('이름 변경 실패: $e'),
-                                                  backgroundColor: Colors.red,
-                                                ),
-                                              );
-                                            }
-                                          },
-                                          icon: const Icon(
-                                            Icons.drive_file_rename_outline,
-                                          ),
-                                        ),
-                                        IconButton(
-                                          tooltip: '폴더 삭제',
-                                          onPressed: () =>
-                                              _confirmAndDeleteFolder(
-                                                vaultId: currentVaultId,
-                                                folderId: it.id,
-                                                folderName: it.name,
+                                              },
+                                              icon: const Icon(
+                                                Icons.arrow_upward,
                                               ),
-                                          icon: Icon(
-                                            Icons.delete_outline,
-                                            color: Colors.red[700],
+                                              label: const Text('한 단계 위로'),
+                                            ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 12),
-                                  ],
+                                          const SizedBox(height: 8),
+                                        ],
 
-                                  // Notes
-                                  for (final it in notes) ...[
-                                    Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Expanded(
-                                          child: NavigationCard(
-                                            icon: Icons.brush,
-                                            title: it.name,
-                                            subtitle: '노트',
-                                            color: const Color(0xFF6750A4),
-                                            onTap: () {
-                                              context.pushNamed(
-                                                AppRoutes.noteEditName,
-                                                pathParameters: {
-                                                  'noteId': it.id,
+                                        if (folders.isEmpty && notes.isEmpty)
+                                          const Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: Text('현재 위치에 항목이 없습니다.'),
+                                          ),
+
+                                        // Folders
+                                        for (final it in folders) ...[
+                                          Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Expanded(
+                                                child: NavigationCard(
+                                                  icon: Icons.folder,
+                                                  title: it.name,
+                                                  subtitle: '폴더',
+                                                  color: Colors.amber[700]!,
+                                                  onTap: () {
+                                                    ref
+                                                        .read(
+                                                          currentFolderProvider(
+                                                            currentVaultId,
+                                                          ).notifier,
+                                                        )
+                                                        .state = it
+                                                        .id;
+                                                  },
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              IconButton(
+                                                tooltip: '폴더 이름 변경',
+                                                onPressed: () async {
+                                                  final name =
+                                                      await showDialog<String>(
+                                                        context: context,
+                                                        builder: (context) =>
+                                                            const _NameInputDialog(
+                                                              title: '폴더 이름 변경',
+                                                              hintText: '새 이름',
+                                                              confirmLabel:
+                                                                  '변경',
+                                                            ),
+                                                      );
+                                                  final trimmed =
+                                                      name?.trim() ?? '';
+                                                  if (trimmed.isEmpty) return;
+                                                  final service = ref.read(
+                                                    vaultNotesServiceProvider,
+                                                  );
+                                                  try {
+                                                    await service.renameFolder(
+                                                      it.id,
+                                                      trimmed,
+                                                    );
+                                                    if (!mounted) return;
+                                                    ScaffoldMessenger.of(
+                                                      context,
+                                                    ).showSnackBar(
+                                                      const SnackBar(
+                                                        content: Text(
+                                                          '폴더 이름을 변경했습니다.',
+                                                        ),
+                                                      ),
+                                                    );
+                                                  } catch (e) {
+                                                    if (!mounted) return;
+                                                    ScaffoldMessenger.of(
+                                                      context,
+                                                    ).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                          '이름 변경 실패: $e',
+                                                        ),
+                                                        backgroundColor:
+                                                            Colors.red,
+                                                      ),
+                                                    );
+                                                  }
                                                 },
-                                              );
-                                            },
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        IconButton(
-                                          tooltip: '노트 이름 변경',
-                                          onPressed: () async {
-                                            final name =
-                                                await showDialog<String>(
-                                                  context: context,
-                                                  builder: (context) =>
-                                                      const _NameInputDialog(
-                                                        title: '노트 이름 변경',
-                                                        hintText: '새 이름',
-                                                        confirmLabel: '변경',
-                                                      ),
-                                                );
-                                            final trimmed = name?.trim() ?? '';
-                                            if (trimmed.isEmpty) return;
-                                            final service = ref.read(
-                                              vaultNotesServiceProvider,
-                                            );
-                                            try {
-                                              await service.renameNote(
-                                                it.id,
-                                                trimmed,
-                                              );
-                                              if (!mounted) return;
-                                              ScaffoldMessenger.of(
-                                                context,
-                                              ).showSnackBar(
-                                                const SnackBar(
-                                                  content: Text(
-                                                    '노트 이름을 변경했습니다.',
-                                                  ),
+                                                icon: const Icon(
+                                                  Icons
+                                                      .drive_file_rename_outline,
                                                 ),
-                                              );
-                                            } catch (e) {
-                                              if (!mounted) return;
-                                              ScaffoldMessenger.of(
-                                                context,
-                                              ).showSnackBar(
-                                                SnackBar(
-                                                  content: Text('이름 변경 실패: $e'),
-                                                  backgroundColor: Colors.red,
-                                                ),
-                                              );
-                                            }
-                                          },
-                                          icon: const Icon(
-                                            Icons.drive_file_rename_outline,
-                                          ),
-                                        ),
-                                        IconButton(
-                                          tooltip: '노트 삭제',
-                                          onPressed: () =>
-                                              _confirmAndDeleteNote(
-                                                noteId: it.id,
-                                                noteTitle: it.name,
                                               ),
-                                          icon: Icon(
-                                            Icons.delete_outline,
-                                            color: Colors.red[700],
+                                              IconButton(
+                                                tooltip: '폴더 삭제',
+                                                onPressed: () =>
+                                                    _confirmAndDeleteFolder(
+                                                      vaultId: currentVaultId,
+                                                      folderId: it.id,
+                                                      folderName: it.name,
+                                                    ),
+                                                icon: Icon(
+                                                  Icons.delete_outline,
+                                                  color: Colors.red[700],
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                        ),
+                                          const SizedBox(height: 12),
+                                        ],
+
+                                        // Notes
+                                        for (final it in notes) ...[
+                                          Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Expanded(
+                                                child: NavigationCard(
+                                                  icon: Icons.brush,
+                                                  title: it.name,
+                                                  subtitle: '노트',
+                                                  color: const Color(
+                                                    0xFF6750A4,
+                                                  ),
+                                                  onTap: () {
+                                                    context.pushNamed(
+                                                      AppRoutes.noteEditName,
+                                                      pathParameters: {
+                                                        'noteId': it.id,
+                                                      },
+                                                    );
+                                                  },
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              IconButton(
+                                                tooltip: '노트 이름 변경',
+                                                onPressed: () async {
+                                                  final name =
+                                                      await showDialog<String>(
+                                                        context: context,
+                                                        builder: (context) =>
+                                                            const _NameInputDialog(
+                                                              title: '노트 이름 변경',
+                                                              hintText: '새 이름',
+                                                              confirmLabel:
+                                                                  '변경',
+                                                            ),
+                                                      );
+                                                  final trimmed =
+                                                      name?.trim() ?? '';
+                                                  if (trimmed.isEmpty) return;
+                                                  final service = ref.read(
+                                                    vaultNotesServiceProvider,
+                                                  );
+                                                  try {
+                                                    await service.renameNote(
+                                                      it.id,
+                                                      trimmed,
+                                                    );
+                                                    if (!mounted) return;
+                                                    ScaffoldMessenger.of(
+                                                      context,
+                                                    ).showSnackBar(
+                                                      const SnackBar(
+                                                        content: Text(
+                                                          '노트 이름을 변경했습니다.',
+                                                        ),
+                                                      ),
+                                                    );
+                                                  } catch (e) {
+                                                    if (!mounted) return;
+                                                    ScaffoldMessenger.of(
+                                                      context,
+                                                    ).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                          '이름 변경 실패: $e',
+                                                        ),
+                                                        backgroundColor:
+                                                            Colors.red,
+                                                      ),
+                                                    );
+                                                  }
+                                                },
+                                                icon: const Icon(
+                                                  Icons
+                                                      .drive_file_rename_outline,
+                                                ),
+                                              ),
+                                              IconButton(
+                                                tooltip: '노트 삭제',
+                                                onPressed: () =>
+                                                    _confirmAndDeleteNote(
+                                                      noteId: it.id,
+                                                      noteTitle: it.name,
+                                                    ),
+                                                icon: Icon(
+                                                  Icons.delete_outline,
+                                                  color: Colors.red[700],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 12),
+                                        ],
                                       ],
-                                    ),
-                                    const SizedBox(height: 12),
-                                  ],
-                                ],
-                              );
-                            },
-                            loading: () => const Center(
-                              child: CircularProgressIndicator(),
+                                    );
+                                  },
+                                  loading: () => const Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                  error: (e, _) =>
+                                      Center(child: Text('오류: $e')),
+                                );
+                              },
+                              loading: () => const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                              error: (e, _) => Center(child: Text('오류: $e')),
                             ),
-                            error: (e, _) => Center(child: Text('오류: $e')),
-                          );
-                        },
-                        loading: () => const Center(
-                          child: CircularProgressIndicator(),
-                        ),
-                        error: (e, _) => Center(child: Text('오류: $e')),
-                      ),
                     ],
                   ),
                 ),
