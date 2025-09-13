@@ -5,9 +5,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../../shared/services/note_service.dart';
+import '../../../shared/services/name_normalizer.dart';
+import '../../../shared/services/vault_notes_service.dart';
 import '../../notes/data/notes_repository_provider.dart';
 import '../../notes/models/note_model.dart';
+import '../../vaults/data/vault_tree_repository_provider.dart';
+import '../../vaults/models/vault_item.dart';
 import '../models/link_model.dart';
 import 'link_providers.dart';
 
@@ -47,45 +50,88 @@ class LinkCreationController {
 
     final notesRepo = ref.read(notesRepositoryProvider);
     final linkRepo = ref.read(linkRepositoryProvider);
+    final service = ref.read(vaultNotesServiceProvider);
+    final vaultTree = ref.read(vaultTreeRepositoryProvider);
+
+    // Resolve source placement and vault context
+    final srcPlacement = await service.getPlacement(sourceNoteId);
+    if (srcPlacement == null) {
+      throw StateError('Source note not found in vault tree: $sourceNoteId');
+    }
 
     // 1) 타깃 노트 결정
     NoteModel targetNote;
     if (targetNoteId != null) {
+      // Validate placement and cross‑vault
+      final tgtPlacement = await service.getPlacement(targetNoteId);
+      if (tgtPlacement == null) {
+        throw StateError('Target note not found in vault tree: $targetNoteId');
+      }
+      if (tgtPlacement.vaultId != srcPlacement.vaultId) {
+        throw StateError('다른 vault에는 링크를 생성할 수 없습니다.');
+      }
       final found = await notesRepo.getNoteById(targetNoteId);
       if (found == null) {
-        throw StateError('Target note not found: $targetNoteId');
+        throw StateError('Target note content not found: $targetNoteId');
       }
       targetNote = found;
       debugPrint(
         '[LinkCreate] resolved existing target noteId=${found.noteId}',
       );
     } else {
-      // 제목으로 조회 (대소문자 무시, 정확 일치)
-      final currentNotes = await notesRepo.watchNotes().first;
-      final normalizedTitle = (targetTitle ?? '').trim().toLowerCase();
-      NoteModel? match;
-      for (final n in currentNotes) {
-        if (n.title.trim().toLowerCase() == normalizedTitle) {
-          match = n;
-          break;
+      // 제목으로 조회 (현 vault의 Placement 집합에서 정확 일치, 케이스 비구분)
+      final normalizedKey = NameNormalizer.compareKey(
+        (targetTitle ?? '').trim(),
+      );
+      String? matchedNoteId;
+      // BFS over folders
+      final queue = <String?>[null];
+      final seen = <String?>{};
+      while (queue.isNotEmpty) {
+        final parent = queue.removeAt(0);
+        if (!seen.add(parent)) continue;
+        final items = await vaultTree
+            .watchFolderChildren(srcPlacement.vaultId, parentFolderId: parent)
+            .first;
+        for (final it in items) {
+          if (it.type == VaultItemType.folder) {
+            queue.add(it.id);
+          } else {
+            if (NameNormalizer.compareKey(it.name) == normalizedKey) {
+              matchedNoteId = it.id;
+              break;
+            }
+          }
         }
+        if (matchedNoteId != null) break;
       }
 
-      if (match != null) {
-        targetNote = match;
-        debugPrint('[LinkCreate] matched title → noteId=${match.noteId}');
+      if (matchedNoteId != null) {
+        final found = await notesRepo.getNoteById(matchedNoteId);
+        if (found != null) {
+          targetNote = found;
+          debugPrint('[LinkCreate] matched title → noteId=${found.noteId}');
+        } else {
+          // 콘텐츠가 없으면 새로 생성(루트에), 동일 이름 허용 범위는 폴더 단위
+          final created = await service.createBlankInFolder(
+            srcPlacement.vaultId,
+            parentFolderId: null,
+            name: targetTitle?.trim().isNotEmpty == true
+                ? targetTitle!.trim()
+                : null,
+          );
+          targetNote = created;
+          debugPrint('[LinkCreate] created new note noteId=${created.noteId}');
+        }
       } else {
-        // 없으면 새 노트 생성 (빈 노트, 페이지 1개)
-        final created = await NoteService.instance.createBlankNote(
-          title: targetTitle?.trim().isEmpty == false
+        // 없으면 새 노트 생성 (해당 vault 루트)
+        final created = await service.createBlankInFolder(
+          srcPlacement.vaultId,
+          parentFolderId: null,
+          name: targetTitle?.trim().isNotEmpty == true
               ? targetTitle!.trim()
               : null,
-          initialPageCount: 1,
         );
-        if (created == null) {
-          throw StateError('Failed to create target note');
-        }
-        await notesRepo.upsert(created);
         targetNote = created;
         debugPrint('[LinkCreate] created new note noteId=${created.noteId}');
       }
@@ -151,38 +197,80 @@ class LinkCreationController {
 
     final notesRepo = ref.read(notesRepositoryProvider);
     final linkRepo = ref.read(linkRepositoryProvider);
+    final service = ref.read(vaultNotesServiceProvider);
+    final vaultTree = ref.read(vaultTreeRepositoryProvider);
 
-    // 1) 타깃 노트 결정
+    // 1) 타깃 노트 결정 (현 링크의 소스 vault 기준으로 제한)
+    // 소스 vault는 link.sourceNoteId의 placement에서 얻음
+    final srcPlacement = await service.getPlacement(link.sourceNoteId);
+    if (srcPlacement == null) {
+      throw StateError(
+        'Source note not found in vault tree: ${link.sourceNoteId}',
+      );
+    }
+
     NoteModel targetNote;
     if (targetNoteId != null) {
+      final tgtPlacement = await service.getPlacement(targetNoteId);
+      if (tgtPlacement == null) {
+        throw StateError('Target note not found in vault tree: $targetNoteId');
+      }
+      if (tgtPlacement.vaultId != srcPlacement.vaultId) {
+        throw StateError('다른 vault에는 링크를 수정할 수 없습니다.');
+      }
       final found = await notesRepo.getNoteById(targetNoteId);
       if (found == null) {
-        throw StateError('Target note not found: $targetNoteId');
+        throw StateError('Target note content not found: $targetNoteId');
       }
       targetNote = found;
     } else {
-      final currentNotes = await notesRepo.watchNotes().first;
-      final normalizedTitle = (targetTitle ?? '').trim().toLowerCase();
-      NoteModel? match;
-      for (final n in currentNotes) {
-        if (n.title.trim().toLowerCase() == normalizedTitle) {
-          match = n;
-          break;
+      final normalizedKey = NameNormalizer.compareKey(
+        (targetTitle ?? '').trim(),
+      );
+      String? matchedNoteId;
+      final queue = <String?>[null];
+      final seen = <String?>{};
+      while (queue.isNotEmpty) {
+        final parent = queue.removeAt(0);
+        if (!seen.add(parent)) continue;
+        final items = await vaultTree
+            .watchFolderChildren(srcPlacement.vaultId, parentFolderId: parent)
+            .first;
+        for (final it in items) {
+          if (it.type == VaultItemType.folder) {
+            queue.add(it.id);
+          } else {
+            if (NameNormalizer.compareKey(it.name) == normalizedKey) {
+              matchedNoteId = it.id;
+              break;
+            }
+          }
         }
+        if (matchedNoteId != null) break;
       }
-      if (match != null) {
-        targetNote = match;
+
+      if (matchedNoteId != null) {
+        final found = await notesRepo.getNoteById(matchedNoteId);
+        if (found != null) {
+          targetNote = found;
+        } else {
+          final created = await service.createBlankInFolder(
+            srcPlacement.vaultId,
+            parentFolderId: null,
+            name: targetTitle?.trim().isNotEmpty == true
+                ? targetTitle!.trim()
+                : null,
+          );
+          targetNote = created;
+        }
       } else {
-        final created = await NoteService.instance.createBlankNote(
-          title: targetTitle?.trim().isEmpty == false
+        final created = await service.createBlankInFolder(
+          srcPlacement.vaultId,
+          parentFolderId: null,
+          name: targetTitle?.trim().isNotEmpty == true
               ? targetTitle!.trim()
               : null,
-          initialPageCount: 1,
         );
-        if (created == null) {
-          throw StateError('Failed to create target note');
-        }
-        await notesRepo.upsert(created);
         targetNote = created;
       }
     }

@@ -7,9 +7,8 @@ import 'package:go_router/go_router.dart';
 import '../../../features/notes/data/notes_repository_provider.dart';
 import '../../../shared/routing/app_routes.dart';
 import '../../../shared/services/file_storage_service.dart';
-import '../../../shared/services/note_deletion_service.dart';
-import '../../canvas/providers/link_providers.dart';
 import '../../../shared/services/pdf_recovery_service.dart';
+import '../../../shared/services/vault_notes_service.dart';
 import '../../notes/models/note_page_model.dart';
 import 'recovery_options_modal.dart';
 import 'recovery_progress_modal.dart';
@@ -307,14 +306,10 @@ class _CanvasBackgroundWidgetState
     if (!shouldDelete || !mounted) return;
 
     try {
-      final repo = ref.read(notesRepositoryProvider);
-      final success = await NoteDeletionService.deleteNoteCompletely(
-        widget.page.noteId,
-        repo: repo,
-        linkRepo: ref.read(linkRepositoryProvider),
-      );
+      final service = ref.read(vaultNotesServiceProvider);
+      await service.deleteNote(widget.page.noteId);
 
-      if (success && mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('노트가 삭제되었습니다.'),
@@ -322,13 +317,6 @@ class _CanvasBackgroundWidgetState
           ),
         );
         context.goNamed(AppRoutes.noteListName);
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('노트 삭제에 실패했습니다.'),
-            backgroundColor: Colors.red,
-          ),
-        );
       }
     } catch (e) {
       debugPrint('❌ 복구 실패 후 노트 삭제 실패: $e');
@@ -384,14 +372,10 @@ class _CanvasBackgroundWidgetState
     }
 
     try {
-      final repo = ref.read(notesRepositoryProvider);
-      final success = await NoteDeletionService.deleteNoteCompletely(
-        widget.page.noteId,
-        repo: repo,
-        linkRepo: ref.read(linkRepositoryProvider),
-      );
+      final service = ref.read(vaultNotesServiceProvider);
+      await service.deleteNote(widget.page.noteId);
 
-      if (success && mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('노트가 삭제되었습니다.'),
@@ -403,13 +387,6 @@ class _CanvasBackgroundWidgetState
         if (mounted) {
           context.goNamed(AppRoutes.noteListName);
         }
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('노트 삭제에 실패했습니다.'),
-            backgroundColor: Colors.red,
-          ),
-        );
       }
     } catch (e) {
       debugPrint('❌ 노트 삭제 실패: $e');

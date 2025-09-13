@@ -7,9 +7,8 @@ import 'package:pdfx/pdfx.dart';
 
 import '../../features/notes/data/notes_repository.dart';
 import '../../features/notes/models/note_page_model.dart';
-import '../repositories/link_repository.dart';
 import 'file_storage_service.dart';
-import 'note_deletion_service.dart';
+import 'vault_notes_service.dart';
 
 /// PDF 파일 손상 유형을 정의합니다.
 enum CorruptionType {
@@ -222,17 +221,13 @@ class PdfRecoveryService {
     }
   }
 
-  /// 노트를 완전히 삭제합니다. (NoteDeletionService로 위임)
+  /// 노트를 완전히 삭제합니다. (VaultNotesService로 위임)
   static Future<bool> deleteNoteCompletely(
     String noteId, {
-    required NotesRepository repo,
-    required LinkRepository linkRepo,
+    required VaultNotesService service,
   }) async {
-    return NoteDeletionService.deleteNoteCompletely(
-      noteId,
-      repo: repo,
-      linkRepo: linkRepo,
-    );
+    await service.deleteNote(noteId);
+    return true;
   }
 
   /// PDF 페이지들을 재렌더링합니다.
