@@ -157,6 +157,29 @@ class VaultNotesService {
     });
   }
 
+  /// 폴더 표시명을 변경합니다.
+  Future<void> renameFolder(String folderId, String newName) async {
+    final normalized = NameNormalizer.normalize(newName);
+    // 금지문자/길이 검증(간단 검증; 세부 정책은 레포가 1차 보장)
+    if (normalized.isEmpty || normalized.length > 100) {
+      throw const FormatException('이름 길이가 올바르지 않습니다');
+    }
+    await dbTxn.write(() async {
+      await vaultTree.renameFolder(folderId, normalized);
+    });
+  }
+
+  /// Vault 이름을 변경합니다(전역 유일).
+  Future<void> renameVault(String vaultId, String newName) async {
+    final normalized = NameNormalizer.normalize(newName);
+    if (normalized.isEmpty || normalized.length > 100) {
+      throw const FormatException('이름 길이가 올바르지 않습니다');
+    }
+    await dbTxn.write(() async {
+      await vaultTree.renameVault(vaultId, normalized);
+    });
+  }
+
   /// 노트를 동일 Vault 내 다른 폴더로 이동합니다.
   Future<void> moveNote(String noteId, {String? newParentFolderId}) async {
     await dbTxn.write(() async {

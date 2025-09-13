@@ -399,6 +399,54 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                   icon: const Icon(Icons.add),
                                   label: const Text('Vault 추가'),
                                 ),
+                                const SizedBox(width: 8),
+                                TextButton.icon(
+                                  onPressed: () async {
+                                    if (currentVaultId == null) return;
+                                    final name = await showDialog<String>(
+                                      context: context,
+                                      builder: (context) =>
+                                          const _NameInputDialog(
+                                            title: 'Vault 이름 변경',
+                                            hintText: '새 이름',
+                                            confirmLabel: '변경',
+                                          ),
+                                    );
+                                    final trimmed = name?.trim() ?? '';
+                                    if (trimmed.isEmpty) return;
+                                    final service = ref.read(
+                                      vaultNotesServiceProvider,
+                                    );
+                                    try {
+                                      await service.renameVault(
+                                        currentVaultId,
+                                        trimmed,
+                                      );
+                                      if (!mounted) return;
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Vault 이름을 변경했습니다.'),
+                                        ),
+                                      );
+                                    } catch (e) {
+                                      if (!mounted) return;
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text('이름 변경 실패: $e'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  icon: const Icon(
+                                    Icons.drive_file_rename_outline,
+                                  ),
+                                  label: const Text('이름 변경'),
+                                ),
                               ],
                             ),
                           );
@@ -524,6 +572,55 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                         ),
                                         const SizedBox(width: 8),
                                         IconButton(
+                                          tooltip: '폴더 이름 변경',
+                                          onPressed: () async {
+                                            final name =
+                                                await showDialog<String>(
+                                                  context: context,
+                                                  builder: (context) =>
+                                                      const _NameInputDialog(
+                                                        title: '폴더 이름 변경',
+                                                        hintText: '새 이름',
+                                                        confirmLabel: '변경',
+                                                      ),
+                                                );
+                                            final trimmed = name?.trim() ?? '';
+                                            if (trimmed.isEmpty) return;
+                                            final service = ref.read(
+                                              vaultNotesServiceProvider,
+                                            );
+                                            try {
+                                              await service.renameFolder(
+                                                it.id,
+                                                trimmed,
+                                              );
+                                              if (!mounted) return;
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    '폴더 이름을 변경했습니다.',
+                                                  ),
+                                                ),
+                                              );
+                                            } catch (e) {
+                                              if (!mounted) return;
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text('이름 변경 실패: $e'),
+                                                  backgroundColor: Colors.red,
+                                                ),
+                                              );
+                                            }
+                                          },
+                                          icon: const Icon(
+                                            Icons.drive_file_rename_outline,
+                                          ),
+                                        ),
+                                        IconButton(
                                           tooltip: '폴더 삭제',
                                           onPressed: () =>
                                               _confirmAndDeleteFolder(
@@ -564,6 +661,55 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                           ),
                                         ),
                                         const SizedBox(width: 8),
+                                        IconButton(
+                                          tooltip: '노트 이름 변경',
+                                          onPressed: () async {
+                                            final name =
+                                                await showDialog<String>(
+                                                  context: context,
+                                                  builder: (context) =>
+                                                      const _NameInputDialog(
+                                                        title: '노트 이름 변경',
+                                                        hintText: '새 이름',
+                                                        confirmLabel: '변경',
+                                                      ),
+                                                );
+                                            final trimmed = name?.trim() ?? '';
+                                            if (trimmed.isEmpty) return;
+                                            final service = ref.read(
+                                              vaultNotesServiceProvider,
+                                            );
+                                            try {
+                                              await service.renameNote(
+                                                it.id,
+                                                trimmed,
+                                              );
+                                              if (!mounted) return;
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    '노트 이름을 변경했습니다.',
+                                                  ),
+                                                ),
+                                              );
+                                            } catch (e) {
+                                              if (!mounted) return;
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text('이름 변경 실패: $e'),
+                                                  backgroundColor: Colors.red,
+                                                ),
+                                              );
+                                            }
+                                          },
+                                          icon: const Icon(
+                                            Icons.drive_file_rename_outline,
+                                          ),
+                                        ),
                                         IconButton(
                                           tooltip: '노트 삭제',
                                           onPressed: () =>
