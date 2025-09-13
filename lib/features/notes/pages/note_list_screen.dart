@@ -9,6 +9,8 @@ import '../../vaults/data/derived_vault_providers.dart';
 import '../../vaults/data/vault_tree_repository_provider.dart';
 import '../../vaults/models/vault_item.dart';
 
+// UI 전용 타입 제거: 서비스의 FolderCascadeImpact로 대체
+
 /// 노트 목록을 표시하고 새로운 노트를 생성하는 화면입니다.
 ///
 /// 위젯 계층 구조:
@@ -38,23 +40,8 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
   }
 
   Future<String?> _findParentFolderId(String vaultId, String folderId) async {
-    final repo = ref.read(vaultTreeRepositoryProvider);
-    final queue = <String?>[null];
-    final seen = <String?>{};
-    while (queue.isNotEmpty) {
-      final parent = queue.removeAt(0);
-      if (!seen.add(parent)) continue;
-      final items = await repo
-          .watchFolderChildren(vaultId, parentFolderId: parent)
-          .first;
-      for (final it in items) {
-        if (it.type == VaultItemType.folder) {
-          if (it.id == folderId) return parent; // found parent
-          queue.add(it.id);
-        }
-      }
-    }
-    return null; // treat as root if not found
+    final service = ref.read(vaultNotesServiceProvider);
+    return service.getParentFolderId(vaultId, folderId);
   }
 
   Future<void> _confirmAndDeleteNote({
@@ -176,6 +163,71 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
           ),
         );
       }
+    }
+  }
+
+  Future<FolderCascadeImpact> _computeCascadeImpact(
+    String vaultId,
+    String rootFolderId,
+  ) async {
+    final service = ref.read(vaultNotesServiceProvider);
+    return service.computeFolderCascadeImpact(vaultId, rootFolderId);
+  }
+
+  Future<void> _confirmAndDeleteFolder({
+    required String vaultId,
+    required String folderId,
+    required String folderName,
+  }) async {
+    try {
+      final impact = await _computeCascadeImpact(vaultId, folderId);
+      final shouldDelete =
+          await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('폴더 삭제 확인'),
+              content: Text(
+                '폴더 "$folderName"를 삭제하면\n'
+                '하위 포함 폴더 ${impact.folderCount}개, 노트 ${impact.noteCount}개가 삭제됩니다.\n\n'
+                '이 작업은 되돌릴 수 없습니다. 계속하시겠습니까?',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('취소'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('삭제'),
+                ),
+              ],
+            ),
+          ) ??
+          false;
+      if (!shouldDelete) return;
+
+      final service = ref.read(vaultNotesServiceProvider);
+      await service.deleteFolderCascade(folderId);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('폴더와 하위 항목이 삭제되었습니다.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('폴더 삭제 실패: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -468,6 +520,20 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                                       .state =
                                                   it.id;
                                             },
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        IconButton(
+                                          tooltip: '폴더 삭제',
+                                          onPressed: () =>
+                                              _confirmAndDeleteFolder(
+                                                vaultId: currentVaultId,
+                                                folderId: it.id,
+                                                folderName: it.name,
+                                              ),
+                                          icon: Icon(
+                                            Icons.delete_outline,
+                                            color: Colors.red[700],
                                           ),
                                         ),
                                       ],

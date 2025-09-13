@@ -15,6 +15,16 @@ import 'file_storage_service.dart';
 import 'name_normalizer.dart';
 import 'note_service.dart';
 
+/// 폴더 삭제 전 영향 범위를 요약합니다.
+class FolderCascadeImpact {
+  final int folderCount;
+  final int noteCount;
+  const FolderCascadeImpact({
+    required this.folderCount,
+    required this.noteCount,
+  });
+}
+
 /// Vault/Folder/Note 배치 트리와 노트 콘텐츠/링크를 오케스트레이션하는 서비스.
 ///
 /// - 생성/이동/이름변경/삭제를 유스케이스 단위로 일관되게 처리합니다.
@@ -178,6 +188,33 @@ class VaultNotesService {
     await FileStorageService.deleteNoteFiles(noteId);
   }
 
+  /// 폴더 하위(자기 포함)의 폴더/노트 영향 범위를 계산합니다.
+  Future<FolderCascadeImpact> computeFolderCascadeImpact(
+    String vaultId,
+    String folderId,
+  ) async {
+    int folderCount = 0;
+    int noteCount = 0;
+    final queue = <String>[folderId];
+    final seen = <String>{};
+    while (queue.isNotEmpty) {
+      final current = queue.removeAt(0);
+      if (!seen.add(current)) continue;
+      folderCount += 1; // include current folder
+      final items = await vaultTree
+          .watchFolderChildren(vaultId, parentFolderId: current)
+          .first;
+      for (final it in items) {
+        if (it.type == VaultItemType.folder) {
+          queue.add(it.id);
+        } else {
+          noteCount += 1;
+        }
+      }
+    }
+    return FolderCascadeImpact(folderCount: folderCount, noteCount: noteCount);
+  }
+
   /// 폴더와 그 하위 모든 노트/폴더를 안전하게 삭제합니다.
   Future<void> deleteFolderCascade(String folderId) async {
     // 폴더가 속한 vaultId 탐색
@@ -209,6 +246,26 @@ class VaultNotesService {
 
     // 폴더 삭제(트리 캐스케이드)
     await vaultTree.deleteFolder(folderId);
+  }
+
+  /// 현재 폴더의 상위 폴더 id를 반환합니다(null이면 루트).
+  Future<String?> getParentFolderId(String vaultId, String folderId) async {
+    final queue = <String?>[null];
+    final seen = <String?>{};
+    while (queue.isNotEmpty) {
+      final parent = queue.removeAt(0);
+      if (!seen.add(parent)) continue;
+      final items = await vaultTree
+          .watchFolderChildren(vaultId, parentFolderId: parent)
+          .first;
+      for (final it in items) {
+        if (it.type == VaultItemType.folder) {
+          if (it.id == folderId) return parent; // found
+          queue.add(it.id);
+        }
+      }
+    }
+    return null;
   }
 
   /// 배치 컨텍스트 조회.
