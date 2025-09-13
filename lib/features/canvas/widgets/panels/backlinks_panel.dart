@@ -149,7 +149,7 @@ class _OutgoingList extends ConsumerWidget {
             return ListTile(
               dense: true,
               leading: const Icon(Icons.north_east, size: 18),
-              title: Text(link.label ?? targetTitle),
+              title: Text(targetTitle),
               subtitle: const Text('To note'),
               onTap: () {
                 // Close drawer then navigate
