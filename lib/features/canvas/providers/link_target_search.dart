@@ -1,8 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../shared/repositories/vault_tree_repository.dart';
-import '../../vaults/data/vault_tree_repository_provider.dart';
-import '../../vaults/models/vault_item.dart';
+import '../../../shared/services/vault_notes_service.dart';
 
 /// 링크 타깃 서제스트 항목(동일 vault 내 노트만 포함)
 class LinkSuggestion {
@@ -34,40 +32,26 @@ abstract class LinkTargetSearch {
 }
 
 final linkTargetSearchProvider = Provider<LinkTargetSearch>((ref) {
-  final vaultTree = ref.watch(vaultTreeRepositoryProvider);
-  return _PlacementLinkTargetSearch(vaultTree);
+  final service = ref.watch(vaultNotesServiceProvider);
+  return _PlacementLinkTargetSearch(service);
 });
 
 class _PlacementLinkTargetSearch implements LinkTargetSearch {
-  final VaultTreeRepository vaultTree;
-  const _PlacementLinkTargetSearch(this.vaultTree);
+  final VaultNotesService service;
+  const _PlacementLinkTargetSearch(this.service);
 
   @override
   Future<List<LinkSuggestion>> listAllInVault(String vaultId) async {
-    // BFS: (parentFolderId, parentFolderName)
-    final queue = <_FolderCtx>[const _FolderCtx(null, '루트')];
-    final suggestions = <LinkSuggestion>[];
-
-    while (queue.isNotEmpty) {
-      final parent = queue.removeAt(0);
-      final items = await vaultTree
-          .watchFolderChildren(vaultId, parentFolderId: parent.id)
-          .first;
-      for (final it in items) {
-        if (it.type == VaultItemType.folder) {
-          queue.add(_FolderCtx(it.id, it.name));
-        } else {
-          suggestions.add(
-            LinkSuggestion(
-              noteId: it.id,
-              title: it.name,
-              parentFolderName: parent.name,
-            ),
-          );
-        }
-      }
-    }
-    return suggestions;
+    final results = await service.searchNotesInVault(vaultId, '', limit: 100);
+    return results
+        .map(
+          (r) => LinkSuggestion(
+            noteId: r.noteId,
+            title: r.title,
+            parentFolderName: r.parentFolderName,
+          ),
+        )
+        .toList(growable: false);
   }
 
   @override
@@ -78,10 +62,4 @@ class _PlacementLinkTargetSearch implements LinkTargetSearch {
         .where((s) => s.title.toLowerCase().contains(q))
         .toList(growable: false);
   }
-}
-
-class _FolderCtx {
-  final String? id;
-  final String? name;
-  const _FolderCtx(this.id, this.name);
 }

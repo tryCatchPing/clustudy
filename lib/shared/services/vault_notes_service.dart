@@ -15,6 +15,18 @@ import 'file_storage_service.dart';
 import 'name_normalizer.dart';
 import 'note_service.dart';
 
+/// 노트 검색 결과 모델
+class NoteSearchResult {
+  final String noteId;
+  final String title;
+  final String? parentFolderName; // 루트면 '루트'
+  const NoteSearchResult({
+    required this.noteId,
+    required this.title,
+    this.parentFolderName,
+  });
+}
+
 /// 폴더 삭제 전 영향 범위를 요약합니다.
 class FolderCascadeImpact {
   final int folderCount;
@@ -296,6 +308,84 @@ class VaultNotesService {
     return vaultTree.getNotePlacement(noteId);
   }
 
+  /// Vault 내 노트 검색(케이스/악센트 무시). 기본은 부분 일치, exact=true 시 정확 일치만.
+  Future<List<NoteSearchResult>> searchNotesInVault(
+    String vaultId,
+    String query, {
+    bool exact = false,
+    int limit = 50,
+  }) async {
+    final q = NameNormalizer.compareKey(query.trim());
+    // BFS: (parentFolderId, parentFolderName)
+    final queue = <_FolderCtx>[const _FolderCtx(null, '루트')];
+    final results = <_ScoredResult>[];
+
+    while (queue.isNotEmpty) {
+      final parent = queue.removeAt(0);
+      final items = await vaultTree
+          .watchFolderChildren(vaultId, parentFolderId: parent.id)
+          .first;
+      for (final it in items) {
+        if (it.type == VaultItemType.folder) {
+          queue.add(_FolderCtx(it.id, it.name));
+        } else {
+          final title = it.name;
+          final key = NameNormalizer.compareKey(title);
+          int score;
+          if (q.isEmpty) {
+            score = 0; // 빈 검색: 정렬만 적용
+          } else if (exact) {
+            if (key == q) {
+              score = 3;
+            } else {
+              continue;
+            }
+          } else {
+            if (key == q) {
+              score = 3;
+            } else if (key.startsWith(q)) {
+              score = 2;
+            } else if (key.contains(q)) {
+              score = 1;
+            } else {
+              continue;
+            }
+          }
+          results.add(
+            _ScoredResult(
+              score: score,
+              result: NoteSearchResult(
+                noteId: it.id,
+                title: title,
+                parentFolderName: parent.name,
+              ),
+            ),
+          );
+        }
+      }
+    }
+
+    // 정렬: 검색어 있을 때는 점수 우선, 없으면 제목 ASC
+    if (q.isEmpty) {
+      results.sort(
+        (a, b) => NameNormalizer.compareKey(
+          a.result.title,
+        ).compareTo(NameNormalizer.compareKey(b.result.title)),
+      );
+    } else {
+      results.sort((a, b) {
+        final byScore = b.score.compareTo(a.score);
+        if (byScore != 0) return byScore;
+        return NameNormalizer.compareKey(
+          a.result.title,
+        ).compareTo(NameNormalizer.compareKey(b.result.title));
+      });
+    }
+
+    final cut = limit > 0 ? results.take(limit) : results;
+    return cut.map((e) => e.result).toList(growable: false);
+  }
+
   //////////////////////////////////////////////////////////////////////////////
   // Helpers
   //////////////////////////////////////////////////////////////////////////////
@@ -341,6 +431,18 @@ class VaultNotesService {
     }
     return noteIds;
   }
+}
+
+class _FolderCtx {
+  final String? id;
+  final String? name;
+  const _FolderCtx(this.id, this.name);
+}
+
+class _ScoredResult {
+  final int score;
+  final NoteSearchResult result;
+  const _ScoredResult({required this.score, required this.result});
 }
 
 /// VaultNotesService DI 지점.
