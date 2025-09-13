@@ -97,8 +97,8 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
   }) async* {
     final key = _scopeKey(vaultId, parentFolderId);
     final c = _ensureChildrenController(key);
-    // initial
-    c.add(_collectChildren(vaultId, parentFolderId));
+    // initial (emit after subscription to avoid losing first event)
+    yield _collectChildren(vaultId, parentFolderId);
     yield* c.stream;
   }
 
