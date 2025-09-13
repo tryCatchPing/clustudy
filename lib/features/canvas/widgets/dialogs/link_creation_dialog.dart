@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../notes/data/derived_note_providers.dart';
-import '../../../notes/models/note_model.dart';
+import '../../../../shared/services/vault_notes_service.dart';
+import '../../providers/link_target_search.dart';
 
 /// 링크 생성 다이얼로그 결과
 class LinkCreationResult {
@@ -17,14 +17,23 @@ class LinkCreationResult {
 
 /// 링크 생성 다이얼로그
 class LinkCreationDialog extends ConsumerStatefulWidget {
-  const LinkCreationDialog({super.key});
+  const LinkCreationDialog({
+    required this.sourceNoteId,
+    super.key,
+  });
 
-  static Future<LinkCreationResult?> show(BuildContext context) {
+  /// 링크를 생성/수정하는 "소스 노트"의 ID. 같은 vault 범위로 제안을 제한하기 위해 필요.
+  final String sourceNoteId;
+
+  static Future<LinkCreationResult?> show(
+    BuildContext context, {
+    required String sourceNoteId,
+  }) {
     return showDialog<LinkCreationResult>(
       context: context,
       barrierDismissible: true,
-      builder: (context) => const Dialog(
-        child: LinkCreationDialog(),
+      builder: (context) => Dialog(
+        child: LinkCreationDialog(sourceNoteId: sourceNoteId),
       ),
     );
   }
@@ -36,7 +45,43 @@ class LinkCreationDialog extends ConsumerStatefulWidget {
 class _LinkCreationDialogState extends ConsumerState<LinkCreationDialog> {
   final TextEditingController _titleCtrl = TextEditingController();
   String? _selectedNoteId;
-  // 페이지 선택은 현재 정책상 사용하지 않음 (페이지→노트 링크)
+  bool _loading = true;
+  List<LinkSuggestion> _all = const <LinkSuggestion>[];
+  List<LinkSuggestion> _filtered = const <LinkSuggestion>[];
+
+  @override
+  void initState() {
+    super.initState();
+    _initVaultAndLoad();
+  }
+
+  Future<void> _initVaultAndLoad() async {
+    final service = ref.read(vaultNotesServiceProvider);
+    final placement = await service.getPlacement(widget.sourceNoteId);
+    if (!mounted) return;
+    if (placement == null) {
+      setState(() {
+        _loading = false;
+      });
+      return;
+    }
+    final search = ref.read(linkTargetSearchProvider);
+    final all = await search.listAllInVault(placement.vaultId);
+    if (!mounted) return;
+    setState(() {
+      _all = all;
+      _filtered = all;
+      _loading = false;
+    });
+  }
+
+  void _applyFilter(String text) {
+    final search = ref.read(linkTargetSearchProvider);
+    setState(() {
+      _selectedNoteId = null; // 검색 시 기존 선택 해제
+      _filtered = search.filterByQuery(_all, text);
+    });
+  }
 
   @override
   void dispose() {
@@ -46,19 +91,6 @@ class _LinkCreationDialogState extends ConsumerState<LinkCreationDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final notesAsync = ref.watch(notesProvider);
-    final notes = notesAsync.value ?? const <NoteModel>[];
-
-    final suggestions = (_titleCtrl.text.trim().isEmpty)
-        ? notes
-        : notes
-              .where(
-                (n) => n.title.toLowerCase().contains(
-                  _titleCtrl.text.trim().toLowerCase(),
-                ),
-              )
-              .toList();
-
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: ConstrainedBox(
@@ -81,11 +113,7 @@ class _LinkCreationDialogState extends ConsumerState<LinkCreationDialog> {
                 hintText: '기존 노트 선택 또는 새 제목 입력',
                 border: OutlineInputBorder(),
               ),
-              onChanged: (_) {
-                setState(() {
-                  _selectedNoteId = null; // 직접 입력 시 기존 선택 해제
-                });
-              },
+              onChanged: _applyFilter,
             ),
 
             const SizedBox(height: 8),
@@ -95,24 +123,28 @@ class _LinkCreationDialogState extends ConsumerState<LinkCreationDialog> {
               height: 160,
               child: Material(
                 color: Colors.transparent,
-                child: ListView.builder(
-                  itemCount: suggestions.length,
-                  itemBuilder: (context, index) {
-                    final n = suggestions[index];
-                    return ListTile(
-                      dense: true,
-                      title: Text(n.title),
-                      subtitle: Text('페이지 ${n.pages.length}개'),
-                      selected: _selectedNoteId == n.noteId,
-                      onTap: () {
-                        setState(() {
-                          _selectedNoteId = n.noteId;
-                          _titleCtrl.text = n.title;
-                        });
-                      },
-                    );
-                  },
-                ),
+                child: _loading
+                    ? const Center(child: CircularProgressIndicator())
+                    : ListView.builder(
+                        itemCount: _filtered.length,
+                        itemBuilder: (context, index) {
+                          final s = _filtered[index];
+                          return ListTile(
+                            dense: true,
+                            title: Text(s.title),
+                            subtitle: s.parentFolderName == null
+                                ? null
+                                : Text(s.parentFolderName!),
+                            selected: _selectedNoteId == s.noteId,
+                            onTap: () {
+                              setState(() {
+                                _selectedNoteId = s.noteId;
+                                _titleCtrl.text = s.title;
+                              });
+                            },
+                          );
+                        },
+                      ),
               ),
             ),
 
