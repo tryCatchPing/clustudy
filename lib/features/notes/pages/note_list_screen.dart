@@ -6,6 +6,7 @@ import '../../../shared/routing/app_routes.dart';
 import '../../../shared/services/vault_notes_service.dart';
 import '../../../shared/widgets/navigation_card.dart';
 import '../../vaults/data/derived_vault_providers.dart';
+import '../../vaults/data/vault_tree_repository_provider.dart';
 import '../../vaults/models/vault_item.dart';
 
 /// 노트 목록을 표시하고 새로운 노트를 생성하는 화면입니다.
@@ -24,6 +25,37 @@ class NoteListScreen extends ConsumerStatefulWidget {
 
 class _NoteListScreenState extends ConsumerState<NoteListScreen> {
   bool _isImporting = false;
+
+  void _onVaultSelected(String vaultId) {
+    ref.read(currentVaultProvider.notifier).state = vaultId;
+    // Reset folder context to root for the selected vault
+    ref.read(currentFolderProvider(vaultId).notifier).state = null;
+  }
+
+  Future<void> _goUpOneLevel(String vaultId, String currentFolderId) async {
+    final parent = await _findParentFolderId(vaultId, currentFolderId);
+    ref.read(currentFolderProvider(vaultId).notifier).state = parent;
+  }
+
+  Future<String?> _findParentFolderId(String vaultId, String folderId) async {
+    final repo = ref.read(vaultTreeRepositoryProvider);
+    final queue = <String?>[null];
+    final seen = <String?>{};
+    while (queue.isNotEmpty) {
+      final parent = queue.removeAt(0);
+      if (!seen.add(parent)) continue;
+      final items = await repo
+          .watchFolderChildren(vaultId, parentFolderId: parent)
+          .first;
+      for (final it in items) {
+        if (it.type == VaultItemType.folder) {
+          if (it.id == folderId) return parent; // found parent
+          queue.add(it.id);
+        }
+      }
+    }
+    return null; // treat as root if not found
+  }
 
   Future<void> _confirmAndDeleteNote({
     required String noteId,
@@ -195,6 +227,53 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                         ),
                       ),
                       const SizedBox(height: 20),
+                      // Vault 선택 드롭다운
+                      vaultsAsync.when(
+                        data: (vaults) {
+                          if (vaults.isEmpty) {
+                            return const Text('생성된 Vault가 없습니다.');
+                          }
+                          final currentVaultId = ref.watch(
+                            currentVaultProvider,
+                          );
+                          final items = vaults
+                              .map(
+                                (v) => DropdownMenuItem<String>(
+                                  value: v.vaultId,
+                                  child: Text(v.name),
+                                ),
+                              )
+                              .toList(growable: false);
+                          return Align(
+                            alignment: Alignment.centerLeft,
+                            child: Row(
+                              children: [
+                                const Text(
+                                  'Vault: ',
+                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                ),
+                                const SizedBox(width: 8),
+                                DropdownButton<String>(
+                                  value:
+                                      currentVaultId ??
+                                      (vaults.isNotEmpty
+                                          ? vaults.first.vaultId
+                                          : null),
+                                  items: items,
+                                  onChanged: (val) {
+                                    if (val != null) _onVaultSelected(val);
+                                  },
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                        loading: () => const SizedBox.shrink(),
+                        error: (_, __) => const SizedBox.shrink(),
+                      ),
+
+                      const SizedBox(height: 12),
+
                       // Placement 기반 브라우저 (vault/folder 컨텍스트)
                       vaultsAsync.when(
                         data: (vaults) {
@@ -210,6 +289,15 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                             WidgetsBinding.instance.addPostFrameCallback((_) {
                               ref.read(currentVaultProvider.notifier).state =
                                   vaults.first.vaultId;
+                              // Also reset folder scope for the selected vault
+                              ref
+                                      .read(
+                                        currentFolderProvider(
+                                          vaults.first.vaultId,
+                                        ).notifier,
+                                      )
+                                      .state =
+                                  null;
                             });
                             return const Center(
                               child: CircularProgressIndicator(),
@@ -247,18 +335,14 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                     Align(
                                       alignment: Alignment.centerLeft,
                                       child: TextButton.icon(
-                                        onPressed: () {
-                                          ref
-                                                  .read(
-                                                    currentFolderProvider(
-                                                      currentVaultId,
-                                                    ).notifier,
-                                                  )
-                                                  .state =
-                                              null;
+                                        onPressed: () async {
+                                          await _goUpOneLevel(
+                                            currentVaultId,
+                                            currentFolderId,
+                                          );
                                         },
                                         icon: const Icon(Icons.arrow_upward),
-                                        label: const Text('루트로 이동'),
+                                        label: const Text('한 단계 위로'),
                                       ),
                                     ),
                                     const SizedBox(height: 8),
