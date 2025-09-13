@@ -3,12 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../shared/routing/app_routes.dart';
-import '../../../shared/services/note_deletion_service.dart';
-import '../../../shared/services/note_service.dart';
+import '../../../shared/services/vault_notes_service.dart';
 import '../../../shared/widgets/navigation_card.dart';
-import '../../canvas/providers/link_providers.dart';
-import '../data/derived_note_providers.dart';
-import '../data/notes_repository_provider.dart';
+import '../../vaults/data/derived_vault_providers.dart';
+import '../../vaults/models/vault_item.dart';
 
 /// 노트 목록을 표시하고 새로운 노트를 생성하는 화면입니다.
 ///
@@ -60,28 +58,15 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
     if (!shouldDelete) return;
 
     try {
-      final repo = ref.read(notesRepositoryProvider);
-      final success = await NoteDeletionService.deleteNoteCompletely(
-        noteId,
-        repo: repo,
-        linkRepo: ref.read(linkRepositoryProvider),
-      );
+      final service = ref.read(vaultNotesServiceProvider);
+      await service.deleteNote(noteId);
       if (!mounted) return;
-      if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('"$noteTitle" 노트를 삭제했습니다.'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('노트 삭제에 실패했습니다.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('"$noteTitle" 노트를 삭제했습니다.'),
+          backgroundColor: Colors.green,
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -100,20 +85,21 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
     setState(() => _isImporting = true);
 
     try {
-      final pdfNote = await NoteService.instance.createPdfNote();
+      final vaultId = ref.read(currentVaultProvider) ?? 'default';
+      final folderId = ref.read(currentFolderProvider(vaultId));
+      final service = ref.read(vaultNotesServiceProvider);
+      final pdfNote = await service.createPdfInFolder(
+        vaultId,
+        parentFolderId: folderId,
+      );
 
-      if (pdfNote != null) {
-        final repo = ref.read(notesRepositoryProvider);
-        repo.upsert(pdfNote);
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('PDF 노트 "${pdfNote.title}"가 성공적으로 생성되었습니다!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF 노트 "${pdfNote.title}"가 성공적으로 생성되었습니다!'),
+            backgroundColor: Colors.green,
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -133,20 +119,21 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
 
   Future<void> _createBlankNote() async {
     try {
-      final blankNote = await NoteService.instance.createBlankNote();
-      final repo = ref.read(notesRepositoryProvider);
+      final vaultId = ref.read(currentVaultProvider) ?? 'default';
+      final folderId = ref.read(currentFolderProvider(vaultId));
+      final service = ref.read(vaultNotesServiceProvider);
+      final blankNote = await service.createBlankInFolder(
+        vaultId,
+        parentFolderId: folderId,
+      );
 
-      if (blankNote != null) {
-        repo.upsert(blankNote);
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('빈 노트 "${blankNote.title}"가 생성되었습니다!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('빈 노트 "${blankNote.title}"가 생성되었습니다!'),
+            backgroundColor: Colors.green,
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -162,7 +149,7 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final notesAsync = ref.watch(notesProvider);
+    final vaultsAsync = ref.watch(vaultsProvider);
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
@@ -208,62 +195,156 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      // 저장된 노트로 이동하는 카드들 (provider 기반)
-                      notesAsync.when(
-                        data: (notes) {
-                          if (notes.isEmpty) {
-                            return const Text('저장된 노트가 없습니다.');
+                      // Placement 기반 브라우저 (vault/folder 컨텍스트)
+                      vaultsAsync.when(
+                        data: (vaults) {
+                          if (vaults.isEmpty) {
+                            return const Text('생성된 Vault가 없습니다.');
                           }
-                          return Column(
-                            children: [
-                              for (var i = 0; i < notes.length; i++) ...[
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      child: NavigationCard(
-                                        icon: Icons.brush,
-                                        title: notes[i].title,
-                                        subtitle:
-                                            '${notes[i].pages.length} 페이지',
-                                        color: const Color(0xFF6750A4),
-                                        onTap: () {
-                                          // RouteAware가 세션을 관리하므로 바로 라우팅
-                                          context.pushNamed(
-                                            AppRoutes.noteEditName,
-                                            pathParameters: {
-                                              'noteId': notes[i].noteId,
-                                            },
-                                          );
+                          // Ensure current vault is set
+                          final currentVaultId = ref.watch(
+                            currentVaultProvider,
+                          );
+                          if (currentVaultId == null) {
+                            // pick the first vault
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              ref.read(currentVaultProvider.notifier).state =
+                                  vaults.first.vaultId;
+                            });
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          }
+
+                          final currentFolderId = ref.watch(
+                            currentFolderProvider(currentVaultId),
+                          );
+                          final itemsAsync = ref.watch(
+                            vaultItemsProvider(
+                              FolderScope(currentVaultId, currentFolderId),
+                            ),
+                          );
+
+                          return itemsAsync.when(
+                            data: (items) {
+                              if (items.isEmpty) {
+                                return const Text('현재 위치에 항목이 없습니다.');
+                              }
+                              final folders = items
+                                  .where(
+                                    (it) => it.type == VaultItemType.folder,
+                                  )
+                                  .toList();
+                              final notes = items
+                                  .where(
+                                    (it) => it.type == VaultItemType.note,
+                                  )
+                                  .toList();
+
+                              return Column(
+                                children: [
+                                  if (currentFolderId != null) ...[
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: TextButton.icon(
+                                        onPressed: () {
+                                          ref
+                                                  .read(
+                                                    currentFolderProvider(
+                                                      currentVaultId,
+                                                    ).notifier,
+                                                  )
+                                                  .state =
+                                              null;
                                         },
+                                        icon: const Icon(Icons.arrow_upward),
+                                        label: const Text('루트로 이동'),
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
-                                    IconButton(
-                                      tooltip: '노트 삭제',
-                                      onPressed: () => _confirmAndDeleteNote(
-                                        noteId: notes[i].noteId,
-                                        noteTitle: notes[i].title,
-                                      ),
-                                      icon: Icon(
-                                        Icons.delete_outline,
-                                        color: Colors.red[700],
-                                      ),
-                                    ),
+                                    const SizedBox(height: 8),
                                   ],
-                                ),
-                                if (i < notes.length - 1)
-                                  const SizedBox(height: 16),
-                              ],
-                            ],
+
+                                  // Folders
+                                  for (final it in folders) ...[
+                                    Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Expanded(
+                                          child: NavigationCard(
+                                            icon: Icons.folder,
+                                            title: it.name,
+                                            subtitle: '폴더',
+                                            color: Colors.amber[700]!,
+                                            onTap: () {
+                                              ref
+                                                      .read(
+                                                        currentFolderProvider(
+                                                          currentVaultId,
+                                                        ).notifier,
+                                                      )
+                                                      .state =
+                                                  it.id;
+                                            },
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                  ],
+
+                                  // Notes
+                                  for (final it in notes) ...[
+                                    Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Expanded(
+                                          child: NavigationCard(
+                                            icon: Icons.brush,
+                                            title: it.name,
+                                            subtitle: '노트',
+                                            color: const Color(0xFF6750A4),
+                                            onTap: () {
+                                              context.pushNamed(
+                                                AppRoutes.noteEditName,
+                                                pathParameters: {
+                                                  'noteId': it.id,
+                                                },
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        IconButton(
+                                          tooltip: '노트 삭제',
+                                          onPressed: () =>
+                                              _confirmAndDeleteNote(
+                                                noteId: it.id,
+                                                noteTitle: it.name,
+                                              ),
+                                          icon: Icon(
+                                            Icons.delete_outline,
+                                            color: Colors.red[700],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                  ],
+                                ],
+                              );
+                            },
+                            loading: () => const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                            error: (e, _) => Center(child: Text('오류: $e')),
                           );
                         },
                         loading: () => const Center(
                           child: CircularProgressIndicator(),
                         ),
-                        error: (error, stackTrace) => Center(
-                          child: Text('오류: $error'),
-                        ),
+                        error: (e, _) => Center(child: Text('오류: $e')),
                       ),
                     ],
                   ),
