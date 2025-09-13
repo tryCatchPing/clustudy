@@ -49,6 +49,7 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
   @override
   Future<VaultModel> createVault(String name) async {
     final normalized = NameNormalizer.normalize(name);
+    _ensureUniqueVaultName(normalized);
     final id = _uuid.v4();
     final now = DateTime.now();
     final v = VaultModel(
@@ -68,6 +69,7 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
     final v = _vaults[vaultId];
     if (v == null) throw Exception('Vault not found: $vaultId');
     final normalized = NameNormalizer.normalize(newName);
+    _ensureUniqueVaultName(normalized, excludeVaultId: vaultId);
     _vaults[vaultId] = v.copyWith(name: normalized, updatedAt: DateTime.now());
     _emitVaults();
   }
@@ -390,6 +392,18 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
       ).compareTo(NameNormalizer.compareKey(b.name)),
     );
     return List<VaultModel>.unmodifiable(list);
+  }
+
+  void _ensureUniqueVaultName(String name, {String? excludeVaultId}) {
+    final lower = NameNormalizer.compareKey(name);
+    final exists = _vaults.values.any(
+      (v) =>
+          v.vaultId != excludeVaultId &&
+          NameNormalizer.compareKey(v.name) == lower,
+    );
+    if (exists) {
+      throw Exception('Vault name already exists');
+    }
   }
 
   StreamController<List<VaultItem>> _ensureChildrenController(String key) {
