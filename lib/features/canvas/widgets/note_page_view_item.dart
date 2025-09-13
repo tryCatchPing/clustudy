@@ -225,6 +225,7 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                                 );
                                 final res = await LinkCreationDialog.show(
                                   context,
+                                  sourceNoteId: notifier.page!.noteId,
                                 );
                                 if (res == null) return; // 취소
                                 final page = notifier.page!;
@@ -322,6 +323,7 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                                       final editRes =
                                           await LinkCreationDialog.show(
                                             context,
+                                            sourceNoteId: link.sourceNoteId,
                                           );
                                       if (editRes == null) break;
                                       try {
