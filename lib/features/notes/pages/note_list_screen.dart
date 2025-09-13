@@ -179,6 +179,83 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
     }
   }
 
+  Future<void> _showCreateVaultDialog() async {
+    final name = await showDialog<String>(
+      context: context,
+      builder: (context) => const _NameInputDialog(
+        title: 'Vault 생성',
+        hintText: 'Vault 이름',
+        confirmLabel: '생성',
+      ),
+    );
+
+    final trimmed = name?.trim() ?? '';
+    if (trimmed.isEmpty) return;
+
+    try {
+      final repo = ref.read(vaultTreeRepositoryProvider);
+      final v = await repo.createVault(trimmed);
+      ref.read(currentVaultProvider.notifier).state = v.vaultId;
+      ref.read(currentFolderProvider(v.vaultId).notifier).state = null;
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Vault "${v.name}"가 생성되었습니다.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Vault 생성 실패: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _showCreateFolderDialog(
+    String vaultId,
+    String? parentFolderId,
+  ) async {
+    final name = await showDialog<String>(
+      context: context,
+      builder: (context) => const _NameInputDialog(
+        title: '폴더 생성',
+        hintText: '폴더 이름',
+        confirmLabel: '생성',
+      ),
+    );
+
+    final trimmed = name?.trim() ?? '';
+    if (trimmed.isEmpty) return;
+
+    try {
+      final repo = ref.read(vaultTreeRepositoryProvider);
+      final folder = await repo.createFolder(
+        vaultId,
+        parentFolderId: parentFolderId,
+        name: trimmed,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('폴더 "${folder.name}"가 생성되었습니다.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('폴더 생성 실패: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final vaultsAsync = ref.watch(vaultsProvider);
@@ -264,6 +341,12 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                     if (val != null) _onVaultSelected(val);
                                   },
                                 ),
+                                const SizedBox(width: 8),
+                                TextButton.icon(
+                                  onPressed: _showCreateVaultDialog,
+                                  icon: const Icon(Icons.add),
+                                  label: const Text('Vault 추가'),
+                                ),
                               ],
                             ),
                           );
@@ -315,9 +398,6 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
 
                           return itemsAsync.when(
                             data: (items) {
-                              if (items.isEmpty) {
-                                return const Text('현재 위치에 항목이 없습니다.');
-                              }
                               final folders = items
                                   .where(
                                     (it) => it.type == VaultItemType.folder,
@@ -331,6 +411,18 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
 
                               return Column(
                                 children: [
+                                  Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: TextButton.icon(
+                                      onPressed: () => _showCreateFolderDialog(
+                                        currentVaultId,
+                                        currentFolderId,
+                                      ),
+                                      icon: const Icon(Icons.create_new_folder),
+                                      label: const Text('폴더 추가'),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
                                   if (currentFolderId != null) ...[
                                     Align(
                                       alignment: Alignment.centerLeft,
@@ -347,6 +439,12 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                     ),
                                     const SizedBox(height: 8),
                                   ],
+
+                                  if (folders.isEmpty && notes.isEmpty)
+                                    const Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Text('현재 위치에 항목이 없습니다.'),
+                                    ),
 
                                   // Folders
                                   for (final it in folders) ...[
@@ -496,6 +594,74 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _NameInputDialog extends StatefulWidget {
+  final String title;
+  final String hintText;
+  final String confirmLabel;
+  const _NameInputDialog({
+    required this.title,
+    required this.hintText,
+    required this.confirmLabel,
+  });
+
+  @override
+  State<_NameInputDialog> createState() => _NameInputDialogState();
+}
+
+class _NameInputDialogState extends State<_NameInputDialog> {
+  late final TextEditingController _controller;
+  bool _submitted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (_submitted) return;
+    _submitted = true;
+    final input = _controller.text.trim();
+    if (input.isEmpty) {
+      Navigator.of(context).pop();
+      return;
+    }
+    Navigator.of(context).pop(input);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.title),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        textInputAction: TextInputAction.done,
+        onSubmitted: (_) => _submit(),
+        decoration: InputDecoration(
+          hintText: widget.hintText,
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('취소'),
+        ),
+        ElevatedButton(
+          onPressed: _submit,
+          child: Text(widget.confirmLabel),
+        ),
+      ],
     );
   }
 }
