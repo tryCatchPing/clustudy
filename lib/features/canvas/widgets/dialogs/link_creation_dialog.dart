@@ -46,7 +46,7 @@ class _LinkCreationDialogState extends ConsumerState<LinkCreationDialog> {
   final TextEditingController _titleCtrl = TextEditingController();
   String? _selectedNoteId;
   bool _loading = true;
-  List<LinkSuggestion> _all = const <LinkSuggestion>[];
+  String? _vaultId;
   List<LinkSuggestion> _filtered = const <LinkSuggestion>[];
 
   @override
@@ -65,21 +65,41 @@ class _LinkCreationDialogState extends ConsumerState<LinkCreationDialog> {
       });
       return;
     }
-    final search = ref.read(linkTargetSearchProvider);
-    final all = await search.listAllInVault(placement.vaultId);
+    _vaultId = placement.vaultId;
+    final results = await service.searchNotesInVault(_vaultId!, '', limit: 100);
+    final all = results
+        .map(
+          (r) => LinkSuggestion(
+            noteId: r.noteId,
+            title: r.title,
+            parentFolderName: r.parentFolderName,
+          ),
+        )
+        .toList(growable: false);
     if (!mounted) return;
     setState(() {
-      _all = all;
       _filtered = all;
       _loading = false;
     });
   }
 
-  void _applyFilter(String text) {
-    final search = ref.read(linkTargetSearchProvider);
+  Future<void> _applyFilter(String text) async {
+    _selectedNoteId = null; // 검색 시 기존 선택 해제
+    final vaultId = _vaultId;
+    if (vaultId == null) return;
+    final service = ref.read(vaultNotesServiceProvider);
+    final results = await service.searchNotesInVault(vaultId, text, limit: 100);
+    if (!mounted) return;
     setState(() {
-      _selectedNoteId = null; // 검색 시 기존 선택 해제
-      _filtered = search.filterByQuery(_all, text);
+      _filtered = results
+          .map(
+            (r) => LinkSuggestion(
+              noteId: r.noteId,
+              title: r.title,
+              parentFolderName: r.parentFolderName,
+            ),
+          )
+          .toList(growable: false);
     });
   }
 
@@ -113,7 +133,7 @@ class _LinkCreationDialogState extends ConsumerState<LinkCreationDialog> {
                 hintText: '기존 노트 선택 또는 새 제목 입력',
                 border: OutlineInputBorder(),
               ),
-              onChanged: _applyFilter,
+              onChanged: (t) => _applyFilter(t),
             ),
 
             const SizedBox(height: 8),
