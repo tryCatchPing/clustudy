@@ -8,7 +8,6 @@ import '../../../shared/routing/app_routes.dart';
 import '../../../shared/services/vault_notes_service.dart';
 import '../../../shared/widgets/navigation_card.dart';
 import '../../vaults/data/derived_vault_providers.dart';
-import '../../vaults/data/vault_tree_repository_provider.dart';
 import '../../vaults/models/vault_item.dart';
 
 // UI 전용 타입 제거: 서비스의 FolderCascadeImpact로 대체
@@ -292,8 +291,8 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
     if (trimmed.isEmpty) return;
 
     try {
-      final repo = ref.read(vaultTreeRepositoryProvider);
-      final v = await repo.createVault(trimmed);
+      final service = ref.read(vaultNotesServiceProvider);
+      final v = await service.createVault(trimmed);
       ref.read(currentVaultProvider.notifier).state = v.vaultId;
       ref.read(currentFolderProvider(v.vaultId).notifier).state = null;
       if (!mounted) return;
@@ -331,8 +330,8 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
     if (trimmed.isEmpty) return;
 
     try {
-      final repo = ref.read(vaultTreeRepositoryProvider);
-      final folder = await repo.createFolder(
+      final service = ref.read(vaultNotesServiceProvider);
+      final folder = await service.createFolder(
         vaultId,
         parentFolderId: parentFolderId,
         name: trimmed,

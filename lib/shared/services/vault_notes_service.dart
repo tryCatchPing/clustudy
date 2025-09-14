@@ -29,6 +29,20 @@ class NoteSearchResult {
   });
 }
 
+/// 폴더 선택용 정보(경로 라벨 포함)
+class FolderInfo {
+  final String folderId;
+  final String name;
+  final String? parentFolderId;
+  final String pathLabel;
+  const FolderInfo({
+    required this.folderId,
+    required this.name,
+    required this.parentFolderId,
+    required this.pathLabel,
+  });
+}
+
 /// 폴더 삭제 전 영향 범위를 요약합니다.
 class FolderCascadeImpact {
   final int folderCount;
@@ -462,6 +476,66 @@ class VaultNotesService {
 
     final cut = limit > 0 ? results.take(limit) : results;
     return cut.map((e) => e.result).toList(growable: false);
+  }
+
+  /// Vault 내 모든 폴더를 경로 라벨과 함께 플랫 리스트로 반환합니다.
+  Future<List<FolderInfo>> listFoldersWithPath(String vaultId) async {
+    final result = <FolderInfo>[];
+    // BFS: (parentFolderId, parentFolderName, pathLabel)
+    final queue = <_FolderCtx>[const _FolderCtx(null, '루트')];
+    final pathMap = <String?, String>{};
+    pathMap[null] = '';
+    while (queue.isNotEmpty) {
+      final parent = queue.removeAt(0);
+      final parentPath = pathMap[parent.id] ?? '';
+      final items = await vaultTree
+          .watchFolderChildren(vaultId, parentFolderId: parent.id)
+          .first;
+      for (final it in items) {
+        if (it.type == VaultItemType.folder) {
+          final path = parent.id == null
+              ? it.name
+              : (parentPath.isEmpty ? it.name : '$parentPath/${it.name}');
+          result.add(
+            FolderInfo(
+              folderId: it.id,
+              name: it.name,
+              parentFolderId: parent.id,
+              pathLabel: path,
+            ),
+          );
+          queue.add(_FolderCtx(it.id, it.name));
+          pathMap[it.id] = path;
+        }
+      }
+    }
+    // 이름 ASC로 정렬(경로 라벨은 표시용)
+    result.sort(
+      (a, b) => NameNormalizer.compareKey(
+        a.name,
+      ).compareTo(NameNormalizer.compareKey(b.name)),
+    );
+    return result;
+  }
+
+  /// 특정 폴더의 하위(자기 포함) 폴더 id 집합을 반환합니다.
+  Future<Set<String>> listFolderSubtreeIds(
+    String vaultId,
+    String rootFolderId,
+  ) async {
+    final ids = <String>{};
+    final dq = <String>[rootFolderId];
+    while (dq.isNotEmpty) {
+      final id = dq.removeAt(0);
+      if (!ids.add(id)) continue;
+      final items = await vaultTree
+          .watchFolderChildren(vaultId, parentFolderId: id)
+          .first;
+      for (final it in items) {
+        if (it.type == VaultItemType.folder) dq.add(it.id);
+      }
+    }
+    return ids;
   }
 
   //////////////////////////////////////////////////////////////////////////////
