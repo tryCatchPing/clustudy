@@ -2,6 +2,8 @@
 ///
 /// - 콘텐츠(페이지/스케치 등)는 포함하지 않습니다.
 /// - 표시/검증/연동(예: cross-vault 링크 차단)에 활용합니다.
+const Object _unset = Object();
+
 class NotePlacement {
   final String noteId;
   final String vaultId;
@@ -22,7 +24,7 @@ class NotePlacement {
   NotePlacement copyWith({
     String? noteId,
     String? vaultId,
-    String? parentFolderId,
+    Object? parentFolderId = _unset,
     String? name,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -30,7 +32,9 @@ class NotePlacement {
     return NotePlacement(
       noteId: noteId ?? this.noteId,
       vaultId: vaultId ?? this.vaultId,
-      parentFolderId: parentFolderId ?? this.parentFolderId,
+      parentFolderId: identical(parentFolderId, _unset)
+          ? this.parentFolderId
+          : parentFolderId as String?,
       name: name ?? this.name,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
