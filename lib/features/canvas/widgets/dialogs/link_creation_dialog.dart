@@ -70,10 +70,12 @@ class _LinkCreationDialogState extends ConsumerState<LinkCreationDialog> {
         return;
       }
       _vaultId = placement.vaultId;
+      // Isar 도입 시: exclude는 DB 쿼리에서 id not in으로 처리되어 성능상 유리함
       final results = await service.searchNotesInVault(
         _vaultId!,
         '',
         limit: 100,
+        excludeNoteIds: {widget.sourceNoteId},
       );
       final all = results
           .map(
@@ -103,10 +105,12 @@ class _LinkCreationDialogState extends ConsumerState<LinkCreationDialog> {
     if (vaultId == null) return;
     try {
       final service = ref.read(vaultNotesServiceProvider);
+      // Isar 도입 시: 입력 변경마다 서버/DB로 푸시, exclude는 쿼리 필터로 흡수
       final results = await service.searchNotesInVault(
         vaultId,
         text,
         limit: 100,
+        excludeNoteIds: {widget.sourceNoteId},
       );
       if (!mounted) return;
       setState(() {

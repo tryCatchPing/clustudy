@@ -532,11 +532,23 @@ class VaultNotesService {
   }
 
   /// Vault 내 노트 검색(케이스/악센트 무시). 기본은 부분 일치, exact=true 시 정확 일치만.
+  ///
+  /// Isar 도입 시 메모:
+  /// - title 정규화 키(`NameNormalizer.compareKey`)를 `titleKey` 필드로 저장하고 인덱스 생성.
+  ///   - 복합 인덱스 예: (vaultId ASC, titleKey ASC)
+  /// - 쿼리 전략:
+  ///   - 기본: where vaultId == ? → filter titleKey ==/startsWith/contains(q)
+  ///   - excludeNoteIds: id not in {...} 필터를 체인(단일이면 `idNotEqualTo`, 다중이면 반복 체인)
+  /// - 정렬:
+  ///   - q 비어있을 때는 titleKey ASC를 Isar 정렬로 위임
+  ///   - q 있을 때 점수(정확=3, 접두=2, 포함=1)는 메모리에서 계산(필요 시 점수별 다중 쿼리로 대체 가능)
+  /// - 악센트/케이스 무시 일관성을 위해 `titleKey`는 미리 정규화해 저장해야 함
   Future<List<NoteSearchResult>> searchNotesInVault(
     String vaultId,
     String query, {
     bool exact = false,
     int limit = 50,
+    Set<String>? excludeNoteIds,
   }) async {
     final q = NameNormalizer.compareKey(query.trim());
     // BFS: (parentFolderId, parentFolderName)
@@ -552,6 +564,11 @@ class VaultNotesService {
         if (it.type == VaultItemType.folder) {
           queue.add(_FolderCtx(it.id, it.name));
         } else {
+          // Isar migration: 이 exclude는 DB 필터로 푸시다운 가능(id not in ...)
+          // Exclude specific note ids if requested (e.g., avoid self-link targets)
+          if (excludeNoteIds?.contains(it.id) == true) {
+            continue;
+          }
           final title = it.name;
           final key = NameNormalizer.compareKey(title);
           int score;
