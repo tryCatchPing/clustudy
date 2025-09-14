@@ -26,7 +26,6 @@ class PdfExportService {
   PdfExportService._();
 
   /// PDF 문서 메타데이터
-  static const String _pdfTitle = 'It Contest Note';
   static const String _pdfCreator = 'It Contest App';
   static const String _pdfSubject = 'Handwritten Note Export';
 
