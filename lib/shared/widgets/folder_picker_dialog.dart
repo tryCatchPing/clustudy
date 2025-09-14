@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/vault_notes_service.dart';
 
+/// 라디오 항목에서 루트를 표현하기 위한 내부 식별자(반환 시 null로 변환)
+const String _kRootId = '__ROOT__'; // 유지: 루트 전달 안전성 확보를 위한 내부 구현 디테일
+
 /// 폴더 선택 다이얼로그
 /// 반환: 선택한 folderId (루트 선택 시 null)
 class FolderPickerDialog extends ConsumerStatefulWidget {
@@ -43,7 +46,7 @@ class _FolderPickerDialogState extends ConsumerState<FolderPickerDialog> {
   bool _loading = true;
   List<_FolderRow> _rows = const <_FolderRow>[];
   Set<String> _disabled = const <String>{};
-  String? _selected;
+  String _selected = _kRootId;
 
   @override
   void initState() {
@@ -55,7 +58,7 @@ class _FolderPickerDialogState extends ConsumerState<FolderPickerDialog> {
     final svc = ref.read(vaultNotesServiceProvider);
     final rows = <_FolderRow>[];
     // Root option
-    rows.add(const _FolderRow(id: null, name: '루트', path: ''));
+    rows.add(const _FolderRow(id: _kRootId, name: '루트', path: ''));
 
     final folders = await svc.listFoldersWithPath(widget.vaultId);
     for (final f in folders) {
@@ -76,7 +79,7 @@ class _FolderPickerDialogState extends ConsumerState<FolderPickerDialog> {
     setState(() {
       _rows = rows;
       _disabled = disabled;
-      _selected = widget.initialFolderId;
+      _selected = widget.initialFolderId ?? _kRootId;
       _loading = false;
     });
   }
@@ -103,15 +106,15 @@ class _FolderPickerDialogState extends ConsumerState<FolderPickerDialog> {
                       itemCount: _rows.length,
                       itemBuilder: (context, index) {
                         final r = _rows[index];
-                        final disabled =
-                            r.id != null && _disabled.contains(r.id);
-                        return RadioListTile<String?>(
+                        final disabled = _disabled.contains(r.id);
+                        return RadioListTile<String>(
                           dense: true,
                           value: r.id,
                           groupValue: _selected,
                           onChanged: disabled
                               ? null
-                              : (v) => setState(() => _selected = v),
+                              : (v) =>
+                                    setState(() => _selected = v ?? _kRootId),
                           title: Text(r.name),
                           subtitle: r.path.isEmpty ? null : Text(r.path),
                         );
@@ -128,7 +131,9 @@ class _FolderPickerDialogState extends ConsumerState<FolderPickerDialog> {
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton(
-                  onPressed: () => Navigator.of(context).pop(_selected),
+                  onPressed: () => Navigator.of(context).pop(
+                    _selected == _kRootId ? null : _selected,
+                  ),
                   child: const Text('선택'),
                 ),
               ],
@@ -141,7 +146,7 @@ class _FolderPickerDialogState extends ConsumerState<FolderPickerDialog> {
 }
 
 class _FolderRow {
-  final String? id;
+  final String id;
   final String name;
   final String path;
   const _FolderRow({required this.id, required this.name, required this.path});

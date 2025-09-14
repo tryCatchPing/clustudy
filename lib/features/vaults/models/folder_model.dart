@@ -1,6 +1,8 @@
 /// Folder 모델.
 ///
 /// Vault 내 계층 구조를 구성합니다. 루트의 경우 `parentFolderId`가 null 입니다.
+const Object _unset = Object();
+
 class FolderModel {
   /// 고유 식별자(UUID)
   final String folderId;
@@ -31,7 +33,7 @@ class FolderModel {
     String? folderId,
     String? vaultId,
     String? name,
-    String? parentFolderId,
+    Object? parentFolderId = _unset,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -39,7 +41,9 @@ class FolderModel {
       folderId: folderId ?? this.folderId,
       vaultId: vaultId ?? this.vaultId,
       name: name ?? this.name,
-      parentFolderId: parentFolderId ?? this.parentFolderId,
+      parentFolderId: identical(parentFolderId, _unset)
+          ? this.parentFolderId
+          : parentFolderId as String?,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
