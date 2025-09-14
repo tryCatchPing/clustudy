@@ -50,30 +50,40 @@ final vaultGraphDataProvider =
         };
       }
 
-      // Prepare vertex list and noteId set for filtering edges
+      // Prepare noteId set for filtering edges and map of placement names
       final noteIds = <String>{};
-      final vertexes = <Map<String, dynamic>>[];
+      final placementNames = <String, String>{};
       for (final it in placements) {
         noteIds.add(it.id);
-        final label = NameNormalizer.normalize(it.name);
-        vertexes.add({
-          'id': it.id,
-          'name': label,
-          'tag': label,
-          'tags': [label],
-        });
+        placementNames[it.id] = it.name;
       }
 
-      // 2) pageId -> noteId map and source pages set
+      // 2) pageId -> noteId map and source pages set, and noteId -> title map
       final pageToNote = <String, String>{};
       final sourcePages = <String>{};
+      final noteTitles = <String, String>{};
       for (final nid in noteIds) {
         final note = await notesRepo.getNoteById(nid);
         if (note == null) continue;
+        // Capture note title for vertex label
+        noteTitles[nid] = note.title;
         for (final p in note.pages) {
           pageToNote[p.pageId] = nid;
           sourcePages.add(p.pageId);
         }
+      }
+
+      // Build vertex list using note titles (fallback to placement name or id)
+      final vertexes = <Map<String, dynamic>>[];
+      for (final nid in noteIds) {
+        final rawTitle = noteTitles[nid] ?? placementNames[nid] ?? nid;
+        final label = NameNormalizer.normalize(rawTitle);
+        vertexes.add({
+          'id': nid,
+          'name': label,
+          'tag': label,
+          'tags': [label],
+        });
       }
 
       if (sourcePages.isEmpty) {
