@@ -1,66 +1,39 @@
 import 'package:go_router/go_router.dart';
-import '../pages/demo_shell.dart';
-import '../pages/figma_pages/note_editor_demo.dart';
-import '../pages/component_showcase/toolbar_demo.dart';
-import '../pages/component_showcase/atoms_demo.dart';
 
-/// 🎨 디자인 시스템 데모 라우트 정의
-///
-/// 컴포넌트 테스트, Figma 디자인 재현, 팀 협업을 위한 라우팅 시스템
+import '../screens/home/home_screen.dart';
+import '../screens/vault/vault_screen.dart';
+import '../screens/notes/note_screen.dart';
+
 class DesignSystemRoutes {
   DesignSystemRoutes._();
 
-  // ================== Route Paths ==================
-  /// 디자인 시스템 메인 경로
-  static const String designSystem = '/design-system';
+  static const String root = '/design-system';
+  static const String home = '/design-system/home';
+  static const String vault = '/design-system/vault';
+  static const String notes = '/design-system/notes';
 
-  /// 툴바 컴포넌트 데모
-  static const String toolbarDemo = '/design-system/toolbar';
+  static const String homeName = 'designHome';
+  static const String vaultName = 'designVault';
+  static const String notesName = 'designNotes';
 
-  /// 아토믹 컴포넌트들 데모
-  static const String atomsDemo = '/design-system/atoms';
-
-  /// Figma 노트 에디터 페이지 재현
-  static const String noteEditorDemo = '/design-system/note-editor';
-
-  // ================== Route Names ==================
-  static const String designSystemName = 'designSystem';
-  static const String toolbarDemoName = 'toolbarDemo';
-  static const String atomsDemoName = 'atomsDemo';
-  static const String noteEditorDemoName = 'noteEditorDemo';
-
-  // ================== Helper Methods ==================
-  static String designSystemRoute() => designSystem;
-  static String toolbarDemoRoute() => toolbarDemo;
-  static String atomsDemoRoute() => atomsDemo;
-  static String noteEditorDemoRoute() => noteEditorDemo;
-
-  // ================== GoRouter Configuration ==================
+  /// Routes that expose the design-only showcase screens. These routes are
+  /// consumed from the main router so the design artifacts remain accessible in
+  /// builds without touching real feature code.
   static final List<RouteBase> routes = [
-    ShellRoute(
-      builder: (context, state, child) => DemoShell(child: child),
-      routes: [
-        GoRoute(
-          path: designSystem,
-          name: designSystemName,
-          redirect: (context, state) => noteEditorDemo, // 기본적으로 노트 에디터로 리다이렉트
-        ),
-        GoRoute(
-          path: noteEditorDemo,
-          name: noteEditorDemoName,
-          builder: (context, state) => const NoteEditorDemo(),
-        ),
-        GoRoute(
-          path: toolbarDemo,
-          name: toolbarDemoName,
-          builder: (context, state) => const ToolbarDemo(),
-        ),
-        GoRoute(
-          path: atomsDemo,
-          name: atomsDemoName,
-          builder: (context, state) => const AtomsDemo(),
-        ),
-      ],
+    GoRoute(
+      path: home,
+      name: homeName,
+      builder: (context, state) => const DesignHomeScreen(),
+    ),
+    GoRoute(
+      path: vault,
+      name: vaultName,
+      builder: (context, state) => const DesignVaultScreen(),
+    ),
+    GoRoute(
+      path: notes,
+      name: notesName,
+      builder: (context, state) => const DesignNoteScreen(),
     ),
   ];
 }
