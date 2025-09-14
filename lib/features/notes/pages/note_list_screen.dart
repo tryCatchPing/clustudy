@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../shared/routing/app_routes.dart';
 import '../../../shared/services/vault_notes_service.dart';
+import '../../../shared/widgets/folder_picker_dialog.dart';
 import '../../../shared/widgets/navigation_card.dart';
 import '../../vaults/data/derived_vault_providers.dart';
 import '../../vaults/models/vault_item.dart';
@@ -704,6 +705,58 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                               ),
                                               const SizedBox(width: 8),
                                               IconButton(
+                                                tooltip: '폴더 이동',
+                                                onPressed: () async {
+                                                  final picked =
+                                                      await FolderPickerDialog.show(
+                                                        context,
+                                                        vaultId: currentVaultId,
+                                                        initialFolderId:
+                                                            currentFolderId,
+                                                        disabledFolderSubtreeRootId:
+                                                            it.id,
+                                                      );
+                                                  if (!mounted) return;
+                                                  try {
+                                                    final service = ref.read(
+                                                      vaultNotesServiceProvider,
+                                                    );
+                                                    await service
+                                                        .moveFolderWithAutoRename(
+                                                          folderId: it.id,
+                                                          newParentFolderId:
+                                                              picked,
+                                                        );
+                                                    if (!mounted) return;
+                                                    ScaffoldMessenger.of(
+                                                      context,
+                                                    ).showSnackBar(
+                                                      const SnackBar(
+                                                        content: Text(
+                                                          '폴더를 이동했습니다.',
+                                                        ),
+                                                      ),
+                                                    );
+                                                  } catch (e) {
+                                                    if (!mounted) return;
+                                                    ScaffoldMessenger.of(
+                                                      context,
+                                                    ).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                          '폴더 이동 실패: $e',
+                                                        ),
+                                                        backgroundColor:
+                                                            Colors.red,
+                                                      ),
+                                                    );
+                                                  }
+                                                },
+                                                icon: const Icon(
+                                                  Icons.drive_file_move_outline,
+                                                ),
+                                              ),
+                                              IconButton(
                                                 tooltip: '폴더 이름 변경',
                                                 onPressed: () async {
                                                   final name =
@@ -801,6 +854,56 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                                 ),
                                               ),
                                               const SizedBox(width: 8),
+                                              IconButton(
+                                                tooltip: '노트 이동',
+                                                onPressed: () async {
+                                                  final picked =
+                                                      await FolderPickerDialog.show(
+                                                        context,
+                                                        vaultId: currentVaultId,
+                                                        initialFolderId:
+                                                            currentFolderId,
+                                                      );
+                                                  if (!mounted) return;
+                                                  try {
+                                                    final service = ref.read(
+                                                      vaultNotesServiceProvider,
+                                                    );
+                                                    await service
+                                                        .moveNoteWithAutoRename(
+                                                          it.id,
+                                                          newParentFolderId:
+                                                              picked,
+                                                        );
+                                                    if (!mounted) return;
+                                                    ScaffoldMessenger.of(
+                                                      context,
+                                                    ).showSnackBar(
+                                                      const SnackBar(
+                                                        content: Text(
+                                                          '노트를 이동했습니다.',
+                                                        ),
+                                                      ),
+                                                    );
+                                                  } catch (e) {
+                                                    if (!mounted) return;
+                                                    ScaffoldMessenger.of(
+                                                      context,
+                                                    ).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                          '노트 이동 실패: $e',
+                                                        ),
+                                                        backgroundColor:
+                                                            Colors.red,
+                                                      ),
+                                                    );
+                                                  }
+                                                },
+                                                icon: const Icon(
+                                                  Icons.drive_file_move_outline,
+                                                ),
+                                              ),
                                               IconButton(
                                                 tooltip: '노트 이름 변경',
                                                 onPressed: () async {
