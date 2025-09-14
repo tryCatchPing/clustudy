@@ -3,6 +3,11 @@ import '../data/vault.dart';
 import '../data/vault_repository.dart';
 
 class VaultStore extends ChangeNotifier {
+  Vault? byId(String id) {
+  final i = _vaults.indexWhere((v) => v.id == id);
+  return i == -1 ? null : _vaults[i];
+  }
+  
   final VaultRepository _repo;
   VaultStore(this._repo);
 
