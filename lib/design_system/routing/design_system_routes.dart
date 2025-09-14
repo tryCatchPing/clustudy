@@ -1,66 +1,48 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../pages/demo_shell.dart';
-import '../pages/figma_pages/note_editor_demo.dart';
-import '../pages/component_showcase/toolbar_demo.dart';
-import '../pages/component_showcase/atoms_demo.dart';
 
-/// 🎨 디자인 시스템 데모 라우트 정의
-/// 
-/// 컴포넌트 테스트, Figma 디자인 재현, 팀 협업을 위한 라우팅 시스템
-class DesignSystemRoutes {
-  DesignSystemRoutes._();
+import '../../features/home/pages/home_screen.dart';
+import '../../features/vaults/pages/vault_screen.dart';
+import '../../features/notes/pages/note_screen.dart';
 
-  // ================== Route Paths ==================
-  /// 디자인 시스템 메인 경로
-  static const String designSystem = '/design-system';
-  
-  /// 툴바 컴포넌트 데모
-  static const String toolbarDemo = '/design-system/toolbar';
-  
-  /// 아토믹 컴포넌트들 데모
-  static const String atomsDemo = '/design-system/atoms';
-  
-  /// Figma 노트 에디터 페이지 재현
-  static const String noteEditorDemo = '/design-system/note-editor';
+// 필요 시 상태를 주입받아 redirect에 활용할 수도 있음.
+class AppRouter {
+  AppRouter();
 
-  // ================== Route Names ==================
-  static const String designSystemName = 'designSystem';
-  static const String toolbarDemoName = 'toolbarDemo';
-  static const String atomsDemoName = 'atomsDemo';
-  static const String noteEditorDemoName = 'noteEditorDemo';
+  late final GoRouter router = GoRouter(
+    initialLocation: '/',
+    routes: [
+      GoRoute(
+        path: '/',
+        name: 'home',
+        builder: (context, state) => const HomeScreen(),
+      ),
+      GoRoute(
+        path: '/vault/:id',
+        name: 'vault',
+        builder: (context, state) =>
+            VaultScreen(vaultId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/note/:id',
+        name: 'note',
+        builder: (context, state) =>
+            NoteScreen(noteId: state.pathParameters['id']!),
+      ),
+    ],
 
-  // ================== Helper Methods ==================
-  static String designSystemRoute() => designSystem;
-  static String toolbarDemoRoute() => toolbarDemo;
-  static String atomsDemoRoute() => atomsDemo;
-  static String noteEditorDemoRoute() => noteEditorDemo;
+    // 예: 첫 실행이면 온보딩으로 보내고 싶을 때 사용
+    // redirect: (context, state) {
+    //   final firstRun = context.read<AppCfg>().isFirstRun;
+    //   if (firstRun && state.uri.toString() != '/onboarding') {
+    //     return '/onboarding';
+    //   }
+    //   return null;
+    // },
 
-  // ================== GoRouter Configuration ==================
-  static final List<RouteBase> routes = [
-    ShellRoute(
-      builder: (context, state, child) => DemoShell(child: child),
-      routes: [
-        GoRoute(
-          path: designSystem,
-          name: designSystemName,
-          redirect: (context, state) => noteEditorDemo, // 기본적으로 노트 에디터로 리다이렉트
-        ),
-        GoRoute(
-          path: noteEditorDemo,
-          name: noteEditorDemoName,
-          builder: (context, state) => const NoteEditorDemo(),
-        ),
-        GoRoute(
-          path: toolbarDemo,
-          name: toolbarDemoName,
-          builder: (context, state) => const ToolbarDemo(),
-        ),
-        GoRoute(
-          path: atomsDemo,
-          name: atomsDemoName,
-          builder: (context, state) => const AtomsDemo(),
-        ),
-      ],
+    errorBuilder: (context, state) => Scaffold(
+      body: Center(child: Text('Route not found: ${state.uri}')),
     ),
-  ];
+    debugLogDiagnostics: false,
+  );
 }

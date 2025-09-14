@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-part 'transformation_controller_provider.g.dart';
 
 /// 확대/축소 상태를 관리하는 컨트롤러
 ///

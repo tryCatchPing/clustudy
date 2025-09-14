@@ -1,102 +1,149 @@
-
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
-import '../../../shared/routing/app_routes.dart';
-import '../../../shared/widgets/app_branding_header.dart';
-import '../../../shared/widgets/info_card.dart';
-import '../../../shared/widgets/navigation_card.dart';
+import '../../../design_system/components/molecules/app_card.dart';
+import '../../../design_system/components/organisms/bottom_actions_dock_fixed.dart';
+import '../../../design_system/components/organisms/top_toolbar.dart';
+import '../../../design_system/tokens/app_colors.dart';
+import '../../../design_system/tokens/app_icons.dart';
+import '../../../design_system/tokens/app_spacing.dart';
+import '../../notes/state/note_store.dart';
+import '../../vaults/state/vault_store.dart';
 
-/// 🏠 홈페이지 (시연/테스트용)
-///
-/// 이 페이지는 현재 시연과 테스트를 위한 임시 페이지입니다.
-/// 나중에 주요 기능들이 메인 앱에 통합될 예정입니다.
-///
-/// 📋 포함된 기능:
-/// - 노트 목록으로 이동
-/// - PDF 파일 불러오기 (나중에 메인 기능으로 통합 예정)
-/// - 프로젝트 상태 정보
-///
-/// 위젯 계층 구조:
-/// MyApp (현 위젯)
 class HomeScreen extends StatelessWidget {
-  /// [HomeScreen]의 생성자.
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        title: const Text(
-          'IT Contest - Flutter App',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        backgroundColor: const Color(0xFF6750A4),
-        elevation: 0,
-        centerTitle: true,
+      appBar: TopToolbar(
+        variant: TopToolbarVariant.landing,
+        title: 'Clustudy',
+        actions: [
+          ToolbarAction(svgPath: AppIcons.search, onTap: () {}),
+          ToolbarAction(svgPath: AppIcons.settings, onTap: () {}),
+        ],
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // 앱 브랜딩 헤더 (재사용 가능한 위젯)
-                const AppBrandingHeader(),
+      body: Padding(
+        padding: const EdgeInsets.only(
+          left: AppSpacing.screenPadding,
+          right: AppSpacing.screenPadding,
+          top: AppSpacing.large, // 적당한 상단 여백
+        ),
+        child: Consumer<VaultStore>(
+          builder: (_, store, __) {
+            if (!store.isLoaded) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final raw = store.vaults;
+            final items = [...raw]
+              ..sort((a, b) {
+                if (a.isTemporary != b.isTemporary) {
+                  return a.isTemporary ? -1 : 1; // 임시 vault 먼저
+                }
+                final t = b.createdAt.compareTo(a.createdAt); // 최신 우선
+                if (t != 0) return t;
+                return a.name.compareTo(b.name); // tie-breaker: 이름
+              });
+            return LayoutBuilder(
+              builder: (context, c) {
+                const tileW = 144.0;
+                const gap = 48.0;
+                final cross = (c.maxWidth + gap) ~/ (tileW + gap);
+                final crossCount = cross.clamp(1, 8);
 
-                const SizedBox(height: 40),
-
-                // 네비게이션 섹션
-                Text(
-                  '페이지 테스트',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF1C1B1F),
+                return GridView.builder(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisSpacing: gap,
+                    mainAxisSpacing: gap,
+                    crossAxisCount: crossCount, // ← 계산값 사용
                   ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // 노트 목록 페이지 버튼
-                NavigationCard(
-                  icon: Icons.note_alt,
-                  title: '노트 목록',
-                  subtitle: '저장된 스케치 파일들을 확인하고 편집하세요',
-                  color: const Color(0xFF4CAF50),
-                  onTap: () {
-                    debugPrint('📝 노트 목록 페이지로 이동 중...');
-                    context.pushNamed(AppRoutes.noteListName);
+                  itemCount: items.length,
+                  itemBuilder: (_, i) {
+                    final v = items[i];
+                    return AppCard(
+                      svgIconPath: v.isTemporary
+                          ? AppIcons.folderVault
+                          : AppIcons.folder,
+                      title: v.name,
+                      date: v.createdAt,
+                      onTap: () => context.go('/vault/${v.id}'),
+                      onTitleChanged: (newTitle) => context
+                          .read<VaultStore>()
+                          .renameVault(v.id, newTitle),
+                    );
+                  },
+                );
+              },
+            );
+          },
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 60,
+          child: Center(
+            child: BottomActionsDockFixed(
+              items: [
+                // 1) Vault 생성
+                DockItem(
+                  label: 'Vault 생성',
+                  svgPath: AppIcons.folderVault,
+                  onTap: () async {
+                    await context.read<VaultStore>().createVault('새 Vault');
                   },
                 ),
-
-                const SizedBox(height: 16),
-
-                // 디자인 시스템 데모 버튼
-                NavigationCard(
-                  icon: Icons.palette,
-                  title: '디자인 시스템 데모',
-                  subtitle: '컴포넌트 쇼케이스 및 Figma 디자인 재현',
-                  color: const Color(0xFF6366F1),
-                  onTap: () {
-                    debugPrint('🎨 디자인 시스템 데모로 이동 중...');
-                    context.go('/design-system/note-editor');
+                // 2) 노트 생성 (임시 vault로 바로)
+                DockItem(
+                  label: '노트 생성',
+                  svgPath: AppIcons.noteAdd, // 아이콘 경로 알맞게 교체
+                  onTap: () async {
+                    final vaultStore = context.read<VaultStore>();
+                    final temp = vaultStore.vaults.firstWhere(
+                      (v) => v.isTemporary,
+                      orElse: () => vaultStore.vaults.first, // 가드
+                    );
+                    final note = await context.read<NoteStore>().createNote(
+                      vaultId: temp.id,
+                      title: '새 노트',
+                    );
+                    if (context.mounted) context.go('/note/${note.id}');
                   },
                 ),
+                // 3) PDF 가져오기 (임시 vault로)
+                DockItem(
+                  label: 'PDF 가져오기',
+                  svgPath: AppIcons.download, // 아이콘 경로 알맞게 교체
+                  onTap: () async {
+                    final result = await FilePicker.platform.pickFiles(
+                      type: FileType.custom,
+                      allowedExtensions: ['pdf'],
+                    );
+                    if (result == null || result.files.isEmpty) return;
 
-                // 프로젝트 정보 (재사용 가능한 InfoCard 사용)
-                const InfoCard.warning(
-                  message: '개발 상태: Canvas 기본 기능 + UI 와이어프레임 완성',
+                    final fileName = result.files.single.name;
+                    final vaultStore = context.read<VaultStore>();
+                    final temp = vaultStore.vaults.firstWhere(
+                      (v) => v.isTemporary,
+                      orElse: () => vaultStore.vaults.first,
+                    );
+                    final note = await context.read<NoteStore>().createPdfNote(
+                      vaultId: temp.id,
+                      fileName: fileName,
+                    );
+
+                    if (context.mounted) context.go('/note/${note.id}');
+                  },
                 ),
               ],
             ),
           ),
         ),
       ),
+      backgroundColor: AppColors.background,
     );
   }
 }
