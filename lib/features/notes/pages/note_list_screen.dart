@@ -472,6 +472,18 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                   ),
                                   label: const Text('이름 변경'),
                                 ),
+                                const SizedBox(width: 8),
+                                TextButton.icon(
+                                  onPressed: currentVaultId == null
+                                      ? null
+                                      : () {
+                                          context.pushNamed(
+                                            AppRoutes.vaultGraphName,
+                                          );
+                                        },
+                                  icon: const Icon(Icons.hub),
+                                  label: const Text('그래프 보기'),
+                                ),
                               ],
                             ),
                           );
