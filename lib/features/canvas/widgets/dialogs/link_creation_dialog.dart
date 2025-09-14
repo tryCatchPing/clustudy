@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../shared/errors/app_error_mapper.dart';
+import '../../../../shared/errors/app_error_spec.dart';
 import '../../../../shared/services/vault_notes_service.dart';
+import '../../../../shared/widgets/app_snackbar.dart';
 import '../../providers/link_target_search.dart';
 
 /// 링크 생성 다이얼로그 결과
@@ -56,42 +59,23 @@ class _LinkCreationDialogState extends ConsumerState<LinkCreationDialog> {
   }
 
   Future<void> _initVaultAndLoad() async {
-    final service = ref.read(vaultNotesServiceProvider);
-    final placement = await service.getPlacement(widget.sourceNoteId);
-    if (!mounted) return;
-    if (placement == null) {
-      setState(() {
-        _loading = false;
-      });
-      return;
-    }
-    _vaultId = placement.vaultId;
-    final results = await service.searchNotesInVault(_vaultId!, '', limit: 100);
-    final all = results
-        .map(
-          (r) => LinkSuggestion(
-            noteId: r.noteId,
-            title: r.title,
-            parentFolderName: r.parentFolderName,
-          ),
-        )
-        .toList(growable: false);
-    if (!mounted) return;
-    setState(() {
-      _filtered = all;
-      _loading = false;
-    });
-  }
-
-  Future<void> _applyFilter(String text) async {
-    _selectedNoteId = null; // 검색 시 기존 선택 해제
-    final vaultId = _vaultId;
-    if (vaultId == null) return;
-    final service = ref.read(vaultNotesServiceProvider);
-    final results = await service.searchNotesInVault(vaultId, text, limit: 100);
-    if (!mounted) return;
-    setState(() {
-      _filtered = results
+    try {
+      final service = ref.read(vaultNotesServiceProvider);
+      final placement = await service.getPlacement(widget.sourceNoteId);
+      if (!mounted) return;
+      if (placement == null) {
+        setState(() {
+          _loading = false;
+        });
+        return;
+      }
+      _vaultId = placement.vaultId;
+      final results = await service.searchNotesInVault(
+        _vaultId!,
+        '',
+        limit: 100,
+      );
+      final all = results
           .map(
             (r) => LinkSuggestion(
               noteId: r.noteId,
@@ -100,7 +84,47 @@ class _LinkCreationDialogState extends ConsumerState<LinkCreationDialog> {
             ),
           )
           .toList(growable: false);
-    });
+      if (!mounted) return;
+      setState(() {
+        _filtered = all;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      final spec = AppErrorMapper.toSpec(e);
+      AppSnackBar.show(context, spec);
+    }
+  }
+
+  Future<void> _applyFilter(String text) async {
+    _selectedNoteId = null; // 검색 시 기존 선택 해제
+    final vaultId = _vaultId;
+    if (vaultId == null) return;
+    try {
+      final service = ref.read(vaultNotesServiceProvider);
+      final results = await service.searchNotesInVault(
+        vaultId,
+        text,
+        limit: 100,
+      );
+      if (!mounted) return;
+      setState(() {
+        _filtered = results
+            .map(
+              (r) => LinkSuggestion(
+                noteId: r.noteId,
+                title: r.title,
+                parentFolderName: r.parentFolderName,
+              ),
+            )
+            .toList(growable: false);
+      });
+    } catch (e) {
+      if (!mounted) return;
+      final spec = AppErrorMapper.toSpec(e);
+      AppSnackBar.show(context, spec);
+    }
   }
 
   @override
@@ -181,8 +205,9 @@ class _LinkCreationDialogState extends ConsumerState<LinkCreationDialog> {
                   onPressed: () {
                     if (_selectedNoteId == null &&
                         _titleCtrl.text.trim().isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('제목을 입력하거나 노트를 선택하세요.')),
+                      AppSnackBar.show(
+                        context,
+                        AppErrorSpec.info('제목을 입력하거나 노트를 선택하세요.'),
                       );
                       return;
                     }

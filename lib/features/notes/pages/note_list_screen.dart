@@ -4,8 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../shared/errors/app_error_mapper.dart';
+import '../../../shared/errors/app_error_spec.dart';
 import '../../../shared/routing/app_routes.dart';
 import '../../../shared/services/vault_notes_service.dart';
+import '../../../shared/widgets/app_snackbar.dart';
 import '../../../shared/widgets/folder_picker_dialog.dart';
 import '../../../shared/widgets/navigation_card.dart';
 import '../../vaults/data/derived_vault_providers.dart';
@@ -81,26 +84,27 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
         ) ??
         false;
 
-    if (!shouldDelete) return;
+    if (!shouldDelete) {
+      if (!mounted) return;
+      AppSnackBar.show(
+        context,
+        AppErrorSpec.info('삭제를 취소했어요.'),
+      );
+      return;
+    }
 
     try {
       final service = ref.read(vaultNotesServiceProvider);
       await service.deleteNote(noteId);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('"$noteTitle" 노트를 삭제했습니다.'),
-          backgroundColor: Colors.green,
-        ),
+      AppSnackBar.show(
+        context,
+        AppErrorSpec.success('"$noteTitle" 노트를 삭제했습니다.'),
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('노트 삭제 실패: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      final spec = AppErrorMapper.toSpec(e);
+      AppSnackBar.show(context, spec);
     }
   }
 
@@ -120,21 +124,15 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('PDF 노트 "${pdfNote.title}"가 성공적으로 생성되었습니다!'),
-            backgroundColor: Colors.green,
-          ),
+        AppSnackBar.show(
+          context,
+          AppErrorSpec.success('PDF 노트 "${pdfNote.title}"가 생성되었습니다.'),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('PDF 노트 생성 중 오류가 발생했습니다: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        final spec = AppErrorMapper.toSpec(e);
+        AppSnackBar.show(context, spec);
       }
     } finally {
       if (mounted) {
@@ -154,21 +152,15 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('빈 노트 "${blankNote.title}"가 생성되었습니다!'),
-            backgroundColor: Colors.green,
-          ),
+        AppSnackBar.show(
+          context,
+          AppErrorSpec.success('빈 노트 "${blankNote.title}"가 생성되었습니다.'),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('노트 생성 중 오류가 발생했습니다: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        final spec = AppErrorMapper.toSpec(e);
+        AppSnackBar.show(context, spec);
       }
     }
   }
@@ -255,26 +247,31 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
             ),
           ) ??
           false;
-      if (!shouldDelete) return;
+      if (!shouldDelete) {
+        if (!mounted) return;
+        AppSnackBar.show(
+          context,
+          AppErrorSpec.info('삭제를 취소했어요.'),
+        );
+        return;
+      }
 
       final service = ref.read(vaultNotesServiceProvider);
       await service.deleteFolderCascade(folderId);
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('폴더와 하위 항목이 삭제되었습니다.'),
-          backgroundColor: Colors.green,
+      AppSnackBar.show(
+        context,
+        const AppErrorSpec(
+          severity: AppErrorSeverity.success,
+          message: '폴더와 하위 항목이 삭제되었습니다.',
+          duration: AppErrorDuration.short,
         ),
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('폴더 삭제 실패: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      final spec = AppErrorMapper.toSpec(e);
+      AppSnackBar.show(context, spec);
     }
   }
 
@@ -297,20 +294,14 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
       ref.read(currentVaultProvider.notifier).state = v.vaultId;
       ref.read(currentFolderProvider(v.vaultId).notifier).state = null;
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Vault "${v.name}"가 생성되었습니다.'),
-          backgroundColor: Colors.green,
-        ),
+      AppSnackBar.show(
+        context,
+        AppErrorSpec.success('Vault "${v.name}"가 생성되었습니다.'),
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Vault 생성 실패: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      final spec = AppErrorMapper.toSpec(e);
+      AppSnackBar.show(context, spec);
     }
   }
 
@@ -338,20 +329,14 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
         name: trimmed,
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('폴더 "${folder.name}"가 생성되었습니다.'),
-          backgroundColor: Colors.green,
-        ),
+      AppSnackBar.show(
+        context,
+        AppErrorSpec.success('폴더 "${folder.name}"가 생성되었습니다.'),
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('폴더 생성 실패: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      final spec = AppErrorMapper.toSpec(e);
+      AppSnackBar.show(context, spec);
     }
   }
 
@@ -470,23 +455,16 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                         trimmed,
                                       );
                                       if (!mounted) return;
-                                      ScaffoldMessenger.of(
+                                      AppSnackBar.show(
                                         context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Vault 이름을 변경했습니다.'),
+                                        AppErrorSpec.success(
+                                          'Vault 이름을 변경했습니다.',
                                         ),
                                       );
                                     } catch (e) {
                                       if (!mounted) return;
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text('이름 변경 실패: $e'),
-                                          backgroundColor: Colors.red,
-                                        ),
-                                      );
+                                      final spec = AppErrorMapper.toSpec(e);
+                                      AppSnackBar.show(context, spec);
                                     }
                                   },
                                   icon: const Icon(
@@ -728,27 +706,21 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                                               picked,
                                                         );
                                                     if (!mounted) return;
-                                                    ScaffoldMessenger.of(
+                                                    AppSnackBar.show(
                                                       context,
-                                                    ).showSnackBar(
-                                                      const SnackBar(
-                                                        content: Text(
-                                                          '폴더를 이동했습니다.',
-                                                        ),
+                                                      AppErrorSpec.success(
+                                                        '폴더를 이동했습니다.',
                                                       ),
                                                     );
                                                   } catch (e) {
                                                     if (!mounted) return;
-                                                    ScaffoldMessenger.of(
+                                                    final spec =
+                                                        AppErrorMapper.toSpec(
+                                                          e,
+                                                        );
+                                                    AppSnackBar.show(
                                                       context,
-                                                    ).showSnackBar(
-                                                      SnackBar(
-                                                        content: Text(
-                                                          '폴더 이동 실패: $e',
-                                                        ),
-                                                        backgroundColor:
-                                                            Colors.red,
-                                                      ),
+                                                      spec,
                                                     );
                                                   }
                                                 },
@@ -782,27 +754,21 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                                       trimmed,
                                                     );
                                                     if (!mounted) return;
-                                                    ScaffoldMessenger.of(
+                                                    AppSnackBar.show(
                                                       context,
-                                                    ).showSnackBar(
-                                                      const SnackBar(
-                                                        content: Text(
-                                                          '폴더 이름을 변경했습니다.',
-                                                        ),
+                                                      AppErrorSpec.success(
+                                                        '폴더 이름을 변경했습니다.',
                                                       ),
                                                     );
                                                   } catch (e) {
                                                     if (!mounted) return;
-                                                    ScaffoldMessenger.of(
+                                                    final spec =
+                                                        AppErrorMapper.toSpec(
+                                                          e,
+                                                        );
+                                                    AppSnackBar.show(
                                                       context,
-                                                    ).showSnackBar(
-                                                      SnackBar(
-                                                        content: Text(
-                                                          '이름 변경 실패: $e',
-                                                        ),
-                                                        backgroundColor:
-                                                            Colors.red,
-                                                      ),
+                                                      spec,
                                                     );
                                                   }
                                                 },
@@ -876,27 +842,21 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                                               picked,
                                                         );
                                                     if (!mounted) return;
-                                                    ScaffoldMessenger.of(
+                                                    AppSnackBar.show(
                                                       context,
-                                                    ).showSnackBar(
-                                                      const SnackBar(
-                                                        content: Text(
-                                                          '노트를 이동했습니다.',
-                                                        ),
+                                                      AppErrorSpec.success(
+                                                        '노트를 이동했습니다.',
                                                       ),
                                                     );
                                                   } catch (e) {
                                                     if (!mounted) return;
-                                                    ScaffoldMessenger.of(
+                                                    final spec =
+                                                        AppErrorMapper.toSpec(
+                                                          e,
+                                                        );
+                                                    AppSnackBar.show(
                                                       context,
-                                                    ).showSnackBar(
-                                                      SnackBar(
-                                                        content: Text(
-                                                          '노트 이동 실패: $e',
-                                                        ),
-                                                        backgroundColor:
-                                                            Colors.red,
-                                                      ),
+                                                      spec,
                                                     );
                                                   }
                                                 },
@@ -930,27 +890,21 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                                       trimmed,
                                                     );
                                                     if (!mounted) return;
-                                                    ScaffoldMessenger.of(
+                                                    AppSnackBar.show(
                                                       context,
-                                                    ).showSnackBar(
-                                                      const SnackBar(
-                                                        content: Text(
-                                                          '노트 이름을 변경했습니다.',
-                                                        ),
+                                                      AppErrorSpec.success(
+                                                        '노트 이름을 변경했습니다.',
                                                       ),
                                                     );
                                                   } catch (e) {
                                                     if (!mounted) return;
-                                                    ScaffoldMessenger.of(
+                                                    final spec =
+                                                        AppErrorMapper.toSpec(
+                                                          e,
+                                                        );
+                                                    AppSnackBar.show(
                                                       context,
-                                                    ).showSnackBar(
-                                                      SnackBar(
-                                                        content: Text(
-                                                          '이름 변경 실패: $e',
-                                                        ),
-                                                        backgroundColor:
-                                                            Colors.red,
-                                                      ),
+                                                      spec,
                                                     );
                                                   }
                                                 },
