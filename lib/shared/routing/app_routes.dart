@@ -18,6 +18,9 @@ class AppRoutes {
   /// PDF 캔버스 화면 라우트 경로.
   static const String pdfCanvas = '/pdf-canvas';
 
+  /// Vault 그래프 화면 라우트 경로.
+  static const String vaultGraph = '/vault-graph';
+
   // 🎯 라우트 이름 상수들 (GoRouter name 속성용)
   /// 홈 화면 라우트 이름.
   static const String homeName = 'home';
@@ -30,6 +33,9 @@ class AppRoutes {
 
   /// PDF 캔버스 화면 라우트 이름.
   static const String pdfCanvasName = 'pdfCanvas';
+
+  /// Vault 그래프 화면 라우트 이름.
+  static const String vaultGraphName = 'vaultGraph';
 
   // 🚀 타입 안전한 네비게이션 헬퍼 메서드들
 
@@ -45,6 +51,9 @@ class AppRoutes {
 
   /// PDF 캔버스 페이지로 이동하는 라우트 경로를 반환합니다.
   static String pdfCanvasRoute() => pdfCanvas;
+
+  /// Vault 그래프 페이지로 이동하는 라우트 경로를 반환합니다.
+  static String vaultGraphRoute() => vaultGraph;
 
   // 📋 추후 확장성을 위한 구조 예시
   //
