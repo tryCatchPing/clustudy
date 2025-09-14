@@ -50,6 +50,7 @@ dependencies:
   riverpod_annotation: ^2.6.1
   pdf: ^3.10.8
   share_plus: ^7.2.2
+  flutter_graph_view: ^1.2.0
 
 dev_dependencies:
   flutter_test:
