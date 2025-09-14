@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../features/canvas/providers/link_providers.dart';
 import '../../features/notes/data/notes_repository.dart';
@@ -58,6 +59,7 @@ class FolderCascadeImpact {
 /// - 생성/이동/이름변경/삭제를 유스케이스 단위로 일관되게 처리합니다.
 /// - 트리의 표시명 정책을 준수하고, 콘텐츠 제목을 미러로 동기화합니다.
 class VaultNotesService {
+  static const _uuid = Uuid();
   final VaultTreeRepository vaultTree;
   final NotesRepository notesRepo;
   final LinkRepository linkRepo;
@@ -122,6 +124,135 @@ class VaultNotesService {
       } catch (_) {}
       rethrow;
     }
+  }
+
+  /// 노트를 동일 Vault 내 타깃 폴더로 이동하되, 이름 충돌 시 자동 접미사로 해결합니다.
+  Future<void> moveNoteWithAutoRename(
+    String noteId, {
+    String? newParentFolderId,
+  }) async {
+    final placement = await getPlacement(noteId);
+    if (placement == null) {
+      throw Exception('Note not found in vault tree: $noteId');
+    }
+    final currentParent = placement.parentFolderId;
+    final vaultId = placement.vaultId;
+    if (newParentFolderId == currentParent) return; // no-op
+
+    // Validate target folder belongs to same vault (if specified)
+    if (newParentFolderId != null) {
+      final ok = await _containsFolder(vaultId, newParentFolderId);
+      if (!ok) throw Exception('Target folder not found in same vault');
+    }
+
+    // Check conflict in target scope
+    final targetKeys = await _collectNoteNameKeysInScope(
+      vaultId,
+      newParentFolderId,
+    );
+    final currentKey = NameNormalizer.compareKey(placement.name);
+    final hasConflict = targetKeys.contains(currentKey);
+
+    if (!hasConflict) {
+      await dbTxn.write(() async {
+        await vaultTree.moveNote(
+          noteId: noteId,
+          newParentFolderId: newParentFolderId,
+        );
+      });
+      return;
+    }
+
+    // Conflict: temporary rename in source scope → move → final rename in target scope
+    final tempName = _generateTemporaryName(placement.name);
+    await renameNote(noteId, tempName);
+    await dbTxn.write(() async {
+      await vaultTree.moveNote(
+        noteId: noteId,
+        newParentFolderId: newParentFolderId,
+      );
+    });
+    await renameNote(noteId, placement.name);
+  }
+
+  /// 폴더를 동일 Vault 내에서 이동하되, 사이클을 금지하고 이름 충돌 시 자동 접미사로 해결합니다.
+  Future<void> moveFolderWithAutoRename({
+    required String folderId,
+    String? newParentFolderId,
+  }) async {
+    // Resolve vaultId that contains the folder
+    final vaults = await vaultTree.watchVaults().first;
+    String? vaultId;
+    for (final v in vaults) {
+      if (await _containsFolder(v.vaultId, folderId)) {
+        vaultId = v.vaultId;
+        break;
+      }
+    }
+    if (vaultId == null) throw Exception('Folder not found: $folderId');
+
+    final currentParent = await getParentFolderId(vaultId, folderId);
+    if (currentParent == newParentFolderId) return; // no-op
+
+    // Validate target parent in same vault
+    if (newParentFolderId != null) {
+      final ok = await _containsFolder(vaultId, newParentFolderId);
+      if (!ok) throw Exception('Target folder not found in same vault');
+    }
+
+    // Cycle check: target cannot be self or descendant
+    if (newParentFolderId != null) {
+      if (newParentFolderId == folderId) {
+        throw Exception('Cycle detected: cannot move into self/descendant');
+      }
+      final subtree = await listFolderSubtreeIds(vaultId, folderId);
+      if (subtree.contains(newParentFolderId)) {
+        throw Exception('Cycle detected: cannot move into self/descendant');
+      }
+    }
+
+    // Get current name
+    String? currentName;
+    final siblings = await vaultTree
+        .watchFolderChildren(vaultId, parentFolderId: currentParent)
+        .first;
+    for (final it in siblings) {
+      if (it.type == VaultItemType.folder && it.id == folderId) {
+        currentName = it.name;
+        break;
+      }
+    }
+    if (currentName == null) throw Exception('Folder name resolve failed');
+
+    // Check conflict in target scope
+    final targetFolderKeys = await _collectFolderNameKeysInScope(
+      vaultId,
+      newParentFolderId,
+    );
+    final hasConflict = targetFolderKeys.contains(
+      NameNormalizer.compareKey(currentName),
+    );
+
+    if (!hasConflict) {
+      await dbTxn.write(() async {
+        await vaultTree.moveFolder(
+          folderId: folderId,
+          newParentFolderId: newParentFolderId,
+        );
+      });
+      return;
+    }
+
+    // Conflict path: temporary rename in source → move → final rename in target
+    final tempName = _generateTemporaryName(currentName);
+    await renameFolder(folderId, tempName);
+    await dbTxn.write(() async {
+      await vaultTree.moveFolder(
+        folderId: folderId,
+        newParentFolderId: newParentFolderId,
+      );
+    });
+    await renameFolder(folderId, currentName);
   }
 
   /// PDF에서 노트를 생성합니다(사전 렌더링/메타 포함).
@@ -629,6 +760,18 @@ class VaultNotesService {
       }
     }
     return false;
+  }
+
+  String _generateTemporaryName(String base) {
+    final id = _uuid.v4().substring(0, 8);
+    final raw = '${NameNormalizer.normalize(base)} (tmp $id)';
+    // enforce max length 100, ensure suffix remains
+    const maxLen = 100;
+    if (raw.length <= maxLen) return raw;
+    final suffix = ' (tmp $id)';
+    final take = maxLen - suffix.length;
+    final trunk = take > 0 ? (raw.substring(0, take)) : '';
+    return trunk + suffix;
   }
 
   Future<List<String>> _collectNotesRecursively(
