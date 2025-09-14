@@ -31,7 +31,7 @@ class VaultGraphScreen extends ConsumerStatefulWidget {
 
 class _VaultGraphScreenState extends ConsumerState<VaultGraphScreen> {
   final GlobalKey _graphKey = GlobalKey(debugLabel: 'graphWidgetKey');
-  Rect? _overlayRect;
+  // Rect? _overlayRect;
 
   void _clearVertexOverlays() {
     final state = _graphKey.currentState;
