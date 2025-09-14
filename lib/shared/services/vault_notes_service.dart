@@ -6,8 +6,10 @@ import '../../features/notes/data/notes_repository.dart';
 import '../../features/notes/data/notes_repository_provider.dart';
 import '../../features/notes/models/note_model.dart';
 import '../../features/vaults/data/vault_tree_repository_provider.dart';
+import '../../features/vaults/models/folder_model.dart';
 import '../../features/vaults/models/note_placement.dart';
 import '../../features/vaults/models/vault_item.dart';
+import '../../features/vaults/models/vault_model.dart';
 import '../repositories/link_repository.dart';
 import '../repositories/vault_tree_repository.dart';
 import 'db_txn_runner.dart';
@@ -62,13 +64,11 @@ class VaultNotesService {
     String? parentFolderId,
     String? name,
   }) async {
-    // 1) 이름 확정(입력값이 있으면 우선 적용)
+    // 1) 콘텐츠 생성(초기 제목은 name가 있으면 우선 적용)
     String? normalizedName;
     if (name != null && name.trim().isNotEmpty) {
       normalizedName = NameNormalizer.normalize(name);
     }
-
-    // 2) 콘텐츠 생성
     final note = await noteService.createBlankNote(
       title: normalizedName,
       initialPageCount: 1,
@@ -77,9 +77,11 @@ class VaultNotesService {
       throw Exception('Failed to create blank note');
     }
 
-    // 제목이 비어있다면 서비스가 생성한 제목을 정규화
-    final finalTitle = NameNormalizer.normalize(note.title);
-    final materialized = note.copyWith(title: finalTitle);
+    // 2) 최종 제목 확정(자동 접미사 포함)
+    final desired = (normalizedName ?? NameNormalizer.normalize(note.title));
+    final existing = await _collectNoteNameKeysInScope(vaultId, parentFolderId);
+    final uniqueTitle = _generateUniqueName(desired, existing);
+    final materialized = note.copyWith(title: uniqueTitle);
 
     try {
       // 3) 트랜잭션: 배치 등록 + 콘텐츠 업서트
@@ -114,21 +116,21 @@ class VaultNotesService {
     String? parentFolderId,
     String? name,
   }) async {
-    // 1) 이름 정규화(있다면)
+    // 1) PDF 처리 및 콘텐츠 생성 (사용자 선택 포함)
     String? normalizedName;
     if (name != null && name.trim().isNotEmpty) {
       normalizedName = NameNormalizer.normalize(name);
     }
-
-    // 2) PDF 처리 및 콘텐츠 생성 (사용자 선택 포함)
     final note = await noteService.createPdfNote(title: normalizedName);
     if (note == null) {
       throw Exception('PDF note creation was cancelled or failed');
     }
 
-    // 3) 제목 정규화 확정
-    final finalTitle = NameNormalizer.normalize(note.title);
-    final materialized = note.copyWith(title: finalTitle);
+    // 2) 최종 제목 확정(자동 접미사 포함)
+    final desired = (normalizedName ?? NameNormalizer.normalize(note.title));
+    final existing = await _collectNoteNameKeysInScope(vaultId, parentFolderId);
+    final uniqueTitle = _generateUniqueName(desired, existing);
+    final materialized = note.copyWith(title: uniqueTitle);
 
     try {
       // 4) 트랜잭션: 배치 등록 + 콘텐츠 업서트
@@ -160,11 +162,22 @@ class VaultNotesService {
   /// 노트 표시명을 변경하고 콘텐츠 제목을 동기화합니다.
   Future<void> renameNote(String noteId, String newName) async {
     final normalized = NameNormalizer.normalize(newName);
+    // 스코프 수집(동일 부모 폴더의 노트 이름들) 및 자기 이름 제외
+    final placement = await getPlacement(noteId);
+    if (placement == null) {
+      throw Exception('Note not found in vault tree: $noteId');
+    }
+    final existing = await _collectNoteNameKeysInScope(
+      placement.vaultId,
+      placement.parentFolderId,
+    );
+    existing.remove(NameNormalizer.compareKey(placement.name));
+    final unique = _generateUniqueName(normalized, existing);
     await dbTxn.write(() async {
-      await vaultTree.renameNote(noteId, normalized);
+      await vaultTree.renameNote(noteId, unique);
       final note = await notesRepo.getNoteById(noteId);
       if (note != null) {
-        await notesRepo.upsert(note.copyWith(title: normalized));
+        await notesRepo.upsert(note.copyWith(title: unique));
       }
     });
   }
@@ -176,8 +189,37 @@ class VaultNotesService {
     if (normalized.isEmpty || normalized.length > 100) {
       throw const FormatException('이름 길이가 올바르지 않습니다');
     }
+    // 소속 vaultId 및 parentFolderId 탐색
+    final vaults = await vaultTree.watchVaults().first;
+    String? vaultId;
+    for (final v in vaults) {
+      if (await _containsFolder(v.vaultId, folderId)) {
+        vaultId = v.vaultId;
+        break;
+      }
+    }
+    if (vaultId == null) {
+      throw Exception('Folder not found: $folderId');
+    }
+    final parentId = await getParentFolderId(vaultId, folderId);
+    // 현재 이름을 찾아 자기 제외 후 unique 산출
+    final items = await vaultTree
+        .watchFolderChildren(vaultId, parentFolderId: parentId)
+        .first;
+    String? currentName;
+    for (final it in items) {
+      if (it.type == VaultItemType.folder && it.id == folderId) {
+        currentName = it.name;
+        break;
+      }
+    }
+    final existing = await _collectFolderNameKeysInScope(vaultId, parentId);
+    if (currentName != null) {
+      existing.remove(NameNormalizer.compareKey(currentName));
+    }
+    final unique = _generateUniqueName(normalized, existing);
     await dbTxn.write(() async {
-      await vaultTree.renameFolder(folderId, normalized);
+      await vaultTree.renameFolder(folderId, unique);
     });
   }
 
@@ -187,9 +229,45 @@ class VaultNotesService {
     if (normalized.isEmpty || normalized.length > 100) {
       throw const FormatException('이름 길이가 올바르지 않습니다');
     }
+    final existing = await _collectVaultNameKeys();
+    // 자기 제외
+    final current = await vaultTree.getVault(vaultId);
+    if (current != null) {
+      existing.remove(NameNormalizer.compareKey(current.name));
+    }
+    final unique = _generateUniqueName(normalized, existing);
     await dbTxn.write(() async {
-      await vaultTree.renameVault(vaultId, normalized);
+      await vaultTree.renameVault(vaultId, unique);
     });
+  }
+
+  /// 폴더 생성(자동 접미사 적용). UI 연동은 후속.
+  Future<FolderModel> createFolder(
+    String vaultId, {
+    String? parentFolderId,
+    required String name,
+  }) async {
+    final desired = NameNormalizer.normalize(name);
+    final existing = await _collectFolderNameKeysInScope(
+      vaultId,
+      parentFolderId,
+    );
+    final unique = _generateUniqueName(desired, existing);
+    return vaultTree.createFolder(
+      vaultId,
+      parentFolderId: parentFolderId,
+      name: unique,
+    );
+  }
+
+  /// Vault 생성(자동 접미사 적용). UI 연동은 후속.
+  Future<VaultModel> createVault(String name) async {
+    final desired = NameNormalizer.normalize(name);
+    final existing = await _collectVaultNameKeys();
+    final unique = _generateUniqueName(desired, existing);
+    // vaultTree.createVault는 내부에서 유일성 재차 검증함
+    final v = await vaultTree.createVault(unique);
+    return v;
   }
 
   /// 노트를 동일 Vault 내 다른 폴더로 이동합니다.
@@ -389,6 +467,75 @@ class VaultNotesService {
   //////////////////////////////////////////////////////////////////////////////
   // Helpers
   //////////////////////////////////////////////////////////////////////////////
+
+  /// 동일 스코프에서 이름 충돌 시 자동 접미사를 붙여 가용 이름을 생성합니다.
+  String _generateUniqueName(
+    String baseName,
+    Set<String> existingKeys, {
+    int maxLen = 100,
+  }) {
+    final normalizedBase = NameNormalizer.normalize(baseName);
+    final baseKey = NameNormalizer.compareKey(normalizedBase);
+    if (!existingKeys.contains(baseKey)) {
+      return normalizedBase.length <= maxLen
+          ? normalizedBase
+          : normalizedBase.substring(0, maxLen);
+    }
+    int n = 2;
+    while (n < 1000) {
+      final suffix = ' ($n)';
+      final take = maxLen - suffix.length;
+      final trunk = take > 0
+          ? (normalizedBase.length <= take
+                ? normalizedBase
+                : normalizedBase.substring(0, take))
+          : '';
+      final candidate = trunk + suffix;
+      final key = NameNormalizer.compareKey(candidate);
+      if (!existingKeys.contains(key)) {
+        return candidate;
+      }
+      n += 1;
+    }
+    throw Exception('Unable to resolve unique name');
+  }
+
+  Future<Set<String>> _collectNoteNameKeysInScope(
+    String vaultId,
+    String? parentFolderId,
+  ) async {
+    final items = await vaultTree
+        .watchFolderChildren(vaultId, parentFolderId: parentFolderId)
+        .first;
+    final set = <String>{};
+    for (final it in items) {
+      if (it.type == VaultItemType.note) {
+        set.add(NameNormalizer.compareKey(it.name));
+      }
+    }
+    return set;
+  }
+
+  Future<Set<String>> _collectFolderNameKeysInScope(
+    String vaultId,
+    String? parentFolderId,
+  ) async {
+    final items = await vaultTree
+        .watchFolderChildren(vaultId, parentFolderId: parentFolderId)
+        .first;
+    final set = <String>{};
+    for (final it in items) {
+      if (it.type == VaultItemType.folder) {
+        set.add(NameNormalizer.compareKey(it.name));
+      }
+    }
+    return set;
+  }
+
+  Future<Set<String>> _collectVaultNameKeys() async {
+    final vaults = await vaultTree.watchVaults().first;
+    return vaults.map((v) => NameNormalizer.compareKey(v.name)).toSet();
+  }
 
   Future<bool> _containsFolder(String vaultId, String folderId) async {
     // BFS from root to see whether folderId appears in this vault
