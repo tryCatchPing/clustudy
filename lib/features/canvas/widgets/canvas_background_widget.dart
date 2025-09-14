@@ -5,10 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../features/notes/data/notes_repository_provider.dart';
+import '../../../shared/errors/app_error_mapper.dart';
+import '../../../shared/errors/app_error_spec.dart';
 import '../../../shared/routing/app_routes.dart';
 import '../../../shared/services/file_storage_service.dart';
 import '../../../shared/services/pdf_recovery_service.dart';
 import '../../../shared/services/vault_notes_service.dart';
+import '../../../shared/widgets/app_snackbar.dart';
 import '../../notes/models/note_page_model.dart';
 import 'recovery_options_modal.dart';
 import 'recovery_progress_modal.dart';
@@ -209,12 +212,8 @@ class _CanvasBackgroundWidgetState
     } catch (e) {
       debugPrint('❌ 파일 손상 처리 중 오류: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('파일 손상 처리 중 오류가 발생했습니다: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        final spec = AppErrorMapper.toSpec(e);
+        AppSnackBar.show(context, spec);
       }
     } finally {
       if (mounted) {
@@ -249,11 +248,9 @@ class _CanvasBackgroundWidgetState
           context.pop();
           // 에러 메시지 표시
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('재렌더링 중 오류가 발생했습니다.'),
-                backgroundColor: Colors.red,
-              ),
+            AppSnackBar.show(
+              context,
+              AppErrorSpec.error('재렌더링 중 오류가 발생했습니다.'),
             );
           }
           // 복구 실패 시 노트 삭제 유도
@@ -264,12 +261,7 @@ class _CanvasBackgroundWidgetState
           context.pop();
           // 취소 메시지 표시
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('재렌더링이 취소되었습니다.'),
-                backgroundColor: Colors.orange,
-              ),
-            );
+            AppSnackBar.show(context, AppErrorSpec.info('재렌더링이 취소되었습니다.'));
           }
         },
       ),
@@ -303,30 +295,26 @@ class _CanvasBackgroundWidgetState
         ) ??
         false;
 
-    if (!shouldDelete || !mounted) return;
+    if (!shouldDelete || !mounted) {
+      if (mounted) {
+        AppSnackBar.show(context, AppErrorSpec.info('삭제를 취소했어요.'));
+      }
+      return;
+    }
 
     try {
       final service = ref.read(vaultNotesServiceProvider);
       await service.deleteNote(widget.page.noteId);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('노트가 삭제되었습니다.'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        AppSnackBar.show(context, AppErrorSpec.success('노트가 삭제되었습니다.'));
         context.goNamed(AppRoutes.noteListName);
       }
     } catch (e) {
       debugPrint('❌ 복구 실패 후 노트 삭제 실패: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('노트 삭제 실패: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        final spec = AppErrorMapper.toSpec(e);
+        AppSnackBar.show(context, spec);
       }
     }
   }
@@ -340,11 +328,9 @@ class _CanvasBackgroundWidgetState
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('필기만 보기 모드가 활성화되었습니다.'),
-            backgroundColor: Colors.green,
-          ),
+        AppSnackBar.show(
+          context,
+          AppErrorSpec.success('필기만 보기 모드가 활성화되었습니다.'),
         );
 
         // 위젯 새로고침
@@ -353,12 +339,8 @@ class _CanvasBackgroundWidgetState
     } catch (e) {
       debugPrint('❌ 필기만 보기 모드 활성화 실패: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('필기만 보기 모드 활성화 실패: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        final spec = AppErrorMapper.toSpec(e);
+        AppSnackBar.show(context, spec);
       }
     }
   }

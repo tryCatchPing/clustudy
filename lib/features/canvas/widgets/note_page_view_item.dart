@@ -5,8 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:scribble/scribble.dart';
 
+import '../../../shared/errors/app_error_mapper.dart';
+import '../../../shared/errors/app_error_spec.dart';
 import '../../../shared/routing/app_routes.dart';
 import '../../../shared/services/sketch_persist_service.dart';
+import '../../../shared/widgets/app_snackbar.dart';
 import '../../canvas/providers/pointer_policy_provider.dart';
 import '../../notes/data/derived_note_providers.dart';
 import '../constants/note_editor_constant.dart'; // NoteEditorConstants 정의 필요
@@ -240,16 +243,14 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                                         targetTitle: res.targetTitle,
                                       );
                                   if (!mounted) return;
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('링크를 생성했습니다.'),
-                                    ),
+                                  AppSnackBar.show(
+                                    context,
+                                    AppErrorSpec.success('링크를 생성했습니다.'),
                                   );
                                 } catch (e) {
                                   if (!mounted) return;
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('링크 생성 실패: $e')),
-                                  );
+                                  final spec = AppErrorMapper.toSpec(e);
+                                  AppSnackBar.show(context, spec);
                                 }
                               },
                               // 링크 찾아서 모달 표시 (링크 이동 / 링크 수정 / 링크 삭제)
@@ -347,22 +348,14 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                                         debugPrint(
                                           '[LinkEdit/UI] updated linkId=${link.id}',
                                         );
-                                        ScaffoldMessenger.of(
+                                        AppSnackBar.show(
                                           context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('링크를 수정했습니다.'),
-                                          ),
+                                          AppErrorSpec.success('링크를 수정했습니다.'),
                                         );
                                       } catch (e) {
                                         if (!mounted) return;
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text('링크 수정 실패: $e'),
-                                          ),
-                                        );
+                                        final spec = AppErrorMapper.toSpec(e);
+                                        AppSnackBar.show(context, spec);
                                       }
                                       break;
                                     case LinkAction.delete:
@@ -398,7 +391,13 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                                             ),
                                           ) ??
                                           false;
-                                      if (!shouldDelete) break;
+                                      if (!shouldDelete) {
+                                        AppSnackBar.show(
+                                          context,
+                                          AppErrorSpec.info('삭제를 취소했어요.'),
+                                        );
+                                        break;
+                                      }
                                       try {
                                         debugPrint(
                                           '[LinkDelete/UI] delete linkId=${link.id} '
@@ -412,22 +411,14 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                                         debugPrint(
                                           '[LinkDelete/UI] deleted linkId=${link.id}',
                                         );
-                                        ScaffoldMessenger.of(
+                                        AppSnackBar.show(
                                           context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('링크를 삭제했습니다.'),
-                                          ),
+                                          AppErrorSpec.success('링크를 삭제했습니다.'),
                                         );
                                       } catch (e) {
                                         if (!mounted) return;
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text('링크 삭제 실패: $e'),
-                                          ),
-                                        );
+                                        final spec = AppErrorMapper.toSpec(e);
+                                        AppSnackBar.show(context, spec);
                                       }
                                       break;
                                   }
