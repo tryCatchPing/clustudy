@@ -26,10 +26,11 @@ class CustomScribbleNotifier extends ScribbleNotifier with ToolManagementMixin {
     super.widths = const [1, 3, 5, 7],
     super.simplifier,
     super.simplificationTolerance,
-    required this.toolMode,
+    required ToolMode toolMode,
     this.page,
     required bool simulatePressure,
-  }) : super(
+  }) : _toolMode = toolMode,
+       super(
          pressureCurve: simulatePressure
              ? const _DefaultPressureCurve()
              : const _ConstantPressureCurve(),
@@ -37,10 +38,14 @@ class CustomScribbleNotifier extends ScribbleNotifier with ToolManagementMixin {
 
   /// 현재 선택된 도구 모드.
   @override
-  ToolMode toolMode;
+  ToolMode get toolMode => _toolMode;
+
+  @override
+  set toolMode(ToolMode value) => _toolMode = value;
+
+  ToolMode _toolMode;
 
   /// 현재 노트 페이지 모델 (초기 스케치 로딩용 스냅샷; 불변 모델 사용).
-  @override
   final page_model.NotePageModel? page;
 
   /// 뷰어 스케일과 동기화하여 획 굵기 일관성을 보장합니다.

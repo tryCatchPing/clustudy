@@ -247,15 +247,6 @@ class MemoryLinkRepository implements LinkRepository {
     );
   }
 
-  StreamController<List<LinkModel>> _ensureBacklinksPageController(
-    String pageId,
-  ) {
-    return _backlinksPageControllers.putIfAbsent(
-      pageId,
-      () => StreamController<List<LinkModel>>.broadcast(),
-    );
-  }
-
   StreamController<List<LinkModel>> _ensureBacklinksNoteController(
     String noteId,
   ) {
