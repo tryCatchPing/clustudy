@@ -9,28 +9,28 @@
 
 - [ ] 2. Create Isar entity definitions with optimized indexing
 
-  - [ ] 2.1 Create VaultEntity with proper annotations and indexes
+  - [-] 2.1 Create VaultEntity with proper annotations and indexes
 
     - Define VaultEntity class with @collection annotation
     - Add unique index on vaultId field
     - Implement IsarLinks for folder and note placement relationships
     - _Requirements: 2.1, 2.2, 5.2_
 
-  - [ ] 2.2 Create FolderEntity with hierarchical relationship support
+  - [-] 2.2 Create FolderEntity with hierarchical relationship support
 
     - Define FolderEntity with parent-child IsarLink relationships
     - Add composite indexes for vault-scoped and hierarchical queries
     - Implement self-referencing parent-child relationships using IsarLinks
     - _Requirements: 2.1, 2.2, 5.2_
 
-  - [ ] 2.3 Create NoteEntity and NotePageEntity with relationship links
+  - [-] 2.3 Create NoteEntity and NotePageEntity with relationship links
 
     - Define NoteEntity with IsarLinks to pages and placement
     - Create NotePageEntity with optimized indexes for page queries
     - Add text search indexes on title and content fields
     - _Requirements: 2.1, 2.2, 5.1_
 
-  - [ ] 2.4 Create LinkEntity with optimized relationship indexes
+  - [-] 2.4 Create LinkEntity with optimized relationship indexes
 
     - Define LinkEntity with composite indexes for efficient backlink queries
     - Add indexes on targetNoteId and sourcePageId for optimized link lookups
