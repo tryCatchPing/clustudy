@@ -6,6 +6,7 @@ import '../../components/organisms/top_toolbar.dart';
 import '../../tokens/app_colors.dart';
 import '../../tokens/app_icons.dart';
 import '../../tokens/app_spacing.dart';
+import 'widgets/home_creation_sheet.dart';
 
 /// Home dashboard showcase that mirrors the feature implementation but runs on
 /// deterministic mock data so the design system can render it without stores
@@ -73,9 +74,9 @@ class DesignHomeScreen extends StatelessWidget {
             child: BottomActionsDockFixed(
               items: [
                 DockItem(
-                  label: 'Vault 생성',
-                  svgPath: AppIcons.folderVault,
-                  onTap: () => _showSnack(context, '새 Vault 생성'),
+                  label: '만들기',
+                  svgPath: AppIcons.plus,
+                  onTap: () => showDesignHomeCreationSheet(context),
                 ),
                 DockItem(
                   label: '노트 생성',

@@ -5,6 +5,7 @@ import '../../components/organisms/top_toolbar.dart';
 import '../../tokens/app_colors.dart';
 import '../../tokens/app_icons.dart';
 import '../../tokens/app_spacing.dart';
+import 'widgets/vault_creation_sheet.dart';
 
 /// Vault detail showcase. Mirrors the feature UI but stays self-contained with
 /// mock data so the design playground does not depend on providers or routing.
@@ -67,9 +68,9 @@ class DesignVaultScreen extends StatelessWidget {
             child: BottomActionsDockFixed(
               items: [
                 DockItem(
-                  label: '폴더 생성',
-                  svgPath: AppIcons.folderAdd,
-                  onTap: () => _showSnack(context, '폴더 생성'),
+                  label: '만들기',
+                  svgPath: AppIcons.plus,
+                  onTap: () => showDesignVaultCreationSheet(context),
                 ),
                 DockItem(
                   label: '노트 생성',

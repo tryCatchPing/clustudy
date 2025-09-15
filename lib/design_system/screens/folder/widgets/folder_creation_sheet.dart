@@ -1,0 +1,49 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+
+import '../../../components/organisms/creation_sheet.dart';
+import '../../../tokens/app_icons.dart';
+
+Future<void> showDesignFolderCreationSheet(BuildContext context) {
+  return showCreationSheet(
+    context,
+    CreationSheet(
+      title: '여기에서 만들기',
+      onBack: () => Navigator.pop(context),
+      rightText: '닫기',
+      onRightTap: () => Navigator.pop(context),
+      actions: [
+        CreationAction(
+          label: '하위 폴더 생성',
+          leading: SvgPicture.asset(AppIcons.folder, width: 28, height: 28),
+          onTap: () async {
+            Navigator.pop(context);
+            _showSnack(context, '하위 폴더 생성');
+          },
+        ),
+        CreationAction(
+          label: '노트 생성',
+          leading: SvgPicture.asset(AppIcons.noteAdd, width: 28, height: 28),
+          onTap: () async {
+            Navigator.pop(context);
+            _showSnack(context, '노트 생성');
+          },
+        ),
+        CreationAction(
+          label: 'PDF 가져오기',
+          leading: SvgPicture.asset(AppIcons.download, width: 28, height: 28),
+          onTap: () async {
+            Navigator.pop(context);
+            _showSnack(context, 'PDF 가져오기');
+          },
+        ),
+      ],
+    ),
+  );
+}
+
+void _showSnack(BuildContext context, String message) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(message), duration: const Duration(milliseconds: 800)),
+  );
+}
