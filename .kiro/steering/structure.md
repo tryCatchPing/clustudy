@@ -4,101 +4,125 @@ inclusion: always
 
 # Project Structure & Architecture Guidelines
 
-## Core Architecture Rules
+## Mandatory Architecture Rules
 
-**Feature-based modular architecture** - Each feature is self-contained with clear boundaries:
+**Feature-based modular architecture** - Each feature MUST be self-contained:
 
-- Features: `canvas/`, `home/`, `notes/` - domain-driven modules
-- Shared: Cross-feature utilities in `shared/` directory
-- State: Riverpod providers with `@riverpod` code generation
-- Navigation: GoRouter with feature-specific routing
+- **Features**: `canvas/`, `home/`, `notes/`, `vaults/` - domain-driven modules
+- **Shared**: Cross-feature utilities only in `shared/` directory
+- **State**: Riverpod providers with `@riverpod` code generation REQUIRED
+- **Navigation**: GoRouter with feature-specific routing in `/routing/` directories
 
-## Directory Structure Requirements
+## Required Directory Structure
+
+When creating new features or files, ALWAYS follow this structure:
 
 ```
 lib/
 ├── features/{feature_name}/
 │   ├── data/                    # Repositories & data sources
-│   ├── models/                  # Domain entities
-│   ├── pages/                   # UI screens
-│   ├── providers/               # Riverpod providers
-│   ├── routing/                 # Route definitions
-│   └── widgets/                 # Feature-specific components
-└── shared/
-    ├── constants/               # App-wide constants
-    ├── services/                # Business logic services
-    └── widgets/                 # Reusable UI components
+│   ├── models/                  # Domain entities & DTOs
+│   ├── pages/                   # UI screens (StatelessWidget)
+│   ├── providers/               # Riverpod providers (@riverpod)
+│   ├── routing/                 # GoRouter route definitions
+│   └── widgets/                 # Feature-specific UI components
+├── shared/
+│   ├── constants/               # App-wide constants
+│   ├── services/                # Business logic services
+│   ├── repositories/            # Cross-feature data access
+│   └── widgets/                 # Reusable UI components
+└── design_system/               # UI tokens, components, themes
 ```
 
-## File Naming Conventions
+## File Naming Rules (ENFORCED)
 
-**REQUIRED suffixes for clarity:**
+**MUST use these suffixes:**
 
-- `_model.dart` - Data models
+- `_model.dart` - Data models and entities
 - `_service.dart` - Business logic services
-- `_repository.dart` - Data repositories
+- `_repository.dart` - Data access layer
 - `_provider.dart` - Riverpod providers
 - `_notifier.dart` - State notifiers
-- `_page.dart` - Screen widgets
-- `_widget.dart` - UI components
+- `_page.dart` - Full screen widgets
+- `_widget.dart` - Reusable UI components
 
 **Directory naming:** Snake case, plural for collections (`models/`, `services/`)
 
-## Import Organization (Enforced by Linter)
+## Import Organization (STRICT ORDER)
 
-1. `dart:*` imports
-2. `package:flutter/*` imports
-3. `package:*` third-party imports
-4. Relative imports (same feature)
-5. `shared/` module imports
+```dart
+// 1. Dart SDK
+import 'dart:async';
 
-**Style rules:**
+// 2. Flutter framework
+import 'package:flutter/material.dart';
 
-- Relative imports within same feature
-- Absolute imports for shared modules
-- Avoid `show`/`hide` unless necessary
+// 3. Third-party packages
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-## Architecture Patterns
+// 4. Relative imports (same feature)
+import '../models/note_model.dart';
 
-### Dependency Direction
+// 5. Shared module imports
+import '../../shared/services/file_storage_service.dart';
+```
+
+## Code Generation Requirements
+
+**ALWAYS run after modifying providers:**
+
+```bash
+fvm flutter packages pub run build_runner build
+```
+
+## Architecture Constraints
+
+### Dependency Direction (ENFORCED)
 
 - Features → Shared modules ✓
-- Shared → Features ✗
+- Shared → Features ✗ (FORBIDDEN)
 - UI → Business logic ✓
-- Business logic → UI ✗
+- Business logic → UI ✗ (FORBIDDEN)
 
-### State Management Pattern
+### State Management Pattern (REQUIRED)
 
 ```dart
 @riverpod
 class ExampleNotifier extends _$ExampleNotifier {
   @override
   ExampleState build() => ExampleState.initial();
-  // Implementation
+
+  // State mutations here
 }
 ```
 
-### Repository Pattern
+### Repository Pattern (MANDATORY)
 
-- Interfaces in `/data/` directories
-- Dependency injection via Riverpod
-- Separate business logic from UI
+- All data access through repositories in `/data/` directories
+- Dependency injection via Riverpod providers
+- NO direct database/file access from UI components
 
-## Key Services (Shared Module)
+## Critical Services (lib/shared/services/)
+
+When working with these domains, ALWAYS use these services:
 
 - `FileStorageService` - File system operations
-- `NoteService` - Cross-feature note operations
-- `PdfProcessor` - PDF handling
-- `NoteDeletionService` - Cleanup operations
+- `NoteService` - Note CRUD operations
+- `PdfProcessor` - PDF rendering and processing
+- `NoteDeletionService` - Safe deletion with cleanup
+- `PageManagementService` - Page ordering and management
+- `VaultNotesService` - Vault-level note operations
 
-## File Storage Structure
+## File Storage Convention
+
+**MUST follow this structure for note storage:**
 
 ```
 /Application Documents/notes/{noteId}/
-├── source.pdf              # Original PDF
-├── pages/                  # Pre-rendered images
+├── source.pdf              # Original PDF (if applicable)
+├── pages/                  # Pre-rendered page images
 ├── thumbnails/             # Cached thumbnails
 └── metadata.json           # Note metadata
 ```
 
-Managed by `FileStorageService` for efficient organization and caching.
+**ALWAYS use `FileStorageService` for file operations - never direct file I/O**
