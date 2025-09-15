@@ -3,6 +3,11 @@ import 'dart:io';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../entities/link_entity.dart';
+import '../entities/note_entities.dart';
+import '../entities/note_placement_entity.dart';
+import '../entities/vault_entity.dart';
+
 part 'isar_database_service.g.dart';
 
 /// Temporary dummy collection for infrastructure setup.
@@ -51,8 +56,17 @@ class IsarDatabaseService {
       // For now, use dummy entity to satisfy Isar's requirement of at least one collection
       _instance = await Isar.open(
         [
+          // Core collections
+          VaultEntitySchema,
+          FolderEntitySchema,
+          NoteEntitySchema,
+          NotePageEntitySchema,
+          LinkEntitySchema,
+          NotePlacementEntitySchema,
+          // Temporary dummy to ensure at least one collection existed in Task 1
+          // Can be removed after all entities are added
           DummyEntitySchema,
-        ], // Will be replaced with actual entity schemas in task 2
+        ],
         directory: dbPath,
         name: _databaseName,
         maxSizeMiB: 256, // 256MB max database size
