@@ -7,7 +7,12 @@ class VaultStore extends ChangeNotifier {
   final i = _vaults.indexWhere((v) => v.id == id);
   return i == -1 ? null : _vaults[i];
   }
-  
+
+  Vault? get temporaryVault {
+    final i = _vaults.indexWhere((v) => v.isTemporary);
+    return i == -1 ? null : _vaults[i];
+  }
+
   final VaultRepository _repo;
   VaultStore(this._repo);
 
@@ -51,5 +56,16 @@ class VaultStore extends ChangeNotifier {
   );
   await _repo.save(_vaults);
   notifyListeners();
+  }
+
+  Future<Vault> ensureTempVault() async {
+    final t = temporaryVault;
+    if (t != null) return t;
+
+    final temp = Vault.temp();        // ← 아래 2) 참고
+    _vaults.insert(0, temp);          // 항상 첫 카드 고정
+    await _repo.save(_vaults);
+    notifyListeners();
+    return temp;
   }
 }

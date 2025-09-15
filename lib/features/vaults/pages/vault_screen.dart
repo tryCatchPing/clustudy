@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
+import '../../../design_system/components/organisms/creation_sheet.dart';
+import '../widgets/vault_creation_sheet.dart';
+import '../../../utils/pickers/pick_pdf.dart';
 
 import '../../../design_system/components/organisms/bottom_actions_dock_fixed.dart';
 import '../../../design_system/components/organisms/top_toolbar.dart';
@@ -10,8 +13,8 @@ import '../../../design_system/tokens/app_colors.dart';
 import '../../../design_system/tokens/app_icons.dart';
 import '../../../design_system/tokens/app_spacing.dart';
 
-import '../data/vault.dart';                     // ← Vault 타입
-import '../state/vault_store.dart';             // ← vaults → vault 로 수정
+import '../data/vault.dart'; // ← Vault 타입
+import '../state/vault_store.dart'; // ← vaults → vault 로 수정
 import '../../notes/state/note_store.dart';
 import '../../../routing/route_names.dart';
 
@@ -66,42 +69,30 @@ class VaultScreen extends StatelessWidget {
                 DockItem(
                   label: '폴더 생성',
                   svgPath: AppIcons.folderAdd,
-                  onTap: () {
-                    // TODO: vault 내 폴더 생성 로직 연결
-                  },
+                  onTap: () => showVaultCreationSheet(context, vault.id),
                 ),
                 // 노트 생성
                 DockItem(
                   label: '노트 생성',
                   svgPath: AppIcons.noteAdd,
-                  onTap: () async {
-                    final note = await context
-                        .read<NoteStore>()
-                        .createNote(vaultId: vault.id, title: '새 노트');
-                    if (context.mounted) {
-                      context.goNamed(RouteNames.note,
-                          pathParameters: {'id': note.id});
-                    }
-                  },
+                  onTap: () => showVaultCreationSheet(context, vault.id),
                 ),
                 // PDF 가져오기
                 DockItem(
                   label: 'PDF 가져오기',
                   svgPath: AppIcons.download,
                   onTap: () async {
-                    final picked = await FilePicker.platform.pickFiles(
-                      type: FileType.custom,
-                      allowedExtensions: ['pdf'],
-                    );
-                    if (picked == null || picked.files.isEmpty) return;
+                    final file = await pickPdf();
+                    if (file == null) return;
                     final note = await context.read<NoteStore>().createPdfNote(
-                          vaultId: vault.id,
-                          fileName: picked.files.single.name,
-                        );
-                    if (context.mounted) {
-                      context.goNamed(RouteNames.note,
-                          pathParameters: {'id': note.id});
-                    }
+                      vaultId: vault.id,
+                      fileName: file.name,
+                    );
+                    if (!context.mounted) return;
+                    context.goNamed(
+                      RouteNames.note,
+                      pathParameters: {'id': note.id},
+                    );
                   },
                 ),
               ],

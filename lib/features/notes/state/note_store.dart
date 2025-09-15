@@ -19,7 +19,7 @@ class NoteStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<Note> createNote({required String vaultId, String? title}) async {
+  Future<Note> createNote({required String vaultId, String? folderId, String? title}) async {
     final n = Note(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       vaultId: vaultId,
@@ -34,6 +34,7 @@ class NoteStore extends ChangeNotifier {
 
   Future<Note> createPdfNote({
     required String vaultId,
+    String? folderId,
     required String fileName,
   }) async {
     final n = Note(
