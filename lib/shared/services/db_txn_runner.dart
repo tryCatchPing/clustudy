@@ -18,6 +18,9 @@ class NoopDbTxnRunner implements DbTxnRunner {
 }
 
 /// DI provider. Memory uses no-op; Isar can override at runtime.
+///
+/// Note: This will be updated to use IsarDbTxnRunner in task 4 when
+/// repository implementations are replaced with Isar versions.
 final dbTxnRunnerProvider = Provider<DbTxnRunner>((ref) {
   return const NoopDbTxnRunner();
 });
