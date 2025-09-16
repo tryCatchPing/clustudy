@@ -58,6 +58,7 @@ class TopToolbar extends StatelessWidget implements PreferredSizeWidget {
     return SafeArea(
       bottom: false,
       child: Container(
+        width: double.infinity,
         height: height,
         padding: const EdgeInsets.only(
           left: AppSpacing.screenPadding, // 30
@@ -66,31 +67,30 @@ class TopToolbar extends StatelessWidget implements PreferredSizeWidget {
         ),
         color: AppColors.background,
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (variant == TopToolbarVariant.folder &&
-                onBack != null &&
-                backSvgPath != null) ...[
-              AppIconButton(
-                svgPath: backSvgPath!,
-                onPressed: onBack,
-                tooltip: '이전',
-                size: AppIconButtonSize.md,
-                color: iconColor,
-              ),
-              const SizedBox(width: AppSpacing.medium),
+                    onBack != null &&
+                    backSvgPath != null) ...[
+                  AppIconButton(
+                    svgPath: backSvgPath!,
+                    onPressed: onBack,
+                    tooltip: '이전',
+                    size: AppIconButtonSize.md,
+                    color: iconColor,
+                  ),
+                  const SizedBox(width: AppSpacing.medium),
             ],
 
-            Flexible(
-              child: Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: titleStyle,
-              ),
-            ),
-
-            const Spacer(),
+            Expanded(
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: titleStyle,
+                  ),
+                ),
 
             Row(
               mainAxisSize: MainAxisSize.min,
