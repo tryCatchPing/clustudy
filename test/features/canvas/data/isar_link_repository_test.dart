@@ -1,29 +1,26 @@
-import 'dart:io';
-
 import 'package:async/async.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
 import 'package:it_contest/features/canvas/data/isar_link_repository.dart';
 import 'package:it_contest/features/canvas/models/link_model.dart';
-import 'package:it_contest/shared/services/isar_database_service.dart';
-
-class _MockPathProvider extends PathProviderPlatform {
-  @override
-  Future<String?> getApplicationDocumentsPath() async {
-    final dir = await Directory.systemTemp.createTemp('isar_link_repo_test');
-    return dir.path;
-  }
-}
+import '../../../shared/utils/test_isar.dart';
 
 void main() {
   setUpAll(() {
     TestWidgetsFlutterBinding.ensureInitialized();
-    PathProviderPlatform.instance = _MockPathProvider();
+  });
+
+  late TestIsarContext isarContext;
+  late IsarLinkRepository repository;
+
+  setUp(() async {
+    isarContext = await openTestIsar();
+    repository = IsarLinkRepository(isar: isarContext.isar);
   });
 
   tearDown(() async {
-    await IsarDatabaseService.close();
+    repository.dispose();
+    await isarContext.dispose();
   });
 
   group('IsarLinkRepository', () {
@@ -46,7 +43,6 @@ void main() {
     }
 
     test('watchByPage emits changes when creating links', () async {
-      final repository = IsarLinkRepository();
       final link = buildLink(0);
 
       final queue = StreamQueue<List<LinkModel>>(
@@ -63,7 +59,6 @@ void main() {
     });
 
     test('rejects links with invalid bounding boxes', () async {
-      final repository = IsarLinkRepository();
       final invalid = LinkModel(
         id: 'bad',
         sourceNoteId: 'src-note',
@@ -86,7 +81,6 @@ void main() {
     });
 
     test('batch operations support backlink queries and deletions', () async {
-      final repository = IsarLinkRepository();
       final links = [buildLink(0), buildLink(1), buildLink(2)];
 
       await repository.createMultipleLinks(links);
