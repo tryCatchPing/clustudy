@@ -100,7 +100,17 @@ class VaultScreen extends StatelessWidget {
         variant: TopToolbarVariant.folder,
         title: vault.name,
         actions: actions,
-      ),
+        backSvgPath: AppIcons.chevronLeft,
+        onBack: () {
+          // go_router 사용 시 안전한 뒤로가기 처리
+          if (Navigator.of(context).canPop()) {
+            context.pop();
+          } else {
+            context.goNamed(RouteNames.home);      // 루트면 홈으로
+          }
+        },
+        iconColor: AppColors.gray50,  // 필요하면 색상 지정
+        ),
       body: Padding(
         padding: const EdgeInsets.all(AppSpacing.screenPadding),
         child: FolderGrid(items: items),

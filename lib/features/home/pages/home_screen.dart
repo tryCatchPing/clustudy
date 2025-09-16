@@ -72,7 +72,7 @@ class HomeScreen extends StatelessWidget {
                 // 1) Vault 생성
                 DockItem(
                   label: 'Vault 생성',
-                  svgPath: AppIcons.folderVault,
+                  svgPath: AppIcons.folderVaultMedium,
                   onTap: () => showHomeCreationSheet(context),
                 ),
                 // 2) 노트 생성 (임시 vault로 바로)
