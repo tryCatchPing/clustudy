@@ -8,6 +8,7 @@ import '../entities/link_entity.dart';
 import '../entities/note_entities.dart';
 import '../entities/note_placement_entity.dart';
 import '../entities/vault_entity.dart';
+import '../entities/thumbnail_metadata_entity.dart';
 
 part 'isar_database_service.g.dart';
 
@@ -72,6 +73,7 @@ class IsarDatabaseService {
           NotePageEntitySchema,
           LinkEntitySchema,
           NotePlacementEntitySchema,
+          ThumbnailMetadataEntitySchema,
           DatabaseMetadataEntitySchema,
         ],
         directory: dbPath,
