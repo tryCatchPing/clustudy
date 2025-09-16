@@ -63,7 +63,7 @@ class CreationBaseSheet extends StatelessWidget {
                     child: Text(
                       title,
                       textAlign: TextAlign.center,
-                      style: AppTypography.subtitle1.copyWith(color: AppColors.white),
+                      style: AppTypography.subtitle1.copyWith(color: AppColors.background),
                     ),
                   ),
                   AppButton.text(

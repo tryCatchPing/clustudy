@@ -2,17 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../../design_system/components/molecules/app_card.dart';
 import '../../../design_system/components/organisms/bottom_actions_dock_fixed.dart';
 import '../../../design_system/components/organisms/top_toolbar.dart';
 import '../../../design_system/components/organisms/folder_grid.dart';
+import '../../../design_system/components/organisms/creation_sheet.dart';
+import '../../../design_system/components/molecules/folder_card.dart';
 import '../../../design_system/tokens/app_colors.dart';
 import '../../../design_system/tokens/app_icons.dart';
 import '../../../design_system/tokens/app_spacing.dart';
 import '../../notes/state/note_store.dart';
+import '../../notes/widgets/note_creation_sheet.dart';
 import '../../vaults/state/vault_store.dart';
+import '../../vaults/widgets/vault_creation_sheet.dart';
 import '../../vaults/data/vault.dart';
-import '../widgets/home_creation_sheet.dart';
 import '../../../utils/pickers/pick_pdf.dart';
 import '../../../routing/route_names.dart';
 
@@ -31,16 +33,19 @@ class HomeScreen extends StatelessWidget {
     final items = vaults
         .map(
           (v) => FolderGridItem(
-            svgIconPath: v.isTemporary
-                ? AppIcons.folderVault
-                : AppIcons.folderVault,
             title: v.name,
             date: v.createdAt,
-            onTap: () => context.goNamed(
-              RouteNames.vault,
-              pathParameters: {'id': v.id},
+            onTap: () =>
+                context.goNamed(RouteNames.vault, pathParameters: {'id': v.id}),
+            child: FolderCard(
+              type: FolderType.vault,
+              title: v.name,
+              date: v.createdAt,
+              onTap: () => context.goNamed(
+                RouteNames.vault,
+                pathParameters: {'id': v.id},
+              ),
             ),
-            // onTitleChanged: (name) => context.read<VaultStore>().renameVault(v.id, name),
           ),
         )
         .toList();
@@ -73,17 +78,51 @@ class HomeScreen extends StatelessWidget {
                 DockItem(
                   label: 'Vault 생성',
                   svgPath: AppIcons.folderVaultMedium,
-                  onTap: () => showHomeCreationSheet(context),
+                  onTap: () async {
+                    await showCreationSheet(
+                      context,
+                      VaultCreationSheet(
+                        onCreate: (name) async {
+                          await context.read<VaultStore>().createVault(name);
+                        },
+                      ),
+                    );
+                  },
                 ),
                 // 2) 노트 생성 (임시 vault로 바로)
                 DockItem(
                   label: '노트 생성',
                   svgPath: AppIcons.noteAdd, // 아이콘 경로 알맞게 교체
-                  onTap: () => showHomeCreationSheet(context),
+                  onTap: () async {
+                    await showCreationSheet(
+                      context,
+                      NoteCreationSheet(
+                        onCreate: (name) async {
+                          // 임시 vault에 생성 (없으면 첫 vault 사용)
+                          final vaultStore = context.read<VaultStore>();
+                          final temp = vaultStore.vaults.firstWhere(
+                            (v) => v.isTemporary,
+                            orElse: () => vaultStore.vaults.first,
+                          );
+                          final note = await context
+                              .read<NoteStore>()
+                              .createNote(
+                                vaultId: temp.id,
+                                title: name,
+                              );
+                          if (!context.mounted) return;
+                          context.goNamed(
+                            RouteNames.note,
+                            pathParameters: {'id': note.id},
+                          );
+                        },
+                      ),
+                    );
+                  },
                 ),
                 // 3) PDF 가져오기 (임시 vault로)
                 DockItem(
-                  label: 'PDF 가져오기',
+                  label: 'PDF 생성',
                   svgPath: AppIcons.download,
                   onTap: () async {
                     final file = await pickPdf();

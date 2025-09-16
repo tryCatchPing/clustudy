@@ -8,13 +8,17 @@ import '../../../design_system/tokens/app_icons.dart';
 import '../../../design_system/components/organisms/top_toolbar.dart';
 import '../../../design_system/components/organisms/bottom_actions_dock_fixed.dart';
 import '../../../design_system/components/organisms/folder_grid.dart';
+import '../../../design_system/components/organisms/creation_sheet.dart';
+import '../../../design_system/components/molecules/folder_card.dart';
 
 import '../widgets/folder_creation_sheet.dart';
 import '../../notes/state/note_store.dart';
 import '../../notes/data/note.dart';
+import '../../notes/widgets/note_creation_sheet.dart';
 import '../../../routing/route_names.dart';
 import '../data/folder.dart';
 import '../state/folder_store.dart';
+import '../widgets/folder_creation_sheet.dart';
 import '../../../utils/pickers/pick_pdf.dart';
 
 import 'package:provider/provider.dart';
@@ -22,6 +26,7 @@ import 'package:provider/provider.dart';
 class FolderScreen extends StatelessWidget {
   final String vaultId;
   final String folderId;
+
   const FolderScreen({
     super.key,
     required this.vaultId,
@@ -58,27 +63,30 @@ class FolderScreen extends StatelessWidget {
 
     final items = <FolderGridItem>[
       // 폴더들
-      ...subFolders.map((f) => FolderGridItem(
-            svgIconPath: AppIcons.folder,           // 폴더는 SVG 아이콘
-            title: f.name,
-            date: f.createdAt,
-            onTap: () => context.goNamed(
-              RouteNames.folder,
-              pathParameters: {'vaultId': vaultId, 'folderId': f.id},
-            ),
-            // onTitleChanged: (name) => context.read<FolderStore>().renameFolder(f.id, name),
-          )),
+      ...subFolders.map(
+        (f) => FolderGridItem(
+          svgIconPath: AppIcons.folder,
+          title: f.name,
+          date: f.createdAt,
+          onTap: () => context.goNamed(
+            RouteNames.folder,
+            pathParameters: {'vaultId': vaultId, 'folderId': f.id},
+          ),
+        ),
+      ),
       // 노트들
-      ...notes.map((n) => FolderGridItem(
-            previewImage: null,                     // 썸네일(Uint8List) 있으면 넣기
-            title: n.title,
-            date: n.createdAt,
-            onTap: () => context.goNamed(
-              RouteNames.note,
-              pathParameters: {'id': n.id},
-            ),
-            // onTitleChanged: (t) => context.read<NoteStore>().renameNote(n.id, t),
-          )),
+      ...notes.map(
+        (n) => FolderGridItem(
+          previewImage: null, // 썸네일(Uint8List) 있으면 넣기
+          title: n.title,
+          date: n.createdAt,
+          onTap: () => context.goNamed(
+            RouteNames.note,
+            pathParameters: {'id': n.id},
+          ),
+          // onTitleChanged: (t) => context.read<NoteStore>().renameNote(n.id, t),
+        ),
+      ),
     ];
 
     // 임시 Vault 화면과 동일: 검색/설정만, 그래프뷰 버튼 없음
@@ -98,15 +106,15 @@ class FolderScreen extends StatelessWidget {
           if (Navigator.of(context).canPop()) {
             context.pop();
           } else {
-            context.goNamed(RouteNames.home);      // 루트면 홈으로
+            context.goNamed(RouteNames.home); // 루트면 홈으로
           }
         },
-        iconColor: AppColors.gray50,  // 필요하면 색상 지정
+        iconColor: AppColors.gray50, // 필요하면 색상 지정
       ),
       body: Padding(
         padding: const EdgeInsets.all(AppSpacing.screenPadding),
         child: FolderGrid(
-          items:items,
+          items: items,
         ),
       ),
       // 하단 Dock: 임시 Vault처럼 “만들기” → 시트 열기
@@ -121,25 +129,51 @@ class FolderScreen extends StatelessWidget {
                 DockItem(
                   label: '폴더 생성',
                   svgPath: AppIcons.folderAdd,
-                  onTap: () => showFolderCreationSheet(
-                    context,
-                    vaultId: vaultId, // ← 이름 있는 인자
-                    parentFolderId: folderId, // ← 이름 있는 인자
-                  ),
+                  onTap: () async {
+                    await showCreationSheet(
+                      context,
+                      FolderCreationSheet(
+                        onCreate: (name) async {
+                          await context.read<FolderStore>().createFolder(
+                            vaultId: vaultId,
+                            parentFolderId: folderId, // 현재 폴더 아래에 생성
+                            name: name,
+                          );
+                        },
+                      ),
+                    );
+                  },
                 ),
+
                 // 노트 생성
                 DockItem(
                   label: '노트 생성',
                   svgPath: AppIcons.noteAdd,
-                  onTap: () => showFolderCreationSheet(
-                    context,
-                    vaultId: vaultId, // ← 이름 있는 인자
-                    parentFolderId: folderId, // ← 이름 있는 인자
-                  ),
+                  onTap: () async {
+                    await showCreationSheet(
+                      context,
+                      NoteCreationSheet(
+                        onCreate: (name) async {
+                          final note = await context
+                              .read<NoteStore>()
+                              .createNote(
+                                vaultId: vaultId,
+                                folderId: folderId, // 현재 폴더에 생성
+                                title: name,
+                              );
+                          if (!context.mounted) return;
+                          context.goNamed(
+                            RouteNames.note,
+                            pathParameters: {'id': note.id},
+                          );
+                        },
+                      ),
+                    );
+                  },
                 ),
                 // PDF 가져오기
                 DockItem(
-                  label: 'PDF 가져오기',
+                  label: 'PDF 생성',
                   svgPath: AppIcons.download,
                   onTap: () async {
                     final file = await pickPdf();

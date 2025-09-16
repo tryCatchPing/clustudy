@@ -59,7 +59,7 @@ class _NoteCreationSheetState extends State<NoteCreationSheet> {
               width: 150,
               height: 200,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.white,
                 borderRadius: BorderRadius.circular(6),
               ),
             ),
@@ -73,7 +73,7 @@ class _NoteCreationSheetState extends State<NoteCreationSheet> {
                 autofocus: true,
                 style: AppTextFieldStyle.none, // 다크 시트에서는 none이 깔끔
                 textStyle: AppTypography.body2.copyWith(
-                  color: AppColors.white,
+                  color: AppColors.background,
                   height: 1.0,
                 ),
                 onSubmitted: (_) => _submit(),

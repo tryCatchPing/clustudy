@@ -48,7 +48,7 @@ class _FolderCreationSheetState extends State<FolderCreationSheet> {
           mainAxisSize: MainAxisSize.min,
           children: [
             SvgPicture.asset(
-              AppIcons.folder,
+              AppIcons.folderXLarge,
               width: 200, height: 184,
               colorFilter: const ColorFilter.mode(AppColors.background, BlendMode.srcIn),
             ),
@@ -60,7 +60,7 @@ class _FolderCreationSheetState extends State<FolderCreationSheet> {
                 textAlign: TextAlign.center,
                 autofocus: true,
                 style: AppTextFieldStyle.none,
-                textStyle: AppTypography.body2.copyWith(color: AppColors.white),
+                textStyle: AppTypography.body2.copyWith(color: AppColors.background),
                 onSubmitted: (_) => _submit(),
               ),
             ),
