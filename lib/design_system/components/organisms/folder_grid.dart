@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../tokens/app_spacing.dart';
 import '../../tokens/app_sizes.dart';
 import '../molecules/app_card.dart';
+import '../molecules/folder_card.dart';
 import 'dart:typed_data';
 
 class FolderGridItem {
@@ -13,7 +14,8 @@ class FolderGridItem {
     required this.date,
     this.onTap,
     this.onTitleChanged,
-  }) : assert(svgIconPath != null || previewImage != null);
+    this.child,
+  }) : assert(svgIconPath != null || previewImage != null || child != null);
 
   final String? svgIconPath;
   final Uint8List? previewImage;
@@ -21,6 +23,7 @@ class FolderGridItem {
   final DateTime date;
   final VoidCallback? onTap;
   final ValueChanged<String>? onTitleChanged;
+  final Widget? child;
 }
 
 class FolderGrid extends StatelessWidget {
@@ -68,15 +71,18 @@ class FolderGrid extends StatelessWidget {
           childAspectRatio: AppSizes.folderTileW / AppSizes.folderTileH, // 144/196
         ),
         itemCount: items.length,
-        itemBuilder: (context, i) {
-          final it = items[i];
+        itemBuilder: (context, index) {              
+          final item = items[index];
+          if (item.child != null) {
+            return item.child!;
+          }
           return AppCard(
-            svgIconPath: it.svgIconPath,
-            previewImage: it.previewImage,
-            title: it.title,
-            date: it.date,
-            onTap: it.onTap,
-            onTitleChanged: it.onTitleChanged,
+            svgIconPath: item.svgIconPath,
+            previewImage: item.previewImage,
+            title: item.title,
+            date: item.date,
+            onTap: item.onTap,
+            onTitleChanged: item.onTitleChanged,
           );
         },
       );

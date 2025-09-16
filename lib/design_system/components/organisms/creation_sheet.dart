@@ -6,7 +6,6 @@ import '../../tokens/app_typography.dart';
 import '../atoms/app_icon_button.dart';
 import '../atoms/app_button.dart';
 
-/// Base container used by creation sheets throughout the design system.
 class CreationBaseSheet extends StatelessWidget {
   const CreationBaseSheet({
     super.key,
@@ -28,16 +27,15 @@ class CreationBaseSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final sheetHeight = size.height * heightRatio;
+    final h = size.height * heightRatio;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
-      height: sheetHeight + bottomInset,
+      height: h + bottomInset,
       decoration: const BoxDecoration(
         color: AppColors.primary,
         borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(30),
-          topRight: Radius.circular(30),
+          topLeft: Radius.circular(30), topRight: Radius.circular(30),
         ),
       ),
       child: SafeArea(
@@ -65,9 +63,7 @@ class CreationBaseSheet extends StatelessWidget {
                     child: Text(
                       title,
                       textAlign: TextAlign.center,
-                      style: AppTypography.subtitle1.copyWith(
-                        color: AppColors.white,
-                      ),
+                      style: AppTypography.subtitle1.copyWith(color: AppColors.background),
                     ),
                   ),
                   AppButton.text(
@@ -88,6 +84,7 @@ class CreationBaseSheet extends StatelessWidget {
   }
 }
 
+/// 공통 호출 헬퍼
 Future<T?> showCreationSheet<T>(BuildContext context, Widget sheet) {
   return showModalBottomSheet<T>(
     context: context,
