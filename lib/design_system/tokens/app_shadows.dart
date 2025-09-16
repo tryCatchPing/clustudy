@@ -1,19 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' as ui show ImageFilter;
 
-/// 🌑 앱 전체에서 사용할 그림자 시스템
-///
-/// Figma 디자인 시스템을 기반으로 한 그림자 토큰입니다.
-/// BoxDecoration에서 하드코딩된 그림자 대신 이 클래스를 사용해주세요.
-///
-/// 예시:
-/// ```dart
-/// Container(
-///   decoration: BoxDecoration(
-///     boxShadow: AppShadows.medium,
-///     borderRadius: BorderRadius.circular(12),
-///   ),
-/// )
-/// ```
 class AppShadows {
   // Private constructor to prevent instantiation
   AppShadows._();
@@ -49,21 +36,47 @@ class AppShadows {
     ),
   ];
 
-  /// (유틸) 필요 시 동적으로 커스터마이즈
-  static List<BoxShadow> custom({
-    double x = 0,
+  static Widget shadowizeVector({
+    required double width,
+    required double height,
+    required Widget child,
     double y = 2,
-    double blur = 4,
-    double spread = 0,
-    double opacity = 0.25,
-    Color base = Colors.black,
-  }) =>
-      [
-        BoxShadow(
-          color: base.withOpacity(opacity),
-          offset: Offset(x, y),
-          blurRadius: blur,
-          spreadRadius: spread,
-        ),
-      ];
+    double sigma = 4,
+    Color color = const Color(0x40000000),
+    double? borderRadius,
+  }) {
+    Widget content({bool forShadow = false}) {
+      final c = forShadow
+          ? ColorFiltered(
+              colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+              child: child,
+            )
+          : child;
+
+      if (borderRadius != null) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(borderRadius),
+          child: c,
+        );
+      }
+      return c;
+    }
+
+    return SizedBox(
+      width: width,
+      height: height,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            top: y,
+            child: ImageFiltered(
+              imageFilter: ui.ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
+              child: content(forShadow: true),
+            ),
+          ),
+          Positioned.fill(child: content()),
+        ],
+      ),
+    );
+  }
 }

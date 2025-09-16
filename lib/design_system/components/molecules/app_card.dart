@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart'; // intl 패키지 import
+import '../../tokens/app_sizes.dart';
 import '../atoms/app_textfield.dart';
 import 'dart:typed_data'; // Uint8List 사용
 
@@ -8,6 +9,7 @@ import '../../../design_system/tokens/app_colors.dart';
 import '../../../design_system/tokens/app_spacing.dart';
 import '../../../design_system/tokens/app_typography.dart';
 import '../../../design_system/tokens/app_shadows.dart';
+import '../../../design_system/tokens/app_icons.dart';
 
 class AppCard extends StatefulWidget {
   final String? svgIconPath;
@@ -80,86 +82,88 @@ class _AppCardState extends State<AppCard> {
 
   @override
   Widget build(BuildContext context) {
-    final formattedDate = DateFormat('yyyy.MM.dd').format(widget.date);
-
-    // 미리보기(노트) 또는 폴더 아이콘
     final preview = widget.previewImage != null
-        ? Container(
-            decoration: BoxDecoration(
-              boxShadow: AppShadows.small,
-              borderRadius: BorderRadius.circular(AppSpacing.small),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(AppSpacing.small),
-              child: Image.memory(
-                widget.previewImage!,
-                width: AppSpacing.cardPreviewWidth,
-                height: AppSpacing.cardPreviewHeight,
-                fit: BoxFit.cover,
-              ),
-            ),
-          )
-        : SvgPicture.asset(
-            widget.svgIconPath!,
-            width: AppSpacing.cardFolderIconWidth,
-            height: AppSpacing.cardFolderIconHeight,
+      ? AppShadows.shadowizeVector(
+          width: AppSizes.folderIconW,
+          height: AppSizes.folderIconH,
+          borderRadius: AppSpacing.small,
+          child: Image.memory(widget.previewImage!, fit: BoxFit.cover),
+          // y/sigma/color는 AppShadows 내부 기본값 그대로 써도 OK
+        )
+      : AppShadows.shadowizeVector(
+          width: AppSizes.folderIconW,
+          height: AppSizes.folderIconH,
+          child: SvgPicture.asset(
+            AppIcons.folderVaultLarge,
+            fit: BoxFit.contain,
             colorFilter: const ColorFilter.mode(AppColors.primary, BlendMode.srcIn),
-          );
-
-    // 본문
-    final body = Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        preview,
-        const SizedBox(height: AppSpacing.medium), // 아이콘 ↔ 이름 16px
-
-        // 이름(보기/편집) — 항상 중앙 정렬, 1줄/ellipsis
-        if (_isEditing)
-          Focus(
-            onFocusChange: (hasFocus) {
-              if (!hasFocus) _commitAndExit();
-            },
-            child: AppTextField(
-              controller: _textController,
-              style: AppTextFieldStyle.none,
-              textStyle: AppTypography.body1.copyWith(color: AppColors.gray50),
-              textAlign: TextAlign.center,     // ← 중앙 정렬
-              autofocus: true,                 // ← 포커스
-              focusNode: _focus,               // ← 포커스 제어
-              onSubmitted: _commitAndExit,
-              onChanged: (_) => setState(() {}), // 확인 버튼 활성화 등 필요 시
-            ),
-          )
-        else
-          Text(
-            widget.title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: AppTypography.body1.copyWith(color: AppColors.gray50),
           ),
+          y: 2, sigma: 4, color: const Color(0x40000000),
+        );
 
-        const SizedBox(height: AppSpacing.small), // 이름 ↔ 날짜 8px
-        Text(
-          formattedDate,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-          style: AppTypography.body5.copyWith(color: AppColors.gray30),
-        ),
-      ],
-    );
-
-    // 전체 16px 패딩 + InkWell로 접근성/리플
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: _isEditing ? null : widget.onTap,
         onLongPress: _isEditing ? null : _enterEdit,
         borderRadius: BorderRadius.circular(AppSpacing.cardBorderRadius),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.medium), // ← 16px 패딩
-          child: body,
+        child: SizedBox(
+          width: 144,
+          height: 200,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8), // or EdgeInsets.zero
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                // 아이콘 144×136 고정
+                preview,
+                const SizedBox(height: 16), // 아이콘↔이름
+                // 이름 (16px, bold, line-height 1.0)
+                if (_isEditing)
+                  Focus(
+                    onFocusChange: (hasFocus) { if (!hasFocus) _commitAndExit(); },
+                    child: AppTextField(
+                      controller: _textController,
+                      style: AppTextFieldStyle.none,
+                      textStyle: AppTypography.body1.copyWith(
+                        color: AppColors.gray50,
+                        height: 1.0,
+                      ),
+                      textAlign: TextAlign.center,
+                      autofocus: true,
+                      focusNode: _focus,
+                      onSubmitted: _commitAndExit,
+                    ),
+                  )
+                else
+                  Text(
+                    widget.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: AppTypography.body1.copyWith(
+                      color: AppColors.gray50,
+                      height: 1.0, // ← 중요
+                    ),
+                  ),
+
+                const SizedBox(height: 8), // 이름↔날짜
+
+                // 날짜 (13px, line-height 1.0)
+                Text(
+                  DateFormat('yyyy.MM.dd').format(widget.date),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.gray30,
+                    height: 1.0, // ← 중요
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

@@ -10,6 +10,8 @@ class AppIcons {
   // Home/Vault actions
   static const folder = 'assets/icons/folder.svg';
   static const folderVault = 'assets/icons/folderVault.svg';
+  static const folderVaultLarge = 'assets/icons/folder_vault_large.svg';
+  static const folderVaultMedium = 'assets/icons/folder_vault_medium.svg';
   static const plus = 'assets/icons/plus.svg';
   static const folderAdd = 'assets/icons/folder_add.svg';
   static const download = 'assets/icons/download.svg';
