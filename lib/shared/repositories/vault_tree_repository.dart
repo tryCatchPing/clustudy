@@ -31,6 +31,9 @@ abstract class VaultTreeRepository {
   /// 단일 Vault 조회.
   Future<VaultModel?> getVault(String vaultId);
 
+  /// 단일 폴더 조회.
+  Future<FolderModel?> getFolder(String folderId);
+
   /// Vault 생성
   Future<VaultModel> createVault(String name);
 
@@ -71,6 +74,12 @@ abstract class VaultTreeRepository {
   /// 하위 노트의 콘텐츠 및 링크 정리는 상위 오케스트레이션 서비스가 책임집니다.
   Future<void> deleteFolder(String folderId);
 
+  /// 지정한 폴더의 조상 목록(루트→자기 자신 순)을 반환합니다.
+  Future<List<FolderModel>> getFolderAncestors(String folderId);
+
+  /// 지정한 폴더의 모든 하위 폴더를 반환합니다.
+  Future<List<FolderModel>> getFolderDescendants(String folderId);
+
   //////////////////////////////////////////////////////////////////////////////
   // Note (트리/배치 관점)
   //////////////////////////////////////////////////////////////////////////////
@@ -109,6 +118,15 @@ abstract class VaultTreeRepository {
     required String vaultId,
     String? parentFolderId,
     required String name,
+  });
+
+  /// Vault 내 노트를 검색합니다.
+  Future<List<NotePlacement>> searchNotes(
+    String vaultId,
+    String query, {
+    bool exact = false,
+    int limit = 50,
+    Set<String>? excludeNoteIds,
   });
 
   //////////////////////////////////////////////////////////////////////////////

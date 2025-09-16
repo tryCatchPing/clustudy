@@ -47,6 +47,9 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
   Future<VaultModel?> getVault(String vaultId) async => _vaults[vaultId];
 
   @override
+  Future<FolderModel?> getFolder(String folderId) async => _folders[folderId];
+
+  @override
   Future<VaultModel> createVault(String name) async {
     final normalized = NameNormalizer.normalize(name);
     _ensureUniqueVaultName(normalized);
@@ -232,6 +235,35 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
     }
   }
 
+  @override
+  Future<List<FolderModel>> getFolderAncestors(String folderId) async {
+    final ancestors = <FolderModel>[];
+    var current = _folders[folderId];
+    while (current != null) {
+      ancestors.add(current);
+      final parentId = current.parentFolderId;
+      current = parentId != null ? _folders[parentId] : null;
+    }
+    return ancestors.reversed.toList(growable: false);
+  }
+
+  @override
+  Future<List<FolderModel>> getFolderDescendants(String folderId) async {
+    final descendants = <FolderModel>[];
+    final queue = <String>[folderId];
+    while (queue.isNotEmpty) {
+      final currentId = queue.removeAt(0);
+      final children = _folders.values.where(
+        (f) => f.parentFolderId == currentId,
+      );
+      for (final child in children) {
+        descendants.add(child);
+        queue.add(child.folderId);
+      }
+    }
+    return List<FolderModel>.unmodifiable(descendants);
+  }
+
   //////////////////////////////////////////////////////////////////////////////
   // Note (tree-level)
   //////////////////////////////////////////////////////////////////////////////
@@ -351,6 +383,71 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
     debugPrint(
       '📝 [VaultRepo] registerExistingNote id=$noteId name=$normalized',
     );
+  }
+
+  @override
+  Future<List<NotePlacement>> searchNotes(
+    String vaultId,
+    String query, {
+    bool exact = false,
+    int limit = 50,
+    Set<String>? excludeNoteIds,
+  }) async {
+    final normalizedQuery = NameNormalizer.compareKey(query.trim());
+    final excludes = excludeNoteIds ?? const <String>{};
+    final scored = <_ScoredPlacement>[];
+
+    for (final placement in _notes.values) {
+      if (placement.vaultId != vaultId) {
+        continue;
+      }
+      if (excludes.contains(placement.noteId)) {
+        continue;
+      }
+
+      final key = NameNormalizer.compareKey(placement.name);
+      int score;
+      if (normalizedQuery.isEmpty) {
+        score = 0;
+      } else if (exact) {
+        if (key == normalizedQuery) {
+          score = 3;
+        } else {
+          continue;
+        }
+      } else {
+        if (key == normalizedQuery) {
+          score = 3;
+        } else if (key.startsWith(normalizedQuery)) {
+          score = 2;
+        } else if (key.contains(normalizedQuery)) {
+          score = 1;
+        } else {
+          continue;
+        }
+      }
+
+      scored.add(_ScoredPlacement(score: score, placement: placement));
+    }
+
+    if (normalizedQuery.isEmpty) {
+      scored.sort(
+        (a, b) => NameNormalizer.compareKey(
+          a.placement.name,
+        ).compareTo(NameNormalizer.compareKey(b.placement.name)),
+      );
+    } else {
+      scored.sort((a, b) {
+        final byScore = b.score.compareTo(a.score);
+        if (byScore != 0) return byScore;
+        return NameNormalizer.compareKey(
+          a.placement.name,
+        ).compareTo(NameNormalizer.compareKey(b.placement.name));
+      });
+    }
+
+    final iterable = limit > 0 ? scored.take(limit) : scored;
+    return iterable.map((e) => e.placement).toList(growable: false);
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -546,4 +643,11 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
   }
 
   // Name normalization moved to NameNormalizer (shared service).
+}
+
+class _ScoredPlacement {
+  final int score;
+  final NotePlacement placement;
+
+  const _ScoredPlacement({required this.score, required this.placement});
 }
