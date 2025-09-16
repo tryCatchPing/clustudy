@@ -62,6 +62,29 @@ void main() {
       await queue.cancel();
     });
 
+    test('rejects links with invalid bounding boxes', () async {
+      final repository = IsarLinkRepository();
+      final invalid = LinkModel(
+        id: 'bad',
+        sourceNoteId: 'src-note',
+        sourcePageId: 'page-1',
+        targetNoteId: 'dest-note',
+        bboxLeft: 0,
+        bboxTop: 0,
+        bboxWidth: 0,
+        bboxHeight: 10,
+        label: null,
+        anchorText: null,
+        createdAt: DateTime.utc(2024, 1, 1),
+        updatedAt: DateTime.utc(2024, 1, 1),
+      );
+
+      await expectLater(
+        repository.create(invalid),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
+
     test('batch operations support backlink queries and deletions', () async {
       final repository = IsarLinkRepository();
       final links = [buildLink(0), buildLink(1), buildLink(2)];

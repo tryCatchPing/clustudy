@@ -65,6 +65,7 @@ class IsarLinkRepository implements LinkRepository {
 
   @override
   Future<void> create(LinkModel link) async {
+    _validateLink(link);
     final isar = await _ensureIsar();
     await isar.writeTxn(() async {
       final entity = link.toEntity();
@@ -74,6 +75,7 @@ class IsarLinkRepository implements LinkRepository {
 
   @override
   Future<void> update(LinkModel link) async {
+    _validateLink(link);
     final isar = await _ensureIsar();
     await isar.writeTxn(() async {
       final existing = await isar.linkEntitys.getByLinkId(link.id);
@@ -214,6 +216,9 @@ class IsarLinkRepository implements LinkRepository {
     if (links.isEmpty) {
       return;
     }
+    for (final link in links) {
+      _validateLink(link);
+    }
     final isar = await _ensureIsar();
     await isar.writeTxn(() async {
       for (final link in links) {
@@ -225,4 +230,12 @@ class IsarLinkRepository implements LinkRepository {
 
   @override
   void dispose() {}
+
+  void _validateLink(LinkModel link) {
+    if (!link.isValidBbox) {
+      throw ArgumentError(
+        'Link ${link.id} has invalid bounding box dimensions.',
+      );
+    }
+  }
 }

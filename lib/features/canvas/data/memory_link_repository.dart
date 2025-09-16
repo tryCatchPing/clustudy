@@ -57,6 +57,7 @@ class MemoryLinkRepository implements LinkRepository {
   //////////////////////////////////////////////////////////////////////////////
   @override
   Future<void> create(LinkModel link) async {
+    _validateLink(link);
     // 삽입
     _links[link.id] = link;
 
@@ -86,6 +87,7 @@ class MemoryLinkRepository implements LinkRepository {
       return;
     }
 
+    _validateLink(link);
     // 기존 인덱스에서 제거
     final oldList = _bySourcePage[old.sourcePageId];
     oldList?.removeWhere((e) => e.id == old.id);
@@ -319,5 +321,13 @@ class MemoryLinkRepository implements LinkRepository {
           .cast<LinkModel>()
           .toList(),
     );
+  }
+
+  void _validateLink(LinkModel link) {
+    if (!link.isValidBbox) {
+      throw ArgumentError(
+        'Link ${link.id} has invalid bounding box dimensions.',
+      );
+    }
   }
 }

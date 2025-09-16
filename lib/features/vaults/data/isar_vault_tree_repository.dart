@@ -259,6 +259,10 @@ class IsarVaultTreeRepository implements VaultTreeRepository {
     final isar = await _ensureIsar();
     await isar.writeTxn(() async {
       final folder = await _requireFolder(isar, folderId);
+      final currentParent = folder.parentFolderId;
+      if (currentParent == newParentFolderId) {
+        return;
+      }
       if (newParentFolderId != null) {
         if (newParentFolderId == folderId) {
           throw Exception('Folder cannot be its own parent');
@@ -291,6 +295,7 @@ class IsarVaultTreeRepository implements VaultTreeRepository {
         ..parentFolderId = newParentFolderId
         ..updatedAt = DateTime.now();
       await isar.folderEntitys.put(folder);
+      await _updateFolderParentLink(isar, folder, newParentFolderId);
     });
   }
 
@@ -428,6 +433,9 @@ class IsarVaultTreeRepository implements VaultTreeRepository {
     final isar = await _ensureIsar();
     await isar.writeTxn(() async {
       final placement = await _requirePlacement(isar, noteId);
+      if (placement.parentFolderId == newParentFolderId) {
+        return;
+      }
       if (newParentFolderId != null) {
         final parent = await _requireFolder(isar, newParentFolderId);
         if (parent.vaultId != placement.vaultId) {
@@ -445,6 +453,12 @@ class IsarVaultTreeRepository implements VaultTreeRepository {
         ..parentFolderId = newParentFolderId
         ..updatedAt = DateTime.now();
       await isar.notePlacementEntitys.put(placement);
+      await _linkPlacement(
+        isar,
+        placement,
+        placement.vaultId,
+        newParentFolderId,
+      );
     });
   }
 
@@ -775,20 +789,42 @@ class IsarVaultTreeRepository implements VaultTreeRepository {
       placement.vault.value = vault;
       await placement.vault.save();
     }
+    await placement.parentFolder.load();
     if (parentFolderId != null) {
       final folder = await isar.folderEntitys.getByFolderId(parentFolderId);
-      if (folder != null) {
-        await placement.parentFolder.load();
-        placement.parentFolder.value = folder;
-        await placement.parentFolder.save();
+      if (folder == null) {
+        throw Exception('Parent folder not found: $parentFolderId');
       }
+      placement.parentFolder.value = folder;
+    } else {
+      placement.parentFolder.value = null;
     }
+    await placement.parentFolder.save();
     final noteEntity = await isar.noteEntitys.getByNoteId(placement.noteId);
     if (noteEntity != null) {
       await placement.note.load();
       placement.note.value = noteEntity;
       await placement.note.save();
     }
+  }
+
+  Future<void> _updateFolderParentLink(
+    Isar isar,
+    FolderEntity folder,
+    String? newParentFolderId,
+  ) async {
+    await folder.parentFolder.load();
+    if (newParentFolderId == null) {
+      folder.parentFolder.value = null;
+      await folder.parentFolder.save();
+      return;
+    }
+    final parent = await isar.folderEntitys.getByFolderId(newParentFolderId);
+    if (parent == null) {
+      throw Exception('Parent folder not found: $newParentFolderId');
+    }
+    folder.parentFolder.value = parent;
+    await folder.parentFolder.save();
   }
 }
 
