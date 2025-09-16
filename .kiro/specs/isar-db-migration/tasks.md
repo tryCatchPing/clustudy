@@ -110,7 +110,7 @@
     - Optimize search performance with proper indexing
     - _Requirements: 4.1, 4.4, 5.1_
 
-- [ ] 6. Implement IsarLinkRepository with advanced query optimization
+- [-] 6. Implement IsarLinkRepository with advanced query optimization
 
   - [ ] 6.1 Implement basic link CRUD operations
 

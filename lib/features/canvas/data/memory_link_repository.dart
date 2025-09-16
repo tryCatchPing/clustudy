@@ -237,6 +237,43 @@ class MemoryLinkRepository implements LinkRepository {
     return List<LinkModel>.unmodifiable(out);
   }
 
+  @override
+  Future<List<LinkModel>> getBacklinksForNote(String noteId) async {
+    return _collectByTargetNote(noteId);
+  }
+
+  @override
+  Future<List<LinkModel>> getOutgoingLinksForPage(String pageId) async {
+    final list = _bySourcePage[pageId];
+    if (list == null || list.isEmpty) {
+      return const <LinkModel>[];
+    }
+    return List<LinkModel>.unmodifiable(list);
+  }
+
+  @override
+  Future<Map<String, int>> getBacklinkCountsForNotes(
+    List<String> noteIds,
+  ) async {
+    final counts = <String, int>{};
+    for (final id in noteIds) {
+      counts[id] = _byTargetNote[id]?.length ?? 0;
+    }
+    return counts;
+  }
+
+  @override
+  Future<void> createMultipleLinks(List<LinkModel> links) async {
+    for (final link in links) {
+      await create(link);
+    }
+  }
+
+  @override
+  Future<int> deleteLinksForMultiplePages(List<String> pageIds) async {
+    return deleteBySourcePages(pageIds);
+  }
+
   //////////////////////////////////////////////////////////////////////////////
   // Helpers
   //////////////////////////////////////////////////////////////////////////////
