@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../shared/repositories/link_repository.dart';
-import '../data/memory_link_repository.dart';
+import '../data/isar_link_repository.dart';
 import '../models/link_model.dart';
 
 part 'link_providers.g.dart';
@@ -16,7 +16,7 @@ const bool _kLinkProvidersVerbose = false;
 /// LinkRepository 주입용 Provider. 실제 구현체는 앱 구성 단계에서 override 가능.
 @Riverpod(keepAlive: true)
 LinkRepository linkRepository(Ref ref) {
-  final repo = MemoryLinkRepository();
+  final repo = IsarLinkRepository();
   ref.onDispose(repo.dispose);
   return repo;
 }

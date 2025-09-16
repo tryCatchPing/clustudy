@@ -1,3 +1,5 @@
+import 'package:isar/isar.dart';
+
 import '../../features/notes/models/thumbnail_metadata.dart';
 import '../entities/thumbnail_metadata_entity.dart';
 

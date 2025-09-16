@@ -60,17 +60,15 @@ class IsarNotesRepository implements NotesRepository {
         emit();
       }
 
-      final noteSub = isar.noteEntitys
-          .where()
-          .anyId()
-          .watchLazy()
-          .listen((_) => trigger(), onError: controller.addError);
+      final noteSub = isar.noteEntitys.where().anyId().watchLazy().listen(
+        (_) => trigger(),
+        onError: controller.addError,
+      );
 
-      final pageSub = isar.notePageEntitys
-          .where()
-          .anyId()
-          .watchLazy()
-          .listen((_) => trigger(), onError: controller.addError);
+      final pageSub = isar.notePageEntitys.where().anyId().watchLazy().listen(
+        (_) => trigger(),
+        onError: controller.addError,
+      );
 
       trigger();
 
@@ -215,8 +213,7 @@ class IsarNotesRepository implements NotesRepository {
         final entity = model.toEntity(
           existingId: existing.id,
           parentNoteId: noteId,
-        )
-          ..pageNumber = i + 1;
+        )..pageNumber = i + 1;
         await isar.notePageEntitys.put(entity);
       }
 
@@ -244,12 +241,11 @@ class IsarNotesRepository implements NotesRepository {
           .findAll();
       final index = insertIndex == null
           ? pages.length
-          : (insertIndex.clamp(0, pages.length) as int);
+          : insertIndex.clamp(0, pages.length);
 
       pages.insert(index, newPage.toEntity(parentNoteId: noteId));
       for (var i = 0; i < pages.length; i += 1) {
-        final entity = pages[i]
-          ..pageNumber = i + 1;
+        final entity = pages[i]..pageNumber = i + 1;
         await isar.notePageEntitys.put(entity);
       }
 
@@ -287,8 +283,7 @@ class IsarNotesRepository implements NotesRepository {
           .sortByPageNumber()
           .findAll();
       for (var i = 0; i < remaining.length; i += 1) {
-        final entity = remaining[i]
-          ..pageNumber = i + 1;
+        final entity = remaining[i]..pageNumber = i + 1;
         await isar.notePageEntitys.put(entity);
       }
 
@@ -365,6 +360,11 @@ class IsarNotesRepository implements NotesRepository {
     final isar = await _ensureIsar();
     final entity = await isar.thumbnailMetadataEntitys.getByPageId(pageId);
     return entity?.toDomainModel();
+  }
+
+  @override
+  void dispose() {
+    _isar = null;
   }
 
   Future<List<NoteModel>> _loadAllNotes(Isar isar) async {

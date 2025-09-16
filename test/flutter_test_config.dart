@@ -1,3 +1,5 @@
+// ignore_for_file: unused_import
+
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -13,4 +15,3 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   // its presence ensures native dynamic libraries are available.
   await testMain();
 }
-
