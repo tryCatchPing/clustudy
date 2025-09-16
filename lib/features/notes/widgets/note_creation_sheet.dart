@@ -1,27 +1,25 @@
+// features/notes/widgets/note_creation_sheet.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import '../../../design_system/components/organisms/creation_sheet.dart';
 import '../../../design_system/tokens/app_colors.dart';
 import '../../../design_system/tokens/app_spacing.dart';
 import '../../../design_system/tokens/app_typography.dart';
-import '../../../design_system/tokens/app_icons.dart';
 import '../../../design_system/components/atoms/app_textfield.dart';
 
-
-class VaultCreationSheet extends StatefulWidget {
-  const VaultCreationSheet({
+class NoteCreationSheet extends StatefulWidget {
+  const NoteCreationSheet({
     super.key,
-    required this.onCreate, // (name) async
+    required this.onCreate,          // (name) async
   });
 
   final Future<void> Function(String name) onCreate;
 
   @override
-  State<VaultCreationSheet> createState() => _VaultCreationSheetState();
+  State<NoteCreationSheet> createState() => _NoteCreationSheetState();
 }
 
-class _VaultCreationSheetState extends State<VaultCreationSheet> {
-  final _c = TextEditingController(text: '새로운 vault 폴더 이름');
+class _NoteCreationSheetState extends State<NoteCreationSheet> {
+  final _c = TextEditingController(text: '새로운 노트 이름');
   bool _busy = false;
 
   bool get _canSubmit => !_busy && _c.text.trim().isNotEmpty;
@@ -39,7 +37,7 @@ class _VaultCreationSheetState extends State<VaultCreationSheet> {
     try {
       await widget.onCreate(name);
       if (!mounted) return;
-      Navigator.of(context).pop(); // 성공 시 닫기
+      Navigator.of(context).pop();
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -48,31 +46,38 @@ class _VaultCreationSheetState extends State<VaultCreationSheet> {
   @override
   Widget build(BuildContext context) {
     return CreationBaseSheet(
-      title: 'Vault 생성',
+      title: '노트 생성',
       onBack: () => Navigator.of(context).pop(),
       rightText: _busy ? '생성중...' : '생성',
-      onRightTap: _canSubmit ? () => _submit() : null,
+      onRightTap: _canSubmit ? () => _submit() : null, // 버튼 비활성화 지원
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SvgPicture.asset(
-              AppIcons.folderVaultLarge,
-              width: 200, height: 184,
-              colorFilter: const ColorFilter.mode(AppColors.background, BlendMode.srcIn),
-              semanticsLabel: 'Vault 폴더 아이콘',
+            // 미리보기 사각형 (레퍼런스 스샷처럼)
+            Container(
+              width: 150,
+              height: 200,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(6),
+              ),
             ),
             const SizedBox(height: AppSpacing.large),
+
             SizedBox(
               width: 280,
               child: AppTextField(
                 controller: _c,
                 textAlign: TextAlign.center,
                 autofocus: true,
-                style: AppTextFieldStyle.none,
-                textStyle: AppTypography.body2.copyWith(color: AppColors.background),
+                style: AppTextFieldStyle.none, // 다크 시트에서는 none이 깔끔
+                textStyle: AppTypography.body2.copyWith(
+                  color: AppColors.white,
+                  height: 1.0,
+                ),
                 onSubmitted: (_) => _submit(),
-                onChanged: (_) => setState(() {}),
+                onChanged: (_) => setState(() {}), // 버튼 활성 갱신
               ),
             ),
           ],
