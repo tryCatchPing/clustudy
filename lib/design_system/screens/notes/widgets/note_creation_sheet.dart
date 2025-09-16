@@ -1,26 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../components/organisms/creation_sheet.dart';
 import '../../../components/atoms/app_textfield.dart';
 import '../../../tokens/app_colors.dart';
-import '../../../tokens/app_icons.dart';
 import '../../../tokens/app_spacing.dart';
 import '../../../tokens/app_typography.dart';
 
-Future<void> showDesignVaultCreationSheet(BuildContext context) {
-  return showCreationSheet(context, const _DesignVaultCreationSheet());
+Future<void> showDesignNoteCreationSheet(BuildContext context) {
+  return showCreationSheet(context, const _DesignNoteCreationSheet());
 }
 
-class _DesignVaultCreationSheet extends StatefulWidget {
-  const _DesignVaultCreationSheet();
+class _DesignNoteCreationSheet extends StatefulWidget {
+  const _DesignNoteCreationSheet();
 
   @override
-  State<_DesignVaultCreationSheet> createState() => _DesignVaultCreationSheetState();
+  State<_DesignNoteCreationSheet> createState() => _DesignNoteCreationSheetState();
 }
 
-class _DesignVaultCreationSheetState extends State<_DesignVaultCreationSheet> {
-  final _controller = TextEditingController(text: '새로운 Vault 이름');
+class _DesignNoteCreationSheetState extends State<_DesignNoteCreationSheet> {
+  final _controller = TextEditingController(text: '새로운 노트 이름');
   bool _busy = false;
 
   bool get _canSubmit => !_busy && _controller.text.trim().isNotEmpty;
@@ -38,14 +36,14 @@ class _DesignVaultCreationSheetState extends State<_DesignVaultCreationSheet> {
     if (!mounted) return;
     Navigator.of(context).pop();
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('"${_controller.text.trim()}" Vault 생성')), // 디자인용 피드백
+      SnackBar(content: Text('"${_controller.text.trim()}" 노트 생성')),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return CreationBaseSheet(
-      title: 'Vault 생성',
+      title: '노트 생성',
       onBack: () => Navigator.of(context).pop(),
       rightText: _busy ? '생성중...' : '생성',
       onRightTap: _canSubmit ? _submit : null,
@@ -53,11 +51,13 @@ class _DesignVaultCreationSheetState extends State<_DesignVaultCreationSheet> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SvgPicture.asset(
-              AppIcons.folderVaultLarge,
-              width: 200,
-              height: 184,
-              colorFilter: const ColorFilter.mode(AppColors.background, BlendMode.srcIn),
+            Container(
+              width: 150,
+              height: 200,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(6),
+              ),
             ),
             const SizedBox(height: AppSpacing.large),
             SizedBox(
@@ -68,7 +68,7 @@ class _DesignVaultCreationSheetState extends State<_DesignVaultCreationSheet> {
                 autofocus: true,
                 style: AppTextFieldStyle.none,
                 textStyle: AppTypography.body2.copyWith(
-                  color: AppColors.background,
+                  color: AppColors.white,
                   height: 1.0,
                 ),
                 onChanged: (_) => setState(() {}),
