@@ -161,8 +161,9 @@ class IsarDatabaseService {
   /// size, collection counts, and schema version.
   static Future<DatabaseInfo> getDatabaseInfo() async {
     final isar = await getInstance();
-    final metadata =
-        await isar.databaseMetadataEntitys.get(_metadataCollectionId);
+    final metadata = await isar.databaseMetadataEntitys.get(
+      _metadataCollectionId,
+    );
     final size = await _calculateDatabaseSize();
 
     final directoryPath = _databaseDirectoryPath ?? 'Unknown directory';
@@ -189,8 +190,6 @@ class IsarDatabaseService {
   /// Includes compaction, cleanup of unused space, and optimization
   /// of indexes for better performance.
   static Future<void> performMaintenance() async {
-    final isar = await getInstance();
-
     try {
       // Database maintenance operations
       // Note: Compact method not available in Isar 3.x
