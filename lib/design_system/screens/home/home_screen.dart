@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../components/molecules/app_card.dart';
+import '../../components/organisms/folder_grid.dart';
 import '../../components/organisms/bottom_actions_dock_fixed.dart';
 import '../../components/organisms/top_toolbar.dart';
 import '../../tokens/app_colors.dart';
@@ -16,7 +16,21 @@ class DesignHomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final demoVaults = _demoVaults;
+    final demoItems = _demoVaults
+        .map(
+          (vault) => FolderGridItem(
+            svgIconPath:
+                vault.isTemporary ? AppIcons.folderVault : AppIcons.folder,
+            title: vault.name,
+            date: vault.createdAt,
+            onTap: () => _showSnack(context, 'Open ${vault.name}'),
+            onTitleChanged: (value) => _showSnack(
+              context,
+              'Rename ${vault.name} → $value',
+            ),
+          ),
+        )
+        .toList();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -34,37 +48,7 @@ class DesignHomeScreen extends StatelessWidget {
           right: AppSpacing.screenPadding,
           top: AppSpacing.large,
         ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            const tileWidth = 144.0;
-            const gap = 48.0;
-            final cross = (constraints.maxWidth + gap) ~/ (tileWidth + gap);
-            final crossCount = cross.clamp(1, 8);
-
-            return GridView.builder(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisSpacing: gap,
-                mainAxisSpacing: gap,
-                crossAxisCount: crossCount,
-              ),
-              itemCount: demoVaults.length,
-              itemBuilder: (context, index) {
-                final vault = demoVaults[index];
-                return AppCard(
-                  svgIconPath:
-                      vault.isTemporary ? AppIcons.folderVault : AppIcons.folder,
-                  title: vault.name,
-                  date: vault.createdAt,
-                  onTap: () => _showSnack(context, 'Open ${vault.name}'),
-                  onTitleChanged: (newTitle) => _showSnack(
-                    context,
-                    'Rename ${vault.name} → $newTitle',
-                  ),
-                );
-              },
-            );
-          },
-        ),
+        child: FolderGrid(items: demoItems),
       ),
       bottomNavigationBar: SafeArea(
         top: false,
@@ -74,14 +58,14 @@ class DesignHomeScreen extends StatelessWidget {
             child: BottomActionsDockFixed(
               items: [
                 DockItem(
-                  label: '만들기',
-                  svgPath: AppIcons.plus,
+                  label: 'Vault 생성',
+                  svgPath: AppIcons.folderVault,
                   onTap: () => showDesignHomeCreationSheet(context),
                 ),
                 DockItem(
                   label: '노트 생성',
                   svgPath: AppIcons.noteAdd,
-                  onTap: () => _showSnack(context, '노트 생성'),
+                  onTap: () => showDesignHomeCreationSheet(context),
                 ),
                 DockItem(
                   label: 'PDF 가져오기',
@@ -117,7 +101,7 @@ class _DemoVault {
   final bool isTemporary;
 }
 
-final List<_DemoVault> _demoVaults = [
+const List<_DemoVault> _demoVaults = [
   _DemoVault(
     id: 'temp',
     name: '임시 Vault',

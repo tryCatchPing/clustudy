@@ -31,15 +31,6 @@ Future<void> showDesignHomeCreationSheet(BuildContext context) {
             _showSnack(context, '새 노트 생성');
           },
         ),
-        CreationAction(
-          label: 'PDF 가져오기',
-          desc: 'PDF를 불러와 주석을 추가해요',
-          leading: SvgPicture.asset(AppIcons.download, width: 28, height: 28),
-          onTap: () async {
-            Navigator.pop(context);
-            _showSnack(context, 'PDF 가져오기');
-          },
-        ),
       ],
     ),
   );

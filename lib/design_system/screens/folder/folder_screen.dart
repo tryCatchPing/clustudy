@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../components/organisms/bottom_actions_dock_fixed.dart';
 import '../../components/organisms/top_toolbar.dart';
+import '../../components/organisms/folder_grid.dart';
 import '../../tokens/app_colors.dart';
 import '../../tokens/app_spacing.dart';
 import '../../tokens/app_icons.dart';
@@ -14,6 +15,27 @@ class DesignFolderScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     const vaultId = 'vault-proj';
     const folderId = 'folder-design';
+
+    final items = <FolderGridItem>[
+      FolderGridItem(
+        svgIconPath: AppIcons.folder,
+        title: 'Wireframe',
+        date: DateTime(2025, 9, 4, 12, 30),
+        onTap: () => _showSnack(context, 'Wireframe 폴더 열기'),
+      ),
+      FolderGridItem(
+        svgIconPath: AppIcons.folder,
+        title: '리서치',
+        date: DateTime(2025, 9, 2, 15, 10),
+        onTap: () => _showSnack(context, '리서치 폴더 열기'),
+      ),
+      FolderGridItem(
+        svgIconPath: AppIcons.noteAdd,
+        title: '유저 여정 정리',
+        date: DateTime(2025, 9, 3, 9, 0),
+        onTap: () => _showSnack(context, '노트 열기'),
+      ),
+    ];
 
     final actions = <ToolbarAction>[
       const ToolbarAction(svgPath: AppIcons.search),
@@ -29,19 +51,7 @@ class DesignFolderScreen extends StatelessWidget {
       ),
       body: Padding(
         padding: const EdgeInsets.all(AppSpacing.screenPadding),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            Text('Vault ID: $vaultId', style: TextStyle(color: AppColors.gray50)),
-            SizedBox(height: 8),
-            Text('Folder ID: $folderId', style: TextStyle(color: AppColors.gray50)),
-            SizedBox(height: 24),
-            Text(
-              '폴더 안의 노트와 하위 폴더가 여기에 노출될 예정입니다. 디자인 시스템에서는 시각적인 프레임만 확인합니다.',
-              style: TextStyle(color: AppColors.gray40, height: 1.4),
-            ),
-          ],
-        ),
+        child: FolderGrid(items: items),
       ),
       bottomNavigationBar: SafeArea(
         top: false,
@@ -63,13 +73,19 @@ class DesignFolderScreen extends StatelessWidget {
                 DockItem(
                   label: 'PDF 가져오기',
                   svgPath: AppIcons.download,
-                  onTap: () => showDesignFolderCreationSheet(context),
+                  onTap: () => _showSnack(context, 'PDF 가져오기'),
                 ),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  static void _showSnack(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), duration: const Duration(milliseconds: 800)),
     );
   }
 }

@@ -29,14 +29,6 @@ Future<void> showDesignFolderCreationSheet(BuildContext context) {
             _showSnack(context, '노트 생성');
           },
         ),
-        CreationAction(
-          label: 'PDF 가져오기',
-          leading: SvgPicture.asset(AppIcons.download, width: 28, height: 28),
-          onTap: () async {
-            Navigator.pop(context);
-            _showSnack(context, 'PDF 가져오기');
-          },
-        ),
       ],
     ),
   );

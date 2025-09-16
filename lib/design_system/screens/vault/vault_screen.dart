@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../components/organisms/bottom_actions_dock_fixed.dart';
 import '../../components/organisms/top_toolbar.dart';
+import '../../components/organisms/folder_grid.dart';
 import '../../tokens/app_colors.dart';
 import '../../tokens/app_icons.dart';
 import '../../tokens/app_spacing.dart';
@@ -17,7 +18,6 @@ class DesignVaultScreen extends StatelessWidget {
     const vault = _DemoVault(
       id: 'vault-proj',
       name: '프로젝트 Vault',
-      description: '디자인 산출물과 회의록을 모아둔 공간입니다.',
       isTemporary: false,
     );
 
@@ -31,6 +31,33 @@ class DesignVaultScreen extends StatelessWidget {
       const ToolbarAction(svgPath: AppIcons.settings),
     ];
 
+    final items = <FolderGridItem>[
+      FolderGridItem(
+        svgIconPath: AppIcons.folder,
+        title: '디자인 산출물',
+        date: DateTime(2025, 9, 2, 10, 12),
+        onTap: () => _showSnack(context, '디자인 산출물 폴더 열기'),
+      ),
+      FolderGridItem(
+        svgIconPath: AppIcons.folder,
+        title: '회의록',
+        date: DateTime(2025, 8, 31, 18, 20),
+        onTap: () => _showSnack(context, '회의록 폴더 열기'),
+      ),
+      FolderGridItem(
+        svgIconPath: AppIcons.noteAdd,
+        title: '제품 플로우 정리',
+        date: DateTime(2025, 9, 3, 9, 45),
+        onTap: () => _showSnack(context, '노트 열기'),
+      ),
+      FolderGridItem(
+        svgIconPath: AppIcons.noteAdd,
+        title: '테스트 케이스',
+        date: DateTime(2025, 9, 1, 15, 5),
+        onTap: () => _showSnack(context, '노트 열기'),
+      ),
+    ];
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: TopToolbar(
@@ -40,25 +67,7 @@ class DesignVaultScreen extends StatelessWidget {
       ),
       body: Padding(
         padding: const EdgeInsets.all(AppSpacing.screenPadding),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Vault ID: ${vault.id}',
-              style: const TextStyle(color: AppColors.gray50),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Vault 소개',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              vault.description,
-              style: const TextStyle(color: AppColors.gray40, height: 1.4),
-            ),
-          ],
-        ),
+        child: FolderGrid(items: items),
       ),
       bottomNavigationBar: SafeArea(
         top: false,
@@ -68,14 +77,14 @@ class DesignVaultScreen extends StatelessWidget {
             child: BottomActionsDockFixed(
               items: [
                 DockItem(
-                  label: '만들기',
-                  svgPath: AppIcons.plus,
+                  label: '폴더 생성',
+                  svgPath: AppIcons.folderAdd,
                   onTap: () => showDesignVaultCreationSheet(context),
                 ),
                 DockItem(
                   label: '노트 생성',
                   svgPath: AppIcons.noteAdd,
-                  onTap: () => _showSnack(context, '노트 생성'),
+                  onTap: () => showDesignVaultCreationSheet(context),
                 ),
                 DockItem(
                   label: 'PDF 가져오기',
@@ -101,12 +110,10 @@ class _DemoVault {
   const _DemoVault({
     required this.id,
     required this.name,
-    required this.description,
-    this.isTemporary = false,
+    required this.isTemporary,
   });
 
   final String id;
   final String name;
-  final String description;
   final bool isTemporary;
 }
