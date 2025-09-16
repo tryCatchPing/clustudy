@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -10,12 +11,18 @@ import '../entities/vault_entity.dart';
 
 part 'isar_database_service.g.dart';
 
-/// Temporary dummy collection for infrastructure setup.
-/// This will be removed when actual entities are created in task 2.
+/// Stores metadata about the Isar instance such as schema version and
+/// migration timestamps.
 @collection
-class DummyEntity {
-  Id id = Isar.autoIncrement;
-  late String dummyField;
+class DatabaseMetadataEntity {
+  /// Fixed primary key – single row collection.
+  Id id = 0;
+
+  /// The schema version currently persisted on disk.
+  late int schemaVersion;
+
+  /// Timestamp of the last migration that touched this database.
+  DateTime? lastMigrationAt;
 }
 
 /// Singleton service for managing Isar database initialization and access.
@@ -26,6 +33,9 @@ class IsarDatabaseService {
   static Isar? _instance;
   static const String _databaseName = 'it_contest_db';
   static const int _currentSchemaVersion = 1;
+  static const int _metadataCollectionId = 0;
+
+  static String? _databaseDirectoryPath;
 
   /// Private constructor to enforce singleton pattern
   IsarDatabaseService._();
@@ -48,12 +58,11 @@ class IsarDatabaseService {
     try {
       final dir = await getApplicationDocumentsDirectory();
       final dbPath = '${dir.path}/databases';
+      _databaseDirectoryPath = dbPath;
 
       // Ensure database directory exists
       await Directory(dbPath).create(recursive: true);
 
-      // TODO: Add entity schemas when they are created in subsequent tasks
-      // For now, use dummy entity to satisfy Isar's requirement of at least one collection
       _instance = await Isar.open(
         [
           // Core collections
@@ -63,9 +72,7 @@ class IsarDatabaseService {
           NotePageEntitySchema,
           LinkEntitySchema,
           NotePlacementEntitySchema,
-          // Temporary dummy to ensure at least one collection existed in Task 1
-          // Can be removed after all entities are added
-          DummyEntitySchema,
+          DatabaseMetadataEntitySchema,
         ],
         directory: dbPath,
         name: _databaseName,
@@ -94,16 +101,33 @@ class IsarDatabaseService {
     if (_instance == null) return;
 
     try {
-      // For now, just log the schema version
-      // Migration logic will be implemented when entities are added
+      final metadataCollection = _instance!.databaseMetadataEntitys;
+      final metadata = await metadataCollection.get(_metadataCollectionId);
 
-      // Log database initialization info
-      print('Isar database initialized:');
-      print('  Name: $_databaseName');
-      print('  Schema version: $_currentSchemaVersion');
-      print('  Database is open: ${_instance!.isOpen}');
+      if (metadata == null) {
+        final newMetadata = DatabaseMetadataEntity()
+          ..schemaVersion = _currentSchemaVersion
+          ..lastMigrationAt = DateTime.now();
+
+        await _instance!.writeTxn(() async {
+          await metadataCollection.put(newMetadata);
+        });
+        return;
+      }
+
+      if (metadata.schemaVersion < _currentSchemaVersion) {
+        // Placeholder for future migration steps. When additional schema
+        // versions are introduced we can perform field by field upgrades here.
+        metadata
+          ..schemaVersion = _currentSchemaVersion
+          ..lastMigrationAt = DateTime.now();
+
+        await _instance!.writeTxn(() async {
+          await metadataCollection.put(metadata);
+        });
+      }
     } catch (e) {
-      print('Warning: Could not retrieve database info: $e');
+      debugPrint('Warning: Could not update database metadata: $e');
     }
   }
 
@@ -127,6 +151,7 @@ class IsarDatabaseService {
       await _instance!.writeTxn(() async {
         await _instance!.clear();
       });
+      await _performMigrationIfNeeded();
     }
   }
 
@@ -136,13 +161,26 @@ class IsarDatabaseService {
   /// size, collection counts, and schema version.
   static Future<DatabaseInfo> getDatabaseInfo() async {
     final isar = await getInstance();
+    final metadata =
+        await isar.databaseMetadataEntitys.get(_metadataCollectionId);
+    final size = await _calculateDatabaseSize();
 
-    return const DatabaseInfo(
+    final directoryPath = _databaseDirectoryPath ?? 'Unknown directory';
+
+    return DatabaseInfo(
       name: _databaseName,
-      path: 'Database path not available in Isar 3.x',
-      size: 0, // Size info not available in Isar 3.x
-      schemaVersion: _currentSchemaVersion,
-      collections: [], // Will be populated when entities are added
+      path: '$directoryPath/$_databaseName',
+      size: size,
+      schemaVersion: metadata?.schemaVersion ?? _currentSchemaVersion,
+      collections: const [
+        'VaultEntity',
+        'FolderEntity',
+        'NoteEntity',
+        'NotePageEntity',
+        'LinkEntity',
+        'NotePlacementEntity',
+        'DatabaseMetadataEntity',
+      ],
     );
   }
 
@@ -157,10 +195,35 @@ class IsarDatabaseService {
       // Database maintenance operations
       // Note: Compact method not available in Isar 3.x
       // Future maintenance operations will be added here
-      print('Database maintenance completed successfully');
+      debugPrint('Database maintenance completed successfully');
     } catch (e) {
-      print('Database maintenance warning: $e');
+      debugPrint('Database maintenance warning: $e');
     }
+  }
+
+  static Future<int> _calculateDatabaseSize() async {
+    final directoryPath = _databaseDirectoryPath;
+    if (directoryPath == null) {
+      return 0;
+    }
+
+    final directory = Directory(directoryPath);
+    if (!await directory.exists()) {
+      return 0;
+    }
+
+    var totalBytes = 0;
+    await for (final entity in directory.list(followLinks: false)) {
+      if (entity is! File) {
+        continue;
+      }
+      if (!entity.path.contains(_databaseName)) {
+        continue;
+      }
+      totalBytes += await entity.length();
+    }
+
+    return totalBytes;
   }
 }
 

@@ -15,7 +15,7 @@ class LinkEntity {
   late String linkId;
 
   /// Source identifiers
-  @Index()
+  @Index(composite: [CompositeIndex('targetNoteId')])
   late String sourceNoteId;
   @Index()
   late String sourcePageId;
