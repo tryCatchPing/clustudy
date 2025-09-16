@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+// ignore: unused_import
 import 'package:isar_flutter_libs/isar_flutter_libs.dart';
 import 'package:it_contest/shared/services/isar_database_service.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';

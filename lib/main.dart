@@ -8,8 +8,29 @@ import 'features/home/routing/home_routes.dart';
 import 'features/notes/routing/notes_routes.dart';
 import 'features/vaults/routing/vault_graph_routes.dart';
 import 'shared/routing/route_observer.dart';
+import 'shared/services/isar_database_service.dart';
 
-void main() => runApp(const ProviderScope(child: MyApp()));
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  try {
+    debugPrint('🗄️ [main] Initializing Isar database...');
+    await IsarDatabaseService.getInstance();
+    debugPrint('🗄️ [main] Isar database initialized');
+  } catch (error, stackTrace) {
+    FlutterError.reportError(
+      FlutterErrorDetails(
+        exception: error,
+        stack: stackTrace,
+        context: ErrorDescription('while initializing the Isar database'),
+        library: 'it_contest main',
+      ),
+    );
+    rethrow;
+  }
+
+  runApp(const ProviderScope(child: MyApp()));
+}
 
 final _router = GoRouter(
   routes: [
