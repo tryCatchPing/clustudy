@@ -550,80 +550,45 @@ class VaultNotesService {
     int limit = 50,
     Set<String>? excludeNoteIds,
   }) async {
-    final q = NameNormalizer.compareKey(query.trim());
-    // BFS: (parentFolderId, parentFolderName)
-    final queue = <_FolderCtx>[const _FolderCtx(null, '루트')];
-    final results = <_ScoredResult>[];
+    final placements = await vaultTree.searchNotes(
+      vaultId,
+      query,
+      exact: exact,
+      limit: limit,
+      excludeNoteIds: excludeNoteIds,
+    );
 
-    while (queue.isNotEmpty) {
-      final parent = queue.removeAt(0);
-      final items = await vaultTree
-          .watchFolderChildren(vaultId, parentFolderId: parent.id)
-          .first;
-      for (final it in items) {
-        if (it.type == VaultItemType.folder) {
-          queue.add(_FolderCtx(it.id, it.name));
-        } else {
-          // Isar migration: 이 exclude는 DB 필터로 푸시다운 가능(id not in ...)
-          // Exclude specific note ids if requested (e.g., avoid self-link targets)
-          if (excludeNoteIds?.contains(it.id) == true) {
-            continue;
-          }
-          final title = it.name;
-          final key = NameNormalizer.compareKey(title);
-          int score;
-          if (q.isEmpty) {
-            score = 0; // 빈 검색: 정렬만 적용
-          } else if (exact) {
-            if (key == q) {
-              score = 3;
-            } else {
-              continue;
-            }
-          } else {
-            if (key == q) {
-              score = 3;
-            } else if (key.startsWith(q)) {
-              score = 2;
-            } else if (key.contains(q)) {
-              score = 1;
-            } else {
-              continue;
-            }
-          }
-          results.add(
-            _ScoredResult(
-              score: score,
-              result: NoteSearchResult(
-                noteId: it.id,
-                title: title,
-                parentFolderName: parent.name,
-              ),
-            ),
-          );
-        }
+    final folderNameCache = <String?, String?>{null: '루트'};
+
+    Future<String?> resolveFolderName(String? folderId) async {
+      if (folderNameCache.containsKey(folderId)) {
+        return folderNameCache[folderId];
       }
+      if (folderId == null) {
+        return '루트';
+      }
+      final folder = await vaultTree.getFolder(folderId);
+      final name = folder?.name ?? '루트';
+      folderNameCache[folderId] = name;
+      return name;
     }
 
-    // 정렬: 검색어 있을 때는 점수 우선, 없으면 제목 ASC
-    if (q.isEmpty) {
-      results.sort(
-        (a, b) => NameNormalizer.compareKey(
-          a.result.title,
-        ).compareTo(NameNormalizer.compareKey(b.result.title)),
+    final results = <NoteSearchResult>[];
+    for (final placement in placements) {
+      final parentName = await resolveFolderName(placement.parentFolderId);
+      results.add(
+        NoteSearchResult(
+          noteId: placement.noteId,
+          title: placement.name,
+          parentFolderName: parentName,
+        ),
       );
-    } else {
-      results.sort((a, b) {
-        final byScore = b.score.compareTo(a.score);
-        if (byScore != 0) return byScore;
-        return NameNormalizer.compareKey(
-          a.result.title,
-        ).compareTo(NameNormalizer.compareKey(b.result.title));
-      });
     }
 
-    final cut = limit > 0 ? results.take(limit) : results;
-    return cut.map((e) => e.result).toList(growable: false);
+    if (limit > 0 && results.length > limit) {
+      return results.take(limit).toList(growable: false);
+    }
+    return results;
   }
 
   /// Vault 내 모든 폴더를 경로 라벨과 함께 플랫 리스트로 반환합니다.
@@ -818,12 +783,6 @@ class _FolderCtx {
   final String? id;
   final String? name;
   const _FolderCtx(this.id, this.name);
-}
-
-class _ScoredResult {
-  final int score;
-  final NoteSearchResult result;
-  const _ScoredResult({required this.score, required this.result});
 }
 
 /// VaultNotesService DI 지점.
