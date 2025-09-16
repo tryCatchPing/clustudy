@@ -33,6 +33,28 @@ void main() {
       repository.dispose();
     });
 
+    test('create throws when bbox is invalid', () async {
+      final invalid = LinkModel(
+        id: 'bad',
+        sourceNoteId: 'note-src',
+        sourcePageId: 'page-src',
+        targetNoteId: 'note-dest',
+        bboxLeft: 0,
+        bboxTop: 0,
+        bboxWidth: 0,
+        bboxHeight: 10,
+        label: null,
+        anchorText: null,
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      await expectLater(
+        repository.create(invalid),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
+
     test('getBacklinksForNote returns expected results', () async {
       final link = buildLink(0);
       await repository.create(link);
