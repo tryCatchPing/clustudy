@@ -45,10 +45,23 @@ void main() {
       final info = await IsarDatabaseService.getDatabaseInfo();
 
       expect(info.name, equals('it_contest_db'));
-      expect(info.path, isNotEmpty);
+      expect(info.path, contains('it_contest_db'));
       expect(info.size, isA<int>());
       expect(info.schemaVersion, equals(1));
-      expect(info.collections, isA<List<String>>());
+      expect(
+        info.collections,
+        containsAll(
+          [
+            'VaultEntity',
+            'FolderEntity',
+            'NoteEntity',
+            'NotePageEntity',
+            'LinkEntity',
+            'NotePlacementEntity',
+            'DatabaseMetadataEntity',
+          ],
+        ),
+      );
     });
 
     test('should handle database closure', () async {

@@ -1,5 +1,7 @@
 import 'package:isar/isar.dart';
 
+import 'note_placement_entity.dart';
+
 part 'note_entities.g.dart';
 
 /// Entity-side enum mirroring domain NoteSourceType.
@@ -37,7 +39,9 @@ class NoteEntity {
   /// Relationship: Note -> Pages
   final pages = IsarLinks<NotePageEntity>();
 
-  // Relationship to placement will be added in Task 2.5
+  /// Relationship: Note -> Placement (one-to-one)
+  @Backlink(to: 'note')
+  final placement = IsarLink<NotePlacementEntity>();
 }
 
 /// Isar collection for Note pages.

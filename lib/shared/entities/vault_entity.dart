@@ -1,5 +1,7 @@
 import 'package:isar/isar.dart';
 
+import 'note_placement_entity.dart';
+
 part 'vault_entity.g.dart';
 
 /// Isar collection for Vaults.
@@ -27,7 +29,9 @@ class VaultEntity {
   // Child folders in this vault (populated via FolderEntity.vault link)
   final folders = IsarLinks<FolderEntity>();
 
-  // Note: link to NotePlacementEntity will be added in Task 2.5
+  /// Backlink to all note placements that belong to this vault.
+  @Backlink(to: 'vault')
+  final notePlacements = IsarLinks<NotePlacementEntity>();
 }
 
 /// Isar collection for Folders with hierarchical relationships.
@@ -66,5 +70,7 @@ class FolderEntity {
   /// Child folders
   final childFolders = IsarLinks<FolderEntity>();
 
-  // Note: link to NotePlacementEntity will be added in Task 2.5
+  /// Backlink to placements scoped under this folder.
+  @Backlink(to: 'parentFolder')
+  final notePlacements = IsarLinks<NotePlacementEntity>();
 }
