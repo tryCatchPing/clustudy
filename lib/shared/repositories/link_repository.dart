@@ -59,6 +59,21 @@ abstract class LinkRepository {
     return result;
   }
 
+  /// 단일 노트에 대한 백링크 조회(즉시).
+  Future<List<LinkModel>> getBacklinksForNote(String noteId);
+
+  /// 특정 페이지에서 나가는 링크 조회(즉시).
+  Future<List<LinkModel>> getOutgoingLinksForPage(String pageId);
+
+  /// 여러 노트에 대한 백링크 개수 조회.
+  Future<Map<String, int>> getBacklinkCountsForNotes(List<String> noteIds);
+
+  /// 여러 링크를 일괄 생성합니다.
+  Future<void> createMultipleLinks(List<LinkModel> links);
+
+  /// 여러 페이지에 대한 링크를 일괄 삭제합니다.
+  Future<int> deleteLinksForMultiplePages(List<String> pageIds);
+
   /// 리소스 정리용. 스트림 컨트롤러 등 내부 자원을 해제합니다.
   void dispose();
 }
