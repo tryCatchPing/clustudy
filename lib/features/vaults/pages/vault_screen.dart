@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
-import '../../../design_system/components/organisms/creation_sheet.dart';
 import '../widgets/vault_creation_sheet.dart';
 import '../../../utils/pickers/pick_pdf.dart';
 
 import '../../../design_system/components/organisms/bottom_actions_dock_fixed.dart';
 import '../../../design_system/components/organisms/top_toolbar.dart';
+import '../../../design_system/components/organisms/folder_grid.dart';
 import '../../../design_system/tokens/app_colors.dart';
 import '../../../design_system/tokens/app_icons.dart';
 import '../../../design_system/tokens/app_spacing.dart';
@@ -16,6 +16,9 @@ import '../../../design_system/tokens/app_spacing.dart';
 import '../data/vault.dart'; // ← Vault 타입
 import '../state/vault_store.dart'; // ← vaults → vault 로 수정
 import '../../notes/state/note_store.dart';
+import '../../notes/data/note.dart';
+import '../../folder/state/folder_store.dart';
+import '../../folder/data/folder.dart';
 import '../../../routing/route_names.dart';
 
 class VaultScreen extends StatelessWidget {
@@ -24,11 +27,24 @@ class VaultScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final vLoaded = context.select<VaultStore, bool>((s) => s.isLoaded);
+    if (!vLoaded) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     final vault = context.select<VaultStore, Vault?>((s) => s.byId(vaultId));
 
     // 가드: 없으면 뒤로/에러 처리
     if (vault == null) {
       return const Scaffold(body: Center(child: Text('Vault not found')));
+    }
+
+    final fLoaded = context.select<FolderStore, bool>((s) => s.isLoaded);
+    final nLoaded =
+        context.select<NoteStore, bool?>((s) => s is NoteStore ? true : null) ??
+        true; // NoteStore에 isLoaded 있으면 교체
+    if (!fLoaded || !nLoaded) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final actions = <ToolbarAction>[
@@ -45,6 +61,40 @@ class VaultScreen extends StatelessWidget {
       ToolbarAction(svgPath: AppIcons.settings, onTap: () {}),
     ];
 
+    // 1) 폴더/노트 가져오기 (루트 레벨)
+    final subFolders = context.select<FolderStore, List<Folder>>(
+      (s) => s.byParent(vaultId: vault.id, parentFolderId: null),
+    );
+    final notes = context.select<NoteStore, List<Note>>(
+      (s) => s.byVault(vault.id).where((n) => n.folderId == null).toList(),
+    );
+
+    // 2) FolderGrid로 매핑
+    final items = <FolderGridItem>[
+      ...subFolders.map(
+        (f) => FolderGridItem(
+          svgIconPath: AppIcons.folder,
+          title: f.name,
+          date: f.createdAt,
+          onTap: () => context.goNamed(
+            RouteNames.folder,
+            pathParameters: {'vaultId': vault.id, 'folderId': f.id},
+          ),
+          // onTitleChanged: (name) => context.read<FolderStore>().renameFolder(f.id, name),
+        ),
+      ),
+      ...notes.map(
+        (n) => FolderGridItem(
+          previewImage: null, // 썸네일 있으면 바인딩
+          title: n.title,
+          date: n.createdAt,
+          onTap: () =>
+              context.goNamed(RouteNames.note, pathParameters: {'id': n.id}),
+          // onTitleChanged: (t) => context.read<NoteStore>().renameNote(n.id, t),
+        ),
+      ),
+    ];
+
     return Scaffold(
       appBar: TopToolbar(
         variant: TopToolbarVariant.folder,
@@ -53,10 +103,7 @@ class VaultScreen extends StatelessWidget {
       ),
       body: Padding(
         padding: const EdgeInsets.all(AppSpacing.screenPadding),
-        child: Text(
-          'Vault ID: ${vault.id}',
-          style: const TextStyle(color: AppColors.gray50),
-        ),
+        child: FolderGrid(items: items),
       ),
       bottomNavigationBar: SafeArea(
         top: false,

@@ -1,4 +1,3 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -6,11 +5,13 @@ import 'package:provider/provider.dart';
 import '../../../design_system/components/molecules/app_card.dart';
 import '../../../design_system/components/organisms/bottom_actions_dock_fixed.dart';
 import '../../../design_system/components/organisms/top_toolbar.dart';
+import '../../../design_system/components/organisms/folder_grid.dart';
 import '../../../design_system/tokens/app_colors.dart';
 import '../../../design_system/tokens/app_icons.dart';
 import '../../../design_system/tokens/app_spacing.dart';
 import '../../notes/state/note_store.dart';
 import '../../vaults/state/vault_store.dart';
+import '../../vaults/data/vault.dart';
 import '../widgets/home_creation_sheet.dart';
 import '../../../utils/pickers/pick_pdf.dart';
 import '../../../routing/route_names.dart';
@@ -20,6 +21,30 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isLoaded = context.select<VaultStore, bool>((s) => s.isLoaded);
+    if (!isLoaded) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    final vaults = context.select<VaultStore, List<Vault>>((s) => s.vaults);
+
+    final items = vaults
+        .map(
+          (v) => FolderGridItem(
+            svgIconPath: v.isTemporary
+                ? AppIcons.folderVault
+                : AppIcons.folderVault,
+            title: v.name,
+            date: v.createdAt,
+            onTap: () => context.goNamed(
+              RouteNames.vault,
+              pathParameters: {'id': v.id},
+            ),
+            // onTitleChanged: (name) => context.read<VaultStore>().renameVault(v.id, name),
+          ),
+        )
+        .toList();
+
     return Scaffold(
       appBar: TopToolbar(
         variant: TopToolbarVariant.landing,
@@ -35,54 +60,7 @@ class HomeScreen extends StatelessWidget {
           right: AppSpacing.screenPadding,
           top: AppSpacing.large, // 적당한 상단 여백
         ),
-        child: Consumer<VaultStore>(
-          builder: (_, store, __) {
-            if (!store.isLoaded) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            final raw = store.vaults;
-            final items = [...raw]
-              ..sort((a, b) {
-                if (a.isTemporary != b.isTemporary) {
-                  return a.isTemporary ? -1 : 1; // 임시 vault 먼저
-                }
-                final t = b.createdAt.compareTo(a.createdAt); // 최신 우선
-                if (t != 0) return t;
-                return a.name.compareTo(b.name); // tie-breaker: 이름
-              });
-            return LayoutBuilder(
-              builder: (context, c) {
-                const tileW = 144.0;
-                const gap = 48.0;
-                final cross = (c.maxWidth + gap) ~/ (tileW + gap);
-                final crossCount = cross.clamp(1, 8);
-
-                return GridView.builder(
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisSpacing: gap,
-                    mainAxisSpacing: gap,
-                    crossAxisCount: crossCount, // ← 계산값 사용
-                  ),
-                  itemCount: items.length,
-                  itemBuilder: (_, i) {
-                    final v = items[i];
-                    return AppCard(
-                      svgIconPath: v.isTemporary
-                          ? AppIcons.folderVault
-                          : AppIcons.folder,
-                      title: v.name,
-                      date: v.createdAt,
-                      onTap: () => context.go('/vault/${v.id}'),
-                      onTitleChanged: (newTitle) => context
-                          .read<VaultStore>()
-                          .renameVault(v.id, newTitle),
-                    );
-                  },
-                );
-              },
-            );
-          },
-        ),
+        child: FolderGrid(items: items),
       ),
       bottomNavigationBar: SafeArea(
         top: false,
@@ -123,7 +101,10 @@ class HomeScreen extends StatelessWidget {
                     );
 
                     if (!context.mounted) return;
-                    context.goNamed(RouteNames.note, pathParameters: {'id': note.id});
+                    context.goNamed(
+                      RouteNames.note,
+                      pathParameters: {'id': note.id},
+                    );
                   },
                 ),
               ],

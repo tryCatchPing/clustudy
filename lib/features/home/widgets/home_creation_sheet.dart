@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:file_picker/file_picker.dart';
 import '../../../design_system/components/organisms/creation_sheet.dart';
 import '../../../design_system/tokens/app_icons.dart';
 import '../../vaults/state/vault_store.dart';
@@ -37,23 +36,6 @@ Future<void> showHomeCreationSheet(BuildContext context) async {
           onTap: () async {
             final note = await context.read<NoteStore>()
                 .createNote(vaultId: temp.id, title: '새 노트');
-            if (context.mounted) {
-              Navigator.pop(context);
-              context.goNamed(RouteNames.note, pathParameters: {'id': note.id});
-            }
-          },
-        ),
-        CreationAction(
-          label: 'PDF 가져오기(임시 Vault)',
-          desc: 'PDF를 불러와 주석/필기',
-          leading: SvgPicture.asset(AppIcons.download, width: 28, height: 28),
-          onTap: () async {
-            final picked = await FilePicker.platform.pickFiles(
-              type: FileType.custom, allowedExtensions: ['pdf'],
-            );
-            if (picked == null || picked.files.isEmpty) return;
-            final note = await context.read<NoteStore>()
-                .createPdfNote(vaultId: temp.id, fileName: picked.files.single.name);
             if (context.mounted) {
               Navigator.pop(context);
               context.goNamed(RouteNames.note, pathParameters: {'id': note.id});

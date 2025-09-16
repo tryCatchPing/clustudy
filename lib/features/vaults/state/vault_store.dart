@@ -62,8 +62,8 @@ class VaultStore extends ChangeNotifier {
     final t = temporaryVault;
     if (t != null) return t;
 
-    final temp = Vault.temp();        // ← 아래 2) 참고
-    _vaults.insert(0, temp);          // 항상 첫 카드 고정
+    final temp = Vault.temp();
+    _vaults.insert(0, temp);          
     await _repo.save(_vaults);
     notifyListeners();
     return temp;

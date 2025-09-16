@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:file_picker/file_picker.dart';
-import '../../../design_system/components/organisms/creation_sheet.dart';
 
 import '../../../design_system/tokens/app_colors.dart';
 import '../../../design_system/tokens/app_spacing.dart';
 import '../../../design_system/tokens/app_icons.dart';
 import '../../../design_system/components/organisms/top_toolbar.dart';
 import '../../../design_system/components/organisms/bottom_actions_dock_fixed.dart';
+import '../../../design_system/components/organisms/folder_grid.dart';
 
 import '../widgets/folder_creation_sheet.dart';
 import '../../notes/state/note_store.dart';
+import '../../notes/data/note.dart';
 import '../../../routing/route_names.dart';
 import '../data/folder.dart';
 import '../state/folder_store.dart';
-import '../../../routing/route_names.dart';
 import '../../../utils/pickers/pick_pdf.dart';
 
 import 'package:provider/provider.dart';
@@ -38,16 +38,48 @@ class FolderScreen extends StatelessWidget {
       );
     }
 
-
     // Store에서 폴더를 구독 (이름이 바뀌면 자동 리빌드)
-    final folder = context.select<FolderStore, Folder?>((s) => s.byId(folderId));
-
+    final folder = context.select<FolderStore, Folder?>(
+      (s) => s.byId(folderId),
+    );
     // 로딩/미존재 가드
     if (folder == null) {
       return const Scaffold(
         body: Center(child: Text('Folder not found')),
       );
     }
+
+    final subFolders = context.select<FolderStore, List<Folder>>(
+      (s) => s.byParent(vaultId: vaultId, parentFolderId: folder.id),
+    );
+    final notes = context.select<NoteStore, List<Note>>(
+      (s) => s.byVault(vaultId).where((n) => n.folderId == folder.id).toList(),
+    );
+
+    final items = <FolderGridItem>[
+      // 폴더들
+      ...subFolders.map((f) => FolderGridItem(
+            svgIconPath: AppIcons.folder,           // 폴더는 SVG 아이콘
+            title: f.name,
+            date: f.createdAt,
+            onTap: () => context.goNamed(
+              RouteNames.folder,
+              pathParameters: {'vaultId': vaultId, 'folderId': f.id},
+            ),
+            // onTitleChanged: (name) => context.read<FolderStore>().renameFolder(f.id, name),
+          )),
+      // 노트들
+      ...notes.map((n) => FolderGridItem(
+            previewImage: null,                     // 썸네일(Uint8List) 있으면 넣기
+            title: n.title,
+            date: n.createdAt,
+            onTap: () => context.goNamed(
+              RouteNames.note,
+              pathParameters: {'id': n.id},
+            ),
+            // onTitleChanged: (t) => context.read<NoteStore>().renameNote(n.id, t),
+          )),
+    ];
 
     // 임시 Vault 화면과 동일: 검색/설정만, 그래프뷰 버튼 없음
     final actions = <ToolbarAction>[
@@ -63,20 +95,8 @@ class FolderScreen extends StatelessWidget {
       ),
       body: Padding(
         padding: const EdgeInsets.all(AppSpacing.screenPadding),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Vault ID: $vaultId',
-              style: const TextStyle(color: AppColors.gray50),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Folder ID: $folderId',
-              style: const TextStyle(color: AppColors.gray50),
-            ),
-            const SizedBox(height: 24),
-          ],
+        child: FolderGrid(
+          items:items,
         ),
       ),
       // 하단 Dock: 임시 Vault처럼 “만들기” → 시트 열기
