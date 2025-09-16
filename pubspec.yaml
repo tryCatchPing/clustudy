@@ -67,6 +67,7 @@ dev_dependencies:
   riverpod_generator: ^2.4.0
   build_runner: ^2.4.13
   isar_generator: ^3.1.0+1
+  path_provider_platform_interface: ^2.0.6
   # Temporarily remove custom_lint/riverpod_lint to avoid analyzer_plugin/analyzer mismatch during build_runner
   # custom_lint: ^0.7.3
   # riverpod_lint: ^2.6.4
