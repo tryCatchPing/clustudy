@@ -9,6 +9,8 @@ import '../../../design_system/tokens/app_colors.dart';
 import '../../../design_system/tokens/app_spacing.dart';
 import '../../../design_system/tokens/app_typography.dart';
 import '../../../design_system/tokens/app_shadows.dart';
+import '../../../design_system/tokens/app_icons.dart';
+import '../../components/organisms/card_action_sheet.dart';
 
 class AppCard extends StatefulWidget {
   final String? svgIconPath;
@@ -26,10 +28,13 @@ class AppCard extends StatefulWidget {
     required this.date,
     this.onTap,
     this.onTitleChanged,
-  }) : assert(svgIconPath != null || previewImage != null, 'svgIconPath 또는 previewImage 둘 중 하나는 반드시 필요합니다.');
+  }) : assert(
+         svgIconPath != null || previewImage != null,
+         'svgIconPath 또는 previewImage 둘 중 하나는 반드시 필요합니다.',
+       );
 
   @override
-    State<AppCard> createState() => _AppCardState();
+  State<AppCard> createState() => _AppCardState();
 }
 
 class _AppCardState extends State<AppCard> {
@@ -65,7 +70,8 @@ class _AppCardState extends State<AppCard> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focus.requestFocus();
       _textController.selection = TextSelection(
-        baseOffset: 0, extentOffset: _textController.text.length,
+        baseOffset: 0,
+        extentOffset: _textController.text.length,
       );
     });
   }
@@ -82,35 +88,78 @@ class _AppCardState extends State<AppCard> {
   @override
   Widget build(BuildContext context) {
     final preview = widget.previewImage != null
-      ? AppShadows.shadowizeVector(
-          width: AppSizes.folderIconW,
-          height: AppSizes.folderIconH,
-          borderRadius: AppSpacing.small,
-          child: Image.memory(widget.previewImage!, fit: BoxFit.cover),
-          // y/sigma/color는 AppShadows 내부 기본값 그대로 써도 OK
-        )
-      : AppShadows.shadowizeVector(
-          width: AppSizes.folderIconW,
-          height: AppSizes.folderIconH,
-          child: SvgPicture.asset(
-            widget.svgIconPath!,
-            fit: BoxFit.contain,
-            colorFilter: const ColorFilter.mode(AppColors.primary, BlendMode.srcIn),
-          ),
-          y: 2, sigma: 4, color: const Color(0x40000000),
-        );
+        ? AppShadows.shadowizeVector(
+            width: AppSizes.folderIconW,
+            height: AppSizes.folderIconH,
+            borderRadius: AppSpacing.small,
+            child: Image.memory(widget.previewImage!, fit: BoxFit.cover),
+            // y/sigma/color는 AppShadows 내부 기본값 그대로 써도 OK
+          )
+        : AppShadows.shadowizeVector(
+            width: AppSizes.folderIconW,
+            height: AppSizes.folderIconH,
+            child: SvgPicture.asset(
+              widget.svgIconPath!,
+              fit: BoxFit.contain,
+              colorFilter: const ColorFilter.mode(
+                AppColors.primary,
+                BlendMode.srcIn,
+              ),
+            ),
+            y: 2,
+            sigma: 4,
+            color: const Color(0x40000000),
+          );
 
     return Material(
       color: Colors.transparent,
-      child: InkWell(
+      child: GestureDetector(
         onTap: _isEditing ? null : widget.onTap,
-        onLongPress: _isEditing ? null : _enterEdit,
-        borderRadius: BorderRadius.circular(AppSpacing.cardBorderRadius),
+        onLongPressStart: (d) {
+          // d.globalPosition = 화면 좌표 (Offset)
+          showCardActionSheetNear(
+            context,
+            anchorGlobal: d.globalPosition,
+            actions: [
+              CardSheetAction(
+                label: '이름 변경',
+                svgPath: AppIcons.rename,
+                onTap: () {
+                  // rename 다이얼로그 or 편집 모드 진입
+                  widget.onTitleChanged != null ? _enterEdit() : null;
+                },
+              ),
+              CardSheetAction(
+                label: '내보내기',
+                svgPath: AppIcons.export,
+                onTap: () {
+                  // export 로직
+                },
+              ),
+              CardSheetAction(
+                label: '복제',
+                svgPath: AppIcons.copy,
+                onTap: () {
+                  // duplicate 로직
+                },
+              ),
+              CardSheetAction(
+                label: '삭제',
+                svgPath: AppIcons.trash,
+                onTap: () {
+                  // delete 로직
+                },
+              ),
+            ],
+          );
+        },
         child: SizedBox(
           width: 144,
           height: 200,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8), // or EdgeInsets.zero
+            padding: const EdgeInsets.symmetric(
+              horizontal: 8,
+            ), // or EdgeInsets.zero
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
               mainAxisSize: MainAxisSize.max,
@@ -121,7 +170,9 @@ class _AppCardState extends State<AppCard> {
                 // 이름 (16px, bold, line-height 1.0)
                 if (_isEditing)
                   Focus(
-                    onFocusChange: (hasFocus) { if (!hasFocus) _commitAndExit(); },
+                    onFocusChange: (hasFocus) {
+                      if (!hasFocus) _commitAndExit();
+                    },
                     child: AppTextField(
                       controller: _textController,
                       style: AppTextFieldStyle.none,
@@ -148,7 +199,6 @@ class _AppCardState extends State<AppCard> {
                   ),
 
                 const SizedBox(height: 8), // 이름↔날짜
-
                 // 날짜 (13px, line-height 1.0)
                 Text(
                   DateFormat('yyyy.MM.dd').format(widget.date),
