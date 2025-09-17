@@ -93,7 +93,8 @@ class FolderScreen extends StatelessWidget {
             RouteNames.note,
             pathParameters: {'id': n.id},
           ),
-          // onTitleChanged: (t) => context.read<NoteStore>().renameNote(n.id, t),
+          onTitleChanged: (t) =>
+      context.read<NoteStore>().renameNote(id: n.id, newTitle: t),
         ),
       ),
     ];

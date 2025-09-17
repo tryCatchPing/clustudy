@@ -32,6 +32,35 @@ class NoteStore extends ChangeNotifier {
     return n;
   }
 
+  Future<void> renameNote({
+  required String id,
+  required String newTitle,
+  }) async {
+    final i = _notes.indexWhere((n) => n.id == id);
+    if (i == -1) return;
+
+    final old = _notes[i];
+
+    final updated = Note(
+      id: old.id,
+      vaultId: old.vaultId,
+      title: newTitle,
+      createdAt: old.createdAt,  
+      isPdf: old.isPdf,
+      pdfName: old.pdfName,
+      // folderId 등 다른 필드가 있으면 그대로 복사
+    );
+
+  _notes = [
+    ..._notes.sublist(0, i),
+    updated,
+    ..._notes.sublist(i + 1),
+  ];
+
+  await _repo.save(_notes);
+  notifyListeners();
+}
+
   Future<Note> createPdfNote({
     required String vaultId,
     String? folderId,

@@ -56,7 +56,6 @@ class VaultScreen extends StatelessWidget {
         ToolbarAction(
           svgPath: AppIcons.graphView, // ← 그래프 아이콘
           onTap: () {
-            // 그래프 뷰로 이동 (예: /graph/:id)
             context.goNamed(RouteNames.graph, pathParameters: {'id': vault.id});
           },
         ),
@@ -101,7 +100,8 @@ class VaultScreen extends StatelessWidget {
           date: n.createdAt,
           onTap: () =>
               context.pushNamed(RouteNames.note, pathParameters: {'id': n.id}),
-          // onTitleChanged: (t) => context.read<NoteStore>().renameNote(n.id, t),
+          onTitleChanged: (t) =>
+      context.read<NoteStore>().renameNote(id: n.id, newTitle: t),
         ),
       ),
     ];
