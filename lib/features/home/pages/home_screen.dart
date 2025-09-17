@@ -28,7 +28,7 @@ class HomeScreen extends StatelessWidget {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    final vaults = context.select<VaultStore, List<Vault>>((s) => s.vaults);
+    final vaults = context.watch<VaultStore>().vaults;
 
     final items = vaults
         .map(
@@ -38,6 +38,7 @@ class HomeScreen extends StatelessWidget {
             onTap: () =>
                 context.pushNamed(RouteNames.vault, pathParameters: {'id': v.id}),
             child: FolderCard(
+              key: ValueKey(v.id),
               type: FolderType.vault,
               title: v.name,
               date: v.createdAt,
@@ -45,6 +46,7 @@ class HomeScreen extends StatelessWidget {
                 RouteNames.vault,
                 pathParameters: {'id': v.id},
               ),
+              onTitleChanged: (t) => context.read<VaultStore>().renameVault(v.id, t)
             ),
           ),
         )

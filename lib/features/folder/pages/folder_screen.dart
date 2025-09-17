@@ -65,12 +65,21 @@ class FolderScreen extends StatelessWidget {
       // 폴더들
       ...subFolders.map(
         (f) => FolderGridItem(
-          svgIconPath: AppIcons.folder,
           title: f.name,
           date: f.createdAt,
-          onTap: () => context.pushNamed(
-            RouteNames.folder,
-            pathParameters: {'vaultId': vaultId, 'folderId': f.id},
+          child: FolderCard(
+            type: FolderType.normal,
+            title: f.name,
+            date: f.createdAt,
+            onTap: () => context.pushNamed(
+              RouteNames.folder,
+              pathParameters: {
+                'vaultId': vaultId,
+                'folderId': f.id,
+              },
+            ),
+            onTitleChanged: (t) =>
+                context.read<FolderStore>().renameFolder(id: f.id, newName: t),
           ),
         ),
       ),

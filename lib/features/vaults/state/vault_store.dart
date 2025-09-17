@@ -63,7 +63,7 @@ class VaultStore extends ChangeNotifier {
     if (t != null) return t;
 
     final temp = Vault.temp();
-    _vaults.insert(0, temp);          
+    _vaults.insert(0, temp);
     await _repo.save(_vaults);
     notifyListeners();
     return temp;

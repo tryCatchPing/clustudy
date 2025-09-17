@@ -89,6 +89,8 @@ class VaultScreen extends StatelessWidget {
                 'folderId': f.id,
               },
             ),
+            onTitleChanged: (t) =>
+                context.read<FolderStore>().renameFolder(id: f.id, newName: t),
           ),
         ),
       ),

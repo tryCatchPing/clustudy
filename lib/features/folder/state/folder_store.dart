@@ -37,6 +37,31 @@ class FolderStore extends ChangeNotifier {
     return f;
   }
 
+  Future<void> renameFolder({
+  required String id,
+  required String newName,
+  }) async {
+    final i = _folders.indexWhere((f) => f.id == id);
+    if (i == -1) return;
+  final old = _folders[i];
+  final updated = Folder(
+    id: old.id,
+    vaultId: old.vaultId,
+    name: newName,
+    createdAt: old.createdAt,
+    parentFolderId: old.parentFolderId,
+  );
+
+  _folders = [
+    ..._folders.sublist(0, i),
+    updated,
+    ..._folders.sublist(i + 1),
+  ];
+
+  await _repo.save(_folders);
+  notifyListeners();
+}
+
   bool get isLoaded => _loaded;
 
   Folder? byId(String id) {

@@ -71,7 +71,7 @@ class FolderGrid extends StatelessWidget {
           childAspectRatio: AppSizes.folderTileW / AppSizes.folderTileH, // 144/196
         ),
         itemCount: items.length,
-        itemBuilder: (context, index) {              
+        itemBuilder: (context, index) {
           final item = items[index];
           if (item.child != null) {
             return item.child!;
