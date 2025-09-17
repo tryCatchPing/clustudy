@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../../../shared/repositories/link_repository.dart';
+import '../../../shared/services/db_txn_runner.dart';
 import '../../canvas/models/link_model.dart';
 
 /// 간단한 인메모리 LinkRepository 구현.
@@ -56,7 +57,7 @@ class MemoryLinkRepository implements LinkRepository {
   // Mutations
   //////////////////////////////////////////////////////////////////////////////
   @override
-  Future<void> create(LinkModel link) async {
+  Future<void> create(LinkModel link, {DbWriteSession? session}) async {
     _validateLink(link);
     // 삽입
     _links[link.id] = link;
@@ -79,11 +80,11 @@ class MemoryLinkRepository implements LinkRepository {
   }
 
   @override
-  Future<void> update(LinkModel link) async {
+  Future<void> update(LinkModel link, {DbWriteSession? session}) async {
     final old = _links[link.id];
     if (old == null) {
       // 없으면 create로 처리
-      await create(link);
+      await create(link, session: session);
       return;
     }
 
@@ -112,7 +113,7 @@ class MemoryLinkRepository implements LinkRepository {
   }
 
   @override
-  Future<void> delete(String linkId) async {
+  Future<void> delete(String linkId, {DbWriteSession? session}) async {
     final old = _links.remove(linkId);
     if (old == null) return;
 
@@ -124,7 +125,7 @@ class MemoryLinkRepository implements LinkRepository {
   }
 
   @override
-  Future<int> deleteBySourcePage(String pageId) async {
+  Future<int> deleteBySourcePage(String pageId, {DbWriteSession? session}) async {
     final list = _bySourcePage[pageId];
     if (list == null || list.isEmpty) {
       // Still emit to clear any stale consumers
@@ -149,7 +150,7 @@ class MemoryLinkRepository implements LinkRepository {
   }
 
   @override
-  Future<int> deleteByTargetNote(String noteId) async {
+  Future<int> deleteByTargetNote(String noteId, {DbWriteSession? session}) async {
     final ids = _byTargetNote[noteId];
     if (ids == null || ids.isEmpty) {
       // Still emit to clear any stale consumers
@@ -177,7 +178,10 @@ class MemoryLinkRepository implements LinkRepository {
   }
 
   @override
-  Future<int> deleteBySourcePages(List<String> pageIds) async {
+  Future<int> deleteBySourcePages(
+    List<String> pageIds, {
+    DbWriteSession? session,
+  }) async {
     if (pageIds.isEmpty) return 0;
     final uniquePages = pageIds.toSet();
     final affectedTargets = <String>{};
@@ -265,15 +269,21 @@ class MemoryLinkRepository implements LinkRepository {
   }
 
   @override
-  Future<void> createMultipleLinks(List<LinkModel> links) async {
+  Future<void> createMultipleLinks(
+    List<LinkModel> links, {
+    DbWriteSession? session,
+  }) async {
     for (final link in links) {
-      await create(link);
+      await create(link, session: session);
     }
   }
 
   @override
-  Future<int> deleteLinksForMultiplePages(List<String> pageIds) async {
-    return deleteBySourcePages(pageIds);
+  Future<int> deleteLinksForMultiplePages(
+    List<String> pageIds, {
+    DbWriteSession? session,
+  }) async {
+    return deleteBySourcePages(pageIds, session: session);
   }
 
   //////////////////////////////////////////////////////////////////////////////

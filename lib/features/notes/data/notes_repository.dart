@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import '../../../shared/services/db_txn_runner.dart';
 import '../models/note_model.dart';
 import '../models/note_page_model.dart';
 import '../models/thumbnail_metadata.dart';
@@ -28,10 +29,10 @@ abstract class NotesRepository {
   /// 노트를 생성하거나 업데이트합니다.
   ///
   /// 동일한 `noteId`가 존재하면 교체(업데이트)하고, 없으면 추가합니다.
-  Future<void> upsert(NoteModel note);
+  Future<void> upsert(NoteModel note, {DbWriteSession? session});
 
   /// 노트를 삭제합니다. 대상이 없어도 에러로 간주하지 않습니다(idempotent).
-  Future<void> delete(String noteId);
+  Future<void> delete(String noteId, {DbWriteSession? session});
 
   // 페이지 컨트롤러를 위한 새로운 메서드들
 
@@ -41,8 +42,9 @@ abstract class NotesRepository {
   /// 모든 페이지의 pageNumber가 새로운 순서에 맞게 재매핑되어야 합니다.
   Future<void> reorderPages(
     String noteId,
-    List<NotePageModel> reorderedPages,
-  );
+    List<NotePageModel> reorderedPages, {
+    DbWriteSession? session,
+  });
 
   /// 페이지를 추가합니다.
   ///
@@ -52,13 +54,18 @@ abstract class NotesRepository {
     String noteId,
     NotePageModel newPage, {
     int? insertIndex,
+    DbWriteSession? session,
   });
 
   /// 페이지를 삭제합니다.
   ///
   /// [noteId]는 대상 노트의 ID이고, [pageId]는 삭제할 페이지의 ID입니다.
   /// 마지막 페이지는 삭제할 수 없습니다.
-  Future<void> deletePage(String noteId, String pageId);
+  Future<void> deletePage(
+    String noteId,
+    String pageId, {
+    DbWriteSession? session,
+  });
 
   /// 여러 페이지를 배치로 업데이트합니다 (Isar DB 최적화용).
   ///
@@ -67,8 +74,9 @@ abstract class NotesRepository {
   /// 향후 Isar DB에서는 트랜잭션을 활용한 배치 처리로 최적화됩니다.
   Future<void> batchUpdatePages(
     String noteId,
-    List<NotePageModel> pages,
-  );
+    List<NotePageModel> pages, {
+    DbWriteSession? session,
+  });
 
   /// 단일 페이지의 스케치(JSON)를 업데이트합니다.
   ///
@@ -78,16 +86,18 @@ abstract class NotesRepository {
   Future<void> updatePageJson(
     String noteId,
     String pageId,
-    String json,
-  );
+    String json, {
+    DbWriteSession? session,
+  });
 
   /// 썸네일 메타데이터를 저장합니다 (향후 Isar DB에서 활용).
   ///
   /// [pageId]는 페이지 ID이고, [metadata]는 저장할 썸네일 메타데이터입니다.
   Future<void> updateThumbnailMetadata(
     String pageId,
-    ThumbnailMetadata metadata,
-  );
+    ThumbnailMetadata metadata, {
+    DbWriteSession? session,
+  });
 
   /// 썸네일 메타데이터를 조회합니다.
   ///

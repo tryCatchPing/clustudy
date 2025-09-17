@@ -1,4 +1,5 @@
 import '../../features/canvas/models/link_model.dart';
+import '../services/db_txn_runner.dart';
 
 /// 링크 영속성에 대한 추상화.
 ///
@@ -16,32 +17,35 @@ abstract class LinkRepository {
 
   /// 단건 생성.
   /// emit: watchByPage(sourcePageId), watchBacklinksToNote(targetNoteId)
-  Future<void> create(LinkModel link);
+  Future<void> create(LinkModel link, {DbWriteSession? session});
 
   /// 단건 수정.
   /// emit: old/new sourcePageId & targetNoteId 각각에 대해 영향 반영
-  Future<void> update(LinkModel link);
+  Future<void> update(LinkModel link, {DbWriteSession? session});
 
   /// 단건 삭제.
   /// emit: watchByPage(sourcePageId), watchBacklinksToNote(targetNoteId)
-  Future<void> delete(String linkId);
+  Future<void> delete(String linkId, {DbWriteSession? session});
 
   /// 소스 페이지 기준 일괄 삭제.
   /// 반환: 삭제된 링크 수
   /// emit: watchByPage(pageId), 그리고 영향받은 targetNoteId 들에 대해 watchBacklinksToNote
-  Future<int> deleteBySourcePage(String pageId);
+  Future<int> deleteBySourcePage(String pageId, {DbWriteSession? session});
 
   /// 타깃 노트 기준 일괄 삭제.
   /// 반환: 삭제된 링크 수
   /// emit: watchBacklinksToNote(noteId), 그리고 영향받은 sourcePageId 들에 대해 watchByPage
-  Future<int> deleteByTargetNote(String noteId);
+  Future<int> deleteByTargetNote(String noteId, {DbWriteSession? session});
 
   /// 여러 소스 페이지 기준 일괄 삭제(편의 함수).
   /// 기본 구현은 deleteBySourcePage 반복으로 충분합니다.
-  Future<int> deleteBySourcePages(List<String> pageIds) async {
+  Future<int> deleteBySourcePages(
+    List<String> pageIds, {
+    DbWriteSession? session,
+  }) async {
     var total = 0;
     for (final id in pageIds) {
-      total += await deleteBySourcePage(id);
+      total += await deleteBySourcePage(id, session: session);
     }
     return total;
   }
@@ -69,10 +73,14 @@ abstract class LinkRepository {
   Future<Map<String, int>> getBacklinkCountsForNotes(List<String> noteIds);
 
   /// 여러 링크를 일괄 생성합니다.
-  Future<void> createMultipleLinks(List<LinkModel> links);
+  Future<void> createMultipleLinks(List<LinkModel> links,
+      {DbWriteSession? session});
 
   /// 여러 페이지에 대한 링크를 일괄 삭제합니다.
-  Future<int> deleteLinksForMultiplePages(List<String> pageIds);
+  Future<int> deleteLinksForMultiplePages(
+    List<String> pageIds, {
+    DbWriteSession? session,
+  });
 
   /// 리소스 정리용. 스트림 컨트롤러 등 내부 자원을 해제합니다.
   void dispose();

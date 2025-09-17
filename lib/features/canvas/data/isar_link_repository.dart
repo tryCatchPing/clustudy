@@ -5,7 +5,9 @@ import 'package:isar/isar.dart';
 import '../../../shared/entities/link_entity.dart';
 import '../../../shared/mappers/isar_link_mappers.dart';
 import '../../../shared/repositories/link_repository.dart';
+import '../../../shared/services/db_txn_runner.dart';
 import '../../../shared/services/isar_database_service.dart';
+import '../../../shared/services/isar_db_txn_runner.dart';
 import '../../canvas/models/link_model.dart';
 
 /// Isar-backed implementation of [LinkRepository].
@@ -23,6 +25,19 @@ class IsarLinkRepository implements LinkRepository {
     final resolved = _providedIsar ?? await IsarDatabaseService.getInstance();
     _isar = resolved;
     return resolved;
+  }
+
+  Future<T> _executeWrite<T>({
+    DbWriteSession? session,
+    required Future<T> Function(Isar isar) action,
+  }) async {
+    if (session is IsarDbWriteSession) {
+      return await action(session.isar);
+    }
+    final isar = await _ensureIsar();
+    return await isar.writeTxn(() async {
+      return await action(isar);
+    });
   }
 
   @override
@@ -64,95 +79,125 @@ class IsarLinkRepository implements LinkRepository {
   }
 
   @override
-  Future<void> create(LinkModel link) async {
+  Future<void> create(
+    LinkModel link, {
+    DbWriteSession? session,
+  }) async {
     _validateLink(link);
-    final isar = await _ensureIsar();
-    await isar.writeTxn(() async {
-      final entity = link.toEntity();
-      await isar.linkEntitys.putByLinkId(entity);
-    });
-  }
-
-  @override
-  Future<void> update(LinkModel link) async {
-    _validateLink(link);
-    final isar = await _ensureIsar();
-    await isar.writeTxn(() async {
-      final existing = await isar.linkEntitys.getByLinkId(link.id);
-      if (existing == null) {
+    await _executeWrite(
+      session: session,
+      action: (isar) async {
         final entity = link.toEntity();
         await isar.linkEntitys.putByLinkId(entity);
-        return;
-      }
-
-      existing
-        ..sourceNoteId = link.sourceNoteId
-        ..sourcePageId = link.sourcePageId
-        ..targetNoteId = link.targetNoteId
-        ..bboxLeft = link.bboxLeft
-        ..bboxTop = link.bboxTop
-        ..bboxWidth = link.bboxWidth
-        ..bboxHeight = link.bboxHeight
-        ..label = link.label
-        ..anchorText = link.anchorText
-        ..createdAt = link.createdAt
-        ..updatedAt = link.updatedAt;
-
-      await isar.linkEntitys.put(existing);
-    });
+      },
+    );
   }
 
   @override
-  Future<void> delete(String linkId) async {
-    final isar = await _ensureIsar();
-    await isar.writeTxn(() async {
-      await isar.linkEntitys.deleteByLinkId(linkId);
-    });
+  Future<void> update(
+    LinkModel link, {
+    DbWriteSession? session,
+  }) async {
+    _validateLink(link);
+    await _executeWrite(
+      session: session,
+      action: (isar) async {
+        final existing = await isar.linkEntitys.getByLinkId(link.id);
+        if (existing == null) {
+          final entity = link.toEntity();
+          await isar.linkEntitys.putByLinkId(entity);
+          return;
+        }
+
+        existing
+          ..sourceNoteId = link.sourceNoteId
+          ..sourcePageId = link.sourcePageId
+          ..targetNoteId = link.targetNoteId
+          ..bboxLeft = link.bboxLeft
+          ..bboxTop = link.bboxTop
+          ..bboxWidth = link.bboxWidth
+          ..bboxHeight = link.bboxHeight
+          ..label = link.label
+          ..anchorText = link.anchorText
+          ..createdAt = link.createdAt
+          ..updatedAt = link.updatedAt;
+
+        await isar.linkEntitys.put(existing);
+      },
+    );
   }
 
   @override
-  Future<int> deleteBySourcePage(String pageId) async {
-    final isar = await _ensureIsar();
-    return await isar.writeTxn(() async {
-      return await isar.linkEntitys
-          .filter()
-          .sourcePageIdEqualTo(pageId)
-          .deleteAll();
-    });
+  Future<void> delete(String linkId, {DbWriteSession? session}) async {
+    await _executeWrite(
+      session: session,
+      action: (isar) async {
+        await isar.linkEntitys.deleteByLinkId(linkId);
+      },
+    );
   }
 
   @override
-  Future<int> deleteByTargetNote(String noteId) async {
-    final isar = await _ensureIsar();
-    return await isar.writeTxn(() async {
-      return await isar.linkEntitys
-          .filter()
-          .targetNoteIdEqualTo(noteId)
-          .deleteAll();
-    });
-  }
-
-  @override
-  Future<int> deleteBySourcePages(List<String> pageIds) async {
-    return deleteLinksForMultiplePages(pageIds);
-  }
-
-  @override
-  Future<int> deleteLinksForMultiplePages(List<String> pageIds) async {
-    if (pageIds.isEmpty) {
-      return 0;
-    }
-    final isar = await _ensureIsar();
-    return await isar.writeTxn(() async {
-      var total = 0;
-      for (final pageId in pageIds.toSet()) {
-        total += await isar.linkEntitys
+  Future<int> deleteBySourcePage(
+    String pageId, {
+    DbWriteSession? session,
+  }) async {
+    return await _executeWrite<int>(
+      session: session,
+      action: (isar) async {
+        return await isar.linkEntitys
             .filter()
             .sourcePageIdEqualTo(pageId)
             .deleteAll();
-      }
-      return total;
-    });
+      },
+    );
+  }
+
+  @override
+  Future<int> deleteByTargetNote(
+    String noteId, {
+    DbWriteSession? session,
+  }) async {
+    return await _executeWrite<int>(
+      session: session,
+      action: (isar) async {
+        return await isar.linkEntitys
+            .filter()
+            .targetNoteIdEqualTo(noteId)
+            .deleteAll();
+      },
+    );
+  }
+
+  @override
+  Future<int> deleteBySourcePages(
+    List<String> pageIds, {
+    DbWriteSession? session,
+  }) async {
+    return deleteLinksForMultiplePages(pageIds, session: session);
+  }
+
+  @override
+  Future<int> deleteLinksForMultiplePages(
+    List<String> pageIds, {
+    DbWriteSession? session,
+  }) async {
+    if (pageIds.isEmpty) {
+      return 0;
+    }
+    return await _executeWrite<int>(
+      session: session,
+      action: (isar) async {
+        var total = 0;
+        for (final pageId in pageIds.toSet()) {
+          total += await isar.linkEntitys
+              .filter()
+              .sourcePageIdEqualTo(pageId)
+              .deleteAll();
+        }
+        return total;
+      },
+    );
   }
 
   @override
@@ -212,20 +257,25 @@ class IsarLinkRepository implements LinkRepository {
   }
 
   @override
-  Future<void> createMultipleLinks(List<LinkModel> links) async {
+  Future<void> createMultipleLinks(
+    List<LinkModel> links, {
+    DbWriteSession? session,
+  }) async {
     if (links.isEmpty) {
       return;
     }
     for (final link in links) {
       _validateLink(link);
     }
-    final isar = await _ensureIsar();
-    await isar.writeTxn(() async {
-      for (final link in links) {
-        final entity = link.toEntity();
-        await isar.linkEntitys.putByLinkId(entity);
-      }
-    });
+    await _executeWrite(
+      session: session,
+      action: (isar) async {
+        for (final link in links) {
+          final entity = link.toEntity();
+          await isar.linkEntitys.putByLinkId(entity);
+        }
+      },
+    );
   }
 
   @override

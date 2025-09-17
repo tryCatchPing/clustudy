@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../models/note_model.dart';
 import '../models/note_page_model.dart';
 import '../models/thumbnail_metadata.dart';
+import '../../../shared/services/db_txn_runner.dart';
 import 'notes_repository.dart';
 
 /// 간단한 인메모리 구현.
@@ -64,7 +65,7 @@ class MemoryNotesRepository implements NotesRepository {
   }
 
   @override
-  Future<void> upsert(NoteModel note) async {
+  Future<void> upsert(NoteModel note, {DbWriteSession? session}) async {
     final index = _notes.indexWhere((n) => n.noteId == note.noteId);
     if (index >= 0) {
       _notes[index] = note;
@@ -75,7 +76,7 @@ class MemoryNotesRepository implements NotesRepository {
   }
 
   @override
-  Future<void> delete(String noteId) async {
+  Future<void> delete(String noteId, {DbWriteSession? session}) async {
     _notes.removeWhere((n) => n.noteId == noteId);
     _emit();
   }
@@ -83,8 +84,9 @@ class MemoryNotesRepository implements NotesRepository {
   @override
   Future<void> reorderPages(
     String noteId,
-    List<NotePageModel> reorderedPages,
-  ) async {
+    List<NotePageModel> reorderedPages, {
+    DbWriteSession? session,
+  }) async {
     final noteIndex = _notes.indexWhere((n) => n.noteId == noteId);
     if (noteIndex >= 0) {
       final note = _notes[noteIndex];
@@ -99,6 +101,7 @@ class MemoryNotesRepository implements NotesRepository {
     String noteId,
     NotePageModel newPage, {
     int? insertIndex,
+    DbWriteSession? session,
   }) async {
     final noteIndex = _notes.indexWhere((n) => n.noteId == noteId);
     if (noteIndex >= 0) {
@@ -120,7 +123,11 @@ class MemoryNotesRepository implements NotesRepository {
   }
 
   @override
-  Future<void> deletePage(String noteId, String pageId) async {
+  Future<void> deletePage(
+    String noteId,
+    String pageId, {
+    DbWriteSession? session,
+  }) async {
     final noteIndex = _notes.indexWhere((n) => n.noteId == noteId);
     if (noteIndex >= 0) {
       final note = _notes[noteIndex];
@@ -142,8 +149,9 @@ class MemoryNotesRepository implements NotesRepository {
   @override
   Future<void> batchUpdatePages(
     String noteId,
-    List<NotePageModel> pages,
-  ) async {
+    List<NotePageModel> pages, {
+    DbWriteSession? session,
+  }) async {
     final noteIndex = _notes.indexWhere((n) => n.noteId == noteId);
     if (noteIndex >= 0) {
       final note = _notes[noteIndex];
@@ -157,8 +165,9 @@ class MemoryNotesRepository implements NotesRepository {
   Future<void> updatePageJson(
     String noteId,
     String pageId,
-    String json,
-  ) async {
+    String json, {
+    DbWriteSession? session,
+  }) async {
     debugPrint(
       '🗄️ [NotesRepo] updatePageJson(noteId=$noteId, pageId=$pageId, bytes=${json.length})',
     );
@@ -190,8 +199,9 @@ class MemoryNotesRepository implements NotesRepository {
   @override
   Future<void> updateThumbnailMetadata(
     String pageId,
-    ThumbnailMetadata metadata,
-  ) async {
+    ThumbnailMetadata metadata, {
+    DbWriteSession? session,
+  }) async {
     _thumbnailMetadata[pageId] = metadata;
   }
 

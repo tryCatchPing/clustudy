@@ -39,10 +39,20 @@ class IsarDbTxnRunner implements DbTxnRunner {
   }
 
   @override
-  Future<T> write<T>(Future<T> Function() action) async {
+  Future<T> write<T>(Future<T> Function() action) {
+    return writeWithSession((_) => action());
+  }
+
+  @override
+  Future<T> writeWithSession<T>(
+    Future<T> Function(DbWriteSession session) action,
+  ) async {
     final isar = await _ensureInstance();
     try {
-      return await isar.writeTxn(action);
+      return await isar.writeTxn(() async {
+        final session = IsarDbWriteSession(isar);
+        return await action(session);
+      });
     } catch (error, stackTrace) {
       throw DbTransactionException(
         'Failed to execute Isar write transaction',
@@ -51,4 +61,13 @@ class IsarDbTxnRunner implements DbTxnRunner {
       );
     }
   }
+}
+
+/// Write session that exposes the current [Isar] instance.
+class IsarDbWriteSession extends DbWriteSession {
+  /// Creates a session wrapper for an active [Isar] transaction.
+  const IsarDbWriteSession(this.isar);
+
+  /// Underlying Isar instance associated with the transaction.
+  final Isar isar;
 }

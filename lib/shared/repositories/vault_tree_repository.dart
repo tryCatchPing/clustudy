@@ -2,6 +2,7 @@ import '../../features/vaults/models/folder_model.dart';
 import '../../features/vaults/models/note_placement.dart';
 import '../../features/vaults/models/vault_item.dart';
 import '../../features/vaults/models/vault_model.dart';
+import '../services/db_txn_runner.dart';
 
 /// VaultTreeRepository: Vault/Folder/Note "배치(placement) 트리" 전용 추상화.
 ///
@@ -35,13 +36,14 @@ abstract class VaultTreeRepository {
   Future<FolderModel?> getFolder(String folderId);
 
   /// Vault 생성
-  Future<VaultModel> createVault(String name);
+  Future<VaultModel> createVault(String name, {DbWriteSession? session});
 
   /// Vault 이름 변경
-  Future<void> renameVault(String vaultId, String newName);
+  Future<void> renameVault(String vaultId, String newName,
+      {DbWriteSession? session});
 
   /// Vault 삭제
-  Future<void> deleteVault(String vaultId);
+  Future<void> deleteVault(String vaultId, {DbWriteSession? session});
 
   //////////////////////////////////////////////////////////////////////////////
   // Folder
@@ -58,21 +60,24 @@ abstract class VaultTreeRepository {
     String vaultId, {
     String? parentFolderId,
     required String name,
+    DbWriteSession? session,
   });
 
   /// 폴더 이름 변경
-  Future<void> renameFolder(String folderId, String newName);
+  Future<void> renameFolder(String folderId, String newName,
+      {DbWriteSession? session});
 
   /// 폴더 이동
   Future<void> moveFolder({
     required String folderId,
     String? newParentFolderId,
+    DbWriteSession? session,
   });
 
   /// 폴더 삭제
   /// 주의: 이 삭제는 "배치 트리"에 대한 캐스케이드만 수행합니다.
   /// 하위 노트의 콘텐츠 및 링크 정리는 상위 오케스트레이션 서비스가 책임집니다.
-  Future<void> deleteFolder(String folderId);
+  Future<void> deleteFolder(String folderId, {DbWriteSession? session});
 
   /// 지정한 폴더의 조상 목록(루트→자기 자신 순)을 반환합니다.
   Future<List<FolderModel>> getFolderAncestors(String folderId);
@@ -90,19 +95,22 @@ abstract class VaultTreeRepository {
     String vaultId, {
     String? parentFolderId,
     required String name,
+    DbWriteSession? session,
   });
 
   /// 노트 표시명(트리 상의 이름) 변경.
-  Future<void> renameNote(String noteId, String newName);
+  Future<void> renameNote(String noteId, String newName,
+      {DbWriteSession? session});
 
   /// 노트 이동(동일 Vault 내에서만 허용).
   Future<void> moveNote({
     required String noteId,
     String? newParentFolderId,
+    DbWriteSession? session,
   });
 
   /// 노트 배치 삭제(콘텐츠/파일/링크 정리는 상위 서비스에서 오케스트레이션).
-  Future<void> deleteNote(String noteId);
+  Future<void> deleteNote(String noteId, {DbWriteSession? session});
 
   //////////////////////////////////////////////////////////////////////////////
   // Note Placement 조회/등록(옵션)
@@ -118,6 +126,7 @@ abstract class VaultTreeRepository {
     required String vaultId,
     String? parentFolderId,
     required String name,
+    DbWriteSession? session,
   });
 
   /// Vault 내 노트를 검색합니다.
