@@ -35,4 +35,3 @@ class NotePlacementEntity {
   final parentFolder = IsarLink<FolderEntity>();
   final note = IsarLink<NoteEntity>();
 }
-

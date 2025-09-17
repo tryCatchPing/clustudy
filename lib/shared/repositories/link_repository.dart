@@ -73,8 +73,10 @@ abstract class LinkRepository {
   Future<Map<String, int>> getBacklinkCountsForNotes(List<String> noteIds);
 
   /// 여러 링크를 일괄 생성합니다.
-  Future<void> createMultipleLinks(List<LinkModel> links,
-      {DbWriteSession? session});
+  Future<void> createMultipleLinks(
+    List<LinkModel> links, {
+    DbWriteSession? session,
+  });
 
   /// 여러 페이지에 대한 링크를 일괄 삭제합니다.
   Future<int> deleteLinksForMultiplePages(

@@ -280,7 +280,8 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
     required String vaultId,
     required String vaultName,
   }) async {
-    final shouldDelete = await showDialog<bool>(
+    final shouldDelete =
+        await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Vault 삭제 확인'),
@@ -571,9 +572,9 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                   onPressed: disableDelete
                                       ? null
                                       : () => _confirmAndDeleteVault(
-                                            vaultId: targetVaultId,
-                                            vaultName: selectedVault.name,
-                                          ),
+                                          vaultId: targetVaultId,
+                                          vaultName: selectedVault.name,
+                                        ),
                                   icon: const Icon(Icons.delete),
                                   label: const Text('Vault 삭제'),
                                   style: TextButton.styleFrom(
