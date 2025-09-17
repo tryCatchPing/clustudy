@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../tokens/app_spacing.dart';
 import '../../tokens/app_sizes.dart';
 import '../molecules/app_card.dart';
-import '../molecules/folder_card.dart';
 import 'dart:typed_data';
 
 class FolderGridItem {

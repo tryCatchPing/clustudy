@@ -25,8 +25,8 @@ class FolderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final iconPath = (type == FolderType.vault)
-        ? AppIcons.folderVault
-        : AppIcons.folder;
+        ? AppIcons.folderVaultLarge
+        : AppIcons.folderLarge;
 
     return AppCard(
       svgIconPath: iconPath,
