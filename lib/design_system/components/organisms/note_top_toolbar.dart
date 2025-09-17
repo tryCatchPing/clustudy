@@ -1,6 +1,5 @@
 // lib/design_system/components/organisms/note_top_toolbar.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../tokens/app_colors.dart';
 import '../../tokens/app_spacing.dart';

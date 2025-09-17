@@ -14,7 +14,6 @@ class FolderCard extends StatelessWidget {
     required this.date,
     this.onTap,
     this.onTitleChanged,
-    this.onLongPressStart,
   });
 
   final FolderType type;
@@ -22,7 +21,6 @@ class FolderCard extends StatelessWidget {
   final DateTime date;
   final VoidCallback? onTap;
   final ValueChanged<String>? onTitleChanged;
-  final void Function(LongPressStartDetails details)? onLongPressStart;
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +34,6 @@ class FolderCard extends StatelessWidget {
       date: date,
       onTap: onTap,
       onTitleChanged: onTitleChanged,
-      onLongPressStart: onLongPressStart,
     );
   }
 }

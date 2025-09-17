@@ -10,6 +10,7 @@ import '../../../design_system/tokens/app_spacing.dart';
 import '../../../design_system/tokens/app_typography.dart';
 import '../../../design_system/tokens/app_shadows.dart';
 import '../../../design_system/tokens/app_icons.dart';
+import '../../components/organisms/card_action_sheet.dart';
 
 class AppCard extends StatefulWidget {
   final String? svgIconPath;
@@ -18,7 +19,6 @@ class AppCard extends StatefulWidget {
   final DateTime date; // subtitle을 DateTime 타입의 date로 변경
   final VoidCallback? onTap;
   final ValueChanged<String>? onTitleChanged; // 제목 변경 시 호출될 콜백
-  final void Function(LongPressStartDetails details)? onLongPressStart;
 
   const AppCard({
     super.key,
@@ -28,7 +28,6 @@ class AppCard extends StatefulWidget {
     required this.date,
     this.onTap,
     this.onTitleChanged,
-    this.onLongPressStart,
   }) : assert(
          svgIconPath != null || previewImage != null,
          'svgIconPath 또는 previewImage 둘 중 하나는 반드시 필요합니다.',
@@ -65,6 +64,18 @@ class _AppCardState extends State<AppCard> {
     super.dispose();
   }
 
+  void _enterEdit() {
+    setState(() => _isEditing = true);
+    // 다음 프레임에 포커스 이동 + 전체 선택
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focus.requestFocus();
+      _textController.selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: _textController.text.length,
+      );
+    });
+  }
+
   void _commitAndExit([String? value]) {
     final newTitle = (value ?? _textController.text).trim();
     _focus.unfocus();
@@ -88,7 +99,7 @@ class _AppCardState extends State<AppCard> {
             width: AppSizes.folderIconW,
             height: AppSizes.folderIconH,
             child: SvgPicture.asset(
-              widget.svgIconPath ?? AppIcons.folderVaultLarge,
+              widget.svgIconPath!,
               fit: BoxFit.contain,
               colorFilter: const ColorFilter.mode(
                 AppColors.primary,
@@ -104,8 +115,44 @@ class _AppCardState extends State<AppCard> {
       color: Colors.transparent,
       child: GestureDetector(
         onTap: _isEditing ? null : widget.onTap,
-        onLongPressStart:
-            _isEditing ? null : (d) => widget.onLongPressStart?.call(d),
+        onLongPressStart: (d) {
+          // d.globalPosition = 화면 좌표 (Offset)
+          showCardActionSheetNear(
+            context,
+            anchorGlobal: d.globalPosition,
+            actions: [
+              CardSheetAction(
+                label: '이름 변경',
+                svgPath: AppIcons.rename,
+                onTap: () {
+                  // rename 다이얼로그 or 편집 모드 진입
+                  widget.onTitleChanged != null ? _enterEdit() : null;
+                },
+              ),
+              CardSheetAction(
+                label: '내보내기',
+                svgPath: AppIcons.export,
+                onTap: () {
+                  // export 로직
+                },
+              ),
+              CardSheetAction(
+                label: '복제',
+                svgPath: AppIcons.copy,
+                onTap: () {
+                  // duplicate 로직
+                },
+              ),
+              CardSheetAction(
+                label: '삭제',
+                svgPath: AppIcons.trash,
+                onTap: () {
+                  // delete 로직
+                },
+              ),
+            ],
+          );
+        },
         child: SizedBox(
           width: 144,
           height: 200,

@@ -8,7 +8,7 @@ import '../../tokens/app_typography.dart';
 class CardSheetAction {
   final String label;
   final String svgPath;
-  final Future<void> Function() onTap; // async 콜백
+  final VoidCallback onTap;
   const CardSheetAction({
     required this.label,
     required this.svgPath,
@@ -113,40 +113,37 @@ class _ActionRow extends StatelessWidget {
   const _ActionRow({required this.action});
   final CardSheetAction action;
 
-  @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return SizedBox(                      // ← 추가: 전체 폭 차지
       width: double.infinity,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () async {
-          await Navigator.of(context).maybePop();
-          await Future<void>.delayed(Duration.zero);
-          await action.onTap();
+        onTap: () {
+          Navigator.of(context).maybePop();
+          action.onTap();
         },
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.start, // ← 명시(기본값이지만 안전)
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(
-                width: 28,
-                height: 28,
+                width: 28, height: 28,
                 child: Center(
                   child: SvgPicture.asset(
-                    action.svgPath,
-                    width: 28,
-                    height: 28,
-                    colorFilter: const ColorFilter.mode(
-                      AppColors.gray50,
-                      BlendMode.srcIn,
-                    ),
+                  action.svgPath,
+                  width: 28,
+                  height: 28,
+                  colorFilter: const ColorFilter.mode(
+                    AppColors.gray50, // 아이콘 색 (필요 시 바꾸세요)
+                    BlendMode.srcIn,
                   ),
                 ),
               ),
+              ),
               const SizedBox(width: 16),
-              Expanded(
+              Expanded( // ← 텍스트가 왼쪽 정렬로 쭉
                 child: Text(
                   action.label,
                   style: AppTypography.body4,
