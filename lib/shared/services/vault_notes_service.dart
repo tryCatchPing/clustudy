@@ -101,14 +101,15 @@ class VaultNotesService {
 
     try {
       // 3) 트랜잭션: 배치 등록 + 콘텐츠 업서트
-      await dbTxn.write(() async {
+      await dbTxn.writeWithSession((session) async {
         await vaultTree.registerExistingNote(
           noteId: materialized.noteId,
           vaultId: vaultId,
           parentFolderId: parentFolderId,
           name: materialized.title,
+          session: session,
         );
-        await notesRepo.upsert(materialized);
+        await notesRepo.upsert(materialized, session: session);
       });
       return materialized;
     } catch (e) {
@@ -154,10 +155,11 @@ class VaultNotesService {
     final hasConflict = targetKeys.contains(currentKey);
 
     if (!hasConflict) {
-      await dbTxn.write(() async {
+      await dbTxn.writeWithSession((session) async {
         await vaultTree.moveNote(
           noteId: noteId,
           newParentFolderId: newParentFolderId,
+          session: session,
         );
       });
       return;
@@ -166,10 +168,11 @@ class VaultNotesService {
     // Conflict: temporary rename in source scope → move → final rename in target scope
     final tempName = _generateTemporaryName(placement.name);
     await renameNote(noteId, tempName);
-    await dbTxn.write(() async {
+    await dbTxn.writeWithSession((session) async {
       await vaultTree.moveNote(
         noteId: noteId,
         newParentFolderId: newParentFolderId,
+        session: session,
       );
     });
     await renameNote(noteId, placement.name);
@@ -234,10 +237,11 @@ class VaultNotesService {
     );
 
     if (!hasConflict) {
-      await dbTxn.write(() async {
+      await dbTxn.writeWithSession((session) async {
         await vaultTree.moveFolder(
           folderId: folderId,
           newParentFolderId: newParentFolderId,
+          session: session,
         );
       });
       return;
@@ -246,10 +250,11 @@ class VaultNotesService {
     // Conflict path: temporary rename in source → move → final rename in target
     final tempName = _generateTemporaryName(currentName);
     await renameFolder(folderId, tempName);
-    await dbTxn.write(() async {
+    await dbTxn.writeWithSession((session) async {
       await vaultTree.moveFolder(
         folderId: folderId,
         newParentFolderId: newParentFolderId,
+        session: session,
       );
     });
     await renameFolder(folderId, currentName);
@@ -279,14 +284,15 @@ class VaultNotesService {
 
     try {
       // 4) 트랜잭션: 배치 등록 + 콘텐츠 업서트
-      await dbTxn.write(() async {
+      await dbTxn.writeWithSession((session) async {
         await vaultTree.registerExistingNote(
           noteId: materialized.noteId,
           vaultId: vaultId,
           parentFolderId: parentFolderId,
           name: materialized.title,
+          session: session,
         );
-        await notesRepo.upsert(materialized);
+        await notesRepo.upsert(materialized, session: session);
       });
       return materialized;
     } catch (e) {
@@ -318,11 +324,14 @@ class VaultNotesService {
     );
     existing.remove(NameNormalizer.compareKey(placement.name));
     final unique = _generateUniqueName(normalized, existing);
-    await dbTxn.write(() async {
-      await vaultTree.renameNote(noteId, unique);
+    await dbTxn.writeWithSession((session) async {
+      await vaultTree.renameNote(noteId, unique, session: session);
       final note = await notesRepo.getNoteById(noteId);
       if (note != null) {
-        await notesRepo.upsert(note.copyWith(title: unique));
+        await notesRepo.upsert(
+          note.copyWith(title: unique),
+          session: session,
+        );
       }
     });
   }
@@ -363,8 +372,8 @@ class VaultNotesService {
       existing.remove(NameNormalizer.compareKey(currentName));
     }
     final unique = _generateUniqueName(normalized, existing);
-    await dbTxn.write(() async {
-      await vaultTree.renameFolder(folderId, unique);
+    await dbTxn.writeWithSession((session) async {
+      await vaultTree.renameFolder(folderId, unique, session: session);
     });
   }
 
@@ -381,8 +390,8 @@ class VaultNotesService {
       existing.remove(NameNormalizer.compareKey(current.name));
     }
     final unique = _generateUniqueName(normalized, existing);
-    await dbTxn.write(() async {
-      await vaultTree.renameVault(vaultId, unique);
+    await dbTxn.writeWithSession((session) async {
+      await vaultTree.renameVault(vaultId, unique, session: session);
     });
   }
 
@@ -417,10 +426,11 @@ class VaultNotesService {
 
   /// 노트를 동일 Vault 내 다른 폴더로 이동합니다.
   Future<void> moveNote(String noteId, {String? newParentFolderId}) async {
-    await dbTxn.write(() async {
+    await dbTxn.writeWithSession((session) async {
       await vaultTree.moveNote(
         noteId: noteId,
         newParentFolderId: newParentFolderId,
+        session: session,
       );
     });
   }
@@ -433,13 +443,13 @@ class VaultNotesService {
         note?.pages.map((p) => p.pageId).toList() ?? const <String>[];
 
     // 2) DB 변경(링크/콘텐츠/배치) — 트랜잭션으로 묶기
-    await dbTxn.write(() async {
+    await dbTxn.writeWithSession((session) async {
       if (pageIds.isNotEmpty) {
-        await linkRepo.deleteBySourcePages(pageIds);
+        await linkRepo.deleteBySourcePages(pageIds, session: session);
       }
-      await linkRepo.deleteByTargetNote(noteId);
-      await notesRepo.delete(noteId);
-      await vaultTree.deleteNote(noteId);
+      await linkRepo.deleteByTargetNote(noteId, session: session);
+      await notesRepo.delete(noteId, session: session);
+      await vaultTree.deleteNote(noteId, session: session);
     });
 
     // 3) 파일 삭제(트랜잭션 밖)

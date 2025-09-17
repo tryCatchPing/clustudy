@@ -6,7 +6,9 @@ import '../../../shared/entities/note_entities.dart';
 import '../../../shared/entities/thumbnail_metadata_entity.dart';
 import '../../../shared/mappers/isar_note_mappers.dart';
 import '../../../shared/mappers/isar_thumbnail_mappers.dart';
+import '../../../shared/services/db_txn_runner.dart';
 import '../../../shared/services/isar_database_service.dart';
+import '../../../shared/services/isar_db_txn_runner.dart';
 import '../models/note_model.dart';
 import '../models/note_page_model.dart';
 import '../models/thumbnail_metadata.dart';
@@ -27,6 +29,19 @@ class IsarNotesRepository implements NotesRepository {
     final resolved = _providedIsar ?? await IsarDatabaseService.getInstance();
     _isar = resolved;
     return resolved;
+  }
+
+  Future<T> _executeWrite<T>({
+    DbWriteSession? session,
+    required Future<T> Function(Isar isar) action,
+  }) async {
+    if (session is IsarDbWriteSession) {
+      return await action(session.isar);
+    }
+    final isar = await _ensureIsar();
+    return await isar.writeTxn(() async {
+      return await action(isar);
+    });
   }
 
   @override
@@ -138,88 +153,95 @@ class IsarNotesRepository implements NotesRepository {
   }
 
   @override
-  Future<void> upsert(NoteModel note) async {
-    final isar = await _ensureIsar();
-    await isar.writeTxn(() async {
-      final existing = await isar.noteEntitys.getByNoteId(note.noteId);
-      final noteEntity = note.toEntity(existingId: existing?.id);
-      await isar.noteEntitys.put(noteEntity);
+  Future<void> upsert(NoteModel note, {DbWriteSession? session}) async {
+    await _executeWrite(
+      session: session,
+      action: (isar) async {
+        final existing = await isar.noteEntitys.getByNoteId(note.noteId);
+        final noteEntity = note.toEntity(existingId: existing?.id);
+        await isar.noteEntitys.put(noteEntity);
 
-      final existingPages = await isar.notePageEntitys
-          .filter()
-          .noteIdEqualTo(note.noteId)
-          .findAll();
-      final existingMap = {
-        for (final page in existingPages) page.pageId: page,
-      };
+        final existingPages = await isar.notePageEntitys
+            .filter()
+            .noteIdEqualTo(note.noteId)
+            .findAll();
+        final existingMap = {
+          for (final page in existingPages) page.pageId: page,
+        };
 
-      final incomingIds = <String>{};
-      for (final page in note.pages) {
-        incomingIds.add(page.pageId);
-        final existingPage = existingMap[page.pageId];
-        final entity = page.toEntity(
-          existingId: existingPage?.id,
-          parentNoteId: note.noteId,
-        );
-        await isar.notePageEntitys.put(entity);
-      }
+        final incomingIds = <String>{};
+        for (final page in note.pages) {
+          incomingIds.add(page.pageId);
+          final existingPage = existingMap[page.pageId];
+          final entity = page.toEntity(
+            existingId: existingPage?.id,
+            parentNoteId: note.noteId,
+          );
+          await isar.notePageEntitys.put(entity);
+        }
 
-      final toDelete = existingPages
-          .where((page) => !incomingIds.contains(page.pageId))
-          .map((page) => page.pageId)
-          .toList(growable: false);
-      if (toDelete.isNotEmpty) {
-        await isar.notePageEntitys.deleteAllByPageId(toDelete);
-        await isar.thumbnailMetadataEntitys.deleteAllByPageId(toDelete);
-      }
-    });
+        final toDelete = existingPages
+            .where((page) => !incomingIds.contains(page.pageId))
+            .map((page) => page.pageId)
+            .toList(growable: false);
+        if (toDelete.isNotEmpty) {
+          await isar.notePageEntitys.deleteAllByPageId(toDelete);
+          await isar.thumbnailMetadataEntitys.deleteAllByPageId(toDelete);
+        }
+      },
+    );
   }
 
   @override
-  Future<void> delete(String noteId) async {
-    final isar = await _ensureIsar();
-    await isar.writeTxn(() async {
-      final pages = await isar.notePageEntitys
-          .filter()
-          .noteIdEqualTo(noteId)
-          .findAll();
-      if (pages.isNotEmpty) {
-        final pageIds = pages.map((p) => p.pageId).toList(growable: false);
-        await isar.notePageEntitys.deleteAllByPageId(pageIds);
-        await isar.thumbnailMetadataEntitys.deleteAllByPageId(pageIds);
-      }
-      await isar.noteEntitys.deleteByNoteId(noteId);
-    });
+  Future<void> delete(String noteId, {DbWriteSession? session}) async {
+    await _executeWrite(
+      session: session,
+      action: (isar) async {
+        final pages = await isar.notePageEntitys
+            .filter()
+            .noteIdEqualTo(noteId)
+            .findAll();
+        if (pages.isNotEmpty) {
+          final pageIds = pages.map((p) => p.pageId).toList(growable: false);
+          await isar.notePageEntitys.deleteAllByPageId(pageIds);
+          await isar.thumbnailMetadataEntitys.deleteAllByPageId(pageIds);
+        }
+        await isar.noteEntitys.deleteByNoteId(noteId);
+      },
+    );
   }
 
   @override
   Future<void> reorderPages(
     String noteId,
-    List<NotePageModel> reorderedPages,
-  ) async {
-    final isar = await _ensureIsar();
-    await isar.writeTxn(() async {
-      final note = await isar.noteEntitys.getByNoteId(noteId);
-      if (note == null) {
-        return;
-      }
-
-      for (var i = 0; i < reorderedPages.length; i += 1) {
-        final model = reorderedPages[i];
-        final existing = await isar.notePageEntitys.getByPageId(model.pageId);
-        if (existing == null) {
-          throw Exception('Page not found: ${model.pageId}');
+    List<NotePageModel> reorderedPages, {
+    DbWriteSession? session,
+  }) async {
+    await _executeWrite(
+      session: session,
+      action: (isar) async {
+        final note = await isar.noteEntitys.getByNoteId(noteId);
+        if (note == null) {
+          return;
         }
-        final entity = model.toEntity(
-          existingId: existing.id,
-          parentNoteId: noteId,
-        )..pageNumber = i + 1;
-        await isar.notePageEntitys.put(entity);
-      }
 
-      note.updatedAt = DateTime.now();
-      await isar.noteEntitys.put(note);
-    });
+        for (var i = 0; i < reorderedPages.length; i += 1) {
+          final model = reorderedPages[i];
+          final existing = await isar.notePageEntitys.getByPageId(model.pageId);
+          if (existing == null) {
+            throw Exception('Page not found: ${model.pageId}');
+          }
+          final entity = model.toEntity(
+            existingId: existing.id,
+            parentNoteId: noteId,
+          )..pageNumber = i + 1;
+          await isar.notePageEntitys.put(entity);
+        }
+
+        note.updatedAt = DateTime.now();
+        await isar.noteEntitys.put(note);
+      },
+    );
   }
 
   @override
@@ -227,132 +249,152 @@ class IsarNotesRepository implements NotesRepository {
     String noteId,
     NotePageModel newPage, {
     int? insertIndex,
+    DbWriteSession? session,
   }) async {
-    final isar = await _ensureIsar();
-    await isar.writeTxn(() async {
-      final note = await isar.noteEntitys.getByNoteId(noteId);
-      if (note == null) {
-        throw Exception('Note not found: $noteId');
-      }
-      final pages = await isar.notePageEntitys
-          .filter()
-          .noteIdEqualTo(noteId)
-          .sortByPageNumber()
-          .findAll();
-      final index = insertIndex == null
-          ? pages.length
-          : insertIndex.clamp(0, pages.length);
+    await _executeWrite(
+      session: session,
+      action: (isar) async {
+        final note = await isar.noteEntitys.getByNoteId(noteId);
+        if (note == null) {
+          throw Exception('Note not found: $noteId');
+        }
+        final pages = await isar.notePageEntitys
+            .filter()
+            .noteIdEqualTo(noteId)
+            .sortByPageNumber()
+            .findAll();
+        final index = insertIndex == null
+            ? pages.length
+            : insertIndex.clamp(0, pages.length);
 
-      pages.insert(index, newPage.toEntity(parentNoteId: noteId));
-      for (var i = 0; i < pages.length; i += 1) {
-        final entity = pages[i]..pageNumber = i + 1;
-        await isar.notePageEntitys.put(entity);
-      }
+        pages.insert(index, newPage.toEntity(parentNoteId: noteId));
+        for (var i = 0; i < pages.length; i += 1) {
+          final entity = pages[i]..pageNumber = i + 1;
+          await isar.notePageEntitys.put(entity);
+        }
 
-      note.updatedAt = DateTime.now();
-      await isar.noteEntitys.put(note);
-    });
+        note.updatedAt = DateTime.now();
+        await isar.noteEntitys.put(note);
+      },
+    );
   }
 
   @override
-  Future<void> deletePage(String noteId, String pageId) async {
-    final isar = await _ensureIsar();
-    await isar.writeTxn(() async {
-      final note = await isar.noteEntitys.getByNoteId(noteId);
-      if (note == null) {
-        throw Exception('Note not found: $noteId');
-      }
-      final pages = await isar.notePageEntitys
-          .filter()
-          .noteIdEqualTo(noteId)
-          .sortByPageNumber()
-          .findAll();
-      if (pages.length <= 1) {
-        throw Exception('Cannot delete the last page of a note');
-      }
+  Future<void> deletePage(
+    String noteId,
+    String pageId, {
+    DbWriteSession? session,
+  }) async {
+    await _executeWrite(
+      session: session,
+      action: (isar) async {
+        final note = await isar.noteEntitys.getByNoteId(noteId);
+        if (note == null) {
+          throw Exception('Note not found: $noteId');
+        }
+        final pages = await isar.notePageEntitys
+            .filter()
+            .noteIdEqualTo(noteId)
+            .sortByPageNumber()
+            .findAll();
+        if (pages.length <= 1) {
+          throw Exception('Cannot delete the last page of a note');
+        }
 
-      final removed = await isar.notePageEntitys.deleteByPageId(pageId);
-      if (!removed) {
-        throw Exception('Page not found: $pageId');
-      }
-      await isar.thumbnailMetadataEntitys.deleteByPageId(pageId);
+        final removed = await isar.notePageEntitys.deleteByPageId(pageId);
+        if (!removed) {
+          throw Exception('Page not found: $pageId');
+        }
+        await isar.thumbnailMetadataEntitys.deleteByPageId(pageId);
 
-      final remaining = await isar.notePageEntitys
-          .filter()
-          .noteIdEqualTo(noteId)
-          .sortByPageNumber()
-          .findAll();
-      for (var i = 0; i < remaining.length; i += 1) {
-        final entity = remaining[i]..pageNumber = i + 1;
-        await isar.notePageEntitys.put(entity);
-      }
+        final remaining = await isar.notePageEntitys
+            .filter()
+            .noteIdEqualTo(noteId)
+            .sortByPageNumber()
+            .findAll();
+        for (var i = 0; i < remaining.length; i += 1) {
+          final entity = remaining[i]..pageNumber = i + 1;
+          await isar.notePageEntitys.put(entity);
+        }
 
-      note.updatedAt = DateTime.now();
-      await isar.noteEntitys.put(note);
-    });
+        note.updatedAt = DateTime.now();
+        await isar.noteEntitys.put(note);
+      },
+    );
   }
 
   @override
   Future<void> batchUpdatePages(
     String noteId,
-    List<NotePageModel> pages,
-  ) async {
-    final isar = await _ensureIsar();
-    await isar.writeTxn(() async {
-      final note = await isar.noteEntitys.getByNoteId(noteId);
-      if (note == null) {
-        throw Exception('Note not found: $noteId');
-      }
-      for (final model in pages) {
-        final existing = await isar.notePageEntitys.getByPageId(model.pageId);
-        if (existing == null) {
-          throw Exception('Page not found: ${model.pageId}');
+    List<NotePageModel> pages, {
+    DbWriteSession? session,
+  }) async {
+    await _executeWrite(
+      session: session,
+      action: (isar) async {
+        final note = await isar.noteEntitys.getByNoteId(noteId);
+        if (note == null) {
+          throw Exception('Note not found: $noteId');
         }
-        final entity = model.toEntity(
-          existingId: existing.id,
-          parentNoteId: noteId,
-        );
-        await isar.notePageEntitys.put(entity);
-      }
-      note.updatedAt = DateTime.now();
-      await isar.noteEntitys.put(note);
-    });
+        for (final model in pages) {
+          final existing = await isar.notePageEntitys.getByPageId(model.pageId);
+          if (existing == null) {
+            throw Exception('Page not found: ${model.pageId}');
+          }
+          final entity = model.toEntity(
+            existingId: existing.id,
+            parentNoteId: noteId,
+          );
+          await isar.notePageEntitys.put(entity);
+        }
+        note.updatedAt = DateTime.now();
+        await isar.noteEntitys.put(note);
+      },
+    );
   }
 
   @override
   Future<void> updatePageJson(
     String noteId,
     String pageId,
-    String json,
-  ) async {
-    final isar = await _ensureIsar();
-    await isar.writeTxn(() async {
-      final page = await isar.notePageEntitys.getByPageId(pageId);
-      if (page == null || page.noteId != noteId) {
-        throw Exception('Page not found: $pageId');
-      }
-      page.jsonData = json;
-      await isar.notePageEntitys.put(page);
+    String json, {
+    DbWriteSession? session,
+  }) async {
+    await _executeWrite(
+      session: session,
+      action: (isar) async {
+        final page = await isar.notePageEntitys.getByPageId(pageId);
+        if (page == null || page.noteId != noteId) {
+          throw Exception('Page not found: $pageId');
+        }
+        page.jsonData = json;
+        await isar.notePageEntitys.put(page);
 
-      final note = await isar.noteEntitys.getByNoteId(noteId);
-      if (note != null) {
-        note.updatedAt = DateTime.now();
-        await isar.noteEntitys.put(note);
-      }
-    });
+        final note = await isar.noteEntitys.getByNoteId(noteId);
+        if (note != null) {
+          note.updatedAt = DateTime.now();
+          await isar.noteEntitys.put(note);
+        }
+      },
+    );
   }
 
   @override
   Future<void> updateThumbnailMetadata(
     String pageId,
-    ThumbnailMetadata metadata,
-  ) async {
-    final isar = await _ensureIsar();
-    await isar.writeTxn(() async {
-      final existing = await isar.thumbnailMetadataEntitys.getByPageId(pageId);
-      final entity = metadata.toEntity(existingId: existing?.id);
-      await isar.thumbnailMetadataEntitys.put(entity);
-    });
+    ThumbnailMetadata metadata, {
+    DbWriteSession? session,
+  }) async {
+    await _executeWrite(
+      session: session,
+      action: (isar) async {
+        final existing = await isar.thumbnailMetadataEntitys.getByPageId(
+          pageId,
+        );
+        final entity = metadata.toEntity(existingId: existing?.id);
+        await isar.thumbnailMetadataEntitys.put(entity);
+      },
+    );
   }
 
   @override

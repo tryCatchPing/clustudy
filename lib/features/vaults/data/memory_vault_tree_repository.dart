@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../shared/repositories/vault_tree_repository.dart';
+import '../../../shared/services/db_txn_runner.dart';
 import '../../../shared/services/name_normalizer.dart';
 import '../models/folder_model.dart';
 import '../models/note_placement.dart';
@@ -50,7 +51,7 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
   Future<FolderModel?> getFolder(String folderId) async => _folders[folderId];
 
   @override
-  Future<VaultModel> createVault(String name) async {
+  Future<VaultModel> createVault(String name, {DbWriteSession? session}) async {
     final normalized = NameNormalizer.normalize(name);
     _ensureUniqueVaultName(normalized);
     final id = _uuid.v4();
@@ -68,7 +69,11 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
   }
 
   @override
-  Future<void> renameVault(String vaultId, String newName) async {
+  Future<void> renameVault(
+    String vaultId,
+    String newName, {
+    DbWriteSession? session,
+  }) async {
     final v = _vaults[vaultId];
     if (v == null) throw Exception('Vault not found: $vaultId');
     final normalized = NameNormalizer.normalize(newName);
@@ -78,7 +83,7 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
   }
 
   @override
-  Future<void> deleteVault(String vaultId) async {
+  Future<void> deleteVault(String vaultId, {DbWriteSession? session}) async {
     final v = _vaults.remove(vaultId);
     if (v == null) return;
     // cascade: remove folders and notes placement
@@ -112,6 +117,7 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
     String vaultId, {
     String? parentFolderId,
     required String name,
+    DbWriteSession? session,
   }) async {
     _assertVaultExists(vaultId);
     if (parentFolderId != null) {
@@ -137,7 +143,11 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
   }
 
   @override
-  Future<void> renameFolder(String folderId, String newName) async {
+  Future<void> renameFolder(
+    String folderId,
+    String newName, {
+    DbWriteSession? session,
+  }) async {
     final f = _folders[folderId];
     if (f == null) throw Exception('Folder not found: $folderId');
     final normalized = NameNormalizer.normalize(newName);
@@ -156,6 +166,7 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
   Future<void> moveFolder({
     required String folderId,
     String? newParentFolderId,
+    DbWriteSession? session,
   }) async {
     final f = _folders[folderId];
     if (f == null) throw Exception('Folder not found: $folderId');
@@ -191,7 +202,7 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
   }
 
   @override
-  Future<void> deleteFolder(String folderId) async {
+  Future<void> deleteFolder(String folderId, {DbWriteSession? session}) async {
     final f = _folders[folderId];
     if (f == null) return;
     final vaultId = f.vaultId;
@@ -272,6 +283,7 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
     String vaultId, {
     String? parentFolderId,
     required String name,
+    DbWriteSession? session,
   }) async {
     _assertVaultExists(vaultId);
     if (parentFolderId != null) {
@@ -296,7 +308,11 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
   }
 
   @override
-  Future<void> renameNote(String noteId, String newName) async {
+  Future<void> renameNote(
+    String noteId,
+    String newName, {
+    DbWriteSession? session,
+  }) async {
     final n = _notes[noteId];
     if (n == null) throw Exception('Note not found: $noteId');
     final normalized = NameNormalizer.normalize(newName);
@@ -314,6 +330,7 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
   Future<void> moveNote({
     required String noteId,
     String? newParentFolderId,
+    DbWriteSession? session,
   }) async {
     final n = _notes[noteId];
     if (n == null) throw Exception('Note not found: $noteId');
@@ -339,7 +356,7 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
   }
 
   @override
-  Future<void> deleteNote(String noteId) async {
+  Future<void> deleteNote(String noteId, {DbWriteSession? session}) async {
     final n = _notes.remove(noteId);
     if (n == null) return;
     _emitChildren(n.vaultId, n.parentFolderId);
@@ -359,6 +376,7 @@ class MemoryVaultTreeRepository implements VaultTreeRepository {
     required String vaultId,
     String? parentFolderId,
     required String name,
+    DbWriteSession? session,
   }) async {
     _assertVaultExists(vaultId);
     if (parentFolderId != null) {

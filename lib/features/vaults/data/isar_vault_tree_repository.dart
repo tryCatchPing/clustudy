@@ -8,7 +8,9 @@ import '../../../shared/entities/note_placement_entity.dart';
 import '../../../shared/entities/vault_entity.dart';
 import '../../../shared/mappers/isar_vault_mappers.dart';
 import '../../../shared/repositories/vault_tree_repository.dart';
+import '../../../shared/services/db_txn_runner.dart';
 import '../../../shared/services/isar_database_service.dart';
+import '../../../shared/services/isar_db_txn_runner.dart';
 import '../../../shared/services/name_normalizer.dart';
 import '../models/folder_model.dart';
 import '../models/note_placement.dart';
@@ -32,6 +34,20 @@ class IsarVaultTreeRepository implements VaultTreeRepository {
     await _ensureDefaultVault(resolved);
     _isar = resolved;
     return resolved;
+  }
+
+  Future<T> _executeWrite<T>({
+    DbWriteSession? session,
+    required Future<T> Function(Isar isar) action,
+  }) async {
+    if (session is IsarDbWriteSession) {
+      await _ensureDefaultVault(session.isar, session: session);
+      return await action(session.isar);
+    }
+    final isar = await _ensureIsar();
+    return await isar.writeTxn(() async {
+      return await action(isar);
+    });
   }
 
   @override
@@ -74,54 +90,74 @@ class IsarVaultTreeRepository implements VaultTreeRepository {
   }
 
   @override
-  Future<VaultModel> createVault(String name) async {
+  Future<VaultModel> createVault(
+    String name, {
+    DbWriteSession? session,
+  }) async {
     final normalized = NameNormalizer.normalize(name);
     final now = DateTime.now();
-    final isar = await _ensureIsar();
     late VaultModel created;
-    await isar.writeTxn(() async {
-      await _ensureUniqueVaultName(isar, normalized);
-      final entity = VaultEntity()
-        ..vaultId = _uuid.v4()
-        ..name = normalized
-        ..createdAt = now
-        ..updatedAt = now;
-      final id = await isar.vaultEntitys.put(entity);
-      entity.id = id;
-      created = entity.toDomainModel();
-    });
+    await _executeWrite(
+      session: session,
+      action: (isar) async {
+        await _ensureUniqueVaultName(isar, normalized);
+        final entity = VaultEntity()
+          ..vaultId = _uuid.v4()
+          ..name = normalized
+          ..createdAt = now
+          ..updatedAt = now;
+        final id = await isar.vaultEntitys.put(entity);
+        entity.id = id;
+        created = entity.toDomainModel();
+      },
+    );
     return created;
   }
 
   @override
-  Future<void> renameVault(String vaultId, String newName) async {
+  Future<void> renameVault(
+    String vaultId,
+    String newName, {
+    DbWriteSession? session,
+  }) async {
     final normalized = NameNormalizer.normalize(newName);
-    final isar = await _ensureIsar();
-    await isar.writeTxn(() async {
-      final entity = await _requireVault(isar, vaultId);
-      await _ensureUniqueVaultName(isar, normalized, excludeVaultId: vaultId);
-      entity
-        ..name = normalized
-        ..updatedAt = DateTime.now();
-      await isar.vaultEntitys.put(entity);
-    });
+    await _executeWrite(
+      session: session,
+      action: (isar) async {
+        final entity = await _requireVault(isar, vaultId);
+        await _ensureUniqueVaultName(
+          isar,
+          normalized,
+          excludeVaultId: vaultId,
+        );
+        entity
+          ..name = normalized
+          ..updatedAt = DateTime.now();
+        await isar.vaultEntitys.put(entity);
+      },
+    );
   }
 
   @override
-  Future<void> deleteVault(String vaultId) async {
-    final isar = await _ensureIsar();
-    await isar.writeTxn(() async {
-      final entity = await isar.vaultEntitys.getByVaultId(vaultId);
-      if (entity == null) {
-        return;
-      }
-      await isar.folderEntitys.filter().vaultIdEqualTo(vaultId).deleteAll();
-      await isar.notePlacementEntitys
-          .filter()
-          .vaultIdEqualTo(vaultId)
-          .deleteAll();
-      await isar.vaultEntitys.deleteByVaultId(vaultId);
-    });
+  Future<void> deleteVault(String vaultId, {DbWriteSession? session}) async {
+    await _executeWrite(
+      session: session,
+      action: (isar) async {
+        final entity = await isar.vaultEntitys.getByVaultId(vaultId);
+        if (entity == null) {
+          return;
+        }
+        await isar.folderEntitys
+            .filter()
+            .vaultIdEqualTo(vaultId)
+            .deleteAll();
+        await isar.notePlacementEntitys
+            .filter()
+            .vaultIdEqualTo(vaultId)
+            .deleteAll();
+        await isar.vaultEntitys.deleteByVaultId(vaultId);
+      },
+    );
   }
 
   @override
@@ -187,159 +223,173 @@ class IsarVaultTreeRepository implements VaultTreeRepository {
     String vaultId, {
     String? parentFolderId,
     required String name,
+    DbWriteSession? session,
   }) async {
     final normalized = NameNormalizer.normalize(name);
     final now = DateTime.now();
-    final isar = await _ensureIsar();
     late FolderModel created;
-    await isar.writeTxn(() async {
-      final vault = await _requireVault(isar, vaultId);
-      FolderEntity? parent;
-      if (parentFolderId != null) {
-        parent = await _requireFolder(isar, parentFolderId);
-        if (parent.vaultId != vaultId) {
-          throw Exception('Folder belongs to a different vault');
+    await _executeWrite(
+      session: session,
+      action: (isar) async {
+        final vault = await _requireVault(isar, vaultId);
+        FolderEntity? parent;
+        if (parentFolderId != null) {
+          parent = await _requireFolder(isar, parentFolderId);
+          if (parent.vaultId != vaultId) {
+            throw Exception('Folder belongs to a different vault');
+          }
         }
-      }
 
-      await _ensureUniqueFolderName(
-        isar,
-        vaultId,
-        parentFolderId,
-        normalized,
-      );
+        await _ensureUniqueFolderName(
+          isar,
+          vaultId,
+          parentFolderId,
+          normalized,
+        );
 
-      final entity = FolderEntity()
-        ..folderId = _uuid.v4()
-        ..vaultId = vaultId
-        ..name = normalized
-        ..parentFolderId = parentFolderId
-        ..createdAt = now
-        ..updatedAt = now;
+        final entity = FolderEntity()
+          ..folderId = _uuid.v4()
+          ..vaultId = vaultId
+          ..name = normalized
+          ..parentFolderId = parentFolderId
+          ..createdAt = now
+          ..updatedAt = now;
 
-      final id = await isar.folderEntitys.put(entity);
-      entity.id = id;
-      await entity.vault.load();
-      entity.vault.value = vault;
-      await entity.vault.save();
-      if (parent != null) {
-        await entity.parentFolder.load();
-        entity.parentFolder.value = parent;
-        await entity.parentFolder.save();
-      }
-      created = entity.toDomainModel();
-    });
+        final id = await isar.folderEntitys.put(entity);
+        entity.id = id;
+        await entity.vault.load();
+        entity.vault.value = vault;
+        await entity.vault.save();
+        if (parent != null) {
+          await entity.parentFolder.load();
+          entity.parentFolder.value = parent;
+          await entity.parentFolder.save();
+        }
+        created = entity.toDomainModel();
+      },
+    );
     return created;
   }
 
   @override
-  Future<void> renameFolder(String folderId, String newName) async {
+  Future<void> renameFolder(
+    String folderId,
+    String newName, {
+    DbWriteSession? session,
+  }) async {
     final normalized = NameNormalizer.normalize(newName);
-    final isar = await _ensureIsar();
-    await isar.writeTxn(() async {
-      final entity = await _requireFolder(isar, folderId);
-      await _ensureUniqueFolderName(
-        isar,
-        entity.vaultId,
-        entity.parentFolderId,
-        normalized,
-        excludeFolderId: folderId,
-      );
-      entity
-        ..name = normalized
-        ..updatedAt = DateTime.now();
-      await isar.folderEntitys.put(entity);
-    });
+    await _executeWrite(
+      session: session,
+      action: (isar) async {
+        final entity = await _requireFolder(isar, folderId);
+        await _ensureUniqueFolderName(
+          isar,
+          entity.vaultId,
+          entity.parentFolderId,
+          normalized,
+          excludeFolderId: folderId,
+        );
+        entity
+          ..name = normalized
+          ..updatedAt = DateTime.now();
+        await isar.folderEntitys.put(entity);
+      },
+    );
   }
 
   @override
   Future<void> moveFolder({
     required String folderId,
     String? newParentFolderId,
+    DbWriteSession? session,
   }) async {
-    final isar = await _ensureIsar();
-    await isar.writeTxn(() async {
-      final folder = await _requireFolder(isar, folderId);
-      final currentParent = folder.parentFolderId;
-      if (currentParent == newParentFolderId) {
-        return;
-      }
-      if (newParentFolderId != null) {
-        if (newParentFolderId == folderId) {
-          throw Exception('Folder cannot be its own parent');
+    await _executeWrite(
+      session: session,
+      action: (isar) async {
+        final folder = await _requireFolder(isar, folderId);
+        final currentParent = folder.parentFolderId;
+        if (currentParent == newParentFolderId) {
+          return;
         }
-        FolderEntity? current = await _requireFolder(isar, newParentFolderId);
-        if (current.vaultId != folder.vaultId) {
-          throw Exception('Target folder belongs to a different vault');
-        }
-        // Prevent moving into its own descendant
-        while (current != null) {
-          if (current.folderId == folderId) {
-            throw Exception('Cannot move folder into its descendant');
+        if (newParentFolderId != null) {
+          if (newParentFolderId == folderId) {
+            throw Exception('Folder cannot be its own parent');
           }
-          final parentId = current.parentFolderId;
-          current = parentId != null
-              ? await isar.folderEntitys.getByFolderId(parentId)
-              : null;
+          FolderEntity? current = await _requireFolder(isar, newParentFolderId);
+          if (current.vaultId != folder.vaultId) {
+            throw Exception('Target folder belongs to a different vault');
+          }
+          // Prevent moving into its own descendant
+          while (current != null) {
+            if (current.folderId == folderId) {
+              throw Exception('Cannot move folder into its descendant');
+            }
+            final parentId = current.parentFolderId;
+            current = parentId != null
+                ? await isar.folderEntitys.getByFolderId(parentId)
+                : null;
+          }
         }
-      }
 
-      await _ensureUniqueFolderName(
-        isar,
-        folder.vaultId,
-        newParentFolderId,
-        folder.name,
-        excludeFolderId: folder.folderId,
-      );
+        await _ensureUniqueFolderName(
+          isar,
+          folder.vaultId,
+          newParentFolderId,
+          folder.name,
+          excludeFolderId: folder.folderId,
+        );
 
-      folder
-        ..parentFolderId = newParentFolderId
-        ..updatedAt = DateTime.now();
-      await isar.folderEntitys.put(folder);
-      await _updateFolderParentLink(isar, folder, newParentFolderId);
-    });
+        folder
+          ..parentFolderId = newParentFolderId
+          ..updatedAt = DateTime.now();
+        await isar.folderEntitys.put(folder);
+        await _updateFolderParentLink(isar, folder, newParentFolderId);
+      },
+    );
   }
 
   @override
-  Future<void> deleteFolder(String folderId) async {
-    final isar = await _ensureIsar();
-    await isar.writeTxn(() async {
-      final folder = await isar.folderEntitys.getByFolderId(folderId);
-      if (folder == null) {
-        return;
-      }
-      final vaultId = folder.vaultId;
-      final allFolders = await isar.folderEntitys
-          .filter()
-          .vaultIdEqualTo(vaultId)
-          .findAll();
-      final toDelete = <String>{folder.folderId};
-      final queue = <String>[folder.folderId];
-      while (queue.isNotEmpty) {
-        final current = queue.removeAt(0);
-        for (final child in allFolders) {
-          if (child.parentFolderId == current) {
-            if (toDelete.add(child.folderId)) {
-              queue.add(child.folderId);
+  Future<void> deleteFolder(String folderId, {DbWriteSession? session}) async {
+    await _executeWrite(
+      session: session,
+      action: (isar) async {
+        final folder = await isar.folderEntitys.getByFolderId(folderId);
+        if (folder == null) {
+          return;
+        }
+        final vaultId = folder.vaultId;
+        final allFolders = await isar.folderEntitys
+            .filter()
+            .vaultIdEqualTo(vaultId)
+            .findAll();
+        final toDelete = <String>{folder.folderId};
+        final queue = <String>[folder.folderId];
+        while (queue.isNotEmpty) {
+          final current = queue.removeAt(0);
+          for (final child in allFolders) {
+            if (child.parentFolderId == current) {
+              if (toDelete.add(child.folderId)) {
+                queue.add(child.folderId);
+              }
             }
           }
         }
-      }
 
-      final placements = await isar.notePlacementEntitys
-          .filter()
-          .vaultIdEqualTo(vaultId)
-          .findAll();
-      final placementIds = placements
-          .where((p) => toDelete.contains(p.parentFolderId))
-          .map((p) => p.noteId)
-          .toList();
+        final placements = await isar.notePlacementEntitys
+            .filter()
+            .vaultIdEqualTo(vaultId)
+            .findAll();
+        final placementIds = placements
+            .where((p) => toDelete.contains(p.parentFolderId))
+            .map((p) => p.noteId)
+            .toList();
 
-      await isar.folderEntitys.deleteAllByFolderId(toDelete.toList());
-      if (placementIds.isNotEmpty) {
-        await isar.notePlacementEntitys.deleteAllByNoteId(placementIds);
-      }
-    });
+        await isar.folderEntitys.deleteAllByFolderId(toDelete.toList());
+        if (placementIds.isNotEmpty) {
+          await isar.notePlacementEntitys.deleteAllByNoteId(placementIds);
+        }
+      },
+    );
   }
 
   @override
@@ -381,94 +431,108 @@ class IsarVaultTreeRepository implements VaultTreeRepository {
     String vaultId, {
     String? parentFolderId,
     required String name,
+    DbWriteSession? session,
   }) async {
     final normalized = NameNormalizer.normalize(name);
-    final isar = await _ensureIsar();
     final noteId = _uuid.v4();
-    await isar.writeTxn(() async {
-      await _ensurePlacementPreconditions(
-        isar,
-        vaultId,
-        parentFolderId,
-        normalized,
-      );
-      final placement = NotePlacementEntity()
-        ..noteId = noteId
-        ..vaultId = vaultId
-        ..parentFolderId = parentFolderId
-        ..name = normalized
-        ..createdAt = DateTime.now()
-        ..updatedAt = DateTime.now();
-      final id = await isar.notePlacementEntitys.put(placement);
-      placement.id = id;
-      await _linkPlacement(isar, placement, vaultId, parentFolderId);
-    });
+    await _executeWrite(
+      session: session,
+      action: (isar) async {
+        await _ensurePlacementPreconditions(
+          isar,
+          vaultId,
+          parentFolderId,
+          normalized,
+        );
+        final placement = NotePlacementEntity()
+          ..noteId = noteId
+          ..vaultId = vaultId
+          ..parentFolderId = parentFolderId
+          ..name = normalized
+          ..createdAt = DateTime.now()
+          ..updatedAt = DateTime.now();
+        final id = await isar.notePlacementEntitys.put(placement);
+        placement.id = id;
+        await _linkPlacement(isar, placement, vaultId, parentFolderId);
+      },
+    );
     return noteId;
   }
 
   @override
-  Future<void> renameNote(String noteId, String newName) async {
+  Future<void> renameNote(
+    String noteId,
+    String newName, {
+    DbWriteSession? session,
+  }) async {
     final normalized = NameNormalizer.normalize(newName);
-    final isar = await _ensureIsar();
-    await isar.writeTxn(() async {
-      final placement = await _requirePlacement(isar, noteId);
-      await _ensureUniqueNoteName(
-        isar,
-        placement.vaultId,
-        placement.parentFolderId,
-        normalized,
-        excludeNoteId: noteId,
-      );
-      placement
-        ..name = normalized
-        ..updatedAt = DateTime.now();
-      await isar.notePlacementEntitys.put(placement);
-    });
+    await _executeWrite(
+      session: session,
+      action: (isar) async {
+        final placement = await _requirePlacement(isar, noteId);
+        await _ensureUniqueNoteName(
+          isar,
+          placement.vaultId,
+          placement.parentFolderId,
+          normalized,
+          excludeNoteId: noteId,
+        );
+        placement
+          ..name = normalized
+          ..updatedAt = DateTime.now();
+        await isar.notePlacementEntitys.put(placement);
+      },
+    );
   }
 
   @override
   Future<void> moveNote({
     required String noteId,
     String? newParentFolderId,
+    DbWriteSession? session,
   }) async {
-    final isar = await _ensureIsar();
-    await isar.writeTxn(() async {
-      final placement = await _requirePlacement(isar, noteId);
-      if (placement.parentFolderId == newParentFolderId) {
-        return;
-      }
-      if (newParentFolderId != null) {
-        final parent = await _requireFolder(isar, newParentFolderId);
-        if (parent.vaultId != placement.vaultId) {
-          throw Exception('Target folder belongs to a different vault');
+    await _executeWrite(
+      session: session,
+      action: (isar) async {
+        final placement = await _requirePlacement(isar, noteId);
+        if (placement.parentFolderId == newParentFolderId) {
+          return;
         }
-      }
-      await _ensureUniqueNoteName(
-        isar,
-        placement.vaultId,
-        newParentFolderId,
-        placement.name,
-        excludeNoteId: noteId,
-      );
-      placement
-        ..parentFolderId = newParentFolderId
-        ..updatedAt = DateTime.now();
-      await isar.notePlacementEntitys.put(placement);
-      await _linkPlacement(
-        isar,
-        placement,
-        placement.vaultId,
-        newParentFolderId,
-      );
-    });
+        if (newParentFolderId != null) {
+          final parent = await _requireFolder(isar, newParentFolderId);
+          if (parent.vaultId != placement.vaultId) {
+            throw Exception('Target folder belongs to a different vault');
+          }
+        }
+        await _ensureUniqueNoteName(
+          isar,
+          placement.vaultId,
+          newParentFolderId,
+          placement.name,
+          excludeNoteId: noteId,
+        );
+        placement
+          ..parentFolderId = newParentFolderId
+          ..updatedAt = DateTime.now();
+        await isar.notePlacementEntitys.put(placement);
+        await _linkPlacement(
+          isar,
+          placement,
+          placement.vaultId,
+          newParentFolderId,
+        );
+      },
+    );
   }
 
   @override
-  Future<void> deleteNote(String noteId) async {
-    final isar = await _ensureIsar();
-    await isar.writeTxn(() async {
-      await isar.notePlacementEntitys.deleteByNoteId(noteId);
-    });
+  Future<void> deleteNote(String noteId, {DbWriteSession? session}) async {
+    await _executeWrite(
+      session: session,
+      action: (isar) async {
+        await isar.notePlacementEntitys.deleteByNoteId(noteId);
+      },
+    );
   }
 
   @override
@@ -484,30 +548,33 @@ class IsarVaultTreeRepository implements VaultTreeRepository {
     required String vaultId,
     String? parentFolderId,
     required String name,
+    DbWriteSession? session,
   }) async {
     final normalized = NameNormalizer.normalize(name);
-    final isar = await _ensureIsar();
-    await isar.writeTxn(() async {
-      if (await isar.notePlacementEntitys.getByNoteId(noteId) != null) {
-        throw Exception('Note already exists: $noteId');
-      }
-      await _ensurePlacementPreconditions(
-        isar,
-        vaultId,
-        parentFolderId,
-        normalized,
-      );
-      final placement = NotePlacementEntity()
-        ..noteId = noteId
-        ..vaultId = vaultId
-        ..parentFolderId = parentFolderId
-        ..name = normalized
-        ..createdAt = DateTime.now()
-        ..updatedAt = DateTime.now();
-      final id = await isar.notePlacementEntitys.put(placement);
-      placement.id = id;
-      await _linkPlacement(isar, placement, vaultId, parentFolderId);
-    });
+    await _executeWrite(
+      session: session,
+      action: (isar) async {
+        if (await isar.notePlacementEntitys.getByNoteId(noteId) != null) {
+          throw Exception('Note already exists: $noteId');
+        }
+        await _ensurePlacementPreconditions(
+          isar,
+          vaultId,
+          parentFolderId,
+          normalized,
+        );
+        final placement = NotePlacementEntity()
+          ..noteId = noteId
+          ..vaultId = vaultId
+          ..parentFolderId = parentFolderId
+          ..name = normalized
+          ..createdAt = DateTime.now()
+          ..updatedAt = DateTime.now();
+        final id = await isar.notePlacementEntitys.put(placement);
+        placement.id = id;
+        await _linkPlacement(isar, placement, vaultId, parentFolderId);
+      },
+    );
   }
 
   @override
@@ -595,13 +662,15 @@ class IsarVaultTreeRepository implements VaultTreeRepository {
   @override
   void dispose() {}
 
-  Future<void> _ensureDefaultVault(Isar isar) async {
-    final existing = await isar.vaultEntitys.getByVaultId('default');
-    if (existing != null) {
+  Future<void> _ensureDefaultVault(
+    Isar isar, {
+    DbWriteSession? session,
+  }) async {
+    if (await isar.vaultEntitys.getByVaultId('default') != null) {
       return;
     }
 
-    await isar.writeTxn(() async {
+    Future<void> createDefault() async {
       final insideTxnExisting = await isar.vaultEntitys.getByVaultId('default');
       if (insideTxnExisting != null) {
         return;
@@ -615,7 +684,13 @@ class IsarVaultTreeRepository implements VaultTreeRepository {
         ..updatedAt = now;
       final id = await isar.vaultEntitys.put(entity);
       entity.id = id;
-    });
+    }
+
+    if (session is IsarDbWriteSession) {
+      await createDefault();
+    } else {
+      await isar.writeTxn(createDefault);
+    }
   }
 
   QueryBuilder<FolderEntity, FolderEntity, QAfterFilterCondition> _folderQuery(

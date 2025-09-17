@@ -7,9 +7,27 @@ import 'isar_db_txn_runner.dart';
 ///
 /// - Memory: simply executes the action.
 /// - Isar: implementation will wrap with `isar.writeTxn`.
+/// Shared write-session context propagated across repository calls while a
+/// transaction is active.
+abstract class DbWriteSession {
+  /// Base const constructor for subclasses.
+  const DbWriteSession();
+}
+
+/// Transaction runner abstraction that optionally exposes the underlying
+/// session object to the caller.
 abstract class DbTxnRunner {
   /// Executes [action] within a transactional boundary.
-  Future<T> write<T>(Future<T> Function() action);
+  Future<T> write<T>(Future<T> Function() action) {
+    return writeWithSession((_) => action());
+  }
+
+  /// Executes [action] within a transactional boundary and supplies the
+  /// contextual [DbWriteSession] so downstream repositories can participate in
+  /// the same transaction without starting their own.
+  Future<T> writeWithSession<T>(
+    Future<T> Function(DbWriteSession session) action,
+  );
 }
 
 /// In-memory transaction runner that simply executes the supplied action.
@@ -17,11 +35,22 @@ class NoopDbTxnRunner implements DbTxnRunner {
   /// Creates a no-op transaction runner.
   const NoopDbTxnRunner();
 
-  /// Executes [action] without any database involvement.
   @override
   Future<T> write<T>(Future<T> Function() action) async {
     return await action();
   }
+
+  @override
+  Future<T> writeWithSession<T>(
+    Future<T> Function(DbWriteSession session) action,
+  ) async {
+    return await action(const _NoopDbWriteSession());
+  }
+}
+
+/// Write session used when no underlying database is present.
+class _NoopDbWriteSession extends DbWriteSession {
+  const _NoopDbWriteSession();
 }
 
 /// Exception thrown when a database transaction fails.
