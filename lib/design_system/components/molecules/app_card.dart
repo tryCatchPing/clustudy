@@ -9,7 +9,6 @@ import '../../../design_system/tokens/app_colors.dart';
 import '../../../design_system/tokens/app_spacing.dart';
 import '../../../design_system/tokens/app_typography.dart';
 import '../../../design_system/tokens/app_shadows.dart';
-import '../../../design_system/tokens/app_icons.dart';
 
 class AppCard extends StatefulWidget {
   final String? svgIconPath;
@@ -94,7 +93,7 @@ class _AppCardState extends State<AppCard> {
           width: AppSizes.folderIconW,
           height: AppSizes.folderIconH,
           child: SvgPicture.asset(
-            AppIcons.folderVaultLarge,
+            widget.svgIconPath!,
             fit: BoxFit.contain,
             colorFilter: const ColorFilter.mode(AppColors.primary, BlendMode.srcIn),
           ),

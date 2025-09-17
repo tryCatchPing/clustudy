@@ -5,12 +5,12 @@ class AppIcons {
   static const search = 'assets/icons/search.svg';
   static const settings = 'assets/icons/setting.svg';
   static const chevronLeft = 'assets/icons/chevron_left.svg';
-  static const chevronLeftBackGround =
-      'assets/icons/arrow-left_background.svg';
+  static const chevronLeftBackGround = 'assets/icons/arrow-left_background.svg';
   static const graphView = 'assets/icons/graph_view.svg';
 
   // Home/Vault actions
   static const folder = 'assets/icons/folder.svg';
+  static const folderLarge = 'assets/icons/folder_large.svg';
   static const folderXLarge = 'assets/icons/folder_xlarge.svg';
   static const folderVault = 'assets/icons/folderVault.svg';
   static const folderVaultLarge = 'assets/icons/folder_vault_large.svg';
