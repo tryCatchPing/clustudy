@@ -17,6 +17,7 @@ enum AppButtonSize { sm, md, lg }
 class AppButton extends StatelessWidget {
   // 공통
   final VoidCallback? onPressed;
+  final double? borderRadius;
   final AppButtonType type;
   final AppButtonStyle style;
   final AppButtonSize size;
@@ -38,6 +39,7 @@ class AppButton extends StatelessWidget {
     super.key,
     required this.text,
     this.onPressed,
+    this.borderRadius,
     this.style = AppButtonStyle.primary,
     this.size = AppButtonSize.md,
     this.fullWidth = false,
@@ -54,6 +56,7 @@ class AppButton extends StatelessWidget {
     super.key,
     required this.text,
     this.onPressed,
+    this.borderRadius,
     this.style = AppButtonStyle.primary,
     this.size = AppButtonSize.md,
     this.fullWidth = false,
@@ -71,6 +74,7 @@ class AppButton extends StatelessWidget {
     required this.text,
     required this.svgIconPath,
     this.onPressed,
+    this.borderRadius,
     this.style = AppButtonStyle.primary,
     this.size = AppButtonSize.md,
     this.iconGap = 8,
@@ -206,9 +210,9 @@ class AppButton extends StatelessWidget {
       foregroundColor: fg,
       disabledForegroundColor: AppColors.gray30,
       disabledBackgroundColor: isPrimary ? AppColors.gray20 : AppColors.gray10,
-      padding: _padding,
+      padding: padding ?? _padding,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.small),
+        borderRadius: BorderRadius.circular(borderRadius ?? AppSpacing.small),
         side: side,
       ),
       elevation: 0, // 기본은 플랫; 필요하면 size별 0/1/2로 조정
@@ -227,7 +231,7 @@ class AppButton extends StatelessWidget {
       disabledForegroundColor: AppColors.gray30,
       padding: padding ?? _padding,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.small),
+        borderRadius: BorderRadius.circular(borderRadius ?? AppSpacing.small),
       ),
       minimumSize: _minSize,
     ).copyWith(

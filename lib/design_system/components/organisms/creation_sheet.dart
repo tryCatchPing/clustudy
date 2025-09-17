@@ -66,11 +66,13 @@ class CreationBaseSheet extends StatelessWidget {
                       style: AppTypography.subtitle1.copyWith(color: AppColors.background),
                     ),
                   ),
-                  AppButton.text(
+                  AppButton(
                     text: rightText,
                     onPressed: onRightTap,
-                    style: AppButtonStyle.secondary,
+                    style: AppButtonStyle.secondary,   // 배경: AppColors.background(크림), 글자: primary
                     size: AppButtonSize.md,
+                    borderRadius: 10,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   ),
                 ],
               ),
