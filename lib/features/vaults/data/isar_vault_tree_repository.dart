@@ -29,6 +29,7 @@ class IsarVaultTreeRepository implements VaultTreeRepository {
       return cached;
     }
     final resolved = _providedIsar ?? await IsarDatabaseService.getInstance();
+    await _ensureDefaultVault(resolved);
     _isar = resolved;
     return resolved;
   }
@@ -593,6 +594,29 @@ class IsarVaultTreeRepository implements VaultTreeRepository {
 
   @override
   void dispose() {}
+
+  Future<void> _ensureDefaultVault(Isar isar) async {
+    final existing = await isar.vaultEntitys.getByVaultId('default');
+    if (existing != null) {
+      return;
+    }
+
+    await isar.writeTxn(() async {
+      final insideTxnExisting = await isar.vaultEntitys.getByVaultId('default');
+      if (insideTxnExisting != null) {
+        return;
+      }
+
+      final now = DateTime.now();
+      final entity = VaultEntity()
+        ..vaultId = 'default'
+        ..name = 'Default Vault'
+        ..createdAt = now
+        ..updatedAt = now;
+      final id = await isar.vaultEntitys.put(entity);
+      entity.id = id;
+    });
+  }
 
   QueryBuilder<FolderEntity, FolderEntity, QAfterFilterCondition> _folderQuery(
     Isar isar,
