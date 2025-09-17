@@ -53,7 +53,7 @@ class CreationBaseSheet extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   AppIconButton(
-                    svgPath: AppIcons.chevronLeft,
+                    svgPath: AppIcons.chevronLeftBackGround,
                     onPressed: onBack,
                     color: AppColors.background,
                     size: AppIconButtonSize.md,
@@ -71,7 +71,7 @@ class CreationBaseSheet extends StatelessWidget {
                     onPressed: onRightTap,
                     style: AppButtonStyle.secondary,   // 배경: AppColors.background(크림), 글자: primary
                     size: AppButtonSize.md,
-                    borderRadius: 10,
+                    borderRadius: 15,
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   ),
                 ],

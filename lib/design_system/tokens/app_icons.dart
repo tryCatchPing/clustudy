@@ -5,6 +5,8 @@ class AppIcons {
   static const search = 'assets/icons/search.svg';
   static const settings = 'assets/icons/setting.svg';
   static const chevronLeft = 'assets/icons/chevron_left.svg';
+  static const chevronLeftBackGround =
+      'assets/icons/arrow-left_background.svg';
   static const graphView = 'assets/icons/graph_view.svg';
 
   // Home/Vault actions
