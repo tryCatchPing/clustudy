@@ -3,13 +3,19 @@ import 'route_names.dart';
 
 extension NavX on GoRouter {
   void goHome() => goNamed(RouteNames.home);
-  void goVault(String id) => goNamed(RouteNames.vault, pathParameters: {'id': id});
-  void goNote(String id)  => goNamed(RouteNames.note,  pathParameters: {'id': id});
-  void goFolder({required String vaultId, required String folderId}) =>
-      goNamed(
-        RouteNames.folder,
-        pathParameters: {'vaultId': vaultId, 'folderId': folderId},
-      );
+  // 계층 깊이 이동: push 사용 (히스토리에 쌓기)
+  Future<void> pushVault(String id) =>
+      pushNamed(RouteNames.vault, pathParameters: {'id': id});
+
+  Future<void> pushFolder(String vaultId, String folderId) =>
+      pushNamed(RouteNames.folder, pathParameters: {
+        'vaultId': vaultId,
+        'folderId': folderId,
+      });
+
+  Future<void> pushNote(String id) =>
+      pushNamed(RouteNames.note, pathParameters: {'id': id});
+
 
   void goGraph(String id) =>
       goNamed(RouteNames.graph, pathParameters: {'id': id});

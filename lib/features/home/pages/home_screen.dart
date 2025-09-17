@@ -36,12 +36,12 @@ class HomeScreen extends StatelessWidget {
             title: v.name,
             date: v.createdAt,
             onTap: () =>
-                context.goNamed(RouteNames.vault, pathParameters: {'id': v.id}),
+                context.pushNamed(RouteNames.vault, pathParameters: {'id': v.id}),
             child: FolderCard(
               type: FolderType.vault,
               title: v.name,
               date: v.createdAt,
-              onTap: () => context.goNamed(
+              onTap: () => context.pushNamed(
                 RouteNames.vault,
                 pathParameters: {'id': v.id},
               ),

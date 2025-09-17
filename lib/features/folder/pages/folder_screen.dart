@@ -68,7 +68,7 @@ class FolderScreen extends StatelessWidget {
           svgIconPath: AppIcons.folder,
           title: f.name,
           date: f.createdAt,
-          onTap: () => context.goNamed(
+          onTap: () => context.pushNamed(
             RouteNames.folder,
             pathParameters: {'vaultId': vaultId, 'folderId': f.id},
           ),
@@ -80,7 +80,7 @@ class FolderScreen extends StatelessWidget {
           previewImage: null, // 썸네일(Uint8List) 있으면 넣기
           title: n.title,
           date: n.createdAt,
-          onTap: () => context.goNamed(
+          onTap: () => context.pushNamed(
             RouteNames.note,
             pathParameters: {'id': n.id},
           ),

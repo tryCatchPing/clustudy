@@ -82,7 +82,7 @@ class VaultScreen extends StatelessWidget {
             type: FolderType.normal,
             title: f.name,
             date: f.createdAt,
-            onTap: () => context.goNamed(
+            onTap: () => context.pushNamed(
               RouteNames.folder,
               pathParameters: {
                 'vaultId': vault.id,
@@ -98,7 +98,7 @@ class VaultScreen extends StatelessWidget {
           title: n.title,
           date: n.createdAt,
           onTap: () =>
-              context.goNamed(RouteNames.note, pathParameters: {'id': n.id}),
+              context.pushNamed(RouteNames.note, pathParameters: {'id': n.id}),
           // onTitleChanged: (t) => context.read<NoteStore>().renameNote(n.id, t),
         ),
       ),
