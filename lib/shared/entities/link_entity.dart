@@ -42,4 +42,3 @@ class LinkEntity {
   final sourcePage = IsarLink<NotePageEntity>();
   final targetNote = IsarLink<NoteEntity>();
 }
-

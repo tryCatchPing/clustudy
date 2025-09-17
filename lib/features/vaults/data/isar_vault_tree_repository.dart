@@ -147,10 +147,7 @@ class IsarVaultTreeRepository implements VaultTreeRepository {
         if (entity == null) {
           return;
         }
-        await isar.folderEntitys
-            .filter()
-            .vaultIdEqualTo(vaultId)
-            .deleteAll();
+        await isar.folderEntitys.filter().vaultIdEqualTo(vaultId).deleteAll();
         await isar.notePlacementEntitys
             .filter()
             .vaultIdEqualTo(vaultId)

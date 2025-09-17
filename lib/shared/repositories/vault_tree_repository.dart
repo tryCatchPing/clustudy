@@ -39,8 +39,11 @@ abstract class VaultTreeRepository {
   Future<VaultModel> createVault(String name, {DbWriteSession? session});
 
   /// Vault 이름 변경
-  Future<void> renameVault(String vaultId, String newName,
-      {DbWriteSession? session});
+  Future<void> renameVault(
+    String vaultId,
+    String newName, {
+    DbWriteSession? session,
+  });
 
   /// Vault 삭제
   Future<void> deleteVault(String vaultId, {DbWriteSession? session});
@@ -64,8 +67,11 @@ abstract class VaultTreeRepository {
   });
 
   /// 폴더 이름 변경
-  Future<void> renameFolder(String folderId, String newName,
-      {DbWriteSession? session});
+  Future<void> renameFolder(
+    String folderId,
+    String newName, {
+    DbWriteSession? session,
+  });
 
   /// 폴더 이동
   Future<void> moveFolder({
@@ -99,8 +105,11 @@ abstract class VaultTreeRepository {
   });
 
   /// 노트 표시명(트리 상의 이름) 변경.
-  Future<void> renameNote(String noteId, String newName,
-      {DbWriteSession? session});
+  Future<void> renameNote(
+    String noteId,
+    String newName, {
+    DbWriteSession? session,
+  });
 
   /// 노트 이동(동일 Vault 내에서만 허용).
   Future<void> moveNote({

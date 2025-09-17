@@ -125,7 +125,10 @@ class MemoryLinkRepository implements LinkRepository {
   }
 
   @override
-  Future<int> deleteBySourcePage(String pageId, {DbWriteSession? session}) async {
+  Future<int> deleteBySourcePage(
+    String pageId, {
+    DbWriteSession? session,
+  }) async {
     final list = _bySourcePage[pageId];
     if (list == null || list.isEmpty) {
       // Still emit to clear any stale consumers
@@ -150,7 +153,10 @@ class MemoryLinkRepository implements LinkRepository {
   }
 
   @override
-  Future<int> deleteByTargetNote(String noteId, {DbWriteSession? session}) async {
+  Future<int> deleteByTargetNote(
+    String noteId, {
+    DbWriteSession? session,
+  }) async {
     final ids = _byTargetNote[noteId];
     if (ids == null || ids.isEmpty) {
       // Still emit to clear any stale consumers
