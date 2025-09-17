@@ -16,7 +16,8 @@
   - `lib/features/notes/pages/note_list_screen.dart`
     - 빈 노트 생성 → `vaultNotesService.createBlankInFolder(vaultId, parentFolderId)`
     - PDF 노트 생성 → `vaultNotesService.createPdfInFolder(vaultId, parentFolderId)`
-    - 삭제 → `vaultNotesService.deleteNote(noteId)`
+- 삭제 → `vaultNotesService.deleteNote(noteId)`
+- Vault 삭제 → `vaultNotesService.deleteVault(vaultId)`
 - 링크 생성/편집 cross‑vault 차단 + 서비스 사용
   - `lib/features/canvas/providers/link_creation_controller.dart`
     - `getPlacement(sourceNoteId)`로 소스 vault 결정

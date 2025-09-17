@@ -395,6 +395,29 @@ class VaultNotesService {
     });
   }
 
+  /// Vault 전체를 삭제합니다.
+  ///
+  /// - Vault 내 모든 노트와 링크, 파일을 삭제합니다.
+  /// - 마지막에 Vault 및 폴더 구조를 정리합니다.
+  Future<void> deleteVault(String vaultId) async {
+    final vault = await vaultTree.getVault(vaultId);
+    if (vault == null) {
+      throw Exception('Vault not found: $vaultId');
+    }
+    if (vault.vaultId == 'default') {
+      throw const FormatException('기본 Vault는 삭제할 수 없습니다.');
+    }
+
+    final noteIds = await _collectAllNoteIdsInVault(vaultId);
+    for (final noteId in noteIds) {
+      await deleteNote(noteId);
+    }
+
+    await dbTxn.writeWithSession((session) async {
+      await vaultTree.deleteVault(vaultId, session: session);
+    });
+  }
+
   /// 폴더 생성(자동 접미사 적용). UI 연동은 후속.
   Future<FolderModel> createFolder(
     String vaultId, {
@@ -774,6 +797,27 @@ class VaultNotesService {
     final queue = <String?>[startFolderId];
     while (queue.isNotEmpty) {
       final parent = queue.removeAt(0);
+      final items = await vaultTree
+          .watchFolderChildren(vaultId, parentFolderId: parent)
+          .first;
+      for (final it in items) {
+        if (it.type == VaultItemType.folder) {
+          queue.add(it.id);
+        } else {
+          noteIds.add(it.id);
+        }
+      }
+    }
+    return noteIds;
+  }
+
+  Future<List<String>> _collectAllNoteIdsInVault(String vaultId) async {
+    final noteIds = <String>[];
+    final queue = <String?>[null];
+    final seen = <String?>{};
+    while (queue.isNotEmpty) {
+      final parent = queue.removeAt(0);
+      if (!seen.add(parent)) continue;
       final items = await vaultTree
           .watchFolderChildren(vaultId, parentFolderId: parent)
           .first;

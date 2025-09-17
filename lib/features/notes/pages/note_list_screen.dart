@@ -12,6 +12,7 @@ import '../../../shared/widgets/app_snackbar.dart';
 import '../../../shared/widgets/folder_picker_dialog.dart';
 import '../../../shared/widgets/navigation_card.dart';
 import '../../vaults/data/derived_vault_providers.dart';
+import '../../vaults/data/vault_tree_repository_provider.dart';
 import '../../vaults/models/vault_item.dart';
 
 // UI 전용 타입 제거: 서비스의 FolderCascadeImpact로 대체
@@ -275,6 +276,78 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
     }
   }
 
+  Future<void> _confirmAndDeleteVault({
+    required String vaultId,
+    required String vaultName,
+  }) async {
+    final shouldDelete = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Vault 삭제 확인'),
+            content: Text(
+              'Vault "$vaultName"를 삭제하면 모든 폴더와 노트가 영구적으로 제거됩니다.\n'
+              '이 작업은 되돌릴 수 없습니다. 계속하시겠습니까?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('취소'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('삭제'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (!shouldDelete) {
+      if (!mounted) return;
+      AppSnackBar.show(
+        context,
+        AppErrorSpec.info('삭제를 취소했어요.'),
+      );
+      return;
+    }
+
+    try {
+      final service = ref.read(vaultNotesServiceProvider);
+      await service.deleteVault(vaultId);
+
+      final repo = ref.read(vaultTreeRepositoryProvider);
+      final remainingVaults = await repo.watchVaults().first;
+
+      if (!mounted) return;
+
+      ref.read(currentFolderProvider(vaultId).notifier).state = null;
+
+      if (remainingVaults.isEmpty) {
+        ref.read(currentVaultProvider.notifier).state = null;
+      } else {
+        final nextVault = remainingVaults.first;
+        ref.read(currentVaultProvider.notifier).state = nextVault.vaultId;
+        ref.read(currentFolderProvider(nextVault.vaultId).notifier).state =
+            null;
+      }
+
+      _clearSearch();
+
+      AppSnackBar.show(
+        context,
+        AppErrorSpec.success('Vault "$vaultName"를 삭제했습니다.'),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      final spec = AppErrorMapper.toSpec(e);
+      AppSnackBar.show(context, spec);
+    }
+  }
+
   Future<void> _showCreateVaultDialog() async {
     final name = await showDialog<String>(
       context: context,
@@ -397,6 +470,15 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                           final currentVaultId = ref.watch(
                             currentVaultProvider,
                           );
+                          final selectedVault = vaults.firstWhere(
+                            (v) =>
+                                v.vaultId ==
+                                (currentVaultId ?? vaults.first.vaultId),
+                            orElse: () => vaults.first,
+                          );
+                          final targetVaultId =
+                              currentVaultId ?? selectedVault.vaultId;
+                          final disableDelete = targetVaultId == 'default';
                           final items = vaults
                               .map(
                                 (v) => DropdownMenuItem<String>(
@@ -483,6 +565,20 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                         },
                                   icon: const Icon(Icons.hub),
                                   label: const Text('그래프 보기'),
+                                ),
+                                const SizedBox(width: 8),
+                                TextButton.icon(
+                                  onPressed: disableDelete
+                                      ? null
+                                      : () => _confirmAndDeleteVault(
+                                            vaultId: targetVaultId,
+                                            vaultName: selectedVault.name,
+                                          ),
+                                  icon: const Icon(Icons.delete),
+                                  label: const Text('Vault 삭제'),
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: Colors.red,
+                                  ),
                                 ),
                               ],
                             ),
