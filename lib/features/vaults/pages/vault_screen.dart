@@ -203,7 +203,7 @@ class VaultScreen extends StatelessWidget {
                                 title: name,
                               );
                           if (!context.mounted) return;
-                          context.goNamed(
+                          context.pushNamed(
                             RouteNames.note,
                             pathParameters: {'id': note.id},
                           );
@@ -224,7 +224,7 @@ class VaultScreen extends StatelessWidget {
                       fileName: file.name,
                     );
                     if (!context.mounted) return;
-                    context.goNamed(
+                    context.pushNamed(
                       RouteNames.note,
                       pathParameters: {'id': note.id},
                     );
