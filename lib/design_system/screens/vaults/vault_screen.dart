@@ -16,8 +16,8 @@ import '../../../design_system/tokens/app_colors.dart';
 import '../../../design_system/tokens/app_icons.dart';
 import '../../../design_system/tokens/app_spacing.dart';
 
-import '../data/vault.dart'; // ← Vault 타입
-import '../state/vault_store.dart'; // ← vaults → vault 로 수정
+import '../data/vault.dart';
+import '../state/vault_store.dart';
 import '../../notes/state/note_store.dart';
 import '../../notes/widgets/note_creation_sheet.dart';
 import '../../notes/data/note.dart';
