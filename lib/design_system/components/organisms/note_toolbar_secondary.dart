@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../tokens/app_colors.dart';
 import '../atoms/tool_glow_icon.dart';
 import '../../tokens/app_icons.dart';
-import '../atoms/app_icon_button.dart';
 import '../../tokens/app_spacing.dart';
 
 enum NoteToolbarSecondaryVariant { bar, pill }
@@ -93,13 +92,7 @@ class NoteToolbarSecondary extends StatelessWidget {
         ),
         const SizedBox(width: 16),
 
-        AppIconButton(
-          svgPath: AppIcons.graphView,
-          onPressed: onGraphView,
-          tooltip: '그래프 뷰',
-          size: AppIconButtonSize.md,
-          color: AppColors.gray50,
-        ),
+        ToolGlowIcon(svgPath: AppIcons.graphView,   onTap: onGraphView,   size: iconSize),
       ],
     );
 
@@ -109,25 +102,22 @@ class NoteToolbarSecondary extends StatelessWidget {
             borderRadius: BorderRadius.circular(30),
             border: Border.all(color: AppColors.gray50, width: 1.5),
           )
-        : const BoxDecoration(
+        : BoxDecoration(
             color: AppColors.background,
-            border: Border(bottom: BorderSide(color: AppColors.gray20, width: 1)),
+            border: showBottomDivider
+              ? const Border(bottom: BorderSide(color: AppColors.gray20, width: 1))
+              : null,
           );
 
     final padding = isPill
         ? const EdgeInsets.symmetric(horizontal: 12, vertical: 8) // 요구사항
         : const EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding, vertical: 15); // 좌우30/상하15
-
-    final child = Container(
-      padding: padding,
-      decoration: decoration,
-      child: Center(child: content),     // 항상 가운데
-    );
-
-    // Pill은 화면 중앙에 딱 맞춘 작은 덩어리여서 Center로 감싸서 반환
-    return isPill ? Center(child: child) : child;
+    return isPill
+        ? Center(child: Container(padding: padding, decoration: decoration, child:  content))
+        : Container(padding: padding, decoration: decoration, child: Center(child: content));
   }
 }
+
 
 class _Divider extends StatelessWidget {
   const _Divider({required this.height, required this.color});
@@ -140,10 +130,10 @@ class _Divider extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: SizedBox(
         height: height,
-        child: const VerticalDivider(
+        child: VerticalDivider(
           width: 0,
           thickness: 1,
-          color: AppColors.gray20,
+          color: color,
         ),
       ),
     );
