@@ -9,6 +9,8 @@ import '../../../design_system/components/organisms/top_toolbar.dart';
 import '../../../design_system/components/organisms/bottom_actions_dock_fixed.dart';
 import '../../../design_system/components/organisms/folder_grid.dart';
 import '../../../design_system/components/organisms/creation_sheet.dart';
+import '../../../design_system/components/organisms/item_actions.dart';
+import '../../../design_system/components/organisms/rename_dialog.dart';
 import '../../../design_system/components/molecules/folder_card.dart';
 
 import '../widgets/folder_creation_sheet.dart';
@@ -78,8 +80,39 @@ class FolderScreen extends StatelessWidget {
                 'folderId': f.id,
               },
             ),
-            onTitleChanged: (t) =>
-                context.read<FolderStore>().renameFolder(id: f.id, newName: t),
+            onLongPressStart: (d) {
+              showItemActionsNear(
+                context,
+                anchorGlobal: d.globalPosition,
+                handlers: ItemActionHandlers(
+                  onRename: () async {
+                    final name = await showRenameDialog(
+                      context,
+                      initial: f.name,
+                      title: '이름 바꾸기',
+                    );
+                    if (name != null && name.trim().isNotEmpty) {
+                      await context.read<FolderStore>().renameFolder(
+                        id: f.id,
+                        newName: name.trim(),
+                      );
+                    }
+                  },
+                  onMove: () async {
+                    /**이동 로직 추가 */
+                  },
+                  onExport: () async {
+                    /* 내보내기 로직 추가 */
+                  },
+                  onDuplicate: () async {
+                    /**복제 로직 추가 */
+                  },
+                  onDelete: () async {
+                    /**삭제 로직 추가 */
+                  },
+                ),
+              );
+            },
           ),
         ),
       ),
@@ -94,7 +127,7 @@ class FolderScreen extends StatelessWidget {
             pathParameters: {'id': n.id},
           ),
           onTitleChanged: (t) =>
-      context.read<NoteStore>().renameNote(id: n.id, newTitle: t),
+              context.read<NoteStore>().renameNote(id: n.id, newTitle: t),
         ),
       ),
     ];

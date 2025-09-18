@@ -6,7 +6,9 @@ import '../../../design_system/components/organisms/bottom_actions_dock_fixed.da
 import '../../../design_system/components/organisms/top_toolbar.dart';
 import '../../../design_system/components/organisms/folder_grid.dart';
 import '../../../design_system/components/organisms/creation_sheet.dart';
+import '../../../design_system/components/organisms/item_actions.dart';
 import '../../../design_system/components/molecules/folder_card.dart';
+import '../../../design_system/components/organisms/rename_dialog.dart';
 import '../../../design_system/tokens/app_colors.dart';
 import '../../../design_system/tokens/app_icons.dart';
 import '../../../design_system/tokens/app_spacing.dart';
@@ -30,27 +32,60 @@ class HomeScreen extends StatelessWidget {
 
     final vaults = context.watch<VaultStore>().vaults;
 
-    final items = vaults
-        .map(
-          (v) => FolderGridItem(
-            title: v.name,
-            date: v.createdAt,
-            onTap: () =>
-                context.pushNamed(RouteNames.vault, pathParameters: {'id': v.id}),
-            child: FolderCard(
-              key: ValueKey(v.id),
-              type: FolderType.vault,
-              title: v.name,
-              date: v.createdAt,
-              onTap: () => context.pushNamed(
-                RouteNames.vault,
-                pathParameters: {'id': v.id},
-              ),
-              onTitleChanged: (t) => context.read<VaultStore>().renameVault(v.id, t)
-            ),
+    final items = vaults.map((v) {
+      final isTemp = v.isTemporary == true;
+
+      return FolderGridItem(
+        title: v.name,
+        date: v.createdAt,
+        onTap: () => context.pushNamed(
+          RouteNames.vault,
+          pathParameters: {'id': v.id},
+        ),
+        child: FolderCard(
+          key: ValueKey(v.id),
+          type: FolderType.vault,
+          title: v.name,
+          date: v.createdAt,
+          onTap: () => context.pushNamed(
+            RouteNames.vault,
+            pathParameters: {'id': v.id},
           ),
-        )
-        .toList();
+          onLongPressStart: isTemp
+              ? null
+              : (d) {
+                  showItemActionsNear(
+                    context,
+                    anchorGlobal: d.globalPosition,
+                    handlers: ItemActionHandlers(
+                      onRename: () async {
+                        final name = await showRenameDialog(
+                          context,
+                          initial: v.name,
+                          title: '이름 바꾸기',
+                        );
+                        if (name != null && name.trim().isNotEmpty) {
+                          await context.read<VaultStore>().renameVault(
+                            v.id,
+                            name.trim(),
+                          );
+                        }
+                      },
+                      onExport: () async {
+                        /* 내보내기 로직 */
+                      },
+                      onDuplicate: () async {
+                        /* 복제 로직 */
+                      },
+                      onDelete: () async {
+                        /* 삭제 로직 */
+                      },
+                    ),
+                  );
+                },
+        ),
+      );
+    }).toList();
 
     return Scaffold(
       appBar: TopToolbar(

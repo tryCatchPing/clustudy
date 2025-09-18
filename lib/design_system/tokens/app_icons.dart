@@ -23,6 +23,7 @@ class AppIcons {
   static const copy = 'assets/icons/copy.svg';
   static const trash = 'assets/icons/trash.svg';
   static const export = 'assets/icons/export.svg';
+  static const move = 'assets/icons/move.svg';
 
   // note Toolbar
   static const pen = 'assets/icons/pen.svg';
