@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../../tokens/app_icons.dart';
 import 'card_action_sheet.dart'; // ← 앞서 만든 28px/간격 16px 시트
 
@@ -20,6 +19,7 @@ class ItemActionHandlers {
   });
 }
 
+
 Future<void> showItemActionsNear(
   BuildContext context, {
   required Offset anchorGlobal,
@@ -28,49 +28,19 @@ Future<void> showItemActionsNear(
   final actions = <CardSheetAction>[];
 
   if (handlers.onRename != null) {
-    actions.add(
-      CardSheetAction(
-        label: '이름 변경',
-        svgPath: AppIcons.rename,
-        onTap: () => handlers.onRename!(),
-      ),
-    );
+    actions.add(CardSheetAction(label: '이름 변경', svgPath: AppIcons.rename, onTap: () => handlers.onRename!()));
   }
   if (handlers.onMove != null) {
-    actions.add(
-      CardSheetAction(
-        label: '이동',
-        svgPath: AppIcons.move,
-        onTap: () => handlers.onMove!(),
-      ),
-    );
+    actions.add(CardSheetAction(label: '이동', svgPath: AppIcons.move, onTap: () => handlers.onMove!()));
   }
   if (handlers.onExport != null) {
-    actions.add(
-      CardSheetAction(
-        label: '내보내기',
-        svgPath: AppIcons.export,
-        onTap: () => handlers.onExport!(),
-      ),
-    );
+    actions.add(CardSheetAction(label: '내보내기', svgPath: AppIcons.export, onTap: () => handlers.onExport!()));
   }
   if (handlers.onDuplicate != null) {
-    actions.add(
-      CardSheetAction(
-        label: '복제',
-        svgPath: AppIcons.copy,
-        onTap: () => handlers.onDuplicate!(),
-      ),
-    );
+    actions.add(CardSheetAction(label: '복제', svgPath: AppIcons.copy, onTap: () => handlers.onDuplicate!()));
   }
   if (handlers.onDelete != null) {
-    actions.add(
-      CardSheetAction(
-        label: '삭제',
-        svgPath: AppIcons.trash,
-        onTap: () => handlers.onDelete!(),
-      ),
-    );
+    actions.add(CardSheetAction(label: '삭제', svgPath: AppIcons.trash, onTap: () => handlers.onDelete!()));
   }
 
   return showCardActionSheetNear(

@@ -1,118 +1,106 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
-import '../../components/molecules/app_card.dart';
-import '../../components/organisms/bottom_actions_dock_fixed.dart';
-import '../../components/organisms/folder_grid.dart';
-import '../../components/organisms/item_actions.dart';
-import '../../components/organisms/rename_dialog.dart';
-import '../../components/organisms/top_toolbar.dart';
-import '../../screens/folder/widgets/folder_creation_sheet.dart';
-import '../../screens/notes/widgets/note_creation_sheet.dart';
-import '../../screens/vault/widgets/vault_creation_sheet.dart';
-import '../../tokens/app_colors.dart';
-import '../../tokens/app_icons.dart';
-import '../../tokens/app_spacing.dart';
-import 'widgets/home_creation_sheet.dart';
+import '../../../design_system/components/organisms/bottom_actions_dock_fixed.dart';
+import '../../../design_system/components/organisms/top_toolbar.dart';
+import '../../../design_system/components/organisms/folder_grid.dart';
+import '../../../design_system/components/organisms/creation_sheet.dart';
+import '../../../design_system/components/organisms/item_actions.dart';
+import '../../../design_system/components/molecules/folder_card.dart';
+import '../../../design_system/components/organisms/rename_dialog.dart';
+import '../../../design_system/tokens/app_colors.dart';
+import '../../../design_system/tokens/app_icons.dart';
+import '../../../design_system/tokens/app_spacing.dart';
+import '../../notes/state/note_store.dart';
+import '../../notes/widgets/note_creation_sheet.dart';
+import '../../vaults/state/vault_store.dart';
+import '../../vaults/widgets/vault_creation_sheet.dart';
+import '../../vaults/data/vault.dart';
+import '../../../utils/pickers/pick_pdf.dart';
+import '../../../routing/route_names.dart';
 
-class DesignHomeScreen extends StatefulWidget {
-  const DesignHomeScreen({super.key});
-
-  @override
-  State<DesignHomeScreen> createState() => _DesignHomeScreenState();
-}
-
-class _DesignHomeScreenState extends State<DesignHomeScreen> {
-  late final List<_DemoVault> _vaults;
-
-  @override
-  // TODO(xodnd): stream 기반으로 연결
-  void initState() {
-    super.initState();
-    _vaults = List<_DemoVault>.from(_demoVaults);
-  }
-
-  void _showVaultActions(_DemoVault vault, LongPressStartDetails details) {
-    showItemActionsNear(
-      context,
-      anchorGlobal: details.globalPosition,
-      handlers: ItemActionHandlers(
-        onRename: () async {
-          final name = await showRenameDialog(
-            context,
-            title: '이름 바꾸기',
-            initial: vault.name,
-          );
-          if (name == null || name.trim().isEmpty) return;
-          setState(() {
-            final idx = _vaults.indexWhere((v) => v.id == vault.id);
-            if (idx != -1) {
-              _vaults[idx] = _vaults[idx].copyWith(name: name.trim());
-            }
-          });
-        },
-        onExport: () async => _showSnack('"${vault.name}" 내보내기'),
-        onDuplicate: () async {
-          setState(() {
-            final copy = vault.copyWith(
-              id: '${vault.id}-copy-${DateTime.now().millisecondsSinceEpoch}',
-              name: '${vault.name} 복제',
-              createdAt: DateTime.now(),
-            );
-            _vaults.insert(0, copy);
-          });
-          _showSnack('"${vault.name}" 복제 완료');
-        },
-        onDelete: () async {
-          setState(() => _vaults.removeWhere((v) => v.id == vault.id));
-          _showSnack('"${vault.name}" 삭제');
-        },
-      ),
-    );
-  }
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final items = _vaults.map((vault) {
+    final isLoaded = context.select<VaultStore, bool>((s) => s.isLoaded);
+    if (!isLoaded) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    final vaults = context.watch<VaultStore>().vaults;
+
+    final items = vaults.map((v) {
+      final isTemp = v.isTemporary == true;
+
       return FolderGridItem(
-        title: vault.name,
-        date: vault.createdAt,
-        child: AppCard(
-          svgIconPath: vault.isTemporary
-              ? AppIcons.folderVault
-              : AppIcons.folder,
-          title: vault.name,
-          date: vault.createdAt,
-          // TODO(xodnd): 기능 연결
-          onTap: () => _showSnack('Open ${vault.name}'),
-          onLongPressStart: vault.isTemporary
+        title: v.name,
+        date: v.createdAt,
+        onTap: () => context.pushNamed(
+          RouteNames.vault,
+          pathParameters: {'id': v.id},
+        ),
+        child: FolderCard(
+          key: ValueKey(v.id),
+          type: FolderType.vault,
+          title: v.name,
+          date: v.createdAt,
+          onTap: () => context.pushNamed(
+            RouteNames.vault,
+            pathParameters: {'id': v.id},
+          ),
+          onLongPressStart: isTemp
               ? null
-              : (d) => _showVaultActions(vault, d),
+              : (d) {
+                  showItemActionsNear(
+                    context,
+                    anchorGlobal: d.globalPosition,
+                    handlers: ItemActionHandlers(
+                      onRename: () async {
+                        final name = await showRenameDialog(
+                          context,
+                          initial: v.name,
+                          title: '이름 바꾸기',
+                        );
+                        if (name != null && name.trim().isNotEmpty) {
+                          await context.read<VaultStore>().renameVault(
+                            v.id,
+                            name.trim(),
+                          );
+                        }
+                      },
+                      onExport: () async {
+                        /* 내보내기 로직 */
+                      },
+                      onDuplicate: () async {
+                        /* 복제 로직 */
+                      },
+                      onDelete: () async {
+                        /* 삭제 로직 */
+                      },
+                    ),
+                  );
+                },
         ),
       );
     }).toList();
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: TopToolbar(
         variant: TopToolbarVariant.landing,
         title: 'Clustudy',
         actions: [
-          // TODO(xodnd): 기능 연결
-          ToolbarAction(
-            svgPath: AppIcons.search,
-            onTap: () {},
-          ),
-          ToolbarAction(
-            svgPath: AppIcons.settings,
-            onTap: () {},
-          ),
+          ToolbarAction(svgPath: AppIcons.search, onTap: () {}),
+          ToolbarAction(svgPath: AppIcons.settings, onTap: () {}),
         ],
       ),
       body: Padding(
         padding: const EdgeInsets.only(
           left: AppSpacing.screenPadding,
           right: AppSpacing.screenPadding,
-          top: AppSpacing.large,
+          top: AppSpacing.large, // 적당한 상단 여백
         ),
         child: FolderGrid(items: items),
       ),
@@ -123,107 +111,84 @@ class _DesignHomeScreenState extends State<DesignHomeScreen> {
           child: Center(
             child: BottomActionsDockFixed(
               items: [
+                // 1) Vault 생성
                 DockItem(
                   label: 'Vault 생성',
                   svgPath: AppIcons.folderVaultMedium,
-                  onTap: () => showDesignVaultCreationSheet(
-                    context,
-                    onCreate: (name) async {
-                      setState(() {
-                        _vaults.insert(
-                          0,
-                          _DemoVault(
-                            id: 'vault-${DateTime.now().millisecondsSinceEpoch}',
-                            name: name,
-                            createdAt: DateTime.now(),
-                          ),
-                        );
-                      });
-                    },
-                  ),
+                  onTap: () async {
+                    await showCreationSheet(
+                      context,
+                      VaultCreationSheet(
+                        onCreate: (name) async {
+                          await context.read<VaultStore>().createVault(name);
+                        },
+                      ),
+                    );
+                  },
                 ),
-                DockItem(
-                  label: '폴더 생성',
-                  svgPath: AppIcons.folderAdd,
-                  onTap: () => showDesignFolderCreationSheet(context),
-                ),
+                // 2) 노트 생성 (임시 vault로 바로)
                 DockItem(
                   label: '노트 생성',
-                  svgPath: AppIcons.noteAdd,
-                  onTap: () => showDesignNoteCreationSheet(context),
+                  svgPath: AppIcons.noteAdd, // 아이콘 경로 알맞게 교체
+                  onTap: () async {
+                    await showCreationSheet(
+                      context,
+                      NoteCreationSheet(
+                        onCreate: (name) async {
+                          // 임시 vault에 생성 (없으면 첫 vault 사용)
+                          final vaultStore = context.read<VaultStore>();
+                          final temp = vaultStore.vaults.firstWhere(
+                            (v) => v.isTemporary,
+                            orElse: () => vaultStore.vaults.first,
+                          );
+                          final note = await context
+                              .read<NoteStore>()
+                              .createNote(
+                                vaultId: temp.id,
+                                title: name,
+                              );
+                          if (!context.mounted) return;
+                          context.goNamed(
+                            RouteNames.note,
+                            pathParameters: {'id': note.id},
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
+                // 3) PDF 가져오기 (임시 vault로)
+                DockItem(
+                  label: 'PDF 생성',
+                  svgPath: AppIcons.download,
+                  onTap: () async {
+                    final file = await pickPdf();
+                    if (file == null) return;
+
+                    final vaultStore = context.read<VaultStore>();
+                    final temp = vaultStore.vaults.firstWhere(
+                      (v) => v.isTemporary,
+                      orElse: () => vaultStore.vaults.first, // 가드
+                    );
+
+                    final note = await context.read<NoteStore>().createPdfNote(
+                      vaultId: temp.id,
+                      fileName: file.name, // 최소 구현: 파일명만 저장
+                    );
+
+                    if (!context.mounted) return;
+                    context.goNamed(
+                      RouteNames.note,
+                      pathParameters: {'id': note.id},
+                    );
+                  },
                 ),
               ],
             ),
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showDesignHomeCreationSheet(context),
-        icon: const Icon(Icons.add),
-        label: const Text('빠른 생성'),
-      ),
-    );
-  }
-
-  void _showSnack(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(milliseconds: 900),
-      ),
+      backgroundColor: AppColors.background,
     );
   }
 }
-
-class _DemoVault {
-  const _DemoVault({
-    required this.id,
-    required this.name,
-    required this.createdAt,
-    this.isTemporary = false,
-  });
-
-  final String id;
-  final String name;
-  final DateTime createdAt;
-  final bool isTemporary;
-
-  _DemoVault copyWith({
-    String? id,
-    String? name,
-    DateTime? createdAt,
-    bool? isTemporary,
-  }) {
-    return _DemoVault(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      createdAt: createdAt ?? this.createdAt,
-      isTemporary: isTemporary ?? this.isTemporary,
-    );
-  }
-}
-
-List<_DemoVault> _demoVaults = [
-  _DemoVault(
-    id: 'temp',
-    name: '임시 Vault',
-    createdAt: DateTime(2025, 9, 1, 9, 30),
-    isTemporary: true,
-  ),
-  _DemoVault(
-    id: 'math',
-    name: '수학 노트',
-    createdAt: DateTime(2025, 9, 2, 11, 10),
-  ),
-  _DemoVault(
-    id: 'design',
-    name: '디자인 자료',
-    createdAt: DateTime(2025, 9, 3, 14, 45),
-  ),
-  _DemoVault(
-    id: 'ref',
-    name: '참고 문서',
-    createdAt: DateTime(2025, 9, 4, 10, 5),
-  ),
-];

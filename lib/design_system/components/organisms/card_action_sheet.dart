@@ -8,7 +8,7 @@ import '../../tokens/app_typography.dart';
 class CardSheetAction {
   final String label;
   final String svgPath;
-  final VoidCallback onTap;
+  final Future<void> Function() onTap; // async 콜백
   const CardSheetAction({
     required this.label,
     required this.svgPath,
@@ -118,10 +118,14 @@ class _ActionRow extends StatelessWidget {
       width: double.infinity,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          Navigator.of(context).maybePop();
-          action.onTap();
-        },
+        onTap: () async {
+        // 1) 시트 닫기
+        await Navigator.of(context).maybePop();
+        // 2) 다음 프레임까지 한 박자 양보 (레이어 정리)
+        await Future<void>.delayed(Duration.zero);
+        // 3) 액션 실행 (rename 다이얼로그 등)
+        await action.onTap();
+      },
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           child: Row(
@@ -136,14 +140,14 @@ class _ActionRow extends StatelessWidget {
                   width: 28,
                   height: 28,
                   colorFilter: const ColorFilter.mode(
-                    AppColors.gray50, // 아이콘 색 (필요 시 바꾸세요)
+                    AppColors.gray50,
                     BlendMode.srcIn,
                   ),
                 ),
               ),
               ),
               const SizedBox(width: 16),
-              Expanded( // ← 텍스트가 왼쪽 정렬로 쭉
+              Expanded(
                 child: Text(
                   action.label,
                   style: AppTypography.body4,
