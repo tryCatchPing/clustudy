@@ -102,8 +102,6 @@ class NoteScreen extends StatelessWidget {
   const NoteScreen({super.key, required this.noteId});
   final String noteId;
 
-  static const double _appBarHeight = 62; // NoteTopToolbar 기본 높이와 일치
-
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
@@ -131,13 +129,13 @@ class NoteScreen extends StatelessWidget {
                       leftActions: [
                         ToolbarAction(
                           svgPath: AppIcons.chevronLeft,
-                          onTap: () => GoRouter.of(context).pop(),
+                          onTap: () => context.pop(),
                           tooltip: '뒤로',
                         ),
                       ],
                       rightActions: [
                         ToolbarAction(
-                          svgPath: AppIcons.scale, // (= 네가 올린 아이콘)
+                          svgPath: AppIcons.scale, 
                           onTap: () =>
                               context.read<NoteUiState>().enterFullscreen(),
                           tooltip: '전체 화면',
@@ -161,69 +159,67 @@ class NoteScreen extends StatelessWidget {
 
               body: Stack(
                 children: [
-                  // 캔버스
                   const _NoteCanvasPage(),
-
-                  // 2) 보조 툴바 (항상 캔버스 위에)
-                  Visibility(
-                    visible: ui.secondaryOpen,
-                    maintainState: true,
-                    child: ui.isFullscreen
-                        // 전체화면 → pill (상단 중앙)
-                        ? Positioned.fill(
-                            child: Column(
-                              children: [
-                                const SafeArea(top: true, bottom: false, child: SizedBox(height: 8)),
-                                NoteToolbarSecondary(
-                                  onUndo: context.read<NoteUiState>().onUndo,
-                                  onRedo: context.read<NoteUiState>().onRedo,
-                                  onPen: context.read<NoteUiState>().onPen,
-                                  onHighlighter: context.read<NoteUiState>().onHighlighter,
-                                  onEraser: context.read<NoteUiState>().onEraser,
-                                  onLinkPen: context.read<NoteUiState>().onLinkPen,
-                                  onGraphView: () => context.read<NoteUiState>().onGraphView(context),
-                                  activePenColor: ui.activePenColor,
-                                  activeHighlighterColor: ui.activeHighlighterColor,
-                                  isEraserOn: ui.eraserOn,
-                                  isLinkPenOn: ui.linkPenOn,
-                                  variant: NoteToolbarSecondaryVariant.pill,
-                                  showBottomDivider: false,
-                                  iconSize: 32,
-                                ),
-                              ],
-                            ),
-                          )
-                        // 일반 모드 → bar (AppBar 아래에 붙이기)
-                        : Align(
-                            alignment: Alignment.topCenter,
-                            child: Padding(
-                              padding: const EdgeInsets.only(top: 62), // NoteTopToolbar 높이
-                              child: NoteToolbarSecondary(
-                                onUndo: context.read<NoteUiState>().onUndo,
-                                onRedo: context.read<NoteUiState>().onRedo,
-                                onPen: context.read<NoteUiState>().onPen,
-                                onHighlighter: context.read<NoteUiState>().onHighlighter,
-                                onEraser: context.read<NoteUiState>().onEraser,
-                                onLinkPen: context.read<NoteUiState>().onLinkPen,
-                                onGraphView: () => context.read<NoteUiState>().onGraphView(context),
-                                activePenColor: ui.activePenColor,
-                                activeHighlighterColor: ui.activeHighlighterColor,
-                                isEraserOn: ui.eraserOn,
-                                isLinkPenOn: ui.linkPenOn,
-                                variant: NoteToolbarSecondaryVariant.bar,
-                                showBottomDivider: true,
-                                iconSize: 32, // ← 네 요구
-                              ),
-                            ),
+                  // 캔버스
+                  if (ui.secondaryOpen) ...[
+                    // 1) PILL 배치 (변형 기준)
+                    if (ui.variant == NoteToolbarSecondaryVariant.pill)
+                      Positioned(
+                        top: MediaQuery.of(context).padding.top + 8,  // 상태바 아래 8px
+                        left: 0,
+                        right: 0,
+                        child: Center(
+                          child: NoteToolbarSecondary(
+                            onUndo: context.read<NoteUiState>().onUndo,
+                            onRedo: context.read<NoteUiState>().onRedo,
+                            onPen: context.read<NoteUiState>().onPen,
+                            onHighlighter: context.read<NoteUiState>().onHighlighter,
+                            onEraser: context.read<NoteUiState>().onEraser,
+                            onLinkPen: context.read<NoteUiState>().onLinkPen,
+                            onGraphView: () => context.read<NoteUiState>().onGraphView(context),
+                            activePenColor: ui.activePenColor,
+                            activeHighlighterColor: ui.activeHighlighterColor,
+                            isEraserOn: ui.eraserOn,
+                            isLinkPenOn: ui.linkPenOn,
+                            iconSize: 28,
+                            showBottomDivider: false,
+                            variant: NoteToolbarSecondaryVariant.pill,
                           ),
-                  ),
+                        ),
+                      )
+                    else
+                      // 2) BAR 배치 (앱바 바로 아래)
+                      Positioned(
+                        top: ui.isFullscreen
+                            ? MediaQuery.of(context).padding.top // 전체화면일 땐 상태바 아래
+                            : 0,                     // 일반 모드에선 앱바 높이(=62)
+                        left: 0,
+                        right: 0,
+                        child: NoteToolbarSecondary(
+                          onUndo: context.read<NoteUiState>().onUndo,
+                          onRedo: context.read<NoteUiState>().onRedo,
+                          onPen: context.read<NoteUiState>().onPen,
+                          onHighlighter: context.read<NoteUiState>().onHighlighter,
+                          onEraser: context.read<NoteUiState>().onEraser,
+                          onLinkPen: context.read<NoteUiState>().onLinkPen,
+                          onGraphView: () => context.read<NoteUiState>().onGraphView(context),
+                          activePenColor: ui.activePenColor,
+                          activeHighlighterColor: ui.activeHighlighterColor,
+                          isEraserOn: ui.eraserOn,
+                          isLinkPenOn: ui.linkPenOn,
+                          iconSize: 28,
+                          showBottomDivider: true,
+                          variant: NoteToolbarSecondaryVariant.bar,
+                        ),
+                      ),
+                  ],
 
                   // 전체화면에서 “원래대로” 버튼(선택)
                   if (ui.isFullscreen)
                     Positioned(
                       right: 8,
                       top:
-                          MediaQuery.of(context).padding.top + 16, // 상태바 아래 8px
+                          MediaQuery.of(context).padding.top + 16,
                       child: AppFabIcon(
                         svgPath: AppIcons.scale,
                         visualDiameter: 34,
@@ -267,7 +263,7 @@ class _NoteCanvasPage extends StatelessWidget {
             BoxShadow(
               blurRadius: 12,
               offset: Offset(0, 2),
-              color: AppColors.gray50,
+              color: Color(0x22000000),
             ),
           ],
         ),

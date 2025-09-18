@@ -205,7 +205,7 @@ class FolderScreen extends StatelessWidget {
                                 title: name,
                               );
                           if (!context.mounted) return;
-                          context.goNamed(
+                          context.pushNamed(
                             RouteNames.note,
                             pathParameters: {'id': note.id},
                           );
@@ -229,7 +229,7 @@ class FolderScreen extends StatelessWidget {
                     );
 
                     if (!context.mounted) return;
-                    context.goNamed(
+                    context.pushNamed(
                       RouteNames.note,
                       pathParameters: {'id': note.id},
                     );
