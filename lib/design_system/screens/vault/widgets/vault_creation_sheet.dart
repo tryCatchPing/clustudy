@@ -8,12 +8,20 @@ import '../../../tokens/app_icons.dart';
 import '../../../tokens/app_spacing.dart';
 import '../../../tokens/app_typography.dart';
 
-Future<void> showDesignVaultCreationSheet(BuildContext context) {
-  return showCreationSheet(context, const _DesignVaultCreationSheet());
+Future<void> showDesignVaultCreationSheet(
+  BuildContext context, {
+  Future<void> Function(String name)? onCreate,
+}) {
+  return showCreationSheet(
+    context,
+    _DesignVaultCreationSheet(onCreate: onCreate),
+  );
 }
 
 class _DesignVaultCreationSheet extends StatefulWidget {
-  const _DesignVaultCreationSheet();
+  const _DesignVaultCreationSheet({this.onCreate});
+
+  final Future<void> Function(String name)? onCreate;
 
   @override
   State<_DesignVaultCreationSheet> createState() => _DesignVaultCreationSheetState();
@@ -34,12 +42,20 @@ class _DesignVaultCreationSheetState extends State<_DesignVaultCreationSheet> {
   Future<void> _submit() async {
     if (!_canSubmit) return;
     setState(() => _busy = true);
-    await Future<void>.delayed(const Duration(milliseconds: 300));
+    final name = _controller.text.trim();
+    if (widget.onCreate != null) {
+      await widget.onCreate!(name);
+    } else {
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('"$name" Vault 생성')),
+        );
+      }
+    }
     if (!mounted) return;
-    Navigator.of(context).pop();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('"${_controller.text.trim()}" Vault 생성')), // 디자인용 피드백
-    );
+    setState(() => _busy = false);
+    Navigator.of(context).pop(name);
   }
 
   @override

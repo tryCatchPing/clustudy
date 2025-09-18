@@ -6,12 +6,20 @@ import '../../../tokens/app_colors.dart';
 import '../../../tokens/app_spacing.dart';
 import '../../../tokens/app_typography.dart';
 
-Future<void> showDesignNoteCreationSheet(BuildContext context) {
-  return showCreationSheet(context, const _DesignNoteCreationSheet());
+Future<void> showDesignNoteCreationSheet(
+  BuildContext context, {
+  Future<void> Function(String name)? onCreate,
+}) {
+  return showCreationSheet(
+    context,
+    _DesignNoteCreationSheet(onCreate: onCreate),
+  );
 }
 
 class _DesignNoteCreationSheet extends StatefulWidget {
-  const _DesignNoteCreationSheet();
+  const _DesignNoteCreationSheet({this.onCreate});
+
+  final Future<void> Function(String name)? onCreate;
 
   @override
   State<_DesignNoteCreationSheet> createState() => _DesignNoteCreationSheetState();
@@ -32,12 +40,20 @@ class _DesignNoteCreationSheetState extends State<_DesignNoteCreationSheet> {
   Future<void> _submit() async {
     if (!_canSubmit) return;
     setState(() => _busy = true);
-    await Future<void>.delayed(const Duration(milliseconds: 300));
+    final name = _controller.text.trim();
+    if (widget.onCreate != null) {
+      await widget.onCreate!(name);
+    } else {
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('"$name" 노트 생성')),
+        );
+      }
+    }
     if (!mounted) return;
-    Navigator.of(context).pop();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('"${_controller.text.trim()}" 노트 생성')),
-    );
+    setState(() => _busy = false);
+    Navigator.of(context).pop(name);
   }
 
   @override

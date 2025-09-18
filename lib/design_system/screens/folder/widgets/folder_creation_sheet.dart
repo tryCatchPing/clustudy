@@ -8,12 +8,20 @@ import '../../../tokens/app_icons.dart';
 import '../../../tokens/app_spacing.dart';
 import '../../../tokens/app_typography.dart';
 
-Future<void> showDesignFolderCreationSheet(BuildContext context) {
-  return showCreationSheet(context, const _DesignFolderCreationSheet());
+Future<void> showDesignFolderCreationSheet(
+  BuildContext context, {
+  Future<void> Function(String name)? onCreate,
+}) {
+  return showCreationSheet(
+    context,
+    _DesignFolderCreationSheet(onCreate: onCreate),
+  );
 }
 
 class _DesignFolderCreationSheet extends StatefulWidget {
-  const _DesignFolderCreationSheet();
+  const _DesignFolderCreationSheet({this.onCreate});
+
+  final Future<void> Function(String name)? onCreate;
 
   @override
   State<_DesignFolderCreationSheet> createState() => _DesignFolderCreationSheetState();
@@ -34,12 +42,20 @@ class _DesignFolderCreationSheetState extends State<_DesignFolderCreationSheet> 
   Future<void> _submit() async {
     if (!_canSubmit) return;
     setState(() => _busy = true);
-    await Future<void>.delayed(const Duration(milliseconds: 300));
+    final name = _controller.text.trim();
+    if (widget.onCreate != null) {
+      await widget.onCreate!(name);
+    } else {
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('"$name" 폴더 생성')),
+        );
+      }
+    }
     if (!mounted) return;
-    Navigator.of(context).pop();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('"${_controller.text.trim()}" 폴더 생성')),
-    );
+    setState(() => _busy = false);
+    Navigator.of(context).pop(name);
   }
 
   @override
