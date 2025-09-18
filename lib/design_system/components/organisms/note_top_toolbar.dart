@@ -20,7 +20,7 @@ class NoteTopToolbar extends StatelessWidget implements PreferredSizeWidget {
     this.leftActions = const [],
     this.rightActions = const [],
     this.iconColor = AppColors.gray50,
-    this.iconSize = 32,
+    this.iconSize = 28,
     this.height = 62, // 15(top) + 32(icon) + 15(bottom) = 62
     this.titleStyle,
     this.showBottomDivider = true,
@@ -42,9 +42,10 @@ class NoteTopToolbar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final ts = titleStyle ??
-        AppTypography.caption.copyWith(color: AppColors.gray50); // 스샷처럼 작고 중립 톤
+        AppTypography.subtitle1.copyWith(color: AppColors.gray50); // 스샷처럼 작고 중립 톤
 
     return SafeArea(
+      top: false,
       bottom: false,
       child: Container(
         height: height,
