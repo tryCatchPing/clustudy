@@ -37,7 +37,7 @@ Future<String?> showRenameDialog(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(title, style: AppTypography.title2), // 원하는 타이틀 스타일
+                  Text(title, style: AppTypography.body2), // 원하는 타이틀 스타일
                   const SizedBox(height: 16),
                   AppTextField(
                     controller: c,
