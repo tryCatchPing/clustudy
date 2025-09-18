@@ -19,6 +19,11 @@ class AppIcons {
   static const folderAdd = 'assets/icons/folder_add.svg';
   static const download = 'assets/icons/download.svg';
   static const noteAdd = 'assets/icons/note_add.svg';
+  static const rename = 'assets/icons/rename.svg';
+  static const move = 'assets/icons/move.svg';
+  static const export = 'assets/icons/export.svg';
+  static const copy = 'assets/icons/copy.svg';
+  static const trash = 'assets/icons/trash.svg';
 
   // note Toolbar
   static const pen = 'assets/icons/pen.svg';
