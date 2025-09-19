@@ -21,6 +21,9 @@ class AppRoutes {
   /// Vault 그래프 화면 라우트 경로.
   static const String vaultGraph = '/vault-graph';
 
+  /// 노트 검색 화면 라우트 경로.
+  static const String noteSearch = '/notes/search';
+
   // 🎯 라우트 이름 상수들 (GoRouter name 속성용)
   /// 홈 화면 라우트 이름.
   static const String homeName = 'home';
@@ -36,6 +39,9 @@ class AppRoutes {
 
   /// Vault 그래프 화면 라우트 이름.
   static const String vaultGraphName = 'vaultGraph';
+
+  /// 노트 검색 화면 라우트 이름.
+  static const String noteSearchName = 'noteSearch';
 
   // 🚀 타입 안전한 네비게이션 헬퍼 메서드들
 
@@ -54,6 +60,9 @@ class AppRoutes {
 
   /// Vault 그래프 페이지로 이동하는 라우트 경로를 반환합니다.
   static String vaultGraphRoute() => vaultGraph;
+
+  /// 노트 검색 페이지로 이동하는 라우트 경로를 반환합니다.
+  static String noteSearchRoute() => noteSearch;
 
   // 📋 추후 확장성을 위한 구조 예시
   //

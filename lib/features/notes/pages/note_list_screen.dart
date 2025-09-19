@@ -30,21 +30,12 @@ class NoteListScreen extends ConsumerStatefulWidget {
 }
 
 class _NoteListScreenState extends ConsumerState<NoteListScreen> {
-  late final TextEditingController _searchCtrl;
-
   NoteListController get _actions =>
       ref.read(noteListControllerProvider.notifier);
 
   @override
   void initState() {
     super.initState();
-    _searchCtrl = TextEditingController();
-  }
-
-  @override
-  void dispose() {
-    _searchCtrl.dispose();
-    super.dispose();
   }
 
   void _onVaultSelected(String vaultId) {
@@ -112,15 +103,6 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
     final spec = await _actions.createBlankNote();
     if (!mounted) return;
     AppSnackBar.show(context, spec);
-  }
-
-  void _onSearchChanged(String text) {
-    _actions.updateSearchQuery(text);
-  }
-
-  void _clearSearch() {
-    _searchCtrl.clear();
-    _actions.clearSearch();
   }
 
   /// vault 선택 페이지에서의 롱 탭 액션
@@ -333,17 +315,6 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<NoteListState>(
-      noteListControllerProvider,
-      (previous, next) {
-        if (_searchCtrl.text == next.searchQuery) return;
-        _searchCtrl
-          ..text = next.searchQuery
-          ..selection = TextSelection.collapsed(
-            offset: next.searchQuery.length,
-          );
-      },
-    );
     final vaultsAsync = ref.watch(vaultsProvider);
     final noteListState = ref.watch(noteListControllerProvider);
     final currentVaultId = ref.watch(currentVaultProvider);
@@ -457,6 +428,13 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                             crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
                               FilledButton.icon(
+                                onPressed: () {
+                                  context.pushNamed(AppRoutes.noteSearchName);
+                                },
+                                icon: const Icon(Icons.search),
+                                label: const Text('노트 검색'),
+                              ),
+                              FilledButton.icon(
                                 onPressed: _actions.clearVaultSelection,
                                 icon: const Icon(Icons.folder_shared),
                                 label: const Text('Vault 선택으로 이동'),
@@ -479,78 +457,12 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                       if (hasActiveVault) ...[
                         const SizedBox(height: 12),
 
-                        // 검색 필드
-                        TextField(
-                          controller: _searchCtrl,
-                          decoration: InputDecoration(
-                            labelText: '노트 검색',
-                            hintText: '제목으로 검색',
-                            border: const OutlineInputBorder(),
-                            suffixIcon: noteListState.searchQuery.isEmpty
-                                ? null
-                                : IconButton(
-                                    onPressed: _clearSearch,
-                                    icon: const Icon(Icons.clear),
-                                  ),
-                          ),
-                          onChanged: _onSearchChanged,
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        // 검색 결과 표현
+                        // 폴더/노트 목록
                         Builder(
                           builder: (_) {
                             final String vaultId = currentVaultId;
 
-                            // 검색 결과 표현
-                            if (noteListState.searchQuery.isNotEmpty) {
-                              if (noteListState.isSearching) {
-                                return const Center(
-                                  child: CircularProgressIndicator(),
-                                );
-                              }
-                              if (noteListState.searchResults.isEmpty) {
-                                return const Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Text('검색 결과가 없습니다.'),
-                                );
-                              }
-                              // 검색 결과 표현
-                              return Column(
-                                children: [
-                                  for (final r
-                                      in noteListState.searchResults) ...[
-                                    Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Expanded(
-                                          child: NavigationCard(
-                                            icon: Icons.brush,
-                                            title: r.title,
-                                            subtitle:
-                                                r.parentFolderName ?? '루트',
-                                            color: const Color(0xFF6750A4),
-                                            onTap: () {
-                                              context.pushNamed(
-                                                AppRoutes.noteEditName,
-                                                pathParameters: {
-                                                  'noteId': r.noteId,
-                                                },
-                                              );
-                                            },
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 12),
-                                  ],
-                                ],
-                              );
-                            }
-
-                            // 검색 안한 경우 (isEmpty)
+                            // Vault 내부 트리 렌더링
                             final currentFolderId = ref.watch(
                               currentFolderProvider(vaultId),
                             );
@@ -578,7 +490,7 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                     )
                                     .toList();
 
-                                // ?
+                                // 폴더/노트 목록 렌더링
                                 return Column(
                                   children: [
                                     Align(
@@ -597,7 +509,6 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                     ),
                                     const SizedBox(height: 8),
 
-                                    // 상위 폴더로 이동
                                     if (currentFolderId != null) ...[
                                       Align(
                                         alignment: Alignment.centerLeft,
@@ -613,8 +524,6 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                         ),
                                       ),
                                       const SizedBox(height: 8),
-
-                                      // vault 선택으로 이동
                                     ] else ...[
                                       Align(
                                         alignment: Alignment.centerLeft,
@@ -633,7 +542,6 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                         child: Text('현재 위치에 항목이 없습니다.'),
                                       ),
 
-                                    // 폴더 표현
                                     for (final it in folders) ...[
                                       Row(
                                         crossAxisAlignment:
