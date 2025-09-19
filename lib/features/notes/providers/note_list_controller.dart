@@ -6,8 +6,6 @@ import '../../../shared/errors/app_error_mapper.dart';
 import '../../../shared/errors/app_error_spec.dart';
 import '../../../shared/services/vault_notes_service.dart';
 import '../../vaults/data/derived_vault_providers.dart';
-import '../../vaults/data/vault_tree_repository_provider.dart';
-import '../../vaults/models/vault_model.dart';
 
 class NoteListState {
   const NoteListState({
@@ -88,7 +86,13 @@ class NoteListController extends StateNotifier<NoteListState> {
 
     state = state.copyWith(isImporting: true);
     try {
-      final vaultId = ref.read(currentVaultProvider) ?? 'default';
+      final vaultId = ref.read(currentVaultProvider);
+      if (vaultId == null) {
+        return const AppErrorSpec(
+          severity: AppErrorSeverity.info,
+          message: '먼저 Vault를 선택해주세요.',
+        );
+      }
       final folderId = ref.read(currentFolderProvider(vaultId));
       final pdfNote = await _service.createPdfInFolder(
         vaultId,
@@ -104,7 +108,13 @@ class NoteListController extends StateNotifier<NoteListState> {
 
   Future<AppErrorSpec> createBlankNote() async {
     try {
-      final vaultId = ref.read(currentVaultProvider) ?? 'default';
+      final vaultId = ref.read(currentVaultProvider);
+      if (vaultId == null) {
+        return const AppErrorSpec(
+          severity: AppErrorSeverity.info,
+          message: '먼저 Vault를 선택해주세요.',
+        );
+      }
       final folderId = ref.read(currentFolderProvider(vaultId));
       final blankNote = await _service.createBlankInFolder(
         vaultId,
@@ -161,6 +171,15 @@ class NoteListController extends StateNotifier<NoteListState> {
     );
   }
 
+  void clearVaultSelection() {
+    ref.read(currentVaultProvider.notifier).state = null;
+    state = state.copyWith(
+      searchQuery: '',
+      searchResults: const <NoteSearchResult>[],
+      isSearching: false,
+    );
+  }
+
   Future<FolderCascadeImpact> computeCascadeImpact(
     String vaultId,
     String rootFolderId,
@@ -191,21 +210,14 @@ class NoteListController extends StateNotifier<NoteListState> {
   }) async {
     try {
       await _service.deleteVault(vaultId);
-      final repo = ref.read(vaultTreeRepositoryProvider);
-      final List<VaultModel> remainingVaults = await repo.watchVaults().first;
-
       ref.read(currentFolderProvider(vaultId).notifier).state = null;
 
-      if (remainingVaults.isEmpty) {
-        ref.read(currentVaultProvider.notifier).state = null;
-      } else {
-        final nextVault = remainingVaults.first;
-        ref.read(currentVaultProvider.notifier).state = nextVault.vaultId;
-        ref.read(currentFolderProvider(nextVault.vaultId).notifier).state =
-            null;
-      }
-
-      clearSearch();
+      ref.read(currentVaultProvider.notifier).state = null;
+      state = state.copyWith(
+        searchQuery: '',
+        searchResults: const <NoteSearchResult>[],
+        isSearching: false,
+      );
 
       return AppErrorSpec.success('Vault "$vaultName"를 삭제했습니다.');
     } catch (error) {
