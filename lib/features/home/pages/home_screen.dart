@@ -151,6 +151,7 @@ class HomeScreen extends StatelessWidget {
                           context.pushNamed(
                             RouteNames.note,
                             pathParameters: {'id': note.id},
+                            extra: {'title': note.title},
                           );
                         },
                       ),
@@ -180,6 +181,7 @@ class HomeScreen extends StatelessWidget {
                     context.pushNamed(
                       RouteNames.note,
                       pathParameters: {'id': note.id},
+                      extra: {'title': note.title},
                     );
                   },
                 ),

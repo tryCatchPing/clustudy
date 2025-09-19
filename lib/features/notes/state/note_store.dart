@@ -8,9 +8,17 @@ class NoteStore extends ChangeNotifier {
 
   List<Note> _notes = [];
   bool _loaded = false;
+  bool get isLoaded => _loaded;
 
   List<Note> byVault(String vaultId) =>
       _notes.where((n) => n.vaultId == vaultId).toList();
+
+   Note? byId(String id) {
+    final i = _notes.indexWhere((n) => n.id == id);
+    return i == -1 ? null : _notes[i];
+  }
+
+  String? titleOf(String id) => byId(id)?.title;
 
   Future<void> init() async {
     if (_loaded) return;
@@ -45,7 +53,7 @@ class NoteStore extends ChangeNotifier {
       id: old.id,
       vaultId: old.vaultId,
       title: newTitle,
-      createdAt: old.createdAt,  
+      createdAt: old.createdAt,
       isPdf: old.isPdf,
       pdfName: old.pdfName,
       // folderId 등 다른 필드가 있으면 그대로 복사

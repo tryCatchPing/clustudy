@@ -1,31 +1,142 @@
 // lib/features/notes/pages/note_screen.dart
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
-import '../../../design_system/tokens/app_colors.dart';
-import '../../../design_system/tokens/app_spacing.dart';
-import '../../../design_system/components/organisms/note_top_toolbar.dart';
-import '../../../design_system/components/organisms/note_toolbar_secondary.dart';
-import '../../../design_system/components/atoms/tool_glow_icon.dart';
-import '../../../design_system/tokens/app_icons.dart';
 import '../../../design_system/components/atoms/app_fab_icon.dart';
+import '../../../design_system/components/atoms/tool_glow_icon.dart';
+import '../../../design_system/components/molecules/tool_color_picker_pill.dart';
+import '../../../design_system/components/organisms/note_toolbar_secondary.dart';
+import '../../../design_system/components/organisms/note_top_toolbar.dart';
+import '../../../design_system/tokens/app_colors.dart';
+import '../../../design_system/tokens/app_icons.dart';
+import '../../../design_system/tokens/app_spacing.dart';
+import '../state/note_store.dart';
+
+enum ToolPicker { none, pen, highlighter }
+
+enum ActiveTool { none, pen, highlighter, eraser, linkPen }
 
 class NoteUiState extends ChangeNotifier {
   NoteUiState() {
-    // 일반 모드에서 기본으로 bar 보이게
     secondaryOpen = true;
   }
 
+  ActiveTool activeTool = ActiveTool.none;
   bool isFullscreen = false;
   bool secondaryOpen = false;
   NoteToolbarSecondaryVariant variant = NoteToolbarSecondaryVariant.bar;
+  ToolPicker picker = ToolPicker.none;
+
+  static const double _eraserGlowAlpha = 0.50;
+  static const double _linkPenGlowAlpha = 0.50;
+
+  bool penColorChosen = false;
+  bool highlighterColorChosen = false;
 
   // 도구 상태
-  ToolAccent activePenColor = ToolAccent.none;
-  ToolAccent activeHighlighterColor = ToolAccent.none;
-  bool eraserOn = false;
-  bool linkPenOn = false;
+  bool get eraserOn => activeTool == ActiveTool.eraser;
+  bool get linkPenOn => activeTool == ActiveTool.linkPen;
+
+  Color? get eraserUiGlowColor =>
+      eraserOn ? AppColors.primary.withOpacity(_eraserGlowAlpha) : null;
+  Color? get linkPenUiGlowColor =>
+      linkPenOn ? AppColors.primary.withOpacity(_linkPenGlowAlpha) : null;
+
+  final List<Color> penPalette = [
+    AppColors.penBlack,
+    AppColors.penRed,
+    AppColors.penBlue,
+    AppColors.penGreen,
+    AppColors.penYellow,
+  ];
+  final List<Color> hlPalette = [
+    AppColors.highlighterBlack,
+    AppColors.highlighterRed,
+    AppColors.highlighterBlue,
+    AppColors.highlighterGreen,
+    AppColors.highlighterYellow,
+  ];
+
+  Color penColor = AppColors.penBlack; // 기본 펜색
+  Color highlighterBase = AppColors.highlighterBlue;
+
+  Color? get penUiGlowColor =>
+      (activeTool == ActiveTool.pen) ? penColor.withOpacity(0.5) : null;
+
+  Color? get highlighterUiGlowColor => (activeTool == ActiveTool.highlighter)
+      ? highlighterBase.withOpacity(0.5)
+      : null;
+
+  Color get highlighterStrokeColor => highlighterBase.withOpacity(0.5);
+
+  // ToolGlowIcon이 쓰는 enum → 색 매핑 (필요 시 확장)
+  ToolAccent get activePenAccent =>
+      penColorChosen ? _accentFromColor(penColor) : ToolAccent.none;
+  ToolAccent get activeHighlighterAccent => highlighterColorChosen
+      ? _accentFromColorHL(highlighterBase)
+      : ToolAccent.none;
+
+  ToolAccent _accentFromColor(Color c) {
+    if (c == AppColors.penBlack) return ToolAccent.black;
+    if (c == AppColors.penRed) return ToolAccent.red;
+    if (c == AppColors.penBlue) return ToolAccent.blue;
+    if (c == AppColors.penGreen) return ToolAccent.green;
+    if (c == AppColors.penYellow) return ToolAccent.yellow;
+    return ToolAccent.none;
+  }
+
+  ToolAccent _accentFromColorHL(Color c) {
+    if (c == AppColors.highlighterBlack) return ToolAccent.black;
+    if (c == AppColors.highlighterRed) return ToolAccent.red;
+    if (c == AppColors.highlighterBlue) return ToolAccent.blue;
+    if (c == AppColors.highlighterGreen) return ToolAccent.green;
+    if (c == AppColors.highlighterYellow) return ToolAccent.yellow;
+    return ToolAccent.none;
+  }
+
+  // 더블탭 → 피커 토글
+  void togglePenPicker() {
+    picker = (picker == ToolPicker.pen) ? ToolPicker.none : ToolPicker.pen;
+    notifyListeners();
+  }
+
+  void toggleHighlighterPicker() {
+    picker = (picker == ToolPicker.highlighter)
+        ? ToolPicker.none
+        : ToolPicker.highlighter;
+    notifyListeners();
+  }
+
+  // 선택 처리
+  void selectPenColor(Color c) {
+    penColorChosen = true;
+    penColor = c;
+    picker = ToolPicker.none;
+    notifyListeners();
+  }
+
+  void selectHighlighterColor(Color c) {
+    highlighterColorChosen = true;
+    highlighterBase = c;
+    picker = ToolPicker.none;
+    notifyListeners();
+  }
+
+  // onPen/onHighlighter는 기존처럼 도구 전환만 담당
+  void onPen() {
+    activeTool = (activeTool == ActiveTool.pen)
+        ? ActiveTool.none
+        : ActiveTool.pen;
+    notifyListeners();
+  }
+
+  void onHighlighter() {
+    activeTool = (activeTool == ActiveTool.highlighter)
+        ? ActiveTool.none
+        : ActiveTool.highlighter;
+    notifyListeners();
+  }
 
   // 토글/전환
   void toggleSecondary([bool? v]) {
@@ -61,34 +172,18 @@ class NoteUiState extends ChangeNotifier {
   void onRedo() {
     /* TODO: canvas.redo() */
   }
-  void onPen() {
-    eraserOn = false;
-    linkPenOn = false;
-    // 예시: 이전 색 유지, 없으면 기본색 지정
-    activePenColor = activePenColor == ToolAccent.none
-        ? ToolAccent.blue
-        : activePenColor;
-    notifyListeners();
-  }
-
-  void onHighlighter() {
-    eraserOn = false;
-    linkPenOn = false;
-    activeHighlighterColor = activeHighlighterColor == ToolAccent.none
-        ? ToolAccent.yellow
-        : activeHighlighterColor;
-    notifyListeners();
-  }
 
   void onEraser() {
-    eraserOn = !eraserOn;
-    linkPenOn = false;
+    activeTool = (activeTool == ActiveTool.eraser)
+        ? ActiveTool.none
+        : ActiveTool.eraser;
     notifyListeners();
   }
 
   void onLinkPen() {
-    linkPenOn = !linkPenOn;
-    eraserOn = false;
+    activeTool = (activeTool == ActiveTool.linkPen)
+        ? ActiveTool.none
+        : ActiveTool.linkPen;
     notifyListeners();
   }
 
@@ -99,17 +194,22 @@ class NoteUiState extends ChangeNotifier {
 }
 
 class NoteScreen extends StatelessWidget {
-  const NoteScreen({super.key, required this.noteId});
+  const NoteScreen({super.key, required this.noteId, this.initialTitle});
   final String noteId;
+  final String? initialTitle;
 
   @override
   Widget build(BuildContext context) {
+    context.read<NoteStore>().init();
     return ChangeNotifierProvider(
       create: (_) => NoteUiState(),
       child: Builder(
         builder: (context) {
           final ui = context.watch<NoteUiState>();
-
+          final noteTitle = context.select<NoteStore, String?>(
+            (s) => s.titleOf(noteId),
+          );
+          final displayTitle = noteTitle ?? initialTitle ?? '제목 없는 노트';
           return WillPopScope(
             onWillPop: () async {
               if (ui.isFullscreen) {
@@ -125,7 +225,7 @@ class NoteScreen extends StatelessWidget {
               appBar: ui.isFullscreen
                   ? null
                   : NoteTopToolbar(
-                      title: '노트 이름',
+                      title: displayTitle,
                       leftActions: [
                         ToolbarAction(
                           svgPath: AppIcons.chevronLeft,
@@ -135,7 +235,7 @@ class NoteScreen extends StatelessWidget {
                       ],
                       rightActions: [
                         ToolbarAction(
-                          svgPath: AppIcons.scale, 
+                          svgPath: AppIcons.scale,
                           onTap: () =>
                               context.read<NoteUiState>().enterFullscreen(),
                           tooltip: '전체 화면',
@@ -165,7 +265,9 @@ class NoteScreen extends StatelessWidget {
                     // 1) PILL 배치 (변형 기준)
                     if (ui.variant == NoteToolbarSecondaryVariant.pill)
                       Positioned(
-                        top: MediaQuery.of(context).padding.top + 8,  // 상태바 아래 8px
+                        top:
+                            MediaQuery.of(context).padding.top +
+                            8, // 상태바 아래 8px
                         left: 0,
                         right: 0,
                         child: Center(
@@ -173,17 +275,30 @@ class NoteScreen extends StatelessWidget {
                             onUndo: context.read<NoteUiState>().onUndo,
                             onRedo: context.read<NoteUiState>().onRedo,
                             onPen: context.read<NoteUiState>().onPen,
-                            onHighlighter: context.read<NoteUiState>().onHighlighter,
+                            onHighlighter: context
+                                .read<NoteUiState>()
+                                .onHighlighter,
                             onEraser: context.read<NoteUiState>().onEraser,
                             onLinkPen: context.read<NoteUiState>().onLinkPen,
-                            onGraphView: () => context.read<NoteUiState>().onGraphView(context),
-                            activePenColor: ui.activePenColor,
-                            activeHighlighterColor: ui.activeHighlighterColor,
+                            onGraphView: () => context
+                                .read<NoteUiState>()
+                                .onGraphView(context),
+                            activePenColor: ui.activePenAccent,
+                            activeHighlighterColor: ui.activeHighlighterAccent,
+                            penGlowColor: ui.penUiGlowColor,
+                            highlighterGlowColor: ui.highlighterUiGlowColor,
                             isEraserOn: ui.eraserOn,
                             isLinkPenOn: ui.linkPenOn,
+                            eraserGlowColor: ui.eraserUiGlowColor,
+                            linkPenGlowColor: ui.linkPenUiGlowColor,
                             iconSize: 28,
                             showBottomDivider: false,
                             variant: NoteToolbarSecondaryVariant.pill,
+                            onPenDoubleTap: () =>
+                                context.read<NoteUiState>().togglePenPicker(),
+                            onHighlighterDoubleTap: () => context
+                                .read<NoteUiState>()
+                                .toggleHighlighterPicker(),
                           ),
                         ),
                       )
@@ -191,35 +306,108 @@ class NoteScreen extends StatelessWidget {
                       // 2) BAR 배치 (앱바 바로 아래)
                       Positioned(
                         top: ui.isFullscreen
-                            ? MediaQuery.of(context).padding.top // 전체화면일 땐 상태바 아래
-                            : 0,                     // 일반 모드에선 앱바 높이(=62)
+                            ? MediaQuery.of(context)
+                                  .padding
+                                  .top // 전체화면일 땐 상태바 아래
+                            : 0, // 일반 모드에선 앱바 높이(=62)
                         left: 0,
                         right: 0,
                         child: NoteToolbarSecondary(
                           onUndo: context.read<NoteUiState>().onUndo,
                           onRedo: context.read<NoteUiState>().onRedo,
                           onPen: context.read<NoteUiState>().onPen,
-                          onHighlighter: context.read<NoteUiState>().onHighlighter,
+                          onHighlighter: context
+                              .read<NoteUiState>()
+                              .onHighlighter,
                           onEraser: context.read<NoteUiState>().onEraser,
                           onLinkPen: context.read<NoteUiState>().onLinkPen,
-                          onGraphView: () => context.read<NoteUiState>().onGraphView(context),
-                          activePenColor: ui.activePenColor,
-                          activeHighlighterColor: ui.activeHighlighterColor,
+                          onGraphView: () =>
+                              context.read<NoteUiState>().onGraphView(context),
+                          activePenColor: ui.activePenAccent,
+                          activeHighlighterColor: ui.activeHighlighterAccent,
+                          penGlowColor: ui.penUiGlowColor,
+                          highlighterGlowColor: ui.highlighterUiGlowColor,
                           isEraserOn: ui.eraserOn,
                           isLinkPenOn: ui.linkPenOn,
+                          eraserGlowColor: ui.eraserUiGlowColor,
+                          linkPenGlowColor: ui.linkPenUiGlowColor,
                           iconSize: 28,
                           showBottomDivider: true,
                           variant: NoteToolbarSecondaryVariant.bar,
+                          onPenDoubleTap: () =>
+                              context.read<NoteUiState>().togglePenPicker(),
+                          onHighlighterDoubleTap: () => context
+                              .read<NoteUiState>()
+                              .toggleHighlighterPicker(),
                         ),
                       ),
                   ],
+
+                  if (ui.picker != ToolPicker.none)
+                    Positioned(
+                      // bar 밑 또는 pill 밑 8px
+                      top: () {
+                        final safeTop = MediaQuery.of(context).padding.top;
+
+                        // 현재 툴바 아이콘 크기와 패딩을 사용해서 동적으로 계산
+                        const double icon =
+                            28; // <- NoteToolbarSecondary에 준 iconSize
+                        const double pillVPad = 8; // pill 상/하 패딩
+                        const double barVPad = 15; // bar 상/하 패딩
+
+                        final double pillHeight =
+                            pillVPad + icon + pillVPad; // 8 + 28 + 8 = 44
+                        final double barHeight =
+                            barVPad + icon + barVPad; // 15 + 28 + 15 = 58
+
+                        if (ui.variant == NoteToolbarSecondaryVariant.pill) {
+                          // 상태바 아래 8 + pill 높이 + 8 간격
+                          return safeTop + 8 + pillHeight + 8;
+                        } else {
+                          // 전체화면이면 bar가 상태바 바로 밑, 일반 모드는 body의 0에서 시작
+                          final barTop = ui.isFullscreen ? safeTop : 0.0;
+                          return barTop + barHeight + 8;
+                        }
+                      }(),
+                      left: 0,
+                      right: 0,
+                      child: Builder(
+                        builder: (ctx) {
+                          final kind = ctx.select<NoteUiState, ToolPicker>(
+                            (s) => s.picker,
+                          );
+                          final state = ctx.read<NoteUiState>();
+
+                          final colors = (kind == ToolPicker.pen)
+                              ? state.penPalette
+                              : state.hlPalette;
+                          final selected = (kind == ToolPicker.pen)
+                              ? state.penColor
+                              : state.highlighterBase;
+
+                          // Center는 여기서 가로 중앙 정렬 용도로 OK (싫으면 Align.topCenter로 교체)
+                          return Center(
+                            child: ToolColorPickerPill(
+                              colors: colors,
+                              selected: selected,
+                              onSelect: (c) {
+                                if (kind == ToolPicker.pen) {
+                                  state.selectPenColor(c);
+                                } else if (kind == ToolPicker.highlighter) {
+                                  state.selectHighlighterColor(c);
+                                }
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                    ),
 
                   // 전체화면에서 “원래대로” 버튼(선택)
                   if (ui.isFullscreen)
                     Positioned(
                       right: 8,
-                      top:
-                          MediaQuery.of(context).padding.top + 16,
+                      top: MediaQuery.of(context).padding.top + 16,
                       child: AppFabIcon(
                         svgPath: AppIcons.scale,
                         visualDiameter: 34,
@@ -249,13 +437,13 @@ class _NoteCanvasPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final horizontalMargin = AppSpacing.xl * 2;
+    const horizontalMargin = AppSpacing.xl * 2;
     final pageWidth = size.width - horizontalMargin * 2;
 
     return Center(
       child: Container(
         width: pageWidth.clamp(320, 820),
-        margin: EdgeInsets.symmetric(horizontal: horizontalMargin),
+        margin: const EdgeInsets.symmetric(horizontal: horizontalMargin),
         decoration: BoxDecoration(
           color: AppColors.white,
           borderRadius: BorderRadius.circular(6),

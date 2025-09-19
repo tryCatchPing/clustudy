@@ -24,6 +24,12 @@ class NoteToolbarSecondary extends StatelessWidget {
     this.iconSize = 32,
     this.showBottomDivider = true,
     this.variant = NoteToolbarSecondaryVariant.bar,
+    this.onPenDoubleTap,
+    this.onHighlighterDoubleTap,
+    this.penGlowColor,
+    this.highlighterGlowColor,
+    this.eraserGlowColor,
+    this.linkPenGlowColor,
   });
 
   final VoidCallback onUndo;
@@ -35,16 +41,23 @@ class NoteToolbarSecondary extends StatelessWidget {
   final VoidCallback onGraphView;
   final double iconSize;
   final NoteToolbarSecondaryVariant variant;
+  final Color? penGlowColor;
+  final Color? highlighterGlowColor;
 
   /// 현재 선택된 펜/하이라이터 색
   final ToolAccent activePenColor;
   final ToolAccent activeHighlighterColor;
+  final VoidCallback? onPenDoubleTap;
+  final VoidCallback? onHighlighterDoubleTap;
 
   /// 지우개/링크펜 활성 상태
   final bool isEraserOn;
   final bool isLinkPenOn;
 
   final bool showBottomDivider;
+
+  final Color? eraserGlowColor;
+  final Color? linkPenGlowColor;
 
   @override
   Widget build(BuildContext context) {
@@ -59,19 +72,29 @@ class NoteToolbarSecondary extends StatelessWidget {
         _Divider(height: iconSize * 0.75, color: isPill ? AppColors.gray50 : AppColors.gray20),
 
         // 펜 (선택 시 하이라이트 색 발광)
-        ToolGlowIcon(
-          svgPath: AppIcons.pen,
-          onTap: onPen,
-          size: iconSize,
-          accent: activePenColor, // 다색 발광
+         GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onDoubleTap: onPenDoubleTap,
+          child: ToolGlowIcon(
+            svgPath: AppIcons.pen,
+            onTap: onPen,
+            size: iconSize,
+            accent: activePenColor,
+            glowColor: penGlowColor,
+          ),
         ),
         const SizedBox(width: 16),
 
-        ToolGlowIcon(
-          svgPath: AppIcons.highlighter,
-          onTap: onHighlighter,
-          size: iconSize,
-          accent: activeHighlighterColor, // 다색 발광
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onDoubleTap: onHighlighterDoubleTap,
+          child: ToolGlowIcon(
+            svgPath: AppIcons.highlighter,      // ← 하이라이터
+            onTap: onHighlighter,
+            size: iconSize,
+            accent: activeHighlighterColor,
+            glowColor: highlighterGlowColor,
+          ),
         ),
         const SizedBox(width: 16),
 
@@ -79,7 +102,7 @@ class NoteToolbarSecondary extends StatelessWidget {
           svgPath: AppIcons.eraser,
           onTap: onEraser,
           size: iconSize,
-          glowColor: isEraserOn ? AppColors.primary : null,
+          glowColor: eraserGlowColor,
           // glowOpacity: 0.48, // 원하면 톤 다운
         ),
         _Divider(height: iconSize * 0.75, color: isPill ? AppColors.gray50 : AppColors.gray20),
@@ -88,7 +111,7 @@ class NoteToolbarSecondary extends StatelessWidget {
           svgPath: AppIcons.linkPen,
           onTap: onLinkPen,
           size: iconSize,
-          glowColor: isLinkPenOn ? AppColors.primary : null,
+          glowColor: linkPenGlowColor,
         ),
         const SizedBox(width: 16),
 

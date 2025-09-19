@@ -14,7 +14,6 @@ class ToolGlowIcon extends StatelessWidget {
     this.onTap,
     this.accent = ToolAccent.none, // none이면 하이라이트 없음
     this.glowColor,                  // NEW: 원하는 색으로 바로 발광
-    this.glowOpacity = 0.56,
     this.size = 32,                // 아이콘 크기 (툴바 세컨드라인은 20~24 추천)
     this.glowDiameter,             // null이면 size + 12
     this.blurSigma = 8,           // Figma Layer blur에 대응 (적당한 값 8~12)
@@ -29,7 +28,6 @@ class ToolGlowIcon extends StatelessWidget {
   final ToolAccent accent;
 
   final Color? glowColor;            // 여기에 AppColors.primary 넘기면 됨
-  final double glowOpacity;          // 기본 56% (Figma layer blur 느낌)
 
   /// 아이콘 크기(px)
   final double size;
@@ -48,7 +46,8 @@ class ToolGlowIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final glowSize = glowDiameter ?? (size + 12);
-    final Color? resolved = glowColor ?? (accent == ToolAccent.none ? null : _accentColor(accent));
+    final bool   glowOn     = glowColor != null;
+    final Color? resolved = glowColor;
 
     final icon = SvgPicture.asset(
       svgPath,
@@ -65,15 +64,17 @@ class ToolGlowIcon extends StatelessWidget {
         width: glowSize, height: glowSize,
         child: Stack(
           alignment: Alignment.center,
+          clipBehavior: Clip.none,
           children: [
-            if (resolved != null)
+            if (glowOn) // resolved != null
               RepaintBoundary(
                 child: ImageFiltered(
                   imageFilter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
                   child: Container(
-                    width: glowSize, height: glowSize,
+                    width: glowSize,
+                    height: glowSize,
                     decoration: BoxDecoration(
-                      color: resolved.withOpacity(glowOpacity),
+                      color: resolved,   // ← 이미 알파 포함된 색을 그대로 사용
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -86,15 +87,5 @@ class ToolGlowIcon extends StatelessWidget {
     );
   }
 
-  Color _accentColor(ToolAccent a) {
-    // 토큰으로 빼고 싶으면 AppColors에 정의해주세요.
-    switch (a) {
-      case ToolAccent.black:  return AppColors.penBlack;                  // #1F1F1F 계열
-      case ToolAccent.red:    return AppColors.penRed;
-      case ToolAccent.blue:   return AppColors.penBlue;
-      case ToolAccent.green:  return AppColors.penGreen;
-      case ToolAccent.yellow: return AppColors.penYellow;
-      case ToolAccent.none:   return Colors.transparent;
-    }
-  }
+  
 }

@@ -13,8 +13,16 @@ extension NavX on GoRouter {
         'folderId': folderId,
       });
 
-  Future<void> pushNote(String id) =>
-      pushNamed(RouteNames.note, pathParameters: {'id': id});
+  Future<void> pushNote(String id, {String? initialTitle}) {
+   final normalized = (initialTitle?.trim().isEmpty ?? true)
+       ? null
+       : {'title': initialTitle!.trim()};
+          return pushNamed(
+     RouteNames.note,
+     pathParameters: {'id': id},
+     extra: normalized, // null이면 전달 안 됨
+   );
+ }
 
 
   void goGraph(String id) =>

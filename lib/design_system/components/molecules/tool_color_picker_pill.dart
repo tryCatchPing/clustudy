@@ -78,10 +78,27 @@ class _ColorDot extends StatelessWidget {
     // 터치 여유(48px 미니멈 히트 권장)
     final double hit = size < 40 ? 40 : size;
 
+    final bool isBlack =
+        color.value == AppColors.penBlack.value;
+
+    final List<BoxShadow>? glow = selected
+        ? [
+            BoxShadow(
+              // 블랙이면 과한 먹먹함 방지
+              color: isBlack ? AppColors.penBlack.withOpacity(0.12)
+                             : color.withOpacity(0.28),
+              blurRadius: 10,
+              spreadRadius: 1,
+            ),
+          ]
+        : null;
+
     return InkResponse(
       onTap: onTap,
       radius: hit / 2,
       containedInkWell: false,
+      splashColor: Colors.transparent,
+      highlightColor: Colors.transparent,
       child: SizedBox(
         width: hit,
         height: hit,
@@ -96,9 +113,7 @@ class _ColorDot extends StatelessWidget {
                 color: selected ? AppColors.background : Colors.transparent,
                 width: selected ? 2 : 0,
               ),
-              boxShadow: selected
-                  ? [BoxShadow(color: color.withOpacity(0.25), blurRadius: 8)]
-                  : null,
+              boxShadow: glow,
             ),
           ),
         ),
