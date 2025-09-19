@@ -1,30 +1,39 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
+// test/link_dialog_test.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:it_contest/main.dart';
+import '../lib/design_system/components/organisms/link_dialog.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('리스트 아이템 탭하면 해당 텍스트 반환', (tester) async {
+  String? result;
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  await tester.pumpWidget(MaterialApp(
+    home: Builder(builder: (context) {
+      return Scaffold(
+        body: Center(
+          child: ElevatedButton(
+            onPressed: () async {
+              result = await showLinkDialog(
+                context,
+                noteTitles: ['a', '루트'],
+              );
+            },
+            child: const Text('open'),
+          ),
+        ),
+      );
+    }),
+  ));
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+  // 다이얼로그 열기
+  await tester.tap(find.text('open'));
+  await tester.pumpAndSettle(const Duration(seconds: 1));
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
-  });
+  // 리스트 항목 선택
+  await tester.tap(find.text('루트'));
+  await tester.pumpAndSettle(const Duration(seconds: 1));
+
+  // 이제 result 값이 세팅됨
+  expect(result, equals('루트'));
+});
 }
