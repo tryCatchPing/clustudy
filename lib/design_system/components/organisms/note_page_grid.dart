@@ -7,12 +7,21 @@ import '../../tokens/app_sizes.dart';
 import '../molecules/note_page_card.dart';
 import '../molecules/add_page_card.dart';
 
+final demoPages = List<NotePageItem>.generate(
+  8,
+  (i) => NotePageItem(
+    previewImage: Uint8List(0),
+    pageNumber: i + 1,
+  ),
+);
+
 class NotePageItem {
   const NotePageItem({
     required this.previewImage,
     required this.pageNumber,
     this.selected = false,
   });
+
 
   final Uint8List previewImage;
   final int pageNumber;
@@ -24,6 +33,7 @@ class NotePageGrid extends StatelessWidget {
     super.key,
     required this.pages,
     this.onTapPage,
+    this.onLongPressPage,
     this.onAddPage,
     this.crossAxisGap = AppSpacing.large, // 24
     this.mainAxisGap = AppSpacing.large,  // 24
@@ -33,6 +43,7 @@ class NotePageGrid extends StatelessWidget {
 
   final List<NotePageItem> pages;
   final ValueChanged<int>? onTapPage; // index
+  final ValueChanged<int>? onLongPressPage;
   final VoidCallback? onAddPage;
   final double crossAxisGap;
   final double mainAxisGap;
@@ -64,13 +75,12 @@ class NotePageGrid extends StatelessWidget {
           crossAxisCount: cols,
           crossAxisSpacing: crossAxisGap,
           mainAxisSpacing: mainAxisGap,
-          // ✅ 타일 비율 고정: 120×152
           childAspectRatio: AppSizes.noteTileW / AppSizes.noteTileH,
         ),
         itemCount: pages.length + 1, // 마지막에 "새 페이지" 타일
         itemBuilder: (context, i) {
           if (i == pages.length) {
-            return AddPageCard(plusSvgPath: plusSvgPath);
+            return AddPageCard(plusSvgPath: plusSvgPath, onTap: onAddPage,);
           }
           final p = pages[i];
           return NotePageCard(
@@ -78,6 +88,7 @@ class NotePageGrid extends StatelessWidget {
             pageNumber: p.pageNumber,
             selected: p.selected,
             onTap: () => onTapPage?.call(i),
+            onLongPress: () => onLongPressPage?.call(i),
           );
         },
       );

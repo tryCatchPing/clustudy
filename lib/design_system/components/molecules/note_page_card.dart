@@ -14,12 +14,14 @@ class NotePageCard extends StatelessWidget {
     required this.previewImage,        // w=88, h=120 미리보기
     required this.pageNumber,          // 페이지 번호
     this.onTap,
+    this.onLongPress,
     this.selected = false,             // 선택 강조(옵션)
   });
 
   final Uint8List previewImage;
   final int pageNumber;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final bool selected;
 
   @override
@@ -30,6 +32,7 @@ class NotePageCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
+        onLongPress: onLongPress,
         borderRadius: radius,
         child: SizedBox(
           width: AppSizes.noteTileW, // ← 타일 폭 120
@@ -47,14 +50,21 @@ class NotePageCard extends StatelessWidget {
                     ),
                   child: ClipRRect(
                     borderRadius: radius,
-                    child: Image.memory(
-                      previewImage,
-                      width: AppSizes.noteThumbW,
-                      height: AppSizes.noteThumbH,
-                      fit: BoxFit.cover,
+                    child: previewImage.isEmpty
+                      ? Container(width: AppSizes.noteThumbW, height: AppSizes.noteThumbH, color: AppColors.white)
+                      :Image.memory(
+                        previewImage,
+                        width: AppSizes.noteThumbW,
+                        height: AppSizes.noteThumbH,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          width: AppSizes.noteThumbW,
+                          height: AppSizes.noteThumbH,
+                          color: AppColors.white,
+                        ),
+                      ),
                     ),
                   ),
-                ),
 
 
               const SizedBox(height: AppSpacing.medium), // 16px

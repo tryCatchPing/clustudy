@@ -53,7 +53,7 @@ class AddPageCard extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: AppSpacing.small), // ✅ 사각형 ↔ 라벨 8px
+              const SizedBox(height: AppSpacing.small), 
 
               // Body/13 Semibold, Gray50
               Text(

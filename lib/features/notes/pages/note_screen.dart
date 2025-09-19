@@ -232,6 +232,13 @@ class NoteScreen extends StatelessWidget {
                           onTap: () => context.pop(),
                           tooltip: '뒤로',
                         ),
+                        ToolbarAction(
+                          svgPath: AppIcons.pageManage,
+                          tooltip: '페이지 관리',
+                          onTap: () {
+                            context.push('/note-pages/$noteId', extra: noteTitle);
+                          },
+                        ),
                       ],
                       rightActions: [
                         ToolbarAction(
