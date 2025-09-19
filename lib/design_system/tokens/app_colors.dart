@@ -10,21 +10,17 @@ class AppColors {
   static const Color gray40 = Color(0xFF656565);
   static const Color gray50 = Color(0xFF1F1F1F);
 
-  static const Color penBlack = Color(0x00000000);
+  static const Color penBlack = Color(0xFF000000);
   static const Color penRed    = Color(0xFFC72C2C);
   static const Color penBlue   = Color(0xFF1A5DBA);
   static const Color penGreen  = Color(0xFF277A3E);
   static const Color penYellow = Color(0xFFFFFF46);
 
-  static const List<Color> penColors = [
-    penBlack,
-    penRed,
-    penBlue,
-    penGreen,
-    penYellow,
-  ];
+  static const Color highlighterBlack = Color(0x80000000);
+  static const Color highlighterRed    = Color(0x80C72C2C);
+  static const Color highlighterBlue   = Color(0x801A5DBA);
+  static const Color highlighterGreen  = Color(0x80277A3E);
+  static const Color highlighterYellow = Color(0x80FFFF46);
 
-  static final List<Color> highlighterColors = penColors
-      .map((color) => color.withOpacity(0.5))
-      .toList();
+
 }

@@ -125,6 +125,7 @@ class FolderScreen extends StatelessWidget {
           onTap: () => context.pushNamed(
             RouteNames.note,
             pathParameters: {'id': n.id},
+            extra: {'title': n.title},
           ),
           onTitleChanged: (t) =>
               context.read<NoteStore>().renameNote(id: n.id, newTitle: t),
@@ -208,6 +209,7 @@ class FolderScreen extends StatelessWidget {
                           context.pushNamed(
                             RouteNames.note,
                             pathParameters: {'id': note.id},
+                            extra: {'title': note.title},
                           );
                         },
                       ),
@@ -232,6 +234,7 @@ class FolderScreen extends StatelessWidget {
                     context.pushNamed(
                       RouteNames.note,
                       pathParameters: {'id': note.id},
+                      extra: {'title': note.title},
                     );
                   },
                 ),
