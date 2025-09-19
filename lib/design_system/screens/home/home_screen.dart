@@ -82,6 +82,7 @@ class _DesignHomeScreenState extends State<DesignHomeScreen> {
               : AppIcons.folder,
           title: vault.name,
           date: vault.createdAt,
+          // TODO(xodnd): 기능 연결
           onTap: () => _showSnack('Open ${vault.name}'),
           onLongPressStart: vault.isTemporary
               ? null

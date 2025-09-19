@@ -21,7 +21,7 @@ class DesignVaultScreen extends StatefulWidget {
 }
 
 class _DesignVaultScreenState extends State<DesignVaultScreen> {
-  final _vault = _DemoVault(
+  final _vault = const _DemoVault(
     id: 'vault-proj',
     name: '프로젝트 Vault',
     isTemporary: false,
@@ -78,13 +78,13 @@ class _DesignVaultScreenState extends State<DesignVaultScreen> {
   @override
   Widget build(BuildContext context) {
     final actions = <ToolbarAction>[
-      const ToolbarAction(svgPath: AppIcons.search),
+      ToolbarAction(svgPath: AppIcons.search, onTap: () {}),
       if (!_vault.isTemporary)
         ToolbarAction(
           svgPath: AppIcons.graphView,
           onTap: () => _showSnack('그래프 뷰 이동'),
         ),
-      const ToolbarAction(svgPath: AppIcons.settings),
+      ToolbarAction(svgPath: AppIcons.settings, onTap: () {}),
     ];
 
     final items = _entries.map((entry) {
@@ -92,6 +92,8 @@ class _DesignVaultScreenState extends State<DesignVaultScreen> {
           ? AppIcons.folder
           : AppIcons.noteAdd;
       return FolderGridItem(
+        title: entry.name,
+        date: entry.createdAt,
         child: AppCard(
           svgIconPath: icon,
           title: entry.name,
@@ -176,7 +178,10 @@ class _DesignVaultScreenState extends State<DesignVaultScreen> {
   void _showSnack(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), duration: const Duration(milliseconds: 900)),
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(milliseconds: 900),
+      ),
     );
   }
 }
@@ -208,7 +213,12 @@ class _VaultEntry {
   final DateTime createdAt;
   final _EntryKind kind;
 
-  _VaultEntry copyWith({String? id, String? name, DateTime? createdAt, _EntryKind? kind}) {
+  _VaultEntry copyWith({
+    String? id,
+    String? name,
+    DateTime? createdAt,
+    _EntryKind? kind,
+  }) {
     return _VaultEntry(
       id: id ?? this.id,
       name: name ?? this.name,
@@ -218,7 +228,7 @@ class _VaultEntry {
   }
 }
 
-const List<_VaultEntry> _seedEntries = [
+List<_VaultEntry> _seedEntries = [
   _VaultEntry(
     id: 'folder-design-assets',
     name: '디자인 산출물',

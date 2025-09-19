@@ -65,6 +65,8 @@ class _DesignFolderScreenState extends State<DesignFolderScreen> {
           ? AppIcons.folder
           : AppIcons.noteAdd;
       return FolderGridItem(
+        title: entry.name,
+        date: entry.createdAt,
         child: AppCard(
           svgIconPath: icon,
           title: entry.name,
@@ -80,9 +82,9 @@ class _DesignFolderScreenState extends State<DesignFolderScreen> {
       appBar: TopToolbar(
         variant: TopToolbarVariant.folder,
         title: '디자인 폴더',
-        actions: const [
-          ToolbarAction(svgPath: AppIcons.search),
-          ToolbarAction(svgPath: AppIcons.settings),
+        actions: [
+          ToolbarAction(svgPath: AppIcons.search, onTap: () {}),
+          ToolbarAction(svgPath: AppIcons.settings, onTap: () {}),
         ],
       ),
       body: Padding(
@@ -152,7 +154,10 @@ class _DesignFolderScreenState extends State<DesignFolderScreen> {
   void _showSnack(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), duration: const Duration(milliseconds: 900)),
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(milliseconds: 900),
+      ),
     );
   }
 }
@@ -172,7 +177,12 @@ class _FolderEntry {
   final DateTime createdAt;
   final _FolderEntryKind kind;
 
-  _FolderEntry copyWith({String? id, String? name, DateTime? createdAt, _FolderEntryKind? kind}) {
+  _FolderEntry copyWith({
+    String? id,
+    String? name,
+    DateTime? createdAt,
+    _FolderEntryKind? kind,
+  }) {
     return _FolderEntry(
       id: id ?? this.id,
       name: name ?? this.name,
@@ -182,7 +192,7 @@ class _FolderEntry {
   }
 }
 
-const List<_FolderEntry> _seedEntries = [
+List<_FolderEntry> _seedEntries = [
   _FolderEntry(
     id: 'subfolder-wireframe',
     name: 'Wireframe',

@@ -14,10 +14,10 @@ class DesignGraphScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: const TopToolbar(
+      appBar: TopToolbar(
         variant: TopToolbarVariant.folder,
         title: '그래프 뷰',
-        actions: [ToolbarAction(svgPath: AppIcons.settings)],
+        actions: [ToolbarAction(svgPath: AppIcons.settings, onTap: () {})],
       ),
       body: Center(
         child: DecoratedBox(

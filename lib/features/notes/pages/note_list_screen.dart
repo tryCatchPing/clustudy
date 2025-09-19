@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,13 +5,12 @@ import 'package:go_router/go_router.dart';
 import '../../../shared/errors/app_error_mapper.dart';
 import '../../../shared/errors/app_error_spec.dart';
 import '../../../shared/routing/app_routes.dart';
-import '../../../shared/services/vault_notes_service.dart';
 import '../../../shared/widgets/app_snackbar.dart';
 import '../../../shared/widgets/folder_picker_dialog.dart';
 import '../../../shared/widgets/navigation_card.dart';
 import '../../vaults/data/derived_vault_providers.dart';
-import '../../vaults/data/vault_tree_repository_provider.dart';
 import '../../vaults/models/vault_item.dart';
+import '../providers/note_list_controller.dart';
 
 // UI 전용 타입 제거: 서비스의 FolderCascadeImpact로 대체
 
@@ -32,27 +29,29 @@ class NoteListScreen extends ConsumerStatefulWidget {
 }
 
 class _NoteListScreenState extends ConsumerState<NoteListScreen> {
-  bool _isImporting = false;
-  final TextEditingController _searchCtrl = TextEditingController();
-  Timer? _searchDebounce;
-  String _searchQuery = '';
-  List<NoteSearchResult> _searchResults = const <NoteSearchResult>[];
-  bool _searching = false;
+  late final TextEditingController _searchCtrl;
+
+  NoteListController get _actions =>
+      ref.read(noteListControllerProvider.notifier);
+
+  @override
+  void initState() {
+    super.initState();
+    _searchCtrl = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
 
   void _onVaultSelected(String vaultId) {
-    ref.read(currentVaultProvider.notifier).state = vaultId;
-    // Reset folder context to root for the selected vault
-    ref.read(currentFolderProvider(vaultId).notifier).state = null;
+    _actions.selectVault(vaultId);
   }
 
   Future<void> _goUpOneLevel(String vaultId, String currentFolderId) async {
-    final parent = await _findParentFolderId(vaultId, currentFolderId);
-    ref.read(currentFolderProvider(vaultId).notifier).state = parent;
-  }
-
-  Future<String?> _findParentFolderId(String vaultId, String folderId) async {
-    final service = ref.read(vaultNotesServiceProvider);
-    return service.getParentFolderId(vaultId, folderId);
+    await _actions.goUpOneLevel(vaultId, currentFolderId);
   }
 
   Future<void> _confirmAndDeleteNote({
@@ -94,124 +93,33 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
       return;
     }
 
-    try {
-      final service = ref.read(vaultNotesServiceProvider);
-      await service.deleteNote(noteId);
-      if (!mounted) return;
-      AppSnackBar.show(
-        context,
-        AppErrorSpec.success('"$noteTitle" 노트를 삭제했습니다.'),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      final spec = AppErrorMapper.toSpec(e);
-      AppSnackBar.show(context, spec);
-    }
+    final spec = await _actions.deleteNote(
+      noteId: noteId,
+      noteTitle: noteTitle,
+    );
+    if (!mounted) return;
+    AppSnackBar.show(context, spec);
   }
 
-  /// PDF 파일을 선택하고 노트로 가져옵니다.
   Future<void> _importPdfNote() async {
-    if (_isImporting) return;
-
-    setState(() => _isImporting = true);
-
-    try {
-      final vaultId = ref.read(currentVaultProvider) ?? 'default';
-      final folderId = ref.read(currentFolderProvider(vaultId));
-      final service = ref.read(vaultNotesServiceProvider);
-      final pdfNote = await service.createPdfInFolder(
-        vaultId,
-        parentFolderId: folderId,
-      );
-
-      if (mounted) {
-        AppSnackBar.show(
-          context,
-          AppErrorSpec.success('PDF 노트 "${pdfNote.title}"가 생성되었습니다.'),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        final spec = AppErrorMapper.toSpec(e);
-        AppSnackBar.show(context, spec);
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isImporting = false);
-      }
-    }
+    final spec = await _actions.importPdfNote();
+    if (!mounted) return;
+    AppSnackBar.show(context, spec);
   }
 
   Future<void> _createBlankNote() async {
-    try {
-      final vaultId = ref.read(currentVaultProvider) ?? 'default';
-      final folderId = ref.read(currentFolderProvider(vaultId));
-      final service = ref.read(vaultNotesServiceProvider);
-      final blankNote = await service.createBlankInFolder(
-        vaultId,
-        parentFolderId: folderId,
-      );
-
-      if (mounted) {
-        AppSnackBar.show(
-          context,
-          AppErrorSpec.success('빈 노트 "${blankNote.title}"가 생성되었습니다.'),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        final spec = AppErrorMapper.toSpec(e);
-        AppSnackBar.show(context, spec);
-      }
-    }
+    final spec = await _actions.createBlankNote();
+    if (!mounted) return;
+    AppSnackBar.show(context, spec);
   }
 
   void _onSearchChanged(String text) {
-    _searchQuery = text.trim();
-    _searchDebounce?.cancel();
-    _searchDebounce = Timer(const Duration(milliseconds: 250), () async {
-      await _runSearch();
-    });
-    setState(() {});
-  }
-
-  Future<void> _runSearch() async {
-    final query = _searchQuery;
-    final vaultId = ref.read(currentVaultProvider);
-    if (vaultId == null) return;
-    setState(() => _searching = true);
-    try {
-      final service = ref.read(vaultNotesServiceProvider);
-      final results = await service.searchNotesInVault(
-        vaultId,
-        query,
-        limit: 50,
-      );
-      if (!mounted) return;
-      setState(() {
-        _searchResults = results;
-        _searching = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _searching = false);
-    }
+    _actions.updateSearchQuery(text);
   }
 
   void _clearSearch() {
     _searchCtrl.clear();
-    setState(() {
-      _searchQuery = '';
-      _searchResults = const <NoteSearchResult>[];
-    });
-  }
-
-  Future<FolderCascadeImpact> _computeCascadeImpact(
-    String vaultId,
-    String rootFolderId,
-  ) async {
-    final service = ref.read(vaultNotesServiceProvider);
-    return service.computeFolderCascadeImpact(vaultId, rootFolderId);
+    _actions.clearSearch();
   }
 
   Future<void> _confirmAndDeleteFolder({
@@ -220,7 +128,7 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
     required String folderName,
   }) async {
     try {
-      final impact = await _computeCascadeImpact(vaultId, folderId);
+      final impact = await _actions.computeCascadeImpact(vaultId, folderId);
       final shouldDelete =
           await showDialog<bool>(
             context: context,
@@ -257,21 +165,15 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
         return;
       }
 
-      final service = ref.read(vaultNotesServiceProvider);
-      await service.deleteFolderCascade(folderId);
-
-      if (!mounted) return;
-      AppSnackBar.show(
-        context,
-        const AppErrorSpec(
-          severity: AppErrorSeverity.success,
-          message: '폴더와 하위 항목이 삭제되었습니다.',
-          duration: AppErrorDuration.short,
-        ),
+      final spec = await _actions.deleteFolder(
+        vaultId: vaultId,
+        folderId: folderId,
       );
-    } catch (e) {
       if (!mounted) return;
-      final spec = AppErrorMapper.toSpec(e);
+      AppSnackBar.show(context, spec);
+    } catch (error) {
+      if (!mounted) return;
+      final spec = AppErrorMapper.toSpec(error);
       AppSnackBar.show(context, spec);
     }
   }
@@ -316,37 +218,12 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
       return;
     }
 
-    try {
-      final service = ref.read(vaultNotesServiceProvider);
-      await service.deleteVault(vaultId);
-
-      final repo = ref.read(vaultTreeRepositoryProvider);
-      final remainingVaults = await repo.watchVaults().first;
-
-      if (!mounted) return;
-
-      ref.read(currentFolderProvider(vaultId).notifier).state = null;
-
-      if (remainingVaults.isEmpty) {
-        ref.read(currentVaultProvider.notifier).state = null;
-      } else {
-        final nextVault = remainingVaults.first;
-        ref.read(currentVaultProvider.notifier).state = nextVault.vaultId;
-        ref.read(currentFolderProvider(nextVault.vaultId).notifier).state =
-            null;
-      }
-
-      _clearSearch();
-
-      AppSnackBar.show(
-        context,
-        AppErrorSpec.success('Vault "$vaultName"를 삭제했습니다.'),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      final spec = AppErrorMapper.toSpec(e);
-      AppSnackBar.show(context, spec);
-    }
+    final spec = await _actions.deleteVault(
+      vaultId: vaultId,
+      vaultName: vaultName,
+    );
+    if (!mounted) return;
+    AppSnackBar.show(context, spec);
   }
 
   Future<void> _showCreateVaultDialog() async {
@@ -362,21 +239,9 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
     final trimmed = name?.trim() ?? '';
     if (trimmed.isEmpty) return;
 
-    try {
-      final service = ref.read(vaultNotesServiceProvider);
-      final v = await service.createVault(trimmed);
-      ref.read(currentVaultProvider.notifier).state = v.vaultId;
-      ref.read(currentFolderProvider(v.vaultId).notifier).state = null;
-      if (!mounted) return;
-      AppSnackBar.show(
-        context,
-        AppErrorSpec.success('Vault "${v.name}"가 생성되었습니다.'),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      final spec = AppErrorMapper.toSpec(e);
-      AppSnackBar.show(context, spec);
-    }
+    final spec = await _actions.createVault(trimmed);
+    if (!mounted) return;
+    AppSnackBar.show(context, spec);
   }
 
   Future<void> _showCreateFolderDialog(
@@ -395,28 +260,30 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
     final trimmed = name?.trim() ?? '';
     if (trimmed.isEmpty) return;
 
-    try {
-      final service = ref.read(vaultNotesServiceProvider);
-      final folder = await service.createFolder(
-        vaultId,
-        parentFolderId: parentFolderId,
-        name: trimmed,
-      );
-      if (!mounted) return;
-      AppSnackBar.show(
-        context,
-        AppErrorSpec.success('폴더 "${folder.name}"가 생성되었습니다.'),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      final spec = AppErrorMapper.toSpec(e);
-      AppSnackBar.show(context, spec);
-    }
+    final spec = await _actions.createFolder(
+      vaultId,
+      parentFolderId,
+      trimmed,
+    );
+    if (!mounted) return;
+    AppSnackBar.show(context, spec);
   }
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<NoteListState>(
+      noteListControllerProvider,
+      (previous, next) {
+        if (_searchCtrl.text == next.searchQuery) return;
+        _searchCtrl
+          ..text = next.searchQuery
+          ..selection = TextSelection.collapsed(
+            offset: next.searchQuery.length,
+          );
+      },
+    );
     final vaultsAsync = ref.watch(vaultsProvider);
+    final noteListState = ref.watch(noteListControllerProvider);
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
@@ -529,26 +396,12 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                     );
                                     final trimmed = name?.trim() ?? '';
                                     if (trimmed.isEmpty) return;
-                                    final service = ref.read(
-                                      vaultNotesServiceProvider,
+                                    final spec = await _actions.renameVault(
+                                      currentVaultId,
+                                      trimmed,
                                     );
-                                    try {
-                                      await service.renameVault(
-                                        currentVaultId,
-                                        trimmed,
-                                      );
-                                      if (!mounted) return;
-                                      AppSnackBar.show(
-                                        context,
-                                        AppErrorSpec.success(
-                                          'Vault 이름을 변경했습니다.',
-                                        ),
-                                      );
-                                    } catch (e) {
-                                      if (!mounted) return;
-                                      final spec = AppErrorMapper.toSpec(e);
-                                      AppSnackBar.show(context, spec);
-                                    }
+                                    if (!mounted) return;
+                                    AppSnackBar.show(context, spec);
                                   },
                                   icon: const Icon(
                                     Icons.drive_file_rename_outline,
@@ -598,7 +451,7 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                           labelText: '노트 검색',
                           hintText: '제목으로 검색',
                           border: const OutlineInputBorder(),
-                          suffixIcon: _searchQuery.isEmpty
+                          suffixIcon: noteListState.searchQuery.isEmpty
                               ? null
                               : IconButton(
                                   onPressed: _clearSearch,
@@ -611,7 +464,7 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                       const SizedBox(height: 12),
 
                       // 검색 결과 또는 Placement 기반 브라우저
-                      _searchQuery.isNotEmpty
+                      noteListState.searchQuery.isNotEmpty
                           ? Builder(
                               builder: (_) {
                                 final currentVaultId = ref.watch(
@@ -622,12 +475,12 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                     child: CircularProgressIndicator(),
                                   );
                                 }
-                                if (_searching) {
+                                if (noteListState.isSearching) {
                                   return const Center(
                                     child: CircularProgressIndicator(),
                                   );
                                 }
-                                if (_searchResults.isEmpty) {
+                                if (noteListState.searchResults.isEmpty) {
                                   return const Align(
                                     alignment: Alignment.centerLeft,
                                     child: Text('검색 결과가 없습니다.'),
@@ -635,7 +488,8 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                 }
                                 return Column(
                                   children: [
-                                    for (final r in _searchResults) ...[
+                                    for (final r
+                                        in noteListState.searchResults) ...[
                                       Row(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
@@ -804,34 +658,17 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                                             it.id,
                                                       );
                                                   if (!mounted) return;
-                                                  try {
-                                                    final service = ref.read(
-                                                      vaultNotesServiceProvider,
-                                                    );
-                                                    await service
-                                                        .moveFolderWithAutoRename(
-                                                          folderId: it.id,
-                                                          newParentFolderId:
-                                                              picked,
-                                                        );
-                                                    if (!mounted) return;
-                                                    AppSnackBar.show(
-                                                      context,
-                                                      AppErrorSpec.success(
-                                                        '폴더를 이동했습니다.',
-                                                      ),
-                                                    );
-                                                  } catch (e) {
-                                                    if (!mounted) return;
-                                                    final spec =
-                                                        AppErrorMapper.toSpec(
-                                                          e,
-                                                        );
-                                                    AppSnackBar.show(
-                                                      context,
-                                                      spec,
-                                                    );
-                                                  }
+                                                  final spec = await _actions
+                                                      .moveFolder(
+                                                        folderId: it.id,
+                                                        newParentFolderId:
+                                                            picked,
+                                                      );
+                                                  if (!mounted) return;
+                                                  AppSnackBar.show(
+                                                    context,
+                                                    spec,
+                                                  );
                                                 },
                                                 icon: const Icon(
                                                   Icons.drive_file_move_outline,
@@ -854,32 +691,16 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                                   final trimmed =
                                                       name?.trim() ?? '';
                                                   if (trimmed.isEmpty) return;
-                                                  final service = ref.read(
-                                                    vaultNotesServiceProvider,
+                                                  final spec = await _actions
+                                                      .renameFolder(
+                                                        it.id,
+                                                        trimmed,
+                                                      );
+                                                  if (!mounted) return;
+                                                  AppSnackBar.show(
+                                                    context,
+                                                    spec,
                                                   );
-                                                  try {
-                                                    await service.renameFolder(
-                                                      it.id,
-                                                      trimmed,
-                                                    );
-                                                    if (!mounted) return;
-                                                    AppSnackBar.show(
-                                                      context,
-                                                      AppErrorSpec.success(
-                                                        '폴더 이름을 변경했습니다.',
-                                                      ),
-                                                    );
-                                                  } catch (e) {
-                                                    if (!mounted) return;
-                                                    final spec =
-                                                        AppErrorMapper.toSpec(
-                                                          e,
-                                                        );
-                                                    AppSnackBar.show(
-                                                      context,
-                                                      spec,
-                                                    );
-                                                  }
                                                 },
                                                 icon: const Icon(
                                                   Icons
@@ -940,34 +761,17 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                                             currentFolderId,
                                                       );
                                                   if (!mounted) return;
-                                                  try {
-                                                    final service = ref.read(
-                                                      vaultNotesServiceProvider,
-                                                    );
-                                                    await service
-                                                        .moveNoteWithAutoRename(
-                                                          it.id,
-                                                          newParentFolderId:
-                                                              picked,
-                                                        );
-                                                    if (!mounted) return;
-                                                    AppSnackBar.show(
-                                                      context,
-                                                      AppErrorSpec.success(
-                                                        '노트를 이동했습니다.',
-                                                      ),
-                                                    );
-                                                  } catch (e) {
-                                                    if (!mounted) return;
-                                                    final spec =
-                                                        AppErrorMapper.toSpec(
-                                                          e,
-                                                        );
-                                                    AppSnackBar.show(
-                                                      context,
-                                                      spec,
-                                                    );
-                                                  }
+                                                  final spec = await _actions
+                                                      .moveNote(
+                                                        noteId: it.id,
+                                                        newParentFolderId:
+                                                            picked,
+                                                      );
+                                                  if (!mounted) return;
+                                                  AppSnackBar.show(
+                                                    context,
+                                                    spec,
+                                                  );
                                                 },
                                                 icon: const Icon(
                                                   Icons.drive_file_move_outline,
@@ -990,32 +794,16 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                                                   final trimmed =
                                                       name?.trim() ?? '';
                                                   if (trimmed.isEmpty) return;
-                                                  final service = ref.read(
-                                                    vaultNotesServiceProvider,
+                                                  final spec = await _actions
+                                                      .renameNote(
+                                                        it.id,
+                                                        trimmed,
+                                                      );
+                                                  if (!mounted) return;
+                                                  AppSnackBar.show(
+                                                    context,
+                                                    spec,
                                                   );
-                                                  try {
-                                                    await service.renameNote(
-                                                      it.id,
-                                                      trimmed,
-                                                    );
-                                                    if (!mounted) return;
-                                                    AppSnackBar.show(
-                                                      context,
-                                                      AppErrorSpec.success(
-                                                        '노트 이름을 변경했습니다.',
-                                                      ),
-                                                    );
-                                                  } catch (e) {
-                                                    if (!mounted) return;
-                                                    final spec =
-                                                        AppErrorMapper.toSpec(
-                                                          e,
-                                                        );
-                                                    AppSnackBar.show(
-                                                      context,
-                                                      spec,
-                                                    );
-                                                  }
                                                 },
                                                 icon: const Icon(
                                                   Icons
@@ -1063,8 +851,10 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: _isImporting ? null : _importPdfNote,
-                    icon: _isImporting
+                    onPressed: noteListState.isImporting
+                        ? null
+                        : _importPdfNote,
+                    icon: noteListState.isImporting
                         ? const SizedBox(
                             width: 20,
                             height: 20,
@@ -1072,7 +862,9 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                           )
                         : const Icon(Icons.picture_as_pdf),
                     label: Text(
-                      _isImporting ? 'PDF 가져오는 중...' : 'PDF 파일에서 노트 생성',
+                      noteListState.isImporting
+                          ? 'PDF 가져오는 중...'
+                          : 'PDF 파일에서 노트 생성',
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF6750A4),
