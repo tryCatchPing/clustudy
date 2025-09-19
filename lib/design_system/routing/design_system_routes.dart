@@ -1,10 +1,10 @@
 import 'package:go_router/go_router.dart';
 
-import '../screens/home/home_screen.dart';
-import '../screens/vault/vault_screen.dart';
-import '../screens/notes/note_screen.dart';
-import '../screens/graph/graph_screen.dart';
 import '../screens/folder/folder_screen.dart';
+import '../screens/graph/graph_screen.dart';
+import '../screens/home/home_screen.dart';
+import '../screens/notes/note_screen.dart';
+import '../screens/vault/vault_screen.dart';
 
 class DesignSystemRoutes {
   DesignSystemRoutes._();

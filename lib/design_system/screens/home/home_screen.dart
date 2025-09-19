@@ -25,6 +25,7 @@ class _DesignHomeScreenState extends State<DesignHomeScreen> {
   late final List<_DemoVault> _vaults;
 
   @override
+  // TODO(xodnd): stream 기반으로 연결
   void initState() {
     super.initState();
     _vaults = List<_DemoVault>.from(_demoVaults);
@@ -73,13 +74,18 @@ class _DesignHomeScreenState extends State<DesignHomeScreen> {
   Widget build(BuildContext context) {
     final items = _vaults.map((vault) {
       return FolderGridItem(
+        title: vault.name,
+        date: vault.createdAt,
         child: AppCard(
-          svgIconPath: vault.isTemporary ? AppIcons.folderVault : AppIcons.folder,
+          svgIconPath: vault.isTemporary
+              ? AppIcons.folderVault
+              : AppIcons.folder,
           title: vault.name,
           date: vault.createdAt,
           onTap: () => _showSnack('Open ${vault.name}'),
-          onLongPressStart:
-              vault.isTemporary ? null : (d) => _showVaultActions(vault, d),
+          onLongPressStart: vault.isTemporary
+              ? null
+              : (d) => _showVaultActions(vault, d),
         ),
       );
     }).toList();
@@ -89,9 +95,16 @@ class _DesignHomeScreenState extends State<DesignHomeScreen> {
       appBar: TopToolbar(
         variant: TopToolbarVariant.landing,
         title: 'Clustudy',
-        actions: const [
-          ToolbarAction(svgPath: AppIcons.search),
-          ToolbarAction(svgPath: AppIcons.settings),
+        actions: [
+          // TODO(xodnd): 기능 연결
+          ToolbarAction(
+            svgPath: AppIcons.search,
+            onTap: () {},
+          ),
+          ToolbarAction(
+            svgPath: AppIcons.settings,
+            onTap: () {},
+          ),
         ],
       ),
       body: Padding(
@@ -154,7 +167,10 @@ class _DesignHomeScreenState extends State<DesignHomeScreen> {
   void _showSnack(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), duration: const Duration(milliseconds: 900)),
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(milliseconds: 900),
+      ),
     );
   }
 }
@@ -172,7 +188,12 @@ class _DemoVault {
   final DateTime createdAt;
   final bool isTemporary;
 
-  _DemoVault copyWith({String? id, String? name, DateTime? createdAt, bool? isTemporary}) {
+  _DemoVault copyWith({
+    String? id,
+    String? name,
+    DateTime? createdAt,
+    bool? isTemporary,
+  }) {
     return _DemoVault(
       id: id ?? this.id,
       name: name ?? this.name,
@@ -182,7 +203,7 @@ class _DemoVault {
   }
 }
 
-const List<_DemoVault> _demoVaults = [
+List<_DemoVault> _demoVaults = [
   _DemoVault(
     id: 'temp',
     name: '임시 Vault',

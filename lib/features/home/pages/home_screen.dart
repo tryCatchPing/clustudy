@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../design_system/routing/design_system_routes.dart';
 import '../../../shared/routing/app_routes.dart';
 import '../../../shared/widgets/app_branding_header.dart';
 import '../../../shared/widgets/info_card.dart';
@@ -83,7 +84,7 @@ class HomeScreen extends StatelessWidget {
                   color: const Color(0xFF6366F1),
                   onTap: () {
                     debugPrint('🎨 디자인 시스템 데모로 이동 중...');
-                    context.go('/design-system/note-editor');
+                    context.pushNamed(DesignSystemRoutes.homeName);
                   },
                 ),
 

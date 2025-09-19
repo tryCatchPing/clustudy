@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../../../components/organisms/creation_sheet.dart';
 import '../../../components/atoms/app_textfield.dart';
+import '../../../components/organisms/creation_sheet.dart';
 import '../../../tokens/app_colors.dart';
 import '../../../tokens/app_icons.dart';
 import '../../../tokens/app_spacing.dart';
@@ -24,7 +24,8 @@ class _DesignVaultCreationSheet extends StatefulWidget {
   final Future<void> Function(String name)? onCreate;
 
   @override
-  State<_DesignVaultCreationSheet> createState() => _DesignVaultCreationSheetState();
+  State<_DesignVaultCreationSheet> createState() =>
+      _DesignVaultCreationSheetState();
 }
 
 class _DesignVaultCreationSheetState extends State<_DesignVaultCreationSheet> {
@@ -73,7 +74,10 @@ class _DesignVaultCreationSheetState extends State<_DesignVaultCreationSheet> {
               AppIcons.folderVaultLarge,
               width: 200,
               height: 184,
-              colorFilter: const ColorFilter.mode(AppColors.background, BlendMode.srcIn),
+              colorFilter: const ColorFilter.mode(
+                AppColors.background,
+                BlendMode.srcIn,
+              ),
             ),
             const SizedBox(height: AppSpacing.large),
             SizedBox(
