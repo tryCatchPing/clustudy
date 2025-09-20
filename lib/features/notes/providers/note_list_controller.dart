@@ -64,6 +64,10 @@ class NoteListController extends StateNotifier<NoteListState> {
     ref.read(currentFolderProvider(vaultId).notifier).state = parent;
   }
 
+  void selectFolder(String vaultId, String folderId) {
+    ref.read(currentFolderProvider(vaultId).notifier).state = folderId;
+  }
+
   Future<AppErrorSpec> deleteNote({
     required String noteId,
     required String noteTitle,
