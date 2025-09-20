@@ -1,70 +1,63 @@
 import 'package:flutter/material.dart';
 
+import '../../../design_system/components/organisms/bottom_actions_dock_fixed.dart';
+import '../../../design_system/tokens/app_icons.dart';
+import '../../../design_system/tokens/app_spacing.dart';
+
 class NoteListPrimaryActions extends StatelessWidget {
   const NoteListPrimaryActions({
     super.key,
     required this.isImporting,
     required this.onImportPdf,
     required this.onCreateBlankNote,
+    required this.onCreateFolder,
   });
 
   final bool isImporting;
   final VoidCallback onImportPdf;
   final VoidCallback onCreateBlankNote;
+  final VoidCallback onCreateFolder;
 
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: isImporting ? null : onImportPdf,
-            icon: isImporting
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.picture_as_pdf),
-            label: Text(
-              isImporting ? 'PDF 불러오는 중...' : 'PDF 파일로 노트 생성',
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6750A4),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(
-                vertical: 16,
-                horizontal: 24,
+        Center(
+          child: BottomActionsDockFixed(
+            items: [
+              DockItem(
+                label: isImporting ? '불러오는 중...' : 'PDF 불러오기',
+                svgPath: AppIcons.download,
+                onTap: () {
+                  if (isImporting) return;
+                  onImportPdf();
+                },
+                tooltip: 'PDF 파일로 노트 생성',
               ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+              DockItem(
+                label: '노트 만들기',
+                svgPath: AppIcons.noteAdd,
+                onTap: onCreateBlankNote,
+                tooltip: '빈 노트 생성',
               ),
-            ),
+              DockItem(
+                label: '폴더 만들기',
+                svgPath: AppIcons.folderAdd,
+                onTap: onCreateFolder,
+                tooltip: '폴더 생성',
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 20),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              foregroundColor: const Color(0xFF6750A4),
-              padding: const EdgeInsets.symmetric(
-                vertical: 16,
-                horizontal: 24,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: const BorderSide(
-                  color: Color(0xFF6750A4),
-                  width: 2,
-                ),
-              ),
-            ),
-            onPressed: onCreateBlankNote,
-            child: const Text('노트 만들기'),
+        if (isImporting) ...[
+          const SizedBox(height: AppSpacing.small),
+          const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
           ),
-        ),
+        ],
       ],
     );
   }

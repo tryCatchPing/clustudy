@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/vault_item.dart';
 import '../models/vault_model.dart';
+import '../models/folder_model.dart';
 import 'vault_tree_repository_provider.dart';
 
 /// 현재 활성 Vault (라우트/브라우저 컨텍스트)
@@ -45,3 +46,12 @@ final vaultItemsProvider = StreamProvider.family<List<VaultItem>, FolderScope>(
     );
   },
 );
+
+/// 특정 폴더 정보를 조회합니다.
+final folderByIdProvider = FutureProvider.family<FolderModel?, String>((
+  ref,
+  folderId,
+) {
+  final repo = ref.watch(vaultTreeRepositoryProvider);
+  return repo.getFolder(folderId);
+});

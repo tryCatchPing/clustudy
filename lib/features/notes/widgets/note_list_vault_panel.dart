@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../shared/widgets/navigation_card.dart';
+import '../../../design_system/components/atoms/app_button.dart';
+import '../../../design_system/components/molecules/app_card.dart';
+import '../../../design_system/tokens/app_colors.dart';
+import '../../../design_system/tokens/app_icons.dart';
+import '../../../design_system/tokens/app_spacing.dart';
 import '../../vaults/models/vault_model.dart';
 
 class VaultListPanel extends StatelessWidget {
@@ -34,12 +38,19 @@ class VaultListPanel extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('아직 Vault가 없습니다.'),
-              const SizedBox(height: 12),
-              FilledButton.icon(
+              Text(
+                '아직 Vault가 없습니다.',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppColors.gray40,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.medium),
+              AppButton.textIcon(
+                text: 'Vault 생성',
+                svgIconPath: AppIcons.plus,
                 onPressed: onCreateVault,
-                icon: const Icon(Icons.add),
-                label: const Text('Vault 생성'),
+                style: AppButtonStyle.primary,
+                size: AppButtonSize.md,
               ),
             ],
           );
@@ -49,30 +60,27 @@ class VaultListPanel extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Align(
-                alignment: Alignment.centerLeft,
-                child: FilledButton.icon(
-                  onPressed: onCreateVault,
-                  icon: const Icon(Icons.add),
-                  label: const Text('Vault 생성'),
-                ),
+              AppButton.textIcon(
+                text: 'Vault 생성',
+                svgIconPath: AppIcons.plus,
+                onPressed: onCreateVault,
+                style: AppButtonStyle.primary,
+                size: AppButtonSize.md,
               ),
-              const SizedBox(height: 16),
-              Column(
+              const SizedBox(height: AppSpacing.large),
+              Wrap(
+                spacing: AppSpacing.large,
+                runSpacing: AppSpacing.large,
                 children: [
-                  for (final v in vaults) ...[
-                    GestureDetector(
-                      onLongPress: () => onShowVaultActions(v),
-                      child: NavigationCard(
-                        icon: Icons.folder,
-                        title: v.name,
-                        subtitle: 'Vault',
-                        color: const Color(0xFF6750A4),
-                        onTap: () => onVaultSelected(v.vaultId),
-                      ),
+                  for (final vault in vaults)
+                    AppCard(
+                      key: ValueKey(vault.vaultId),
+                      svgIconPath: AppIcons.folderVaultLarge,
+                      title: vault.name,
+                      date: vault.createdAt,
+                      onTap: () => onVaultSelected(vault.vaultId),
+                      onLongPressStart: (details) => onShowVaultActions(vault),
                     ),
-                    const SizedBox(height: 12),
-                  ],
                 ],
               ),
             ],
@@ -80,24 +88,29 @@ class VaultListPanel extends StatelessWidget {
         }
 
         return Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: AppSpacing.medium,
+          runSpacing: AppSpacing.medium,
           children: [
-            FilledButton.icon(
+            AppButton.textIcon(
+              text: '노트 검색',
+              svgIconPath: AppIcons.search,
               onPressed: onGoToSearch,
-              icon: const Icon(Icons.search),
-              label: const Text('노트 검색'),
+              style: AppButtonStyle.primary,
+              size: AppButtonSize.md,
             ),
-            FilledButton.icon(
+            AppButton.textIcon(
+              text: 'Vault 목록으로',
+              svgIconPath: AppIcons.folderVault,
               onPressed: onClearSelection,
-              icon: const Icon(Icons.folder_shared),
-              label: const Text('Vault 선택화면 이동'),
+              style: AppButtonStyle.secondary,
+              size: AppButtonSize.md,
             ),
-            FilledButton.icon(
+            AppButton.textIcon(
+              text: '그래프 보기',
+              svgIconPath: AppIcons.graphView,
               onPressed: onGoToGraph,
-              icon: const Icon(Icons.hub),
-              label: const Text('그래프 보기'),
+              style: AppButtonStyle.secondary,
+              size: AppButtonSize.md,
             ),
           ],
         );
