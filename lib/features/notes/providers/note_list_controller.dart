@@ -116,7 +116,7 @@ class NoteListController extends StateNotifier<NoteListState> {
     }
   }
 
-  Future<AppErrorSpec> createBlankNote() async {
+  Future<AppErrorSpec> createBlankNote({String? name}) async {
     try {
       final vaultId = ref.read(currentVaultProvider);
       if (vaultId == null) {
@@ -129,6 +129,7 @@ class NoteListController extends StateNotifier<NoteListState> {
       final blankNote = await _service.createBlankInFolder(
         vaultId,
         parentFolderId: folderId,
+        name: name,
       );
       return AppErrorSpec.success('빈 노트 "${blankNote.title}"가 생성되었습니다.');
     } catch (error) {

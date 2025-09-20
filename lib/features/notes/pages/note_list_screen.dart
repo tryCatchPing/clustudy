@@ -89,9 +89,10 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
   }
 
   Future<void> _createBlankNote() async {
-    final spec = await _actions.createBlankNote();
-    if (!mounted) return;
-    AppSnackBar.show(context, spec);
+    await showDesignNoteCreationFlow(
+      context: context,
+      onSubmit: (name) => _actions.createBlankNote(name: name),
+    );
   }
 
   Future<void> _renameVaultPrompt(VaultModel vault) async {
