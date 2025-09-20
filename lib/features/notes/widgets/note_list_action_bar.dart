@@ -32,14 +32,6 @@ class NoteListActionBar extends StatelessWidget {
           size: AppButtonSize.md,
         )
       else ...[
-        if (onCreateFolder != null)
-          AppButton.textIcon(
-            text: '폴더 추가',
-            svgIconPath: AppIcons.folderAdd,
-            onPressed: onCreateFolder,
-            style: AppButtonStyle.secondary,
-            size: AppButtonSize.sm,
-          ),
         if (onGoUp != null)
           AppButton.textIcon(
             text: '한 단계 위로',

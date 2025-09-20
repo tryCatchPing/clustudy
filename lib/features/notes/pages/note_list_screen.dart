@@ -548,41 +548,41 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
             },
           ),
         ),
-        bottomNavigationBar: hasActiveVault
-            ? SafeArea(
-                top: false,
-                child: Padding(
-                  padding: const EdgeInsets.only(
-                    left: AppSpacing.large,
-                    right: AppSpacing.large,
-                    bottom: AppSpacing.large,
-                  ),
-                  child: SizedBox(
-                    height: 60,
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 520),
-                        child: NoteListPrimaryActions(
-                          isImporting: noteListState.isImporting,
-                          onImportPdf: () {
-                            _importPdfNote();
-                          },
-                          onCreateBlankNote: () {
-                            _createBlankNote();
-                          },
-                          onCreateFolder: () {
-                            _showCreateFolderDialog(
-                              currentVaultId,
-                              currentFolderId,
-                            );
-                          },
-                        ),
-                      ),
-                    ),
+        bottomNavigationBar: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.only(
+              left: AppSpacing.large,
+              right: AppSpacing.large,
+              bottom: AppSpacing.large,
+            ),
+            child: SizedBox(
+              height: 60,
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 520),
+                  child: NoteListPrimaryActions(
+                    hasActiveVault: hasActiveVault,
+                    isImporting: noteListState.isImporting,
+                    onImportPdf: () {
+                      _importPdfNote();
+                    },
+                    onCreateBlankNote: () {
+                      _createBlankNote();
+                    },
+                    onCreateFolder: () {
+                      _showCreateFolderDialog(
+                        currentVaultId!,
+                        currentFolderId,
+                      );
+                    },
+                    onCreateVault: _showCreateVaultDialog,
                   ),
                 ),
-              )
-            : null,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
