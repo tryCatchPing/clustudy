@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../../../design_system/components/atoms/app_button.dart';
 import '../../../design_system/components/molecules/app_card.dart';
 import '../../../design_system/tokens/app_colors.dart';
 import '../../../design_system/tokens/app_icons.dart';
@@ -13,10 +12,6 @@ class NoteListFolderSection extends StatelessWidget {
   const NoteListFolderSection({
     super.key,
     required this.itemsAsync,
-    required this.currentFolderId,
-    required this.onCreateFolder,
-    required this.onGoUp,
-    required this.onReturnToVaultSelection,
     required this.onOpenFolder,
     required this.onMoveFolder,
     required this.onRenameFolder,
@@ -28,10 +23,6 @@ class NoteListFolderSection extends StatelessWidget {
   });
 
   final AsyncValue<List<VaultItem>> itemsAsync;
-  final String? currentFolderId;
-  final VoidCallback onCreateFolder;
-  final VoidCallback? onGoUp;
-  final VoidCallback onReturnToVaultSelection;
   final ValueChanged<VaultItem> onOpenFolder;
   final ValueChanged<VaultItem> onMoveFolder;
   final ValueChanged<VaultItem> onRenameFolder;
@@ -77,48 +68,19 @@ class NoteListFolderSection extends StatelessWidget {
             ),
         ];
 
-        final actionButtons = <Widget>[
-          if (onGoUp != null)
-            AppButton.textIcon(
-              text: '한 단계 위로',
-              svgIconPath: AppIcons.chevronLeft,
-              onPressed: onGoUp,
-              style: AppButtonStyle.secondary,
-              size: AppButtonSize.sm,
-            )
-          else
-            AppButton.textIcon(
-              text: 'Vault 목록으로',
-              svgIconPath: AppIcons.folderVault,
-              onPressed: onReturnToVaultSelection,
-              style: AppButtonStyle.secondary,
-              size: AppButtonSize.sm,
+        if (cards.isEmpty) {
+          return Text(
+            '현재 위치에 항목이 없습니다.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppColors.gray40,
             ),
-        ];
+          );
+        }
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Wrap(
-              spacing: AppSpacing.small,
-              runSpacing: AppSpacing.small,
-              children: actionButtons,
-            ),
-            const SizedBox(height: AppSpacing.medium),
-            if (cards.isEmpty)
-              Text(
-                '현재 위치에 항목이 없습니다.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.gray40,
-                ),
-              )
-            else
-              Wrap(
-                spacing: AppSpacing.large,
-                runSpacing: AppSpacing.large,
-                children: cards,
-              ),
-          ],
+        return Wrap(
+          spacing: AppSpacing.large,
+          runSpacing: AppSpacing.large,
+          children: cards,
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),

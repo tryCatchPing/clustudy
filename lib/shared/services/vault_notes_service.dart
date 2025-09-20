@@ -404,9 +404,6 @@ class VaultNotesService {
     if (vault == null) {
       throw Exception('Vault not found: $vaultId');
     }
-    if (vault.vaultId == 'default') {
-      throw const FormatException('기본 Vault는 삭제할 수 없습니다.');
-    }
 
     final noteIds = await _collectAllNoteIdsInVault(vaultId);
     for (final noteId in noteIds) {

@@ -16,6 +16,7 @@ import '../../vaults/models/vault_item.dart';
 import '../../vaults/models/vault_model.dart';
 import '../providers/note_list_controller.dart';
 import '../widgets/name_input_dialog.dart';
+import '../widgets/note_list_action_bar.dart';
 import '../widgets/note_list_folder_section.dart';
 import '../widgets/note_list_primary_actions.dart';
 import '../widgets/note_list_vault_panel.dart';
@@ -111,58 +112,18 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
     AppSnackBar.show(context, spec);
   }
 
-  Future<void> _showVaultActions(VaultModel vault) async {
-    final result = await showModalBottomSheet<String>(
+  Future<void> _renameVaultPrompt(VaultModel vault) async {
+    final name = await showNameInputDialog(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.drive_file_rename_outline),
-              title: const Text('이름 변경'),
-              onTap: () => Navigator.of(context).pop('rename'),
-            ),
-            if (vault.vaultId != 'default')
-              ListTile(
-                leading: const Icon(
-                  Icons.delete_outline,
-                  color: Colors.red,
-                ),
-                title: const Text('Vault 삭제'),
-                onTap: () => Navigator.of(context).pop('delete'),
-              ),
-          ],
-        ),
-      ),
+      title: 'Vault 이름 변경',
+      hintText: '새 이름',
+      confirmLabel: '변경',
     );
-
-    if (!mounted || result == null) return;
-
-    if (result == 'rename') {
-      final name = await showNameInputDialog(
-        context: context,
-        title: 'Vault 이름 변경',
-        hintText: '새 이름',
-        confirmLabel: '변경',
-      );
-      final trimmed = name?.trim() ?? '';
-      if (trimmed.isEmpty) return;
-      final spec = await _actions.renameVault(vault.vaultId, trimmed);
-      if (!mounted) return;
-      AppSnackBar.show(context, spec);
-      return;
-    }
-
-    if (result == 'delete') {
-      await _confirmAndDeleteVault(
-        vaultId: vault.vaultId,
-        vaultName: vault.name,
-      );
-    }
+    final trimmed = name?.trim() ?? '';
+    if (trimmed.isEmpty) return;
+    final spec = await _actions.renameVault(vault.vaultId, trimmed);
+    if (!mounted) return;
+    AppSnackBar.show(context, spec);
   }
 
   Future<void> _confirmAndDeleteFolder({
@@ -409,11 +370,11 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
     String? currentFolderId;
     AsyncValue<List<VaultItem>>? itemsAsync;
     if (hasActiveVault) {
-      currentFolderId = ref.watch(currentFolderProvider(currentVaultId));
+      currentFolderId = ref.watch(currentFolderProvider(currentVaultId!));
       itemsAsync = ref.watch(
         vaultItemsProvider(
           FolderScope(
-            currentVaultId,
+            currentVaultId!,
             currentFolderId,
           ),
         ),
@@ -483,7 +444,7 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
         if (folderId == null) {
           return;
         }
-        _goUpOneLevel(vaultId, folderId);
+        _goUpOneLevel(vaultId!, folderId);
       };
       backSvgPath = AppIcons.chevronLeft;
     } else if (hasActiveVault) {
@@ -496,6 +457,32 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
       };
       backSvgPath = AppIcons.chevronLeft;
     }
+
+    final VoidCallback? createFolderAction =
+        hasActiveVault && currentVaultId != null
+        ? () {
+            _showCreateFolderDialog(
+              currentVaultId!,
+              currentFolderId,
+            );
+          }
+        : null;
+
+    final VoidCallback? goUpAction =
+        hasActiveVault && currentVaultId != null && currentFolderId != null
+        ? () {
+            _goUpOneLevel(
+              currentVaultId!,
+              currentFolderId!,
+            );
+          }
+        : null;
+
+    final VoidCallback? goToVaultsAction = hasActiveVault
+        ? () {
+            _actions.clearVaultSelection();
+          }
+        : null;
 
     return WillPopScope(
       onWillPop: () async {
@@ -531,43 +518,37 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                     color: AppColors.primary,
                   ),
                 ),
-                const SizedBox(height: AppSpacing.large),
-                VaultListPanel(
-                  vaultsAsync: vaultsAsync,
+                const SizedBox(height: AppSpacing.medium),
+                NoteListActionBar(
                   hasActiveVault: hasActiveVault,
                   onCreateVault: _showCreateVaultDialog,
-                  onVaultSelected: _onVaultSelected,
-                  onShowVaultActions: _showVaultActions,
-                  onGoToSearch: _goToNoteSearch,
-                  onClearSelection: _actions.clearVaultSelection,
-                  onGoToGraph: _goToVaultGraph,
+                  onCreateFolder: createFolderAction,
+                  onGoUp: goUpAction,
+                  onGoToVaults: goToVaultsAction,
                 ),
-                if (hasActiveVault && itemsAsync != null) ...[
+                if (!hasActiveVault) ...[
                   const SizedBox(height: AppSpacing.large),
-                  NoteListFolderSection(
-                    itemsAsync: itemsAsync,
-                    currentFolderId: currentFolderId,
-                    onCreateFolder: () {
-                      _showCreateFolderDialog(
-                        currentVaultId,
-                        currentFolderId,
+                  VaultListPanel(
+                    vaultsAsync: vaultsAsync,
+                    onVaultSelected: _onVaultSelected,
+                    onRenameVault: _renameVaultPrompt,
+                    onDeleteVault: (vault) {
+                      _confirmAndDeleteVault(
+                        vaultId: vault.vaultId,
+                        vaultName: vault.name,
                       );
                     },
-                    onGoUp: currentFolderId == null
-                        ? null
-                        : () {
-                            _goUpOneLevel(
-                              currentVaultId,
-                              currentFolderId!,
-                            );
-                          },
-                    onReturnToVaultSelection: _actions.clearVaultSelection,
+                  ),
+                ] else if (itemsAsync != null) ...[
+                  const SizedBox(height: AppSpacing.large),
+                  NoteListFolderSection(
+                    itemsAsync: itemsAsync!,
                     onOpenFolder: (folder) {
-                      _onFolderSelected(currentVaultId, folder.id);
+                      _onFolderSelected(currentVaultId!, folder.id);
                     },
                     onMoveFolder: (folder) {
                       _moveFolder(
-                        vaultId: currentVaultId,
+                        vaultId: currentVaultId!,
                         currentFolderId: currentFolderId,
                         folder: folder,
                       );
@@ -577,7 +558,7 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                     },
                     onDeleteFolder: (folder) {
                       _confirmAndDeleteFolder(
-                        vaultId: currentVaultId,
+                        vaultId: currentVaultId!,
                         folderId: folder.id,
                         folderName: folder.name,
                       );
@@ -585,7 +566,7 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                     onOpenNote: _openNote,
                     onMoveNote: (note) {
                       _moveNote(
-                        vaultId: currentVaultId,
+                        vaultId: currentVaultId!,
                         currentFolderId: currentFolderId,
                         note: note,
                       );
