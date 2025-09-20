@@ -663,13 +663,14 @@ class IsarVaultTreeRepository implements VaultTreeRepository {
     Isar isar, {
     DbWriteSession? session,
   }) async {
-    if (await isar.vaultEntitys.getByVaultId('default') != null) {
+    Future<bool> hasAnyVault() async => (await isar.vaultEntitys.count()) > 0;
+
+    if (await hasAnyVault()) {
       return;
     }
 
     Future<void> createDefault() async {
-      final insideTxnExisting = await isar.vaultEntitys.getByVaultId('default');
-      if (insideTxnExisting != null) {
+      if (await hasAnyVault()) {
         return;
       }
 
