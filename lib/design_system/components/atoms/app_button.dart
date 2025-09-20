@@ -133,7 +133,7 @@ class AppButton extends StatelessWidget {
       AppButtonSize.lg => 18.0,
     };
 
-    if (loading) {
+    if (loading && type != AppButtonType.textIcon) {
       return SizedBox(
         width: spinnerSize,
         height: spinnerSize,
@@ -174,6 +174,34 @@ class AppButton extends StatelessWidget {
       height: sz,
       colorFilter: ColorFilter.mode(fg, BlendMode.srcIn),
     );
+
+    if (loading) {
+      final spinner = SizedBox(
+        width: spinnerSize,
+        height: spinnerSize,
+        child: const CircularProgressIndicator(strokeWidth: 2),
+      );
+
+      if (layout == AppButtonLayout.vertical) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            spinner,
+            if ((iconGap ?? 0) > 0) SizedBox(height: iconGap),
+            Text(text!, style: labelStyle),
+          ],
+        );
+      }
+
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          spinner,
+          SizedBox(width: iconGap ?? 8),
+          Text(text!, style: labelStyle),
+        ],
+      );
+    }
 
     if (layout == AppButtonLayout.vertical) {
       return Column(

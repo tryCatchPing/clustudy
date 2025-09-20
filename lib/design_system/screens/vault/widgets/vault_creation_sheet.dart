@@ -29,7 +29,7 @@ class _DesignVaultCreationSheet extends StatefulWidget {
 }
 
 class _DesignVaultCreationSheetState extends State<_DesignVaultCreationSheet> {
-  final _controller = TextEditingController(text: '새로운 Vault 이름');
+  final _controller = TextEditingController();
   bool _busy = false;
 
   bool get _canSubmit => !_busy && _controller.text.trim().isNotEmpty;

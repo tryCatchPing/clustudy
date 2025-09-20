@@ -24,11 +24,13 @@ class _DesignFolderCreationSheet extends StatefulWidget {
   final Future<void> Function(String name)? onCreate;
 
   @override
-  State<_DesignFolderCreationSheet> createState() => _DesignFolderCreationSheetState();
+  State<_DesignFolderCreationSheet> createState() =>
+      _DesignFolderCreationSheetState();
 }
 
-class _DesignFolderCreationSheetState extends State<_DesignFolderCreationSheet> {
-  final _controller = TextEditingController(text: '새로운 폴더 이름');
+class _DesignFolderCreationSheetState
+    extends State<_DesignFolderCreationSheet> {
+  final _controller = TextEditingController();
   bool _busy = false;
 
   bool get _canSubmit => !_busy && _controller.text.trim().isNotEmpty;
@@ -73,7 +75,10 @@ class _DesignFolderCreationSheetState extends State<_DesignFolderCreationSheet> 
               AppIcons.folder,
               width: 200,
               height: 184,
-              colorFilter: const ColorFilter.mode(AppColors.background, BlendMode.srcIn),
+              colorFilter: const ColorFilter.mode(
+                AppColors.background,
+                BlendMode.srcIn,
+              ),
             ),
             const SizedBox(height: AppSpacing.large),
             SizedBox(

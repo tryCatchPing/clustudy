@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:scribble/scribble.dart';
 
 import '../../../shared/routing/route_observer.dart';
 import '../../../shared/services/sketch_persist_service.dart';
 import '../../notes/data/derived_note_providers.dart';
 import '../providers/note_editor_provider.dart';
+import '../providers/pointer_policy_provider.dart';
 import '../widgets/note_editor_canvas.dart';
 import '../widgets/panels/backlinks_panel.dart';
 import '../widgets/toolbar/actions_bar.dart';
@@ -38,6 +40,27 @@ class NoteEditorScreen extends ConsumerStatefulWidget {
 
 class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
     with RouteAware {
+  ScribblePointerMode? _cachedPointerPolicy;
+
+  void _cachePointerPolicyIfNeeded() {
+    _cachedPointerPolicy ??= ref.read(pointerPolicyProvider);
+  }
+
+  void _restorePointerPolicy() {
+    final target = _cachedPointerPolicy ?? ScribblePointerMode.all;
+    final notifier = ref.read(pointerPolicyProvider.notifier);
+    if (notifier.state != target) {
+      notifier.state = target;
+    }
+  }
+
+  void _forceAllPointerPolicy() {
+    final notifier = ref.read(pointerPolicyProvider.notifier);
+    if (notifier.state != ScribblePointerMode.all) {
+      notifier.state = ScribblePointerMode.all;
+    }
+  }
+
   /// Sync the initial page index from per-route resume or lastKnown after
   /// route becomes current and note data is available.
   void _scheduleSyncInitialIndexFromResume({bool allowLastKnown = true}) {
@@ -95,6 +118,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
   void dispose() {
     appRouteObserver.unsubscribe(this);
     debugPrint('🧭 [RouteAware] unsubscribe noteId=${widget.noteId}');
+    _forceAllPointerPolicy();
     super.dispose();
   }
 
@@ -103,6 +127,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
     debugPrint(
       '🧭 [RouteAware] didPush noteId=${widget.noteId} → schedule enter session',
     );
+    _cachePointerPolicyIfNeeded();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       ref.read(noteSessionProvider.notifier).enterNote(widget.noteId);
@@ -151,6 +176,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
         ref
             .read(noteRouteIdProvider(widget.noteId).notifier)
             .enter(widget.routeId);
+        _restorePointerPolicy();
         WidgetsBinding.instance.addPostFrameCallback((___) {
           _scheduleSyncInitialIndexFromResume(allowLastKnown: false);
         });
@@ -166,6 +192,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
     // Save current page sketch when another route is pushed above
     // Fire-and-forget; errors are logged inside the service
     SketchPersistService.saveCurrentPage(ref, widget.noteId);
+    _forceAllPointerPolicy();
     // Do not write per-route resume/lastKnown for transient overlays (e.g., dialogs)
   }
 
@@ -174,6 +201,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
     debugPrint(
       '🧭 [RouteAware] didPop noteId=${widget.noteId} → schedule exit session',
     );
+    _forceAllPointerPolicy();
     // Save current page when leaving editor via back
     SketchPersistService.saveCurrentPage(ref, widget.noteId);
     // On pop: remember lastKnown for cold re-open and clear per-route resume
@@ -213,6 +241,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
         ref
             .read(noteRouteIdProvider(widget.noteId).notifier)
             .enter(widget.routeId);
+        _restorePointerPolicy();
         WidgetsBinding.instance.addPostFrameCallback((__) {
           _scheduleSyncInitialIndexFromResume(allowLastKnown: true);
         });

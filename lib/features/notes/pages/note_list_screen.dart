@@ -7,6 +7,7 @@ import '../../../design_system/tokens/app_colors.dart';
 import '../../../design_system/tokens/app_icons.dart';
 import '../../../design_system/tokens/app_spacing.dart';
 import '../../../shared/errors/app_error_mapper.dart';
+import '../../../shared/dialogs/design_sheet_helpers.dart';
 import '../../../shared/errors/app_error_spec.dart';
 import '../../../shared/routing/app_routes.dart';
 import '../../../shared/widgets/app_snackbar.dart';
@@ -15,7 +16,6 @@ import '../../vaults/data/derived_vault_providers.dart';
 import '../../vaults/models/vault_item.dart';
 import '../../vaults/models/vault_model.dart';
 import '../providers/note_list_controller.dart';
-import '../widgets/name_input_dialog.dart';
 import '../widgets/note_list_action_bar.dart';
 import '../widgets/note_list_folder_section.dart';
 import '../widgets/note_list_primary_actions.dart';
@@ -57,31 +57,13 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
     required String noteId,
     required String noteTitle,
   }) async {
-    final shouldDelete =
-        await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('노트 삭제 확인'),
-            content: Text(
-              '정말로 "$noteTitle" 노트를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('취소'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('삭제'),
-              ),
-            ],
-          ),
-        ) ??
-        false;
+    final shouldDelete = await showDesignConfirmDialog(
+      context: context,
+      title: '노트 삭제 확인',
+      message: '정말로 "$noteTitle" 노트를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.',
+      confirmLabel: '삭제',
+      destructive: true,
+    );
 
     if (!shouldDelete) {
       if (!mounted) return;
@@ -113,15 +95,13 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
   }
 
   Future<void> _renameVaultPrompt(VaultModel vault) async {
-    final name = await showNameInputDialog(
+    final newName = await showDesignRenameDialogTrimmed(
       context: context,
       title: 'Vault 이름 변경',
-      hintText: '새 이름',
-      confirmLabel: '변경',
+      initial: vault.name,
     );
-    final trimmed = name?.trim() ?? '';
-    if (trimmed.isEmpty) return;
-    final spec = await _actions.renameVault(vault.vaultId, trimmed);
+    if (newName == null) return;
+    final spec = await _actions.renameVault(vault.vaultId, newName);
     if (!mounted) return;
     AppSnackBar.show(context, spec);
   }
@@ -133,33 +113,14 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
   }) async {
     try {
       final impact = await _actions.computeCascadeImpact(vaultId, folderId);
-      final shouldDelete =
-          await showDialog<bool>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('폴더 삭제 확인'),
-              content: Text(
-                '폴더 "$folderName"를 삭제하면\n'
-                '하위 폴더 ${impact.folderCount}개, 노트 ${impact.noteCount}개가 사라집니다.\n\n'
-                '이 작업은 되돌릴 수 없어요. 진행할까요?',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('취소'),
-                ),
-                ElevatedButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text('삭제'),
-                ),
-              ],
-            ),
-          ) ??
-          false;
+      final shouldDelete = await showDesignConfirmDialog(
+        context: context,
+        title: '폴더 삭제 확인',
+        message:
+            '폴더 "$folderName"를 삭제하면\n하위 폴더 ${impact.folderCount}개, 노트 ${impact.noteCount}개가 함께 삭제됩니다.\n\n이 작업은 되돌릴 수 없어요. 진행할까요?',
+        confirmLabel: '삭제',
+        destructive: true,
+      );
       if (!shouldDelete) {
         if (!mounted) return;
         AppSnackBar.show(
@@ -186,32 +147,14 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
     required String vaultId,
     required String vaultName,
   }) async {
-    final shouldDelete =
-        await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Vault 삭제 확인'),
-            content: Text(
-              'Vault "$vaultName"를 삭제하면 모든 폴더와 노트가 함께 삭제됩니다.\n'
-              '이 작업은 되돌릴 수 없어요. 진행할까요?',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('취소'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('삭제'),
-              ),
-            ],
-          ),
-        ) ??
-        false;
+    final shouldDelete = await showDesignConfirmDialog(
+      context: context,
+      title: 'Vault 삭제 확인',
+      message:
+          'Vault "$vaultName"를 삭제하면 모든 폴더와 노트가 함께 삭제됩니다.\n이 작업은 되돌릴 수 없어요. 진행할까요?',
+      confirmLabel: '삭제',
+      destructive: true,
+    );
 
     if (!shouldDelete) {
       if (!mounted) return;
@@ -231,42 +174,24 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
   }
 
   Future<void> _showCreateVaultDialog() async {
-    final name = await showNameInputDialog(
+    await showDesignVaultCreationFlow(
       context: context,
-      title: 'Vault 생성',
-      hintText: 'Vault 이름',
-      confirmLabel: '생성',
+      onSubmit: (name) => _actions.createVault(name),
     );
-
-    final trimmed = name?.trim() ?? '';
-    if (trimmed.isEmpty) return;
-
-    final spec = await _actions.createVault(trimmed);
-    if (!mounted) return;
-    AppSnackBar.show(context, spec);
   }
 
   Future<void> _showCreateFolderDialog(
     String vaultId,
     String? parentFolderId,
   ) async {
-    final name = await showNameInputDialog(
+    await showDesignFolderCreationFlow(
       context: context,
-      title: '폴더 생성',
-      hintText: '폴더 이름',
-      confirmLabel: '생성',
+      onSubmit: (name) => _actions.createFolder(
+        vaultId,
+        parentFolderId,
+        name,
+      ),
     );
-
-    final trimmed = name?.trim() ?? '';
-    if (trimmed.isEmpty) return;
-
-    final spec = await _actions.createFolder(
-      vaultId,
-      parentFolderId,
-      trimmed,
-    );
-    if (!mounted) return;
-    AppSnackBar.show(context, spec);
   }
 
   Future<void> _moveFolder({
@@ -274,6 +199,11 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
     required String? currentFolderId,
     required VaultItem folder,
   }) async {
+    // TODO(design): 폴더 이동 전용 디자인 시트 요청 필요.
+    //  - 입력: vaultId, currentFolderId, disabledFolderSubtreeRootId(folder.id)
+    //  - 데이터: listFoldersWithPath(vaultId) → [folderId, name, pathLabel]
+    //  - UI: 라디오 선택 + 루트 옵션, 선택/취소 버튼, 로딩/에러 상태 반영
+    //  - 반환: 선택한 folderId (null = 루트)
     final picked = await FolderPickerDialog.show(
       context,
       vaultId: vaultId,
@@ -290,17 +220,15 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
   }
 
   Future<void> _renameFolder(VaultItem folder) async {
-    final name = await showNameInputDialog(
+    final newName = await showDesignRenameDialogTrimmed(
       context: context,
       title: '폴더 이름 변경',
-      hintText: '새 이름',
-      confirmLabel: '변경',
+      initial: folder.name,
     );
-    final trimmed = name?.trim() ?? '';
-    if (trimmed.isEmpty) return;
+    if (newName == null) return;
     final spec = await _actions.renameFolder(
       folder.id,
-      trimmed,
+      newName,
     );
     if (!mounted) return;
     AppSnackBar.show(context, spec);
@@ -311,6 +239,10 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
     required String? currentFolderId,
     required VaultItem note,
   }) async {
+    // TODO(design): 노트 이동 시에도 동일한 디자인 시트 사용 예정.
+    //  - 입력: vaultId, currentFolderId
+    //  - 데이터: listFoldersWithPath(vaultId)
+    //  - 반환: 선택한 folderId (null = 루트)
     final picked = await FolderPickerDialog.show(
       context,
       vaultId: vaultId,
@@ -326,17 +258,15 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
   }
 
   Future<void> _renameNote(VaultItem note) async {
-    final name = await showNameInputDialog(
+    final newName = await showDesignRenameDialogTrimmed(
       context: context,
       title: '노트 이름 변경',
-      hintText: '새 이름',
-      confirmLabel: '변경',
+      initial: note.name,
     );
-    final trimmed = name?.trim() ?? '';
-    if (trimmed.isEmpty) return;
+    if (newName == null) return;
     final spec = await _actions.renameNote(
       note.id,
-      trimmed,
+      newName,
     );
     if (!mounted) return;
     AppSnackBar.show(context, spec);

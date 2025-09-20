@@ -55,6 +55,9 @@ class NoteListController extends StateNotifier<NoteListState> {
   }
 
   void selectVault(String vaultId) {
+    // debug log
+    // ignore: avoid_print
+    print('🗄️ Vault selected: $vaultId');
     ref.read(currentVaultProvider.notifier).state = vaultId;
     ref.read(currentFolderProvider(vaultId).notifier).state = null;
   }
@@ -65,6 +68,9 @@ class NoteListController extends StateNotifier<NoteListState> {
   }
 
   void selectFolder(String vaultId, String folderId) {
+    // debug log
+    // ignore: avoid_print
+    print('📁 Folder selected in $vaultId -> $folderId');
     ref.read(currentFolderProvider(vaultId).notifier).state = folderId;
   }
 

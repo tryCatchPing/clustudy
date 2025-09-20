@@ -1,23 +1,24 @@
-// lib/design_system/components/overlays/rename_dialog.dart
 import 'package:flutter/material.dart';
+
 import '../../tokens/app_colors.dart';
 import '../../tokens/app_typography.dart';
 import '../atoms/app_button.dart';
-import '../atoms/app_textfield.dart';
 
-Future<String?> showRenameDialog(
+Future<bool?> showConfirmDialog(
   BuildContext context, {
-  required String title, // 다이얼로그 타이틀 (예: '이름 바꾸기')
-  required String initial, // 초기 텍스트
-}) async {
-  final controller = TextEditingController(text: initial);
-  final focus = FocusNode();
-
-  return showGeneralDialog<String>(
+  required String title,
+  required String message,
+  String confirmLabel = '확인',
+  String cancelLabel = '취소',
+  bool barrierDismissible = true,
+  bool destructive = false,
+  Widget? leading,
+}) {
+  return showGeneralDialog<bool>(
     context: context,
-    barrierLabel: 'rename',
-    barrierDismissible: true,
-    barrierColor: Colors.black.withOpacity(0.45), // 배경 딤
+    barrierLabel: 'confirm',
+    barrierDismissible: barrierDismissible,
+    barrierColor: Colors.black.withOpacity(0.45),
     pageBuilder: (_, __, ___) {
       return Builder(
         builder: (dialogContext) {
@@ -28,10 +29,10 @@ Future<String?> showRenameDialog(
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeOut,
             padding: EdgeInsets.only(
-              bottom: bottomInset + 24,
               left: 24,
               right: 24,
               top: 24,
+              bottom: bottomInset + 24,
             ),
             child: Center(
               child: Material(
@@ -39,9 +40,9 @@ Future<String?> showRenameDialog(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 360),
                   child: Container(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
                     decoration: BoxDecoration(
-                      color: AppColors.white, // 크림색 카드
+                      color: AppColors.white,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: const [
                         BoxShadow(
@@ -55,40 +56,43 @@ Future<String?> showRenameDialog(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text(title, style: AppTypography.body2),
-                        const SizedBox(height: 16),
-                        AppTextField(
-                          controller: controller,
-                          style: AppTextFieldStyle.underline,
-                          textStyle: AppTypography.body2.copyWith(
+                        if (leading != null) ...[
+                          Center(child: leading),
+                          const SizedBox(height: 16),
+                        ],
+                        Text(
+                          title,
+                          style: AppTypography.body2,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          message,
+                          style: AppTypography.body4.copyWith(
                             color: AppColors.gray50,
                           ),
-                          autofocus: true,
-                          focusNode: focus,
-                          onSubmitted: (_) =>
-                              navigator.pop(controller.text.trim()),
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 24),
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
                           children: [
-                            const Spacer(),
                             TextButton(
-                              onPressed: () => navigator.pop(),
+                              onPressed: () => navigator.pop(false),
                               child: Text(
-                                '취소',
+                                cancelLabel,
                                 style: AppTypography.body4.copyWith(
                                   color: AppColors.gray40,
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 16),
-                            AppButton.text(
-                              text: '확인',
-                              onPressed: () =>
-                                  navigator.pop(controller.text.trim()),
-                              style: AppButtonStyle.primary,
-                              size: AppButtonSize.md,
-                            ),
+                           const SizedBox(width: 16),
+                           AppButton.text(
+                             text: confirmLabel,
+                             onPressed: () => navigator.pop(true),
+                              style: destructive
+                                  ? AppButtonStyle.primary
+                                  : AppButtonStyle.secondary,
+                             size: AppButtonSize.md,
+                           ),
                           ],
                         ),
                       ],

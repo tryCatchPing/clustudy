@@ -22,11 +22,12 @@ class _DesignNoteCreationSheet extends StatefulWidget {
   final Future<void> Function(String name)? onCreate;
 
   @override
-  State<_DesignNoteCreationSheet> createState() => _DesignNoteCreationSheetState();
+  State<_DesignNoteCreationSheet> createState() =>
+      _DesignNoteCreationSheetState();
 }
 
 class _DesignNoteCreationSheetState extends State<_DesignNoteCreationSheet> {
-  final _controller = TextEditingController(text: '새로운 노트 이름');
+  final _controller = TextEditingController();
   bool _busy = false;
 
   bool get _canSubmit => !_busy && _controller.text.trim().isNotEmpty;
