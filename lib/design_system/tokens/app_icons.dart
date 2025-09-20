@@ -24,6 +24,8 @@ class AppIcons {
   static const trash = 'assets/icons/trash.svg';
   static const export = 'assets/icons/export.svg';
   static const move = 'assets/icons/move.svg';
+  static const roundX = 'assets/icons/round-X.svg';
+  static const searchLarge = 'assets/icons/search_large.svg';
 
   // note Toolbar
   static const pen = 'assets/icons/pen.svg';
