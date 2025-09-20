@@ -2,63 +2,43 @@ import 'package:flutter/material.dart';
 
 import '../../../design_system/components/atoms/app_button.dart';
 import '../../../design_system/tokens/app_icons.dart';
-import '../../../design_system/tokens/app_spacing.dart';
 
+enum NoteLocationVariant { root, folder }
+
+/// A minimal location crumb for navigation consistency.
+/// - root: shows vault icon + "(...)" and navigates to vault list.
+/// - folder: shows folder icon + "(...)" and navigates one level up.
 class NoteListActionBar extends StatelessWidget {
   const NoteListActionBar({
     super.key,
-    required this.hasActiveVault,
-    required this.onCreateVault,
-    this.onCreateFolder,
-    this.onGoUp,
-    this.onGoToVaults,
+    required this.variant,
+    required this.onTap,
   });
 
-  final bool hasActiveVault;
-  final VoidCallback onCreateVault;
-  final VoidCallback? onCreateFolder;
-  final VoidCallback? onGoUp;
-  final VoidCallback? onGoToVaults;
+  final NoteLocationVariant variant;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final buttons = <Widget>[
-      if (!hasActiveVault)
-        AppButton.textIcon(
-          text: 'Vault 생성',
-          svgIconPath: AppIcons.plus,
-          onPressed: onCreateVault,
-          style: AppButtonStyle.primary,
-          size: AppButtonSize.md,
-        )
-      else ...[
-        if (onGoUp != null)
-          AppButton.textIcon(
-            text: '한 단계 위로',
-            svgIconPath: AppIcons.chevronLeft,
-            onPressed: onGoUp,
-            style: AppButtonStyle.secondary,
-            size: AppButtonSize.sm,
-          ),
-        if (onGoToVaults != null)
-          AppButton.textIcon(
-            text: 'Vault 목록으로',
-            svgIconPath: AppIcons.folderVault,
-            onPressed: onGoToVaults,
-            style: AppButtonStyle.secondary,
-            size: AppButtonSize.sm,
-          ),
-      ],
-    ];
+    final String icon = variant == NoteLocationVariant.root
+        ? AppIcons.folderVault
+        : AppIcons.folder;
+    final String label = variant == NoteLocationVariant.root
+        ? '상위 Vault로 이동'
+        : '상위 폴더로 이동';
 
-    if (buttons.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Wrap(
-      spacing: AppSpacing.small,
-      runSpacing: AppSpacing.small,
-      children: buttons,
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: AppButton.textIcon(
+        text: label,
+        svgIconPath: icon,
+        onPressed: onTap,
+        style: AppButtonStyle.secondary,
+        size: AppButtonSize.sm,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        iconGap: 6,
+        iconSize: 18,
+      ),
     );
   }
 }

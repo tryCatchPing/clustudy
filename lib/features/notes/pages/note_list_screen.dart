@@ -402,14 +402,7 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
       backSvgPath = AppIcons.chevronLeft;
     }
 
-    final VoidCallback? createFolderAction = hasActiveVault
-        ? () {
-            _showCreateFolderDialog(
-              currentVaultId,
-              currentFolderId,
-            );
-          }
-        : null;
+    // Removed createFolderAction from toolbar (location crumb takes over minimal nav)
 
     final VoidCallback? goUpAction = hasActiveVault && currentFolderId != null
         ? () {
@@ -463,13 +456,15 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.medium),
-                  NoteListActionBar(
-                    hasActiveVault: hasActiveVault,
-                    onCreateVault: _showCreateVaultDialog,
-                    onCreateFolder: createFolderAction,
-                    onGoUp: goUpAction,
-                    onGoToVaults: goToVaultsAction,
-                  ),
+                  if (hasActiveVault)
+                    NoteListActionBar(
+                      variant: currentFolderId == null
+                          ? NoteLocationVariant.root
+                          : NoteLocationVariant.folder,
+                      onTap: currentFolderId == null
+                          ? goToVaultsAction!
+                          : goUpAction!,
+                    ),
                   if (!hasActiveVault) ...[
                     const SizedBox(height: AppSpacing.large),
                     VaultListPanel(
