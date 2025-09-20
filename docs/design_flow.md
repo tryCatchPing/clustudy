@@ -82,3 +82,22 @@ vault 의 루트일 경우 `vault` 선택 화면으로 이동하는 상위 폴�
 2. 검색 전용 화면(라우트) 설계 및 기존 인라인 검색 필드 교체.
 3. 디자인 시스템의 `TopToolbar`, `FolderGrid`, `BottomActionsDockFixed` 를 기능 화면에서 직접 사용하도록 props/콜백 정의.
 4. Vault 내부 CTA(노트/폴더/PDF 생성, 상단 버튼)를 디자인 가이드에 맞춰 최종 정렬.
+### 2025-03-?? 작업 정리
+
+- note_list_screen( `lib/features/notes/pages/note_list_screen.dart` )에서 뷰 계층을 action bar + 리스트 패널로 재구성. 상단 `NoteListActionBar` (`lib/features/notes/widgets/note_list_action_bar.dart`)을 추가해 Vault/폴더 생성, 한 단계 위로, Vault 목록으로 이동을 한 레이어에서 처리함. 본문 컴포넌트는 순수 목록 역할만 담당하도록 분리.
+- `lib/features/notes/widgets/note_list_vault_panel.dart`에 카드별 퀵 액션(이름 변경, 삭제)을 추가. Vault 개수가 1개일 때 삭제 아이콘은 비활성화하고 툴팁으로 안내. 기존 롱프레스 바텀시트 제거.
+- `lib/features/notes/widgets/note_list_folder_section.dart`는 카드 그리드/아이콘만 유지하고 액션 버튼은 상단 바에서 처리하도록 간소화.
+- 서비스/저장소 레벨 방어 로직 변경.
+  * `lib/shared/services/vault_notes_service.dart`의 `deleteVault`가 전체 Vault 수를 검사해 마지막 Vault 삭제 시 `FormatException`을 던지도록 수정.
+  * `lib/features/vaults/data/isar_vault_tree_repository.dart`의 `_ensureDefaultVault`는 DB가 완전히 비어 있을 때만 기본 Vault를 생성. rename/delete 후 “Default Vault”가 다시 생기는 현상 예방.
+- UI guard도 동일 규칙 사용 (Vault 한 개일 때 삭제 버튼 비활성화)으로 일관성 확보.
+
+#### 해결 배경/접근
+- 기본 Vault가 이름 변경/삭제 상황에서 재생성되면서 UI 흐름을 깨뜨리는 문제가 있어, 저장소 초기화와 서비스 레벨에서 "최소 1개" 규칙만 유지하도록 재설계.
+- 노트 목록 화면은 디자인 시스템 위젯을 그대로 가져다 쓰기 위해 액션과 뷰를 분리하고, 삭제/생성 버튼이 이중으로 보이던 문제를 해소.
+
+#### 남은 이슈/추가 고려사항
+1. Analyzer info 경고(문서화, deprecated withOpacity 등)가 프로젝트 전반에 남아 있음 → 추후 정리 필요.
+2. `NoteListActionBar`/`VaultListPanel` 스타일을 디자인 시스템 토큰에 맞춰 세부 정리(색상, hover 등).
+3. 마지막 Vault 삭제 거부 시 사용자 피드백을 더 명확히(별도 SnackBar 등) 제공할지 논의 필요.
+4. 테스트 미보유 → 기본 vault 삭제/재생성 케이스에 대한 unit/integration test 추가 고려.
