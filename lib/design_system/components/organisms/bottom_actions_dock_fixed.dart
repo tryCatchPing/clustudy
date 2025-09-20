@@ -1,8 +1,8 @@
 // lib/design_system/components/organisms/bottom_actions_dock_fixed.dart
 import 'package:flutter/material.dart';
 
-import '../../tokens/app_colors.dart';
 import '../../../design_system/components/atoms/app_button.dart';
+import '../../tokens/app_colors.dart';
 
 class DockItem {
   const DockItem({
@@ -36,7 +36,7 @@ class BottomActionsDockFixed extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = const BorderRadius.only(
+    const radius = BorderRadius.only(
       topLeft: Radius.circular(25),
       topRight: Radius.circular(25),
     );
@@ -44,10 +44,10 @@ class BottomActionsDockFixed extends StatelessWidget {
     return Container(
       width: width,
       height: height,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.background, // 채우기: 배경색
         borderRadius: radius, // 좌/우/위 radius=25
-        border: const Border(
+        border: Border(
           // 외곽선: 좌/우/위 only
           top: BorderSide(color: AppColors.primary, width: 1),
           left: BorderSide(color: AppColors.primary, width: 1),

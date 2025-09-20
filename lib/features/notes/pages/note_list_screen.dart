@@ -6,8 +6,8 @@ import '../../../design_system/components/organisms/top_toolbar.dart';
 import '../../../design_system/tokens/app_colors.dart';
 import '../../../design_system/tokens/app_icons.dart';
 import '../../../design_system/tokens/app_spacing.dart';
-import '../../../shared/errors/app_error_mapper.dart';
 import '../../../shared/dialogs/design_sheet_helpers.dart';
+import '../../../shared/errors/app_error_mapper.dart';
 import '../../../shared/errors/app_error_spec.dart';
 import '../../../shared/routing/app_routes.dart';
 import '../../../shared/widgets/app_snackbar.dart';
@@ -290,25 +290,39 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
   }
 
   @override
-  @override
   Widget build(BuildContext context) {
     final vaultsAsync = ref.watch(vaultsProvider);
     final noteListState = ref.watch(noteListControllerProvider);
     final String? currentVaultId = ref.watch(currentVaultProvider);
     final bool hasActiveVault = currentVaultId != null;
+    debugPrint(
+      '📄 NoteListScreen.build: hasActiveVault=$hasActiveVault vaultId=${currentVaultId ?? 'NONE'}',
+    );
 
     String? currentFolderId;
     AsyncValue<List<VaultItem>>? itemsAsync;
     if (hasActiveVault) {
-      currentFolderId = ref.watch(currentFolderProvider(currentVaultId!));
+      currentFolderId = ref.watch(currentFolderProvider(currentVaultId));
+      debugPrint(
+        '📂 currentFolderId=${currentFolderId ?? 'ROOT'} for vault=$currentVaultId',
+      );
       itemsAsync = ref.watch(
         vaultItemsProvider(
           FolderScope(
-            currentVaultId!,
+            currentVaultId,
             currentFolderId,
           ),
         ),
       );
+      debugPrint(
+        '👀 itemsAsync watched for scope: vault=$currentVaultId parent=${currentFolderId ?? 'ROOT'}',
+      );
+    }
+
+    if (itemsAsync == null) {
+      debugPrint('!!!!!!!!!!!!!!!!!!! itemsAsync is null');
+    } else {
+      debugPrint('??????????????????? itemsAsync is not null');
     }
 
     VaultModel? activeVault;
@@ -374,7 +388,7 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
         if (folderId == null) {
           return;
         }
-        _goUpOneLevel(vaultId!, folderId);
+        _goUpOneLevel(vaultId, folderId);
       };
       backSvgPath = AppIcons.chevronLeft;
     } else if (hasActiveVault) {
@@ -388,21 +402,19 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
       backSvgPath = AppIcons.chevronLeft;
     }
 
-    final VoidCallback? createFolderAction =
-        hasActiveVault && currentVaultId != null
+    final VoidCallback? createFolderAction = hasActiveVault
         ? () {
             _showCreateFolderDialog(
-              currentVaultId!,
+              currentVaultId,
               currentFolderId,
             );
           }
         : null;
 
-    final VoidCallback? goUpAction =
-        hasActiveVault && currentVaultId != null && currentFolderId != null
+    final VoidCallback? goUpAction = hasActiveVault && currentFolderId != null
         ? () {
             _goUpOneLevel(
-              currentVaultId!,
+              currentVaultId,
               currentFolderId!,
             );
           }
@@ -423,6 +435,7 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
         return true;
       },
       child: Scaffold(
+        resizeToAvoidBottomInset: false,
         backgroundColor: AppColors.background,
         appBar: TopToolbar(
           variant: toolbarVariant,
@@ -433,111 +446,140 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
         ),
         body: SafeArea(
           bottom: false,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.screenPadding,
-              vertical: AppSpacing.large,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  '작업할 노트들',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
-                  ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              debugPrint('📐 NoteListScreen.body constraints: $constraints');
+              return ListView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.screenPadding,
+                  vertical: AppSpacing.large,
                 ),
-                const SizedBox(height: AppSpacing.medium),
-                NoteListActionBar(
-                  hasActiveVault: hasActiveVault,
-                  onCreateVault: _showCreateVaultDialog,
-                  onCreateFolder: createFolderAction,
-                  onGoUp: goUpAction,
-                  onGoToVaults: goToVaultsAction,
-                ),
-                if (!hasActiveVault) ...[
-                  const SizedBox(height: AppSpacing.large),
-                  VaultListPanel(
-                    vaultsAsync: vaultsAsync,
-                    onVaultSelected: _onVaultSelected,
-                    onRenameVault: _renameVaultPrompt,
-                    onDeleteVault: (vault) {
-                      _confirmAndDeleteVault(
-                        vaultId: vault.vaultId,
-                        vaultName: vault.name,
-                      );
-                    },
+                children: [
+                  Text(
+                    '작업할 노트들',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
                   ),
-                ] else if (itemsAsync != null) ...[
-                  const SizedBox(height: AppSpacing.large),
-                  NoteListFolderSection(
-                    itemsAsync: itemsAsync!,
-                    onOpenFolder: (folder) {
-                      _onFolderSelected(currentVaultId!, folder.id);
-                    },
-                    onMoveFolder: (folder) {
-                      _moveFolder(
-                        vaultId: currentVaultId!,
-                        currentFolderId: currentFolderId,
-                        folder: folder,
-                      );
-                    },
-                    onRenameFolder: (folder) {
-                      _renameFolder(folder);
-                    },
-                    onDeleteFolder: (folder) {
-                      _confirmAndDeleteFolder(
-                        vaultId: currentVaultId!,
-                        folderId: folder.id,
-                        folderName: folder.name,
-                      );
-                    },
-                    onOpenNote: _openNote,
-                    onMoveNote: (note) {
-                      _moveNote(
-                        vaultId: currentVaultId!,
-                        currentFolderId: currentFolderId,
-                        note: note,
-                      );
-                    },
-                    onRenameNote: (note) {
-                      _renameNote(note);
-                    },
-                    onDeleteNote: (note) {
-                      _confirmAndDeleteNote(
-                        noteId: note.id,
-                        noteTitle: note.name,
-                      );
-                    },
+                  const SizedBox(height: AppSpacing.medium),
+                  NoteListActionBar(
+                    hasActiveVault: hasActiveVault,
+                    onCreateVault: _showCreateVaultDialog,
+                    onCreateFolder: createFolderAction,
+                    onGoUp: goUpAction,
+                    onGoToVaults: goToVaultsAction,
                   ),
+                  if (!hasActiveVault) ...[
+                    const SizedBox(height: AppSpacing.large),
+                    VaultListPanel(
+                      vaultsAsync: vaultsAsync,
+                      onVaultSelected: _onVaultSelected,
+                      onRenameVault: _renameVaultPrompt,
+                      onDeleteVault: (vault) {
+                        _confirmAndDeleteVault(
+                          vaultId: vault.vaultId,
+                          vaultName: vault.name,
+                        );
+                      },
+                    ),
+                  ] else if (itemsAsync != null) ...[
+                    const SizedBox(height: AppSpacing.large),
+                    LayoutBuilder(
+                      builder: (context, c) {
+                        debugPrint(
+                          '📐 NoteListFolderSection parent constraints: $c',
+                        );
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          final size = context.size;
+                          debugPrint(
+                            '📏 NoteListFolderSection parent size: ${size?.width}x${size?.height}',
+                          );
+                        });
+                        return const SizedBox.shrink();
+                      },
+                    ),
+                    NoteListFolderSection(
+                      itemsAsync: itemsAsync,
+                      onOpenFolder: (folder) {
+                        _onFolderSelected(currentVaultId, folder.id);
+                      },
+                      onMoveFolder: (folder) {
+                        _moveFolder(
+                          vaultId: currentVaultId,
+                          currentFolderId: currentFolderId,
+                          folder: folder,
+                        );
+                      },
+                      onRenameFolder: (folder) {
+                        _renameFolder(folder);
+                      },
+                      onDeleteFolder: (folder) {
+                        _confirmAndDeleteFolder(
+                          vaultId: currentVaultId,
+                          folderId: folder.id,
+                          folderName: folder.name,
+                        );
+                      },
+                      onOpenNote: _openNote,
+                      onMoveNote: (note) {
+                        _moveNote(
+                          vaultId: currentVaultId,
+                          currentFolderId: currentFolderId,
+                          note: note,
+                        );
+                      },
+                      onRenameNote: (note) {
+                        _renameNote(note);
+                      },
+                      onDeleteNote: (note) {
+                        _confirmAndDeleteNote(
+                          noteId: note.id,
+                          noteTitle: note.name,
+                        );
+                      },
+                    ),
+                    const SizedBox(height: AppSpacing.xxl),
+                  ] else ...[
+                    const Text('No items'),
+                  ],
                 ],
-              ],
-            ),
+              );
+            },
           ),
         ),
         bottomNavigationBar: hasActiveVault
             ? SafeArea(
                 top: false,
-                minimum: const EdgeInsets.only(
-                  left: AppSpacing.large,
-                  right: AppSpacing.large,
-                  bottom: AppSpacing.large,
-                ),
-                child: NoteListPrimaryActions(
-                  isImporting: noteListState.isImporting,
-                  onImportPdf: () {
-                    _importPdfNote();
-                  },
-                  onCreateBlankNote: () {
-                    _createBlankNote();
-                  },
-                  onCreateFolder: () {
-                    _showCreateFolderDialog(
-                      currentVaultId,
-                      currentFolderId,
-                    );
-                  },
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    left: AppSpacing.large,
+                    right: AppSpacing.large,
+                    bottom: AppSpacing.large,
+                  ),
+                  child: SizedBox(
+                    height: 60,
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 520),
+                        child: NoteListPrimaryActions(
+                          isImporting: noteListState.isImporting,
+                          onImportPdf: () {
+                            _importPdfNote();
+                          },
+                          onCreateBlankNote: () {
+                            _createBlankNote();
+                          },
+                          onCreateFolder: () {
+                            _showCreateFolderDialog(
+                              currentVaultId,
+                              currentFolderId,
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               )
             : null,
