@@ -12,6 +12,7 @@ import '../../../design_system/tokens/app_colors.dart';
 import '../../../design_system/tokens/app_icons.dart';
 import '../../../design_system/tokens/app_spacing.dart';
 import '../state/note_store.dart';
+import '../widgets/note_links_sheet.dart';
 
 enum ToolPicker { none, pen, highlighter }
 
@@ -236,7 +237,10 @@ class NoteScreen extends StatelessWidget {
                           svgPath: AppIcons.pageManage,
                           tooltip: '페이지 관리',
                           onTap: () {
-                            context.push('/note-pages/$noteId', extra: noteTitle);
+                            context.push(
+                              '/note-pages/$noteId',
+                              extra: noteTitle,
+                            );
                           },
                         ),
                       ],
@@ -247,6 +251,7 @@ class NoteScreen extends StatelessWidget {
                               context.read<NoteUiState>().enterFullscreen(),
                           tooltip: '전체 화면',
                         ),
+                        ToolbarAction(svgPath: AppIcons.linkList, onTap: () {}),
                         ToolbarAction(
                           svgPath: AppIcons.search,
                           onTap: () {
