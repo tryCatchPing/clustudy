@@ -1,75 +1,80 @@
 # Design Branch Cleanup Runbook
 
-This runbook captures the exact plan for cleaning up the branch `design/clean-dev-xodnd` so that it only contains design-system assets and demo screens while restoring all feature/business logic back to `origin/dev`.
+이 문서는 `design/clean-dev-xodnd` 브랜치에서 Yura의 디자인 작업을 재적용하면서 기능 코드(`lib/features/**`, `lib/shared/**`, `lib/routing/**`, 등)를 현재 브랜치 상태와 동일하게 유지하기 위한 절차를 기록합니다. 큰 흐름은 다음 두 단계로 나뉩니다.
 
-The process relies on an interactive rebase onto `origin/dev`, replaying Yura's design commits and, for mixed commits, extracting only the design UI into `lib/design_system` (plus assets) while keeping the app's real feature code untouched. This document keeps the context so a future "full-auto" session can resume and finish the job.
+- **Phase 1 (완료)**: `90cadcd`부터 `de8cbbd`까지 정리 완료. 디자인 자산만 `lib/design_system/**`로 추출했고 기능 계층은 `origin/dev`와 동일하게 맞춰둠.
+- **Phase 2 (진행 중)**: `de8cbbd` 이후 Yura가 추가한 커밋들(`c676136`~`880c7d5`)을 재생산. 기능 코드는 현재 브랜치(`design/clean-dev-xodnd`) 상태로 고정하고, 디자인 관련 파일만 누적.
 
 ---
 
-## 1. Current Context
+## 1. 현재 브랜치 상태
 
-- Branch to clean: `design/clean-dev-xodnd`
-- Base branch: `origin/dev` (commit `38f056b` at the time of writing)
-- Goal:
-  - Preserve design artifacts (tokens, atoms, molecules, organisms, sample screens, icons, fonts).
-  - Move any UI work that landed under `lib/features/**` into `lib/design_system/**`.
-  - Restore feature/business logic files (`lib/features`, `lib/routing`, `lib/shared`, etc.) to match `origin/dev` exactly.
-  - Keep asset registrations in `pubspec.yaml` that the design system needs (fonts, icons).
-  - Preserve original authorship/timestamps of Yura's commits while crediting her via `Co-authored-by: yul-04 <yurakim0829@gmail.com>` and standardized `feat(design): ...` subjects.
+- 작업 브랜치: `design/clean-dev-xodnd`
+- 기능/서비스 기준선: Phase 2 시작 시점의 `design/clean-dev-xodnd` (추후 `tmp/design-clean-base` 브랜치로 보관)
+- 디자인 변경 원본: `origin/design/landing_page-yura`
+- 목표
+  - 디자인 시스템 자산(`lib/design_system/**`, `assets/fonts/**`, `assets/icons/**`)만 누적
+  - 기능 계층(`lib/features/**`, `lib/shared/**`, `lib/routing/**`, `lib/main.dart`, `test/**`)은 기준선과 동일하게 유지
+  - 디자인 관련 생성 시트/화면을 `lib/design_system/screens/**`로 이동하고, 더미 데이터/콜백으로 대체
+  - 기존 커밋 작성자/타임스탬프 보존 + `Co-authored-by: yul-04 <yurakim0829@gmail.com>` 추가, 커밋 메시지는 `feat(design): ...` 형식으로 통일
 
 ---
 
 ## 2. Pre-flight Checklist
 
-1. **Clean tree**
+1. **작업 트리 정리**
 
    ```bash
    git status
    ```
 
-   Ensure only helper files like `docs/how_to_rebase_yura.md` remain. Either stash or delete helpers during the rebase.
+   로컬 변경이 있다면 스태시하거나 별도 브랜치에 백업.
 
-2. **Remove helper artifacts** (optional but recommended)
+2. **원격 최신 상태 동기화**
 
-   ```bash
-   rm -f edit_rebase_todo.py
-   rm -f docs/how_to_rebase_yura.md  # or stash it if still needed
-   ```
-
-3. **Update remote refs**
    ```bash
    git fetch origin
    ```
 
+3. **기준선 스냅샷 저장** (Phase 2 작업용)
+
+   ```bash
+   git checkout design/clean-dev-xodnd
+   git branch --force tmp/design-clean-base
+   ```
+
+   이후 `git restore --source tmp/design-clean-base ...` 명령으로 기능 파일을 항상 이전 상태로 되돌릴 수 있음.
+
+4. **Yura 최신 브랜치 로컬 추적**
+   ```bash
+   git checkout -B tmp/yura-refresh origin/design/landing_page-yura
+   ```
+   Phase 2 커밋을 모두 포함한 임시 작업 브랜치.
+
 ---
 
-## 3. Interactive Rebase Setup
+## 3. 인터랙티브 리베이스 준비
 
-### 3.1 Mark commits that need manual surgery
-
-Only Yura's commits that touched feature logic should be marked as `edit`. Prepare the helper once:
+### 3.1 Phase 2용 GIT_SEQUENCE_EDITOR 스크립트
 
 ```bash
-cat <<'PY' > edit_rebase_todo.py
+cat <<'PY' > docs/edit_rebase_todo_phase2.py
 #!/usr/bin/env python3
 import sys
 from pathlib import Path
 
 REWRITE = {
-    '359402f2db466980178a5487ec3955cca2e1f56b': 'edit',
-    'e90ad47adae4401d5228233f43a0c4d6d0610deb': 'edit',
-    '2bf274cde1f78c98ef7f4ba792dc0ca2de9c2c39': 'edit',
-    '711d7259d33a9d864354b098fcb65b8bec8fc074': 'edit',
-    '225f5c5d9a900fe50d5638197e85ddb6966a12f7': 'edit',
-    '10df4c17772a9f66f51e4cda4dd1f463f2f16b36': 'edit',
-    'b5ecb740b52294e06f834e109f07c6e25b748960': 'edit',
-    'f86f79d4ea39c54d3ce4469ce156c8c62638ced8': 'edit',
-    'b9fb12fc0e6068f621add866464485742f366cb4': 'edit',
-    'b5c704b39af11fcacd20a7112cdf4db62a80b211': 'edit',
-    '4179da2934051028648a00ad1b59ec20ffa4eeba': 'edit',
-    '41eb910cfb0e63362c913e0b8143a1e83b1df8a0': 'edit',
-    'c108d9d298d8437ae6505724e4d9b57ab67a6c94': 'edit',
-    'de8cbbde79d9147f61afdad1d11a898120560271': 'edit',
+    'c6761363b6d7ce7c377d6a2fce69698626c7d15c': 'edit',
+    '3e2f420fda37c3365130f0a872f5f58f7e56a3cb': 'edit',
+    '0269af5d2aee8f0ade7372d9654f293f729fab48': 'edit',
+    '127e5f431b5187d0245cc823aac9d2ff1df3fdd7': 'edit',
+    '6a170bb807b3d36b1d19c63b7bb47fb3c9aaf9d4': 'edit',
+    'e9f20c5f5bf8b1dc13181c14356bcbc85e885e3e': 'edit',
+    '7c0dec4ede2336ab755d3efac1cd252db100302a': 'edit',
+    'c973119ccf51cbf4942fe04806f1b0df9b6671e0': 'edit',
+    '2c20d5c7ee057f0a70890fade77c1f6fd20b997c': 'edit',
+    '8d3fd616970e581cb3a66af2a1f5d883d40aeddf': 'edit',
+    '880c7d5dea0840b621cbea08bdf5d06fbfa59a8b': 'edit',
 }
 
 path = Path(sys.argv[1])
@@ -81,6 +86,9 @@ for line in text.splitlines():
         lines.append(line)
         continue
     parts = stripped.split()
+    if len(parts) < 2:
+        lines.append(line)
+        continue
     sha = parts[1]
     new_action = REWRITE.get(sha)
     if new_action:
@@ -89,88 +97,56 @@ for line in text.splitlines():
     lines.append(line)
 path.write_text('\n'.join(lines) + '\n')
 PY
-chmod +x edit_rebase_todo.py
+chmod +x docs/edit_rebase_todo_phase2.py
 ```
 
-Run the rebase with the helper as `GIT_SEQUENCE_EDITOR`:
+### 3.2 Phase 2 커밋만 리플레이
+
+`tmp/yura-refresh`에서 다음 명령 실행:
 
 ```bash
-GIT_SEQUENCE_EDITOR="python3 edit_rebase_todo.py" git rebase -i origin/dev
+GIT_SEQUENCE_EDITOR="python3 docs/edit_rebase_todo_phase2.py" \
+  git rebase -i --onto design/clean-dev-xodnd \
+    de8cbbde79d9147f61afdad1d11a898120560271 \
+    tmp/yura-refresh
 ```
 
-### 3.2 Commit classification
+- 리베이스는 `de8cbbd` 이후 커밋(`c676136`~`880c7d5`)만 대상으로 함
+- `edit`으로 표시된 커밋에서 멈출 때마다 Mixed Commit Extraction Loop 수행
+- 순수 디자인 커밋이 있다면(Phase 2에는 드묾) 충돌 해결 후 바로 `git rebase --continue`
 
-- **Pure design commits (auto)**: `90cadcd` through `c2ad63f` are limited to design assets/tokens. Resolve conflicts, stage design files, `git rebase --continue`.
-- **Mixed commits (manual)**: the SHA list in `REWRITE` above requires extraction of design code and restoration of features.
-
----
-
-## 4. Conflict Policy for Design-only Commits
-
-1. **`lib/design_system/tokens/app_colors.dart` conflict** (commit `90cadcd`)
-
-   - design_system 폴더의 수정사항은 모두 yura 의 최신 변경 사항을 가져옵니다
-
-2. **`pubspec.yaml` conflicts**
-
-   - Ensure the following remain:
-     - Font registration for `assets/fonts/PretendardVariable.ttf` (added in `90cadcd`).
-     - Icon assets under `flutter/assets` introduced by later design commits (`assets/icons/*.svg`).
-   - Stage only the relevant chunks via `git add -p pubspec.yaml` if necessary.
-
-3. For other design-only commits, simply stage modified design files and run `git rebase --continue`.
+리베이스가 끝나면 `tmp/yura-refresh`가 정리된 디자인 커밋만 갖게 되므로 이후 `design/clean-dev-xodnd`에 fast-forward로 반영.
 
 ---
 
-## 5. Mixed Commit Extraction Loop
+## 4. Mixed Commit Extraction Loop (Phase 2)
 
-For each commit marked `edit`, follow this pattern (replace `<SHA>` and paths as needed):
+`edit` 지점마다 다음 절차 반복:
 
-1. **Reset to a clean state for that commit**
+1. **초기화**
 
    ```bash
    git reset --hard HEAD
    ```
 
-2. **Check out the commit's changes only for design-relevant directories**
+2. **디자인 관련 변경만 체크아웃**
 
    ```bash
    git checkout <SHA> -- assets lib/design_system
+   # 필요 시 features 내부의 UI 파일도 임시로 체크아웃 후 design 폴더로 복사
    ```
 
-   Add additional paths only if the design system needs them (e.g., demo routing files under `lib/design_system/routing`).
+3. **기능 UI를 디자인 시스템으로 이동/복사**
 
-3. **Copy UI screens/widgets out of features before restoring**
+   - `lib/features/**/pages/*.dart`, `widgets/*.dart` 중 UI 위젯은
+     `lib/design_system/screens/<domain>/` 경로로 복사
+   - 기존에 동일 파일이 있다면 수동 병합 (스타일 변경 반영)
+   - Provider, Router, 서비스 의존성은 삭제하고 더미 데이터/콜백으로 치환
 
-   - For each features file that contains visual work (pages, widgets), copy it into the design system. Examples:
-
-     ```bash
-     mkdir -p lib/design_system/screens/home
-     cp lib/features/home/pages/home_screen.dart lib/design_system/screens/home/home_screen.dart
-
-     mkdir -p lib/design_system/screens/folder
-     cp lib/features/folder/pages/folder_screen.dart lib/design_system/screens/folder/folder_screen.dart
-
-     mkdir -p lib/design_system/screens/vault
-     cp lib/features/vaults/pages/vault_screen.dart lib/design_system/screens/vault/vault_screen.dart
-
-     mkdir -p lib/design_system/screens/notes
-     cp lib/features/notes/pages/note_screen.dart lib/design_system/screens/notes/note_screen.dart
-
-     mkdir -p lib/design_system/screens/home/widgets
-     cp lib/features/home/widgets/home_creation_sheet.dart lib/design_system/screens/home/widgets/home_creation_sheet.dart
-     cp lib/features/folder/widgets/folder_creation_sheet.dart lib/design_system/screens/folder/widgets/folder_creation_sheet.dart
-     cp lib/features/vaults/widgets/vault_creation_sheet.dart lib/design_system/screens/vault/widgets/vault_creation_sheet.dart
-     cp lib/features/notes/widgets/note_creation_sheet.dart lib/design_system/screens/notes/widgets/note_creation_sheet.dart
-     ```
-
-   - If earlier commits already created a design version of a file, open both and merge by hand so history remains consistent.
-   - Strip app logic (providers, navigation, async calls) from the design copies; replace them with deterministic sample data.
-
-4. **Restore feature/business code back to `origin/dev`**
+4. **기능 계층을 기준선으로 롤백**
 
    ```bash
-   git restore --source origin/dev --staged --worktree \
+   git restore --source tmp/design-clean-base --staged --worktree \
      lib/features \
      lib/routing \
      lib/shared \
@@ -178,16 +154,16 @@ For each commit marked `edit`, follow this pattern (replace `<SHA>` and paths as
      test
    ```
 
-   Add/remove paths here according to each commit's scope (some commits touch additional files such as `lib/utils/pickers/pick_pdf.dart`).
+   수정 범위에 따라 추가 경로(`lib/utils/**` 등)를 포함
 
-5. **Stage design assets only**
+5. **디자인 자산만 스테이징**
 
    ```bash
    git add assets lib/design_system
-   git add -p pubspec.yaml  # keep only icon/font entries needed by design
+   git add -p pubspec.yaml  # 아이콘/폰트 등록 변경만 포함
    ```
 
-6. **Re-create the commit with co-author metadata and standardized message**
+6. **커밋 재작성 (작성자/타임스탬프 유지)**
 
    ```bash
    AUTHOR=$(git show --no-patch --format='%an <%ae>' <SHA>)
@@ -199,121 +175,78 @@ For each commit marked `edit`, follow this pattern (replace `<SHA>` and paths as
      -m 'Co-authored-by: yul-04 <yurakim0829@gmail.com>'
    ```
 
-   Replace `<concise summary>` with the specific design change (e.g. `refine home showcase`). Include additional body text if the original commit message had details.
+   `<concise summary>`에는 해당 커밋의 디자인 변경 요약 입력.
 
-7. **Continue the rebase**
+7. **리베이스 계속**
    ```bash
    git rebase --continue
    ```
 
-Repeat the loop for each SHA in the `REWRITE` map.
+---
+
+## 5. Phase 2 커밋별 메모
+
+| SHA (원본) | 커밋 메시지             | 메모                                                                                            |
+| ---------- | ----------------------- | ----------------------------------------------------------------------------------------------- |
+| `c676136`  | 폴더 관리 시트 생성     | 새 시트들을 `lib/design_system/screens/folder/widgets/`로 이동. 기능 시트는 기준선으로 복원.    |
+| `3e2f420`  | 폴더 관리 시트 수정     | 디자인 시트에만 스타일 반영, 기능 위젯은 롤백.                                                  |
+| `0269af5`  | 폴더 관리 카드 2차 수정 | `lib/design_system/components/molecules/folder_card.dart` 등 디자인 파일로 통합.                |
+| `127e5f4`  | 전체 화면 툴바 해결     | 디자인 툴바(Top/Bottom) 관련 변경만 유지. 기능 툴바는 기준선.                                   |
+| `6a170bb`  | 노트 툴바 수정          | 디자인 노트 툴바/세컨더리 툴바에 반영, 기능 쪽은 되돌림.                                        |
+| `e9f20c5`  | 노트 화면 완성          | 디자인 노트 데모 화면 강화. 기능 노트 화면은 복원.                                              |
+| `7c0dec4`  | 링크 생성용 시트        | 시트/다이얼로그를 `design_system` 쪽으로 복제, 기능 링크 시트는 제거.                           |
+| `c973119`  | 기존 링크용 시트        | 위와 동일 전략.                                                                                 |
+| `2c20d5c`  | 노트 페이지 관리 생성   | 관리 UI는 디자인 데모로 옮기고 기능 라우팅/서비스는 롤백.                                       |
+| `8d3fd61`  | 검색 화면 완성          | `lib/design_system/screens/search/` 생성 후 더미 데이터 연결. 기능 검색 페이지는 baseline 유지. |
+| `880c7d5`  | 링크 리스트 생성        | 링크 리스트/아이콘만 디자인 시스템에 남김. 기능 내부 변화는 모두 복원.                          |
+
+> 모든 커밋에서 새로 추가된 아이콘(`assets/icons/**`)은 디자인 시스템에서만 사용하도록 확인. 기능에서 참조하지 않는지 double check.
 
 ---
 
-## 6. Commit-specific Notes
+## 6. 리베이스 이후 마무리
 
-### 359402f `home 1차 완성`
-
-- Keep removal of `lib/design_system/ai_generated/**` and the new design routing files.
-- Extract all UI from `lib/features/**` into the corresponding folders under `lib/design_system/screens/**`.
-- Restore `lib/features`, `lib/routing`, `lib/shared`, `lib/main.dart`, `pubspec.yaml` (except for icon/font asset lines).
-
-### e90ad47 `router 해결, vault 폴더 화면 생성`
-
-- Adds vault/folder demo screens and routing glue.
-- Copy visual widgets (`vault_screen`, `folder_screen`, `vault_creation_sheet`, etc.) into `lib/design_system/screens/**`.
-- Keep design-system routing updates (`lib/design_system/routing/design_system_routes.dart`).
-- Restore all feature logic and providers to `origin/dev`.
-
-### 2bf274c `폴더, 노트 생성을 위한 스크린 생성`
-
-- Same pattern: move new creation sheets into `lib/design_system/screens/**/widgets`.
-- Restore feature stores/routes/services.
-
-### 711d725 `home, vault, folder 2차 수정`
-
-- Merge incremental design tweaks into the design copies created earlier.
-- Before restoring features, diff against the previous design versions to bring over style changes.
-
-### 225f5c5 `toptoolbar 수정`
-
-- Purely design system except for canvas references. Only `lib/design_system/components` should stay; ensure canvas feature files revert to `dev`.
-
-### 10df4c1 `appcard 수정`
-
-- Keep design-system molecule updates, new icons, and screens.
-- Restore `lib/features/*` pages to `dev`.
-
-### b5ecb74 `생성 sheet 생성 버튼 수정`
-
-- Only design components should remain. Restore widgets under `lib/features/**` after copying to design folder if needed.
-
-### f86f79d `homescreen 수정`
-
-- Continue merging updates into `lib/design_system/screens/home/home_screen.dart`.
-- Restore feature home screen to `dev` version afterward.
-
-### b9fb12f `이전 버튼 경로 수정`
-
-- Similar: merge icon path tweaks into design copy, then restore features.
-
-### b5c704b `생성 sheet 생성 버튼 수정`
-
-- Update design creation sheets; restore feature sheets to `dev`.
-
-### 4179da2 `creationsheet 아이콘 버튼 수정`
-
-- Keep design component changes; restore feature usages.
-
-### 41eb910c `folder_grid + stores`
-
-- UI parts (folder grid) stay in `lib/design_system/components/organisms`.
-- Feature store/state/data files must revert.
-
-### c108d9d `folder_screen, note_store`
-
-- Move final visual tweaks into design screens; restore feature stores and pages.
-
-### de8cbbd `foldercard 아이콘 수정`
-
-- Purely design updates except maybe icons. Ensure only `lib/design_system/...` and `assets/icons/*.svg` stay staged.
-
----
-
-## 7. After the Rebase
-
-1. **Verify diff scope**
+1. **정리된 브랜치 합치기**
 
    ```bash
-   git diff --name-only origin/dev..HEAD
+   git checkout design/clean-dev-xodnd
+   git merge --ff-only tmp/yura-refresh
    ```
 
-   Expect to see only `assets/fonts`, `assets/icons`, `lib/design_system/**`, and possibly documentation.
+2. **Diff 범위 재확인**
 
-2. **Run sanity checks** (optional but encouraged)
+   ```bash
+   git diff --name-only tmp/design-clean-base..HEAD
+   ```
+
+   결과가 `assets/**`, `lib/design_system/**`, `docs/**` 정도에 한정되는지 확인. 다른 경로가 나오면 기준선으로 복원.
+
+3. **필요 시 추가 검증**
 
    ```bash
    fvm flutter analyze
    fvm flutter test
    ```
 
-3. **Force-push the cleaned branch**
-
+4. **푸시 및 정리**
    ```bash
    git push --force-with-lease origin design/clean-dev-xodnd
-   ```
-
-4. **Cleanup**
-   ```bash
-   rm -f edit_rebase_todo.py
+   # 작업 끝난 뒤 정리
+   git branch -D tmp/yura-refresh
+   git branch -D tmp/design-clean-base   # 필요 시 유지
+   rm -f docs/edit_rebase_todo_phase2.py
    ```
 
 ---
 
-## 8. Open Questions / TODOs
+## 7. Open Questions / TODOs
 
-- When copying feature UI into `lib/design_system/screens/**`, replace provider/data calls with static mock data so that design previews compile without app state.
-- Decide how to expose the new design screens (e.g., via `lib/design_system/routing/design_system_routes.dart`).
-- Revisit `pubspec.yaml` after rebase to ensure no unused asset entries remain.
+- 디자인 화면으로 옮기는 과정에서 필요한 더미 데이터/콜백 패턴 표준화 필요
+- `lib/design_system/routing/design_system_routes.dart`에 새 데모 화면을 어떻게 노출할지 결정
+- `pubspec.yaml` 디자인 자산 섹션을 주기적으로 점검 (사용되지 않는 아이콘 제거 등)
+- Phase 2 완료 후에는 향후 Phase 3(추가 커밋) 대비해서 동일 절차 반복 가능하도록 본 문서를 최신화할 것
+- 기준선 브랜치(`tmp/design-clean-base`)는 Phase 2 종료 후에도 다음 작업 전까지 업데이트해 두기
 
-This document should give the next session full context to resume the cleanup without re-discovering the workflow.
+---
+
+이 문서를 따라가면 이후 세션에서도 동일한 컨텍스트를 재현해 Phase 2 커밋을 안전하게 정리할 수 있습니다.
