@@ -1,12 +1,13 @@
 // lib/design_system/components/molecules/note_page_card.dart
 import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
 import '../../tokens/app_colors.dart';
-import '../../tokens/app_spacing.dart';
-import '../../tokens/app_typography.dart';
 import '../../tokens/app_shadows.dart';
 import '../../tokens/app_sizes.dart';
+import '../../tokens/app_spacing.dart';
+import '../../tokens/app_typography.dart';
 
 class NotePageCard extends StatelessWidget {
   const NotePageCard({

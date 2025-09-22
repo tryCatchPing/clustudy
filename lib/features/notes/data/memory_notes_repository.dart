@@ -3,10 +3,10 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../../../shared/services/db_txn_runner.dart';
 import '../models/note_model.dart';
 import '../models/note_page_model.dart';
 import '../models/thumbnail_metadata.dart';
-import '../../../shared/services/db_txn_runner.dart';
 import 'notes_repository.dart';
 
 /// 간단한 인메모리 구현.

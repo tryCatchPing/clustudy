@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import 'dart:ui' as ui show ImageFilter;
+
+import 'package:flutter/material.dart';
 
 class AppShadows {
   // Private constructor to prevent instantiation

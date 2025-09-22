@@ -9,7 +9,7 @@ class DesignNoteScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final notes = _demoNotes;
+    const notes = _demoNotes;
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(

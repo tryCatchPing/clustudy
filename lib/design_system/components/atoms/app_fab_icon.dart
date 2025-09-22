@@ -1,6 +1,7 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'dart:math' as math;
 
 import '../../tokens/app_colors.dart';
 import '../../tokens/app_shadows.dart';

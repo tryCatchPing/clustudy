@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../tokens/app_colors.dart';
+import '../../tokens/app_sizes.dart';
 import '../../tokens/app_spacing.dart';
 import '../../tokens/app_typography.dart';
-import '../../tokens/app_sizes.dart';
 import '../../utils/dashed_border.dart';
 
 class AddPageCard extends StatelessWidget {

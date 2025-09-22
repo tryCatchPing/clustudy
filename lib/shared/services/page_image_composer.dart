@@ -56,7 +56,7 @@ class PageImageComposer {
 
       final fileBytes = imageFile.lengthSync();
       debugPrint(
-        '  - BG File Exists: ${page.preRenderedImagePath} (${fileBytes} bytes)',
+        '  - BG File Exists: ${page.preRenderedImagePath} ($fileBytes bytes)',
       );
 
       final imageBytes = await imageFile.readAsBytes();

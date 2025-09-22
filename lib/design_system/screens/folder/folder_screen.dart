@@ -1,29 +1,27 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:provider/provider.dart';
 
-import '../../../design_system/tokens/app_colors.dart';
-import '../../../design_system/tokens/app_spacing.dart';
-import '../../../design_system/tokens/app_icons.dart';
-import '../../../design_system/components/organisms/top_toolbar.dart';
+import '../../../design_system/components/molecules/folder_card.dart';
 import '../../../design_system/components/organisms/bottom_actions_dock_fixed.dart';
-import '../../../design_system/components/organisms/folder_grid.dart';
 import '../../../design_system/components/organisms/creation_sheet.dart';
+import '../../../design_system/components/organisms/folder_grid.dart';
 import '../../../design_system/components/organisms/item_actions.dart';
 import '../../../design_system/components/organisms/rename_dialog.dart';
-import '../../../design_system/components/molecules/folder_card.dart';
-
-import '../widgets/folder_creation_sheet.dart';
-import '../../notes/state/note_store.dart';
-import '../../notes/data/note.dart';
-import '../../notes/widgets/note_creation_sheet.dart';
+import '../../../design_system/components/organisms/top_toolbar.dart';
+import '../../../design_system/tokens/app_colors.dart';
+import '../../../design_system/tokens/app_icons.dart';
+import '../../../design_system/tokens/app_spacing.dart';
 import '../../../routing/route_names.dart';
+import '../../../utils/pickers/pick_pdf.dart';
+import '../../notes/data/note.dart';
+import '../../notes/state/note_store.dart';
+import '../../notes/widgets/note_creation_sheet.dart';
 import '../data/folder.dart';
 import '../state/folder_store.dart';
 import '../widgets/folder_creation_sheet.dart';
-import '../../../utils/pickers/pick_pdf.dart';
-
-import 'package:provider/provider.dart';
+import '../widgets/folder_creation_sheet.dart';
 
 class FolderScreen extends StatelessWidget {
   final String vaultId;

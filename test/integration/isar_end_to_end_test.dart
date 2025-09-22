@@ -2,8 +2,6 @@ import 'dart:io';
 
 import 'package:async/async.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
-
 import 'package:it_contest/features/canvas/data/isar_link_repository.dart';
 import 'package:it_contest/features/canvas/models/link_model.dart';
 import 'package:it_contest/features/notes/data/isar_notes_repository.dart';
@@ -12,6 +10,7 @@ import 'package:it_contest/features/notes/models/note_page_model.dart';
 import 'package:it_contest/features/vaults/data/isar_vault_tree_repository.dart';
 import 'package:it_contest/features/vaults/models/vault_item.dart';
 import 'package:it_contest/shared/services/isar_database_service.dart';
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
 class _FixedPathProvider extends PathProviderPlatform {
   _FixedPathProvider(this.documentsPath);
@@ -91,7 +90,7 @@ void main() {
           vault.vaultId,
           name: 'Graph Theory',
         );
-        final graphPageId = 'graph-page';
+        const graphPageId = 'graph-page';
         await notesRepo.upsert(
           _buildBlankNote(graphNoteId, 'Graph Theory', graphPageId),
         );
@@ -128,7 +127,7 @@ void main() {
           parentFolderId: algorithmsFolder.folderId,
           name: 'Dynamic Programming',
         );
-        final dpPageId = 'dp-page';
+        const dpPageId = 'dp-page';
         await notesRepo.upsert(
           _buildBlankNote(dpNoteId, 'Dynamic Programming', dpPageId),
         );

@@ -1,9 +1,11 @@
 // lib/design_system/components/organisms/folder_grid.dart
-import 'package:flutter/material.dart';
-import '../../tokens/app_spacing.dart';
-import '../../tokens/app_sizes.dart';
-import '../molecules/app_card.dart';
 import 'dart:typed_data';
+
+import 'package:flutter/material.dart';
+
+import '../../tokens/app_sizes.dart';
+import '../../tokens/app_spacing.dart';
+import '../molecules/app_card.dart';
 
 class FolderGridItem {
   const FolderGridItem({

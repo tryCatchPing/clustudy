@@ -1,9 +1,10 @@
 // lib/features/notes/widgets/note_links_sheet.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+
 import '../../../design_system/tokens/app_colors.dart';
-import '../../../design_system/tokens/app_typography.dart';
 import '../../../design_system/tokens/app_icons.dart';
+import '../../../design_system/tokens/app_typography.dart';
 
 class NoteLinkItem {
   final String title; // 예: '새 노트 2025-09-19 1643 - p.1'
@@ -166,7 +167,7 @@ class _Section extends StatelessWidget {
             ),
           )
         else
-          ...items.map((e) => _LinkTile(item: e)).toList(),
+          ...items.map((e) => _LinkTile(item: e)),
       ],
     );
   }

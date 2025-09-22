@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../tokens/app_colors.dart';
 import '../../tokens/app_spacing.dart';
+import '../atoms/app_button.dart';
 import '../atoms/app_icon_button.dart';
 import '../atoms/app_textfield.dart';
-import '../atoms/app_button.dart';
 
 class SearchToolbar extends StatelessWidget implements PreferredSizeWidget {
   const SearchToolbar({
@@ -51,7 +51,7 @@ class SearchToolbar extends StatelessWidget implements PreferredSizeWidget {
       bottom: false,
       child: Container(
         height: height,
-        padding: EdgeInsets.only(
+        padding: const EdgeInsets.only(
           left: AppSpacing.screenPadding,   // 30
           right: AppSpacing.screenPadding,  // 30
           top: AppSpacing.screenPadding,    // 30

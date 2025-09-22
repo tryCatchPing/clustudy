@@ -113,6 +113,7 @@ class _ActionRow extends StatelessWidget {
   const _ActionRow({required this.action});
   final CardSheetAction action;
 
+  @override
   Widget build(BuildContext context) {
     return SizedBox(                      // ← 추가: 전체 폭 차지
       width: double.infinity,

@@ -1,9 +1,10 @@
 // lib/design_system/components/organisms/note_toolbar_secondary.dart
 import 'package:flutter/material.dart';
+
 import '../../tokens/app_colors.dart';
-import '../atoms/tool_glow_icon.dart';
 import '../../tokens/app_icons.dart';
 import '../../tokens/app_spacing.dart';
+import '../atoms/tool_glow_icon.dart';
 
 enum NoteToolbarSecondaryVariant { bar, pill }
 

@@ -70,16 +70,16 @@ class AppTextField extends StatelessWidget {
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: controller,
       builder: (_, value, __) {
-        final _style = _resolveTextStyle();
-        final _decoration = _buildDecoration(value);
+        final style = _resolveTextStyle();
+        final decoration = _buildDecoration(value);
 
         final textField = TextField(
           controller: controller,
           enabled: enabled,
           focusNode: focusNode,
           autofocus: autofocus,
-          style: _style,
-          decoration: _decoration,
+          style: style,
+          decoration: decoration,
           cursorColor: AppColors.primary,
           textAlign: textAlign ?? (style == AppTextFieldStyle.underline
             ? TextAlign.center

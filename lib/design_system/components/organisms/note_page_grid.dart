@@ -1,11 +1,12 @@
 // lib/design_system/components/organisms/note_page_grid.dart
 import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
-import '../../tokens/app_spacing.dart';
 import '../../tokens/app_sizes.dart';
-import '../molecules/note_page_card.dart';
+import '../../tokens/app_spacing.dart';
 import '../molecules/add_page_card.dart';
+import '../molecules/note_page_card.dart';
 
 final demoPages = List<NotePageItem>.generate(
   8,
@@ -65,7 +66,7 @@ class NotePageGrid extends StatelessWidget {
       // 2) 열 수 자동 계산 (gap은 고정)
       // 타일 폭 = 120, gap = 24(기본)
       final double inner = w - gutters.horizontal;
-      final double tileW = AppSizes.noteTileW; // 120
+      const double tileW = AppSizes.noteTileW; // 120
       final double gap = crossAxisGap;         // 24
       final int cols = ((inner + gap) / (tileW + gap)).floor().clamp(1, 12);
 

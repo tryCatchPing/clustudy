@@ -367,9 +367,9 @@ class NoteScreen extends StatelessWidget {
                         const double pillVPad = 8; // pill 상/하 패딩
                         const double barVPad = 15; // bar 상/하 패딩
 
-                        final double pillHeight =
+                        const double pillHeight =
                             pillVPad + icon + pillVPad; // 8 + 28 + 8 = 44
-                        final double barHeight =
+                        const double barHeight =
                             barVPad + icon + barVPad; // 15 + 28 + 15 = 58
 
                         if (ui.variant == NoteToolbarSecondaryVariant.pill) {
