@@ -1,5 +1,18 @@
 # Design Branch Cleanup Runbook
 
+## 작업 목적 및 배경
+
+**개발 워크플로우**: 개발자가 `lib/design_system/**`에 있는 스크린 예시들을 참고해서 `lib/features/**`에서 UI 컴포넌트들을 사용해 실제 기능을 구현하는 방식으로 진행 예정.
+
+**문제 상황**: 디자이너(Yura)가 디자인 테스트를 위해 `lib/features/**`의 기능 코드를 직접 수정해버림. 이로 인해 개발자의 기능 구현 작업이 손상됨.
+
+**해결 방안**:
+1. Yura의 커밋들을 분석하여 디자인 관련 변경사항만 `lib/design_system/**`로 분리
+2. `lib/features/**` 등 기능 코드는 개발자가 작업한 clean-dev 상태로 복원
+3. 이후 정리된 디자인 파일들을 참고하여 단계적으로 디자인 적용
+
+---
+
 이 문서는 `design/clean-dev-xodnd` 브랜치에서 Yura의 디자인 작업을 재적용하면서 기능 코드(`lib/features/**`, `lib/shared/**`, `lib/routing/**`, 등)를 현재 브랜치 상태와 동일하게 유지하기 위한 절차를 기록합니다. 큰 흐름은 다음 두 단계로 나뉩니다.
 
 - **Phase 1 (완료)**: `90cadcd`부터 `de8cbbd`까지 정리 완료. 디자인 자산만 `lib/design_system/**`로 추출했고 기능 계층은 `origin/dev`와 동일하게 맞춰둠.
