@@ -5,10 +5,10 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../design_system/components/organisms/note_page_grid.dart';
-import '../../../design_system/components/organisms/top_toolbar.dart';
-import '../../../design_system/tokens/app_colors.dart';
-import '../../../design_system/tokens/app_icons.dart';
+import '../../../components/organisms/note_page_grid.dart';
+import '../../../components/organisms/top_toolbar.dart';
+import '../../../tokens/app_colors.dart';
+import '../../../tokens/app_icons.dart';
 
 class NotePagesScreen extends StatefulWidget {
   const NotePagesScreen({
@@ -86,7 +86,11 @@ class _NotePagesScreenState extends State<NotePagesScreen> {
     if (bytes == null) return;
     setState(() {
       _pages.add(
-        NotePageItem(previewImage: bytes, pageNumber: _pages.length + 1, selected: false,),
+        NotePageItem(
+          previewImage: bytes,
+          pageNumber: _pages.length + 1,
+          selected: false,
+        ),
       );
     });
   }

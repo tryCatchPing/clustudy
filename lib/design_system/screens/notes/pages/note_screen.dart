@@ -3,16 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../../design_system/components/atoms/app_fab_icon.dart';
-import '../../../design_system/components/atoms/tool_glow_icon.dart';
-import '../../../design_system/components/molecules/tool_color_picker_pill.dart';
-import '../../../design_system/components/organisms/note_toolbar_secondary.dart';
-import '../../../design_system/components/organisms/note_top_toolbar.dart';
-import '../../../design_system/tokens/app_colors.dart';
-import '../../../design_system/tokens/app_icons.dart';
-import '../../../design_system/tokens/app_spacing.dart';
-import '../state/note_store.dart';
-import '../widgets/note_links_sheet.dart';
+import '../../../components/atoms/app_fab_icon.dart';
+import '../../../components/atoms/tool_glow_icon.dart';
+import '../../../components/molecules/tool_color_picker_pill.dart';
+import '../../../components/organisms/note_toolbar_secondary.dart';
+import '../../../components/organisms/note_top_toolbar.dart';
+import '../../../tokens/app_colors.dart';
+import '../../../tokens/app_icons.dart';
+import '../../../tokens/app_spacing.dart';
 
 enum ToolPicker { none, pen, highlighter }
 
@@ -201,15 +199,16 @@ class NoteScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    context.read<NoteStore>().init();
+    // context.read<NoteStore>().init();
     return ChangeNotifierProvider(
       create: (_) => NoteUiState(),
       child: Builder(
         builder: (context) {
           final ui = context.watch<NoteUiState>();
-          final noteTitle = context.select<NoteStore, String?>(
-            (s) => s.titleOf(noteId),
-          );
+          // final noteTitle = context.select<NoteStore, String?>(
+          //   (s) => s.titleOf(noteId),
+          // );
+          const noteTitle = '제목 없는 노트';
           final displayTitle = noteTitle ?? initialTitle ?? '제목 없는 노트';
           return WillPopScope(
             onWillPop: () async {

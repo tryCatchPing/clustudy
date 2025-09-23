@@ -1,15 +1,11 @@
 // features/vault/pages/vault_screen.dart
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
 import '../../../design_system/components/molecules/folder_card.dart';
 import '../../../design_system/components/organisms/bottom_actions_dock_fixed.dart';
-import '../../../design_system/components/organisms/creation_sheet.dart';
 import '../../../design_system/components/organisms/folder_grid.dart';
 import '../../../design_system/components/organisms/item_actions.dart';
-import '../../../design_system/components/organisms/rename_dialog.dart';
 import '../../../design_system/components/organisms/top_toolbar.dart';
 import '../../../design_system/tokens/app_colors.dart';
 import '../../../design_system/tokens/app_icons.dart';
@@ -21,25 +17,26 @@ class VaultScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final vLoaded = context.select<VaultStore, bool>((s) => s.isLoaded);
-    if (!vLoaded) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
+    // final vLoaded = context.select<VaultStore, bool>((s) => s.isLoaded);
+    // if (!vLoaded) {
+    //   return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    // }
 
-    final vault = context.select<VaultStore, Vault?>((s) => s.byId(vaultId));
+    // final vault = context.select<VaultStore, Vault?>((s) => s.byId(vaultId));
+    const vault = null;
 
     // 가드: 없으면 뒤로/에러 처리
     if (vault == null) {
       return const Scaffold(body: Center(child: Text('Vault not found')));
     }
 
-    final fLoaded = context.select<FolderStore, bool>((s) => s.isLoaded);
-    final nLoaded =
-        context.select<NoteStore, bool?>((s) => s is NoteStore ? true : null) ??
-        true; // NoteStore에 isLoaded 있으면 교체
-    if (!fLoaded || !nLoaded) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
+    // final fLoaded = context.select<FolderStore, bool>((s) => s.isLoaded);
+    // final nLoaded =
+    //     context.select<NoteStore, bool?>((s) => s is NoteStore ? true : null) ??
+    //     true; // NoteStore에 isLoaded 있으면 교체
+    // if (!fLoaded || !nLoaded) {
+    //   return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    // }
 
     final actions = <ToolbarAction>[
       // 임시 vault가 아니면 그래프뷰 버튼 노출
@@ -47,7 +44,7 @@ class VaultScreen extends StatelessWidget {
         ToolbarAction(
           svgPath: AppIcons.graphView, // ← 그래프 아이콘
           onTap: () {
-            context.goNamed(RouteNames.graph, pathParameters: {'id': vault.id});
+            // context.goNamed(RouteNames.graph, pathParameters: {'id': vault.id});
           },
         ),
       ToolbarAction(svgPath: AppIcons.search, onTap: () {}),
@@ -55,12 +52,16 @@ class VaultScreen extends StatelessWidget {
     ];
 
     // 1) 폴더/노트 가져오기 (루트 레벨)
-    final subFolders = context.select<FolderStore, List<Folder>>(
-      (s) => s.byParent(vaultId: vault.id, parentFolderId: null),
-    );
-    final notes = context.select<NoteStore, List<Note>>(
-      (s) => s.byVault(vault.id).where((n) => n.folderId == null).toList(),
-    );
+    // final subFolders = context.select<FolderStore, List<Folder>>(
+    //   (s) => s.byParent(vaultId: vault.id, parentFolderId: null),
+    // );
+    final subFolders = [];
+    // final notes = context.select<NoteStore, List<Note>>(
+    //   (s) => s.byVault(vault.id).where((n) => n.folderId == null).toList(),
+    // );
+    final notes = [];
+    //   (s) => s.byVault(vault.id).where((n) => n.folderId == null).toList(),
+    // )
 
     // 2) FolderGrid로 매핑
     final items = <FolderGridItem>[
@@ -72,30 +73,30 @@ class VaultScreen extends StatelessWidget {
             type: FolderType.normal,
             title: f.name,
             date: f.createdAt,
-            onTap: () => context.pushNamed(
-              RouteNames.folder,
-              pathParameters: {
-                'vaultId': vault.id,
-                'folderId': f.id,
-              },
-            ),
+            onTap: () => {
+              // context.pushNamed(
+              // RouteNames.folder,
+              // pathParameters: {
+              //   'vaultId': vault.id,
+              //   'folderId': f.id,
+            },
             onLongPressStart: (d) {
               showItemActionsNear(
                 context,
                 anchorGlobal: d.globalPosition,
                 handlers: ItemActionHandlers(
                   onRename: () async {
-                    final name = await showRenameDialog(
-                      context,
-                      initial: f.name,
-                      title: '이름 바꾸기',
-                    );
-                    if (name != null && name.trim().isNotEmpty) {
-                      await context.read<FolderStore>().renameFolder(
-                        id: f.id,
-                        newName: name.trim(),
-                      );
-                    }
+                    // final name = await showRenameDialog(
+                    //   context,
+                    //   initial: f.name,
+                    //   title: '이름 바꾸기',
+                    // );
+                    // if (name != null && name.trim().isNotEmpty) {
+                    //   await context.read<FolderStore>().renameFolder(
+                    //     id: f.id,
+                    //     newName: name.trim(),
+                    //   );
+                    // }
                   },
                   onMove: () async {
                     /*이동 로직 추가 */
@@ -120,13 +121,16 @@ class VaultScreen extends StatelessWidget {
           previewImage: null, // 썸네일 있으면 바인딩
           title: n.title,
           date: n.createdAt,
-          onTap: () => context.pushNamed(
-            RouteNames.note,
-            pathParameters: {'id': n.id},
-            extra: {'title': n.title},
-          ),
-          onTitleChanged: (t) =>
-              context.read<NoteStore>().renameNote(id: n.id, newTitle: t),
+          onTap: () => {
+            // context.pushNamed(
+            // RouteNames.note,
+            // pathParameters: {'id': n.id},
+            // extra: {'title': n.title},
+            // ),
+          },
+          onTitleChanged: (t) => {
+            // context.read<NoteStore>().renameNote(id: n.id, newTitle: t),
+          },
         ),
       ),
     ];
@@ -142,14 +146,10 @@ class VaultScreen extends StatelessWidget {
           if (Navigator.of(context).canPop()) {
             context.pop();
           } else {
-            context.goNamed(RouteNames.home); // 루트면 홈으로
+            // context.goNamed(RouteNames.home); // 루트면 홈으로
           }
         },
         iconColor: AppColors.gray50, // 필요하면 색상 지정
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(AppSpacing.screenPadding),
-        child: FolderGrid(items: items),
       ),
       bottomNavigationBar: SafeArea(
         top: false,
@@ -163,18 +163,18 @@ class VaultScreen extends StatelessWidget {
                   label: '폴더 생성',
                   svgPath: AppIcons.folderAdd,
                   onTap: () async {
-                    await showCreationSheet(
-                      context,
-                      FolderCreationSheet(
-                        onCreate: (name) async {
-                          await context.read<FolderStore>().createFolder(
-                            vaultId: vault.id,
-                            parentFolderId: null, // 루트에 생성
-                            name: name,
-                          );
-                        },
-                      ),
-                    );
+                    // await showCreationSheet(
+                    //   context,
+                    //   FolderCreationSheet(
+                    //     onCreate: (name) async {
+                    //       await context.read<FolderStore>().createFolder(
+                    //         vaultId: vault.id,
+                    //         parentFolderId: null, // 루트에 생성
+                    //         name: name,
+                    //       );
+                    //     },
+                    //   ),
+                    // )
                   },
                 ),
 
@@ -183,26 +183,26 @@ class VaultScreen extends StatelessWidget {
                   label: '노트 생성',
                   svgPath: AppIcons.noteAdd,
                   onTap: () async {
-                    await showCreationSheet(
-                      context,
-                      NoteCreationSheet(
-                        onCreate: (name) async {
-                          final note = await context
-                              .read<NoteStore>()
-                              .createNote(
-                                vaultId: vault.id,
-                                folderId: null, // 루트에 생성
-                                title: name,
-                              );
-                          if (!context.mounted) return;
-                          context.pushNamed(
-                            RouteNames.note,
-                            pathParameters: {'id': note.id},
-                            extra: {'title': note.title},
-                          );
-                        },
-                      ),
-                    );
+                    // await showCreationSheet(
+                    //   context,
+                    //   NoteCreationSheet(
+                    //     onCreate: (name) async {
+                    //       final note = await context
+                    //           .read<NoteStore>()
+                    //           .createNote(
+                    //             vaultId: vault.id,
+                    //             folderId: null, // 루트에 생성
+                    //             title: name,
+                    //           );
+                    //       if (!context.mounted) return;
+                    //       context.pushNamed(
+                    //         RouteNames.note,
+                    //         pathParameters: {'id': note.id},
+                    //         extra: {'title': note.title},
+                    //       );
+                    //     },
+                    //   ),
+                    // );
                   },
                 ),
                 // PDF 가져오기
@@ -210,18 +210,18 @@ class VaultScreen extends StatelessWidget {
                   label: 'PDF 생성',
                   svgPath: AppIcons.download,
                   onTap: () async {
-                    final file = await pickPdf();
-                    if (file == null) return;
-                    final note = await context.read<NoteStore>().createPdfNote(
-                      vaultId: vault.id,
-                      fileName: file.name,
-                    );
-                    if (!context.mounted) return;
-                    context.pushNamed(
-                      RouteNames.note,
-                      pathParameters: {'id': note.id},
-                      extra: {'title': note.title},
-                    );
+                    // final file = await pickPdf();
+                    // if (file == null) return;
+                    // final note = await context.read<NoteStore>().createPdfNote(
+                    //   vaultId: vault.id,
+                    //   fileName: file.name,
+                    // );
+                    // if (!context.mounted) return;
+                    // context.pushNamed(
+                    //   RouteNames.note,
+                    //   pathParameters: {'id': note.id},
+                    //   extra: {'title': note.title},
+                    // );
                   },
                 ),
               ],
@@ -230,6 +230,10 @@ class VaultScreen extends StatelessWidget {
         ),
       ),
       backgroundColor: AppColors.background,
+      body: Padding(
+        padding: const EdgeInsets.all(AppSpacing.screenPadding),
+        child: FolderGrid(items: items),
+      ),
     );
   }
 }

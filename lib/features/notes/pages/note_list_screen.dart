@@ -320,12 +320,6 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
       );
     }
 
-    if (itemsAsync == null) {
-      debugPrint('!!!!!!!!!!!!!!!!!!! itemsAsync is null');
-    } else {
-      debugPrint('??????????????????? itemsAsync is not null');
-    }
-
     VaultModel? activeVault;
     final vaultsValue = vaultsAsync.valueOrNull;
     if (hasActiveVault && vaultsValue != null) {
@@ -449,14 +443,6 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                   vertical: AppSpacing.large,
                 ),
                 children: [
-                  Text(
-                    '작업할 노트들',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.medium),
                   if (hasActiveVault)
                     NoteListActionBar(
                       variant: currentFolderId == null
