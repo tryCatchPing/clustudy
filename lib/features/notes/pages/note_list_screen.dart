@@ -479,20 +479,20 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                     ),
                   ] else if (itemsAsync != null) ...[
                     const SizedBox(height: AppSpacing.large),
-                    LayoutBuilder(
-                      builder: (context, c) {
-                        debugPrint(
-                          '📐 NoteListFolderSection parent constraints: $c',
-                        );
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          final size = context.size;
-                          debugPrint(
-                            '📏 NoteListFolderSection parent size: ${size?.width}x${size?.height}',
-                          );
-                        });
-                        return const SizedBox.shrink();
-                      },
-                    ),
+                    // LayoutBuilder(
+                    //   builder: (context, c) {
+                    //     debugPrint(
+                    //       '📐 NoteListFolderSection parent constraints: $c',
+                    //     );
+                    //     WidgetsBinding.instance.addPostFrameCallback((_) {
+                    //       final size = context.size;
+                    //       debugPrint(
+                    //         '📏 NoteListFolderSection parent size: ${size?.width}x${size?.height}',
+                    //       );
+                    //     });
+                    //     return const SizedBox.shrink();
+                    //   },
+                    // ),
                     NoteListFolderSection(
                       itemsAsync: itemsAsync,
                       onOpenFolder: (folder) {

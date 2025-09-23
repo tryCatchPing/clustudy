@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
-import '../../../design_system/components/molecules/app_card.dart';
+import '../../../design_system/components/molecules/note_card.dart';
 import '../../../design_system/tokens/app_colors.dart';
 import '../../../design_system/tokens/app_icons.dart';
 import '../../../design_system/tokens/app_spacing.dart';
@@ -45,7 +44,7 @@ class NoteListFolderSection extends StatelessWidget {
 
         final cards = <Widget>[
           for (final folder in folders)
-            _NoteListCard(
+            NoteCard(
               key: ValueKey('folder-${folder.id}'),
               iconPath: AppIcons.folderLarge,
               title: folder.name,
@@ -56,7 +55,7 @@ class NoteListFolderSection extends StatelessWidget {
               onDelete: () => onDeleteFolder(folder),
             ),
           for (final note in notes)
-            _NoteListCard(
+            NoteCard(
               key: ValueKey('note-${note.id}'),
               iconPath: AppIcons.noteAdd,
               title: note.name,
@@ -89,96 +88,3 @@ class NoteListFolderSection extends StatelessWidget {
   }
 }
 
-class _NoteListCard extends StatelessWidget {
-  const _NoteListCard({
-    super.key,
-    required this.iconPath,
-    required this.title,
-    required this.date,
-    required this.onTap,
-    required this.onMove,
-    required this.onRename,
-    required this.onDelete,
-  });
-
-  final String iconPath;
-  final String title;
-  final DateTime date;
-  final VoidCallback onTap;
-  final VoidCallback onMove;
-  final VoidCallback onRename;
-  final VoidCallback onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 168,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AppCard(
-            svgIconPath: iconPath,
-            title: title,
-            date: date,
-            onTap: onTap,
-          ),
-          const SizedBox(height: AppSpacing.small),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _CardActionButton(
-                iconPath: AppIcons.move,
-                tooltip: '이동',
-                onPressed: onMove,
-              ),
-              const SizedBox(width: AppSpacing.small),
-              _CardActionButton(
-                iconPath: AppIcons.rename,
-                tooltip: '이름 변경',
-                onPressed: onRename,
-              ),
-              const SizedBox(width: AppSpacing.small),
-              _CardActionButton(
-                iconPath: AppIcons.trash,
-                tooltip: '삭제',
-                onPressed: onDelete,
-                color: AppColors.penRed,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CardActionButton extends StatelessWidget {
-  const _CardActionButton({
-    required this.iconPath,
-    required this.tooltip,
-    required this.onPressed,
-    this.color,
-  });
-
-  final String iconPath;
-  final String tooltip;
-  final VoidCallback onPressed;
-  final Color? color;
-
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      tooltip: tooltip,
-      onPressed: onPressed,
-      icon: SvgPicture.asset(
-        iconPath,
-        width: 20,
-        height: 20,
-        colorFilter: ColorFilter.mode(
-          color ?? AppColors.primary,
-          BlendMode.srcIn,
-        ),
-      ),
-    );
-  }
-}
