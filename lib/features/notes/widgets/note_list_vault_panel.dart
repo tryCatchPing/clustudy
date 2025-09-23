@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../design_system/components/molecules/app_card.dart';
+import '../../../design_system/components/organisms/item_actions.dart';
 import '../../../design_system/tokens/app_colors.dart';
 import '../../../design_system/tokens/app_icons.dart';
 import '../../../design_system/tokens/app_spacing.dart';
@@ -46,8 +46,16 @@ class VaultListPanel extends StatelessWidget {
                 key: ValueKey(vault.vaultId),
                 vault: vault,
                 onTap: () => onVaultSelected(vault.vaultId),
-                onRename: () => onRenameVault(vault),
-                onDelete: canDelete ? () => onDeleteVault(vault) : null,
+                onLongPressStart: (details) {
+                  showItemActionsNear(
+                    context,
+                    anchorGlobal: details.globalPosition,
+                    handlers: ItemActionHandlers(
+                      onRename: () async => onRenameVault(vault),
+                      onDelete: canDelete ? () async => onDeleteVault(vault) : null,
+                    ),
+                  );
+                },
               ),
           ],
         );
@@ -63,80 +71,21 @@ class _VaultCard extends StatelessWidget {
     super.key,
     required this.vault,
     required this.onTap,
-    required this.onRename,
-    required this.onDelete,
+    this.onLongPressStart,
   });
 
   final VaultModel vault;
   final VoidCallback onTap;
-  final VoidCallback onRename;
-  final VoidCallback? onDelete;
+  final void Function(LongPressStartDetails details)? onLongPressStart;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final deleteDisabled = onDelete == null;
-
-    return SizedBox(
-      width: 168,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AppCard(
-            svgIconPath: AppIcons.folderVaultLarge,
-            title: vault.name,
-            date: vault.createdAt,
-            onTap: onTap,
-          ),
-          const SizedBox(height: AppSpacing.small),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _VaultActionButton(
-                iconPath: AppIcons.rename,
-                tooltip: '이름 변경',
-                onPressed: onRename,
-                color: AppColors.primary,
-              ),
-              const SizedBox(width: AppSpacing.small),
-              _VaultActionButton(
-                iconPath: AppIcons.trash,
-                tooltip: deleteDisabled ? '마지막 Vault는 삭제할 수 없습니다' : '삭제',
-                onPressed: onDelete,
-                color: deleteDisabled ? theme.disabledColor : AppColors.penRed,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _VaultActionButton extends StatelessWidget {
-  const _VaultActionButton({
-    required this.iconPath,
-    required this.tooltip,
-    required this.onPressed,
-    required this.color,
-  });
-
-  final String iconPath;
-  final String tooltip;
-  final VoidCallback? onPressed;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      tooltip: tooltip,
-      onPressed: onPressed,
-      icon: SvgPicture.asset(
-        iconPath,
-        width: 20,
-        height: 20,
-        colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-      ),
+    return AppCard(
+      svgIconPath: AppIcons.folderVaultLarge,
+      title: vault.name,
+      date: vault.createdAt,
+      onTap: onTap,
+      onLongPressStart: onLongPressStart,
     );
   }
 }

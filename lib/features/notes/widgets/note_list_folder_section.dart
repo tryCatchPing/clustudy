@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../design_system/components/molecules/note_card.dart';
+import '../../../design_system/components/organisms/item_actions.dart';
 import '../../../design_system/tokens/app_colors.dart';
 import '../../../design_system/tokens/app_icons.dart';
 import '../../../design_system/tokens/app_spacing.dart';
@@ -50,9 +51,17 @@ class NoteListFolderSection extends StatelessWidget {
               title: folder.name,
               date: folder.updatedAt,
               onTap: () => onOpenFolder(folder),
-              onMove: () => onMoveFolder(folder),
-              onRename: () => onRenameFolder(folder),
-              onDelete: () => onDeleteFolder(folder),
+              onLongPressStart: (details) {
+                showItemActionsNear(
+                  context,
+                  anchorGlobal: details.globalPosition,
+                  handlers: ItemActionHandlers(
+                    onMove: () async => onMoveFolder(folder),
+                    onRename: () async => onRenameFolder(folder),
+                    onDelete: () async => onDeleteFolder(folder),
+                  ),
+                );
+              },
             ),
           for (final note in notes)
             NoteCard(
@@ -61,9 +70,17 @@ class NoteListFolderSection extends StatelessWidget {
               title: note.name,
               date: note.updatedAt,
               onTap: () => onOpenNote(note),
-              onMove: () => onMoveNote(note),
-              onRename: () => onRenameNote(note),
-              onDelete: () => onDeleteNote(note),
+              onLongPressStart: (details) {
+                showItemActionsNear(
+                  context,
+                  anchorGlobal: details.globalPosition,
+                  handlers: ItemActionHandlers(
+                    onMove: () async => onMoveNote(note),
+                    onRename: () async => onRenameNote(note),
+                    onDelete: () async => onDeleteNote(note),
+                  ),
+                );
+              },
             ),
         ];
 
@@ -87,4 +104,3 @@ class NoteListFolderSection extends StatelessWidget {
     );
   }
 }
-

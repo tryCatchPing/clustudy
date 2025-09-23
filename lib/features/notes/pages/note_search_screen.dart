@@ -108,7 +108,6 @@ class _NoteSearchScreenState extends ConsumerState<NoteSearchScreen> {
                   iconPath: AppIcons.noteAdd,
                   title: result.title,
                   date: DateTime.now(), // TODO: 실제 노트 업데이트 날짜로 교체
-                  showActions: false,
                   onTap: () {
                     context.pushNamed(
                       AppRoutes.noteEditName,
