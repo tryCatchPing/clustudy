@@ -5,12 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../design_system/components/molecules/note_card.dart';
 import '../../../design_system/components/organisms/search_toolbar.dart';
 import '../../../design_system/tokens/app_colors.dart';
 import '../../../design_system/tokens/app_icons.dart';
+import '../../../design_system/tokens/app_spacing.dart';
 import '../../../design_system/tokens/app_typography.dart';
 import '../../../shared/routing/app_routes.dart';
-import '../../../shared/widgets/navigation_card.dart';
 import '../providers/note_list_controller.dart';
 
 /// 노트 검색 전용 화면.
@@ -32,39 +33,20 @@ class _NoteSearchScreenState extends ConsumerState<NoteSearchScreen> {
   void initState() {
     super.initState();
     _searchCtrl = TextEditingController();
-    // 검색 화면 진입 시 기존 검색 상태 초기화
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _actions.clearSearch();
-    });
   }
 
   @override
   void dispose() {
-    _actions.clearSearch();
     _searchCtrl.dispose();
     _debounce?.cancel();
     super.dispose();
   }
 
-  void _handleBack() => context.pop();
-
-  void _handleDone() => _runSearch(_searchCtrl.text.trim());
-
   void _onQueryChanged(String value) {
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 200), () {
-      _runSearch(value.trim());
+      _actions.updateSearchQuery(value.trim());
     });
-  }
-
-  void _runSearch(String query) {
-    _actions.updateSearchQuery(query);
-  }
-
-  void _clearQuery() {
-    _searchCtrl.clear();
-    _actions.clearSearch();
   }
 
   @override
@@ -87,14 +69,14 @@ class _NoteSearchScreenState extends ConsumerState<NoteSearchScreen> {
       backgroundColor: AppColors.background,
       appBar: SearchToolbar(
         controller: _searchCtrl,
-        onBack: _handleBack,
-        onDone: _handleDone,
+        onBack: () => context.pop(),
+        onDone: () {}, // 검색은 onChange로 이미 처리됨
         backSvgPath: AppIcons.chevronLeft,
         searchSvgPath: AppIcons.search,
         clearSvgPath: AppIcons.roundX,
         autofocus: true,
         onChanged: _onQueryChanged,
-        onSubmitted: (_) => _handleDone(),
+        onSubmitted: (_) {}, // 검색은 onChange로 이미 처리됨
       ),
       body: Builder(
         builder: (_) {
@@ -114,17 +96,19 @@ class _NoteSearchScreenState extends ConsumerState<NoteSearchScreen> {
             );
           }
           return Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: ListView.separated(
-              itemCount: state.searchResults.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final result = state.searchResults[index];
-                return NavigationCard(
-                  icon: Icons.brush,
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.screenPadding,
+              vertical: AppSpacing.large,
+            ),
+            child: Wrap(
+              spacing: AppSpacing.large,
+              runSpacing: AppSpacing.large,
+              children: state.searchResults.map((result) {
+                return NoteCard(
+                  iconPath: AppIcons.noteAdd,
                   title: result.title,
-                  subtitle: result.parentFolderName ?? '루트',
-                  color: const Color(0xFF6750A4),
+                  date: DateTime.now(), // TODO: 실제 노트 업데이트 날짜로 교체
+                  showActions: false,
                   onTap: () {
                     context.pushNamed(
                       AppRoutes.noteEditName,
@@ -132,7 +116,7 @@ class _NoteSearchScreenState extends ConsumerState<NoteSearchScreen> {
                     );
                   },
                 );
-              },
+              }).toList(),
             ),
           );
         },
