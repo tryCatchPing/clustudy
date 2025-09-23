@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../design_system/components/organisms/folder_grid.dart';
-import '../../../design_system/components/organisms/search_toolbar.dart';
-import '../../../design_system/tokens/app_colors.dart';
-import '../../../design_system/tokens/app_icons.dart'; // 아이콘 경로 가정
-import '../../../design_system/tokens/app_typography.dart';
+import '../../../components/organisms/folder_grid.dart';
+import '../../../components/organisms/search_toolbar.dart';
+import '../../../tokens/app_colors.dart';
+import '../../../tokens/app_icons.dart'; // 아이콘 경로 가정
+import '../../../tokens/app_typography.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -97,7 +97,12 @@ class _SearchEmptyState extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           // 디자인 토큰 아이콘 사용
-          SvgPicture.asset(AppIcons.searchLarge, width: 144, height: 144, color: AppColors.primary),
+          SvgPicture.asset(
+            AppIcons.searchLarge,
+            width: 144,
+            height: 144,
+            color: AppColors.primary,
+          ),
           const SizedBox(height: 12),
           Text(
             message,
