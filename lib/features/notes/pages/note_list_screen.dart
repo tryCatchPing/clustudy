@@ -391,7 +391,13 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
         if (Navigator.of(context).canPop()) {
           Navigator.of(context).maybePop();
         } else {
-          _actions.clearVaultSelection();
+          if (mounted) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                _actions.clearVaultSelection();
+              }
+            });
+          }
         }
       };
       backSvgPath = AppIcons.chevronLeft;
@@ -410,7 +416,13 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
 
     final VoidCallback? goToVaultsAction = hasActiveVault
         ? () {
-            _actions.clearVaultSelection();
+            if (mounted) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  _actions.clearVaultSelection();
+                }
+              });
+            }
           }
         : null;
 
