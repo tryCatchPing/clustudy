@@ -13,15 +13,7 @@ import '../../../design_system/components/organisms/top_toolbar.dart';
 import '../../../design_system/tokens/app_colors.dart';
 import '../../../design_system/tokens/app_icons.dart';
 import '../../../design_system/tokens/app_spacing.dart';
-import '../../../routing/route_names.dart';
-import '../../../utils/pickers/pick_pdf.dart';
-import '../../notes/data/note.dart';
-import '../../notes/state/note_store.dart';
-import '../../notes/widgets/note_creation_sheet.dart';
-import '../data/folder.dart';
-import '../state/folder_store.dart';
-import '../widgets/folder_creation_sheet.dart';
-import '../widgets/folder_creation_sheet.dart';
+import '../routing/app_router.dart';
 
 class FolderScreen extends StatelessWidget {
   final String vaultId;

@@ -26,7 +26,7 @@ class DesignSystemRoutes {
     GoRoute(
       path: home,
       name: homeName,
-      builder: (context, state) => const DesignHomeScreen(),
+      builder: (context, state) => const HomeScreen(),
     ),
     GoRoute(
       path: vault,
@@ -46,7 +46,10 @@ class DesignSystemRoutes {
     GoRoute(
       path: folder,
       name: folderName,
-      builder: (context, state) => const DesignFolderScreen(),
+      builder: (context, state) => FolderScreen(
+        vaultId: state.pathParameters['vaultId']!,
+        folderId: state.pathParameters['folderId']!,
+      ),
     ),
   ];
 }

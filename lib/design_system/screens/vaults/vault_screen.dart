@@ -14,16 +14,6 @@ import '../../../design_system/components/organisms/top_toolbar.dart';
 import '../../../design_system/tokens/app_colors.dart';
 import '../../../design_system/tokens/app_icons.dart';
 import '../../../design_system/tokens/app_spacing.dart';
-import '../../../routing/route_names.dart';
-import '../../../utils/pickers/pick_pdf.dart';
-import '../../folder/data/folder.dart';
-import '../../folder/state/folder_store.dart';
-import '../../folder/widgets/folder_creation_sheet.dart';
-import '../../notes/data/note.dart';
-import '../../notes/state/note_store.dart';
-import '../../notes/widgets/note_creation_sheet.dart';
-import '../data/vault.dart';
-import '../state/vault_store.dart';
 
 class VaultScreen extends StatelessWidget {
   final String vaultId;
@@ -130,8 +120,11 @@ class VaultScreen extends StatelessWidget {
           previewImage: null, // 썸네일 있으면 바인딩
           title: n.title,
           date: n.createdAt,
-          onTap: () =>
-              context.pushNamed(RouteNames.note, pathParameters: {'id': n.id}, extra: {'title': n.title},),
+          onTap: () => context.pushNamed(
+            RouteNames.note,
+            pathParameters: {'id': n.id},
+            extra: {'title': n.title},
+          ),
           onTitleChanged: (t) =>
               context.read<NoteStore>().renameNote(id: n.id, newTitle: t),
         ),
