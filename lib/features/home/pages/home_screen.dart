@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../design_system/routing/design_system_routes.dart';
 import '../../../shared/routing/app_routes.dart';
 import '../../../shared/widgets/app_branding_header.dart';
 import '../../../shared/widgets/info_card.dart';
@@ -71,20 +70,6 @@ class HomeScreen extends StatelessWidget {
                   onTap: () {
                     debugPrint('📝 노트 목록 페이지로 이동 중...');
                     context.pushNamed(AppRoutes.noteListName);
-                  },
-                ),
-
-                const SizedBox(height: 16),
-
-                // 디자인 시스템 데모 버튼
-                NavigationCard(
-                  icon: Icons.palette,
-                  title: '디자인 시스템 데모',
-                  subtitle: '컴포넌트 쇼케이스 및 Figma 디자인 재현',
-                  color: const Color(0xFF6366F1),
-                  onTap: () {
-                    debugPrint('🎨 디자인 시스템 데모로 이동 중...');
-                    context.pushNamed(DesignSystemRoutes.homeName);
                   },
                 ),
 
