@@ -62,6 +62,22 @@ class NoteListPrimaryActions extends StatelessWidget {
                   onTap: onCreateVault,
                   tooltip: '새 Vault 생성',
                 ),
+                DockItem(
+                  label: '노트 만들기',
+                  svgPath: AppIcons.noteAdd,
+                  onTap: onCreateBlankNote,
+                  tooltip: '빈 노트 생성',
+                ),
+                DockItem(
+                  label: 'PDF 불러오기',
+                  svgPath: AppIcons.download,
+                  onTap: () {
+                    if (isImporting) return;
+                    onImportPdf();
+                  },
+                  tooltip: 'PDF 파일로 노트 생성',
+                  loading: isImporting,
+                ),
               ],
       ),
     );

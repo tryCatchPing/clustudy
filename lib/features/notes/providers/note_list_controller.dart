@@ -116,6 +116,7 @@ class NoteListController extends StateNotifier<NoteListState> {
     }
   }
 
+  // TODO(xodnd): vault 없는 상태에서 생성 시 temporary vault 에 생성 (temporary vault 도 생성)
   Future<AppErrorSpec> createBlankNote({String? name}) async {
     try {
       final vaultId = ref.read(currentVaultProvider);
