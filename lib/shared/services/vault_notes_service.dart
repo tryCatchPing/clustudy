@@ -60,6 +60,7 @@ class FolderCascadeImpact {
 /// - 트리의 표시명 정책을 준수하고, 콘텐츠 제목을 미러로 동기화합니다.
 class VaultNotesService {
   static const _uuid = Uuid();
+  static const String _temporaryVaultName = 'temporary vault';
   final VaultTreeRepository vaultTree;
   final NotesRepository notesRepo;
   final LinkRepository linkRepo;
@@ -827,6 +828,22 @@ class VaultNotesService {
       }
     }
     return noteIds;
+  }
+
+  /// Temporary vault가 없으면 생성하고, vault ID를 반환합니다.
+  Future<String> ensureTemporaryVault() async {
+    final vaults = await vaultTree.watchVaults().first;
+
+    // 기존 temporary vault 찾기
+    for (final vault in vaults) {
+      if (vault.name == _temporaryVaultName) {
+        return vault.vaultId;
+      }
+    }
+
+    // 없으면 새로 생성
+    final vault = await createVault(_temporaryVaultName);
+    return vault.vaultId;
   }
 }
 

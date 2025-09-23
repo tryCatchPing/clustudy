@@ -33,6 +33,18 @@ class NoteListPrimaryActions extends StatelessWidget {
         items: hasActiveVault
             ? [
                 DockItem(
+                  label: '폴더 만들기',
+                  svgPath: AppIcons.folderAdd,
+                  onTap: onCreateFolder,
+                  tooltip: '폴더 생성',
+                ),
+                DockItem(
+                  label: '노트 만들기',
+                  svgPath: AppIcons.noteAdd,
+                  onTap: onCreateBlankNote,
+                  tooltip: '빈 노트 생성',
+                ),
+                DockItem(
                   label: 'PDF 불러오기',
                   svgPath: AppIcons.download,
                   onTap: () {
@@ -42,22 +54,10 @@ class NoteListPrimaryActions extends StatelessWidget {
                   tooltip: 'PDF 파일로 노트 생성',
                   loading: isImporting,
                 ),
-                DockItem(
-                  label: '노트 만들기',
-                  svgPath: AppIcons.noteAdd,
-                  onTap: onCreateBlankNote,
-                  tooltip: '빈 노트 생성',
-                ),
-                DockItem(
-                  label: '폴더 만들기',
-                  svgPath: AppIcons.folderAdd,
-                  onTap: onCreateFolder,
-                  tooltip: '폴더 생성',
-                ),
               ]
             : [
                 DockItem(
-                  label: 'Vault 생성',
+                  label: 'vault 만들기',
                   svgPath: AppIcons.plus,
                   onTap: onCreateVault,
                   tooltip: '새 Vault 생성',
