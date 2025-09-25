@@ -7,6 +7,7 @@ class AppIcons {
   static const chevronLeft = 'assets/icons/chevron_left.svg';
   static const chevronLeftBackGround = 'assets/icons/arrow-left_background.svg';
   static const graphView = 'assets/icons/graph_view.svg';
+  static const chevronRight = 'assets/icons/arrow-right.svg';
 
   // Home/Vault actions
   static const folder = 'assets/icons/folder.svg';
@@ -36,7 +37,7 @@ class AppIcons {
   static const redo = 'assets/icons/redo.svg';
   static const pageManage = 'assets/icons/page_management.svg';
   static const scale = 'assets/icons/scale.svg';
-  static const scaleReverse ='assets/icons/scale-reverse.svg';
+  static const scaleReverse = 'assets/icons/scale-reverse.svg';
   static const linkList = 'assets/icons/link_list.svg';
   static const link = 'assets/icons/link.svg';
 }
