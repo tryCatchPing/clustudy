@@ -7,12 +7,19 @@ import '../../tokens/app_typography.dart';
 import '../atoms/app_icon_button.dart';
 
 class ToolbarAction {
-  const ToolbarAction({required this.svgPath, required this.onTap, this.tooltip});
+  const ToolbarAction({
+    required this.svgPath,
+    required this.onTap,
+    this.tooltip,
+  });
   final String svgPath;
   final VoidCallback onTap;
   final String? tooltip;
 }
 
+// D: NoteScreen 에서 사용
+// F: NoteEditorScreen 에서 사용
+// 전체화면 시 비활성화
 class NoteTopToolbar extends StatelessWidget implements PreferredSizeWidget {
   const NoteTopToolbar({
     super.key,
@@ -33,7 +40,7 @@ class NoteTopToolbar extends StatelessWidget implements PreferredSizeWidget {
   final Color iconColor;
   final double iconSize;
   final double height;
-  final TextStyle? titleStyle;          // 기본 스타일은 아래에서 정함
+  final TextStyle? titleStyle; // 기본 스타일은 아래에서 정함
   final bool showBottomDivider;
 
   @override
@@ -41,8 +48,11 @@ class NoteTopToolbar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ts = titleStyle ??
-        AppTypography.subtitle1.copyWith(color: AppColors.gray50); // 스샷처럼 작고 중립 톤
+    final ts =
+        titleStyle ??
+        AppTypography.subtitle1.copyWith(
+          color: AppColors.gray50,
+        ); // 스샷처럼 작고 중립 톤
 
     return SafeArea(
       top: false,
@@ -51,7 +61,7 @@ class NoteTopToolbar extends StatelessWidget implements PreferredSizeWidget {
         height: height,
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.screenPadding, // 30
-          vertical: 15,                         // ↑↓ 15
+          vertical: 15, // ↑↓ 15
         ),
         decoration: BoxDecoration(
           color: AppColors.background,

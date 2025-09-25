@@ -9,6 +9,9 @@ import '../widgets/note_editor_canvas.dart';
 import '../widgets/panels/backlinks_panel.dart';
 import '../widgets/toolbar/actions_bar.dart';
 
+// 노트 편집 화면 - 로직 및 UI 모두 존재
+// 이걸 베이스로 각 항목 교체해야.. 로직 분리 안하고 진행할게요
+
 /// 노트 편집 화면을 구성하는 위젯입니다.
 ///
 /// 위젯 계층 구조:

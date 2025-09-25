@@ -16,13 +16,21 @@ enum ToolPicker { none, pen, highlighter }
 
 enum ActiveTool { none, pen, highlighter, eraser, linkPen }
 
+// 1. 기존 provider 대비 전체화면 provider를 추가해야하는가?
+// 그럼 리스너가 뭘 빌드해야하는데?
+// 그냥 setState 가능할듯
+
 class NoteUiState extends ChangeNotifier {
   NoteUiState() {
     secondaryOpen = true;
   }
 
   ActiveTool activeTool = ActiveTool.none;
+
+  /// 전체화면 상태
   bool isFullscreen = false;
+
+  /// 서브툴바 상태
   bool secondaryOpen = false;
   NoteToolbarSecondaryVariant variant = NoteToolbarSecondaryVariant.bar;
   ToolPicker picker = ToolPicker.none;
@@ -192,6 +200,7 @@ class NoteUiState extends ChangeNotifier {
   }
 }
 
+// 노트 화면 전체 빌드
 class NoteScreen extends StatelessWidget {
   const NoteScreen({super.key, required this.noteId, this.initialTitle});
   final String noteId;
@@ -270,10 +279,12 @@ class NoteScreen extends StatelessWidget {
 
               body: Stack(
                 children: [
+                  // 캔버스 (임시 더미)
                   const _NoteCanvasPage(),
-                  // 캔버스
+
+                  // 서브 툴바 열린경우
                   if (ui.secondaryOpen) ...[
-                    // 1) PILL 배치 (변형 기준)
+                    // 1) PILL = 상단 바 존재 (전체 화면 아님)
                     if (ui.variant == NoteToolbarSecondaryVariant.pill)
                       Positioned(
                         top:
@@ -282,6 +293,11 @@ class NoteScreen extends StatelessWidget {
                         left: 0,
                         right: 0,
                         child: Center(
+                          // pill 파라미터로 넘기면 내부에서 빌드
+                          // provider 로 최소 빌드 필요할거같은데
+                          // 현재는 state 하나 관리 및 변경되면 툴바 전체 리빌드
+                          // F: drawing_toolbar.dart 처럼? 아니다 얘도 전체 수정 필요
+                          // -> 어떻게..? 툴바 전체 빌드 되면 안됨..
                           child: NoteToolbarSecondary(
                             onUndo: context.read<NoteUiState>().onUndo,
                             onRedo: context.read<NoteUiState>().onRedo,
@@ -315,6 +331,7 @@ class NoteScreen extends StatelessWidget {
                       )
                     else
                       // 2) BAR 배치 (앱바 바로 아래)
+                      // 2) PILL 아님 = 전체화면
                       Positioned(
                         top: ui.isFullscreen
                             ? MediaQuery.of(context)
@@ -323,6 +340,7 @@ class NoteScreen extends StatelessWidget {
                             : 0, // 일반 모드에선 앱바 높이(=62)
                         left: 0,
                         right: 0,
+                        // bar 파라미터로 넘기면 내부에서 빌드
                         child: NoteToolbarSecondary(
                           onUndo: context.read<NoteUiState>().onUndo,
                           onRedo: context.read<NoteUiState>().onRedo,
@@ -354,6 +372,7 @@ class NoteScreen extends StatelessWidget {
                       ),
                   ],
 
+                  // ?
                   if (ui.picker != ToolPicker.none)
                     Positioned(
                       // bar 밑 또는 pill 밑 8px
@@ -414,7 +433,8 @@ class NoteScreen extends StatelessWidget {
                       ),
                     ),
 
-                  // 전체화면에서 “원래대로” 버튼(선택)
+                  // 원래대로 버튼 (토글)
+                  // fullscreen 시 노출
                   if (ui.isFullscreen)
                     Positioned(
                       right: 8,
@@ -442,6 +462,7 @@ class NoteScreen extends StatelessWidget {
   }
 }
 
+/// 더미 위젯
 class _NoteCanvasPage extends StatelessWidget {
   const _NoteCanvasPage();
 
