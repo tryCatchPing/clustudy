@@ -4,6 +4,8 @@ import '../../tokens/app_colors.dart';
 import '../atoms/tool_glow_icon.dart';
 import '../../tokens/app_icons.dart';
 import '../../tokens/app_spacing.dart';
+import '../atoms/stroke_glow_icon.dart';
+import '../../tokens/app_icons_path.dart';
 
 enum NoteToolbarSecondaryVariant { bar, pill }
 
@@ -69,18 +71,25 @@ class NoteToolbarSecondary extends StatelessWidget {
         ToolGlowIcon(svgPath: AppIcons.undo, onTap: onUndo, size: iconSize),
         const SizedBox(width: 16),
         ToolGlowIcon(svgPath: AppIcons.redo, onTap: onRedo, size: iconSize),
-        _Divider(height: iconSize * 0.75, color: isPill ? AppColors.gray50 : AppColors.gray20),
+        _Divider(
+          height: iconSize * 0.75,
+          color: isPill ? AppColors.gray50 : AppColors.gray20,
+        ),
 
         // 펜 (선택 시 하이라이트 색 발광)
-         GestureDetector(
+        GestureDetector(
           behavior: HitTestBehavior.opaque,
           onDoubleTap: onPenDoubleTap,
-          child: ToolGlowIcon(
-            svgPath: AppIcons.pen,
+          child: StrokeGlowIcon(
+            svgPathData: AppIconsPath.pen,
             onTap: onPen,
             size: iconSize,
-            accent: activePenColor,
+            svgViewBox: 32,     // 원본 viewBox
+            svgStroke: 1.5,
+            color: AppColors.gray50,
             glowColor: penGlowColor,
+            glowSigma: 10,
+            glowSpread: 5,
           ),
         ),
         const SizedBox(width: 16),
@@ -88,34 +97,54 @@ class NoteToolbarSecondary extends StatelessWidget {
         GestureDetector(
           behavior: HitTestBehavior.opaque,
           onDoubleTap: onHighlighterDoubleTap,
-          child: ToolGlowIcon(
-            svgPath: AppIcons.highlighter,      // ← 하이라이터
+          child: StrokeGlowIcon(
+            svgPathData: AppIconsPath.highlighter, // ← 하이라이터
             onTap: onHighlighter,
             size: iconSize,
-            accent: activeHighlighterColor,
+            svgViewBox: 32,     // 원본 viewBox
+            svgStroke: 1.5,
+            color: AppColors.gray50,
             glowColor: highlighterGlowColor,
+            glowSigma: 10,
+            glowSpread: 5,
           ),
         ),
         const SizedBox(width: 16),
 
-        ToolGlowIcon(
-          svgPath: AppIcons.eraser,
+        StrokeGlowIcon(
+          svgPathData: AppIconsPath.eraser,
           onTap: onEraser,
           size: iconSize,
+          svgViewBox: 32,     // 원본 viewBox
+          svgStroke: 1.5,
+          color: AppColors.gray50,
           glowColor: eraserGlowColor,
-          // glowOpacity: 0.48, // 원하면 톤 다운
+          glowSigma: 10,
+          glowSpread: 5,
         ),
-        _Divider(height: iconSize * 0.75, color: isPill ? AppColors.gray50 : AppColors.gray20),
+        _Divider(
+          height: iconSize * 0.75,
+          color: isPill ? AppColors.gray50 : AppColors.gray20,
+        ),
 
-        ToolGlowIcon(
-          svgPath: AppIcons.linkPen,
+        StrokeGlowIcon(
+          svgPathData: AppIconsPath.linkPen,
           onTap: onLinkPen,
           size: iconSize,
+          svgViewBox: 32,     // 원본 viewBox
+          svgStroke: 1.5,
+          color: AppColors.gray50,
           glowColor: linkPenGlowColor,
+          glowSigma: 10,
+          glowSpread: 5,
         ),
         const SizedBox(width: 16),
 
-        ToolGlowIcon(svgPath: AppIcons.graphView,   onTap: onGraphView,   size: iconSize),
+        ToolGlowIcon(
+          svgPath: AppIcons.graphView,
+          onTap: onGraphView,
+          size: iconSize,
+        ),
       ],
     );
 
@@ -128,19 +157,33 @@ class NoteToolbarSecondary extends StatelessWidget {
         : BoxDecoration(
             color: AppColors.background,
             border: showBottomDivider
-              ? const Border(bottom: BorderSide(color: AppColors.gray20, width: 1))
-              : null,
+                ? const Border(
+                    bottom: BorderSide(color: AppColors.gray20, width: 1),
+                  )
+                : null,
           );
 
     final padding = isPill
         ? const EdgeInsets.symmetric(horizontal: 12, vertical: 8) // 요구사항
-        : const EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding, vertical: 15); // 좌우30/상하15
+        : const EdgeInsets.symmetric(
+            horizontal: AppSpacing.screenPadding,
+            vertical: 15,
+          ); // 좌우30/상하15
     return isPill
-        ? Center(child: Container(padding: padding, decoration: decoration, child:  content))
-        : Container(padding: padding, decoration: decoration, child: Center(child: content));
+        ? Center(
+            child: Container(
+              padding: padding,
+              decoration: decoration,
+              child: content,
+            ),
+          )
+        : Container(
+            padding: padding,
+            decoration: decoration,
+            child: Center(child: content),
+          );
   }
 }
-
 
 class _Divider extends StatelessWidget {
   const _Divider({required this.height, required this.color});
