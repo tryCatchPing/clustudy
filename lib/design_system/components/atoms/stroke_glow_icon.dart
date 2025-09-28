@@ -113,8 +113,9 @@ class _StrokeGlowPainter extends CustomPainter {
     if (glowColor != null) {
       final glowPaint = Paint()
         ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round
+        ..strokeCap = StrokeCap.butt
+        ..strokeJoin = StrokeJoin.miter
+        ..strokeMiterLimit = 2
         ..strokeWidth = strokePx + glowSpreadPx
         ..color = glowColor!
         ..maskFilter = MaskFilter.blur(BlurStyle.outer, glowSigma);
