@@ -2,15 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../design_system/components/atoms/app_fab_icon.dart';
+import '../../../design_system/components/organisms/note_top_toolbar.dart';
 import '../../../design_system/tokens/app_icons.dart';
+import '../../../design_system/tokens/app_spacing.dart';
 import '../../../shared/routing/route_observer.dart';
 import '../../../shared/services/sketch_persist_service.dart';
 import '../../notes/data/derived_note_providers.dart';
+import '../constants/note_editor_constant.dart';
 import '../providers/note_editor_provider.dart';
 import '../providers/note_editor_ui_provider.dart';
 import '../widgets/note_editor_canvas.dart';
 import '../widgets/panels/backlinks_panel.dart';
-import '../widgets/toolbar/actions_bar.dart';
+import '../widgets/toolbar/toolbar.dart';
 
 // 노트 편집 화면 - 로직 및 UI 모두 존재
 // 이걸 베이스로 각 항목 교체해야.. 로직 분리 안하고 진행할게요
@@ -44,6 +47,8 @@ class NoteEditorScreen extends ConsumerStatefulWidget {
 
 class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
     with RouteAware {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   /// Sync the initial page index from per-route resume or lastKnown after
   /// route becomes current and note data is available.
   void _scheduleSyncInitialIndexFromResume({bool allowLastKnown = true}) {
@@ -247,43 +252,103 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
       noteEditorUiStateProvider(widget.noteId).notifier,
     );
 
+    final titleWithPage = '$noteTitle · ${currentIndex + 1}/$notePagesCount';
+
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: uiState.isFullscreen
           ? null
-          : AppBar(
-              title: Text(
-                '$noteTitle - Page ${currentIndex + 1}/$notePagesCount',
-              ),
-              actions: [
-                NoteEditorActionsBar(noteId: widget.noteId),
-                IconButton(
-                  icon: const Icon(Icons.fullscreen),
+          : NoteTopToolbar(
+              title: titleWithPage,
+              leftActions: [
+                ToolbarAction(
+                  svgPath: AppIcons.chevronLeft,
+                  onTap: () => Navigator.of(context).maybePop(),
+                  tooltip: '뒤로',
+                ),
+              ],
+              rightActions: [
+                ToolbarAction(
+                  svgPath: AppIcons.scale,
+                  onTap: uiNotifier.enterFullscreen,
                   tooltip: '전체 화면',
-                  onPressed: uiNotifier.enterFullscreen,
+                ),
+                ToolbarAction(
+                  svgPath: AppIcons.linkList,
+                  onTap: () => _scaffoldKey.currentState?.openEndDrawer(),
+                  tooltip: '백링크',
                 ),
               ],
             ),
       endDrawer: BacklinksPanel(noteId: widget.noteId),
       body: Stack(
         children: [
-          NoteEditorCanvas(
-            noteId: widget.noteId,
-            routeId: widget.routeId,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (!uiState.isFullscreen) ...[
+                NoteEditorToolbar(
+                  noteId: widget.noteId,
+                  canvasWidth: NoteEditorConstants.canvasWidth,
+                  canvasHeight: NoteEditorConstants.canvasHeight,
+                ),
+                const SizedBox(height: AppSpacing.large),
+              ],
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.screenPadding,
+                  ),
+                  child: NoteEditorCanvas(
+                    noteId: widget.noteId,
+                    routeId: widget.routeId,
+                  ),
+                ),
+              ),
+            ],
           ),
-          if (uiState.isFullscreen)
+          if (uiState.isFullscreen) ...[
+            Align(
+              alignment: Alignment.topCenter,
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: AppSpacing.small),
+                  child: NoteEditorToolbar(
+                    noteId: widget.noteId,
+                    canvasWidth: NoteEditorConstants.canvasWidth,
+                    canvasHeight: NoteEditorConstants.canvasHeight,
+                  ),
+                ),
+              ),
+            ),
             Positioned(
               right: 16,
               top: MediaQuery.of(context).padding.top + 16,
-              child: AppFabIcon(
-                svgPath: AppIcons.scale,
-                visualDiameter: 34,
-                minTapTarget: 44,
-                iconSize: 16,
-                tooltip: '닫기',
-                onPressed: uiNotifier.exitFullscreen,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  AppFabIcon(
+                    svgPath: AppIcons.scale,
+                    visualDiameter: 34,
+                    minTapTarget: 44,
+                    iconSize: 16,
+                    tooltip: '닫기',
+                    onPressed: uiNotifier.exitFullscreen,
+                  ),
+                  const SizedBox(height: AppSpacing.small),
+                  AppFabIcon(
+                    svgPath: AppIcons.linkList,
+                    visualDiameter: 34,
+                    minTapTarget: 44,
+                    iconSize: 16,
+                    tooltip: '백링크',
+                    onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
+                  ),
+                ],
               ),
             ),
+          ],
         ],
       ),
     );

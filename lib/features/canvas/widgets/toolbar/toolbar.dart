@@ -12,10 +12,6 @@ import '../../models/tool_mode.dart';
 import '../../providers/note_editor_provider.dart';
 import '../../providers/note_editor_ui_provider.dart';
 import '../../providers/tool_settings_provider.dart';
-import '../controls/note_editor_page_navigation.dart';
-import '../controls/note_editor_pointer_mode.dart';
-import '../controls/note_editor_pressure_toggle.dart';
-import '../controls/note_editor_viewport_info.dart';
 
 extension on NoteEditorDesignToolbarVariant {
   bool get isFullscreen => this == NoteEditorDesignToolbarVariant.fullscreen;
@@ -101,12 +97,6 @@ class NoteEditorDesignToolbar extends ConsumerWidget {
       _NoteEditorToolbarMainRow(noteId: noteId, variant: variant),
       const SizedBox(height: AppSpacing.large),
       _NoteEditorPaletteSection(noteId: noteId),
-      const SizedBox(height: AppSpacing.large),
-      _NoteEditorUtilityRow(
-        noteId: noteId,
-        canvasWidth: canvasWidth,
-        canvasHeight: canvasHeight,
-      ),
     ];
 
     return Padding(
@@ -572,98 +562,7 @@ class _StrokeOptionChip extends StatelessWidget {
   }
 }
 
-class _NoteEditorUtilityRow extends StatelessWidget {
-  const _NoteEditorUtilityRow({
-    required this.noteId,
-    required this.canvasWidth,
-    required this.canvasHeight,
-  });
-
-  final String noteId;
-  final double canvasWidth;
-  final double canvasHeight;
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: AppSpacing.medium,
-      runSpacing: AppSpacing.small,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      alignment: WrapAlignment.center,
-      children: [
-        NoteEditorPageNavigation(noteId: noteId),
-        const _UtilityCard(
-          padding: EdgeInsets.symmetric(
-            horizontal: AppSpacing.medium,
-            vertical: AppSpacing.small,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('필압 시뮬레이션'),
-              SizedBox(width: AppSpacing.small),
-              NoteEditorPressureToggle(),
-            ],
-          ),
-        ),
-        _UtilityCard(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.medium,
-            vertical: AppSpacing.small,
-          ),
-          child: NoteEditorPointerMode(noteId: noteId),
-        ),
-        _UtilityCard(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.medium,
-            vertical: AppSpacing.small,
-          ),
-          child: NoteEditorViewportInfo(
-            canvasWidth: canvasWidth,
-            canvasHeight: canvasHeight,
-            noteId: noteId,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _UtilityCard extends StatelessWidget {
-  const _UtilityCard({
-    required this.child,
-    required this.padding,
-  });
-
-  final Widget child;
-  final EdgeInsets padding;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.gray20.withOpacity(0.8)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x11000000),
-            blurRadius: 10,
-            offset: Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: padding,
-        child: child,
-      ),
-    );
-  }
-}
-
-/// 노트 편집기 하단에 표시되는 툴바 위젯입니다.
-///
-/// 그리기 도구, 페이지 네비게이션, 필압 토글, 캔버스 정보, 포인터 모드 등을 포함합니다.
+/// 노트 편집기에 필요한 드로잉 도구와 스타일 제어를 제공하는 툴바입니다.
 class NoteEditorToolbar extends ConsumerWidget {
   /// [NoteEditorToolbar]의 생성자.
   ///
