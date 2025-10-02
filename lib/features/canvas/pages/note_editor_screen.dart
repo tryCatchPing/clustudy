@@ -254,6 +254,11 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
 
     final titleWithPage = '$noteTitle · ${currentIndex + 1}/$notePagesCount';
 
+    final mediaQuery = MediaQuery.of(context);
+    final double toolbarTop = uiState.isFullscreen
+        ? mediaQuery.padding.top + AppSpacing.small
+        : AppSpacing.small;
+
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -284,47 +289,37 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
       endDrawer: BacklinksPanel(noteId: widget.noteId),
       body: Stack(
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (!uiState.isFullscreen) ...[
-                NoteEditorToolbar(
-                  noteId: widget.noteId,
-                  canvasWidth: NoteEditorConstants.canvasWidth,
-                  canvasHeight: NoteEditorConstants.canvasHeight,
-                ),
-                const SizedBox(height: AppSpacing.large),
-              ],
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.screenPadding,
-                  ),
-                  child: NoteEditorCanvas(
-                    noteId: widget.noteId,
-                    routeId: widget.routeId,
-                  ),
-                ),
+          Positioned.fill(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.screenPadding,
+                0,
+                AppSpacing.screenPadding,
+                AppSpacing.xl,
               ),
-            ],
-          ),
-          if (uiState.isFullscreen) ...[
-            Align(
-              alignment: Alignment.topCenter,
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: AppSpacing.small),
-                  child: NoteEditorToolbar(
-                    noteId: widget.noteId,
-                    canvasWidth: NoteEditorConstants.canvasWidth,
-                    canvasHeight: NoteEditorConstants.canvasHeight,
-                  ),
-                ),
+              child: NoteEditorCanvas(
+                noteId: widget.noteId,
+                routeId: widget.routeId,
               ),
             ),
+          ),
+          Positioned(
+            top: toolbarTop,
+            left: 0,
+            right: 0,
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: NoteEditorToolbar(
+                noteId: widget.noteId,
+                canvasWidth: NoteEditorConstants.canvasWidth,
+                canvasHeight: NoteEditorConstants.canvasHeight,
+              ),
+            ),
+          ),
+          if (uiState.isFullscreen)
             Positioned(
-              right: 16,
-              top: MediaQuery.of(context).padding.top + 16,
+              right: AppSpacing.screenPadding,
+              top: mediaQuery.padding.top + AppSpacing.large,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -348,7 +343,6 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
                 ],
               ),
             ),
-          ],
         ],
       ),
     );

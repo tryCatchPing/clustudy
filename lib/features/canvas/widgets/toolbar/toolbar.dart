@@ -78,6 +78,7 @@ class NoteEditorDesignToolbar extends ConsumerWidget {
     required this.canvasWidth,
     required this.canvasHeight,
     this.variant = NoteEditorDesignToolbarVariant.standard,
+    this.paletteKind = NoteEditorPaletteKind.none,
     super.key,
   });
 
@@ -85,6 +86,7 @@ class NoteEditorDesignToolbar extends ConsumerWidget {
   final double canvasWidth;
   final double canvasHeight;
   final NoteEditorDesignToolbarVariant variant;
+  final NoteEditorPaletteKind paletteKind;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -94,9 +96,17 @@ class NoteEditorDesignToolbar extends ConsumerWidget {
     }
 
     final children = <Widget>[
-      _NoteEditorToolbarMainRow(noteId: noteId, variant: variant),
-      const SizedBox(height: AppSpacing.large),
-      _NoteEditorPaletteSection(noteId: noteId),
+      _NoteEditorToolbarMainRow(
+        noteId: noteId,
+        variant: variant,
+      ),
+      if (paletteKind != NoteEditorPaletteKind.none) ...[
+        const SizedBox(height: AppSpacing.medium),
+        _NoteEditorPaletteSheet(
+          noteId: noteId,
+          paletteKind: paletteKind,
+        ),
+      ],
     ];
 
     return Padding(
@@ -126,6 +136,7 @@ class _NoteEditorToolbarMainRow extends ConsumerWidget {
     final toolNotifier = ref.read(
       toolSettingsNotifierProvider(noteId).notifier,
     );
+    final uiNotifier = ref.read(noteEditorUiStateProvider(noteId).notifier);
 
     return ValueListenableBuilder<ScribbleState>(
       valueListenable: notifier,
@@ -161,29 +172,50 @@ class _NoteEditorToolbarMainRow extends ConsumerWidget {
               isPill: variant.isFullscreen,
               iconSize: variant._iconSize,
             ),
-            _ToolbarIconButton(
-              svgPath: AppIcons.pen,
-              iconSize: variant._iconSize,
-              onTap: () => toolNotifier.setToolMode(ToolMode.pen),
-              glowColor: _glowFor(toolSettings.penColor, penActive),
-              accent: _penAccentFor(toolSettings.penColor),
+            GestureDetector(
+              onDoubleTap: () {
+                toolNotifier.setToolMode(ToolMode.pen);
+                uiNotifier.togglePalette(NoteEditorPaletteKind.pen);
+              },
+              child: _ToolbarIconButton(
+                svgPath: AppIcons.pen,
+                iconSize: variant._iconSize,
+                onTap: () {
+                  toolNotifier.setToolMode(ToolMode.pen);
+                  uiNotifier.hidePalette();
+                },
+                glowColor: _glowFor(toolSettings.penColor, penActive),
+                accent: _penAccentFor(toolSettings.penColor),
+              ),
             ),
             const SizedBox(width: AppSpacing.small * 2),
-            _ToolbarIconButton(
-              svgPath: AppIcons.highlighter,
-              iconSize: variant._iconSize,
-              onTap: () => toolNotifier.setToolMode(ToolMode.highlighter),
-              glowColor: _glowFor(
-                toolSettings.highlighterColor,
-                highlighterActive,
+            GestureDetector(
+              onDoubleTap: () {
+                toolNotifier.setToolMode(ToolMode.highlighter);
+                uiNotifier.togglePalette(NoteEditorPaletteKind.highlighter);
+              },
+              child: _ToolbarIconButton(
+                svgPath: AppIcons.highlighter,
+                iconSize: variant._iconSize,
+                onTap: () {
+                  toolNotifier.setToolMode(ToolMode.highlighter);
+                  uiNotifier.hidePalette();
+                },
+                glowColor: _glowFor(
+                  toolSettings.highlighterColor,
+                  highlighterActive,
+                ),
+                accent: _highlighterAccentFor(toolSettings.highlighterColor),
               ),
-              accent: _highlighterAccentFor(toolSettings.highlighterColor),
             ),
             const SizedBox(width: AppSpacing.small * 2),
             _ToolbarIconButton(
               svgPath: AppIcons.eraser,
               iconSize: variant._iconSize,
-              onTap: () => toolNotifier.setToolMode(ToolMode.eraser),
+              onTap: () {
+                uiNotifier.hidePalette();
+                toolNotifier.setToolMode(ToolMode.eraser);
+              },
               glowColor: _solidGlow(AppColors.primary, eraserActive),
             ),
             _ToolbarDivider(
@@ -193,7 +225,10 @@ class _NoteEditorToolbarMainRow extends ConsumerWidget {
             _ToolbarIconButton(
               svgPath: AppIcons.linkPen,
               iconSize: variant._iconSize,
-              onTap: () => toolNotifier.setToolMode(ToolMode.linker),
+              onTap: () {
+                uiNotifier.hidePalette();
+                toolNotifier.setToolMode(ToolMode.linker);
+              },
               glowColor: _solidGlow(AppColors.primary, linkActive),
             ),
             const SizedBox(width: AppSpacing.small * 2),
@@ -201,6 +236,7 @@ class _NoteEditorToolbarMainRow extends ConsumerWidget {
               svgPath: AppIcons.graphView,
               iconSize: variant._iconSize,
               onTap: () {
+                uiNotifier.hidePalette();
                 // Placeholder: actual routing wiring will be handled when
                 // the toolbar replaces the legacy implementation.
               },
@@ -602,6 +638,113 @@ class NoteEditorToolbar extends ConsumerWidget {
       canvasWidth: canvasWidth,
       canvasHeight: canvasHeight,
       variant: uiState.toolbarVariant,
+      paletteKind: uiState.paletteKind,
+    );
+  }
+}
+
+class _NoteEditorPaletteSheet extends ConsumerWidget {
+  const _NoteEditorPaletteSheet({
+    required this.noteId,
+    required this.paletteKind,
+  });
+
+  final String noteId;
+  final NoteEditorPaletteKind paletteKind;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(toolSettingsNotifierProvider(noteId));
+    final toolNotifier = ref.read(
+      toolSettingsNotifierProvider(noteId).notifier,
+    );
+    final uiNotifier = ref.read(noteEditorUiStateProvider(noteId).notifier);
+
+    final isPen = paletteKind == NoteEditorPaletteKind.pen;
+    final toolMode = isPen ? ToolMode.pen : ToolMode.highlighter;
+
+    final colors = CanvasColor.all
+        .map((c) => isPen ? c.color : c.highlighterColor)
+        .toList(growable: false);
+    final Color selectedColor = isPen
+        ? settings.penColor
+        : settings.highlighterColor;
+
+    final widths = toolMode.widths;
+    final double selectedWidth = isPen
+        ? settings.penWidth
+        : settings.highlighterWidth;
+
+    double visualSize(double width) {
+      final minWidth = widths.reduce((a, b) => a < b ? a : b);
+      final maxWidth = widths.reduce((a, b) => a > b ? a : b);
+      if ((maxWidth - minWidth).abs() < 1e-6) {
+        return 18;
+      }
+      final t = (width - minWidth) / (maxWidth - minWidth);
+      return 12 + t * 16;
+    }
+
+    final Color fillColor = isPen
+        ? settings.penColor
+        : settings.highlighterColor;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.large,
+        vertical: AppSpacing.medium,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.gray20.withOpacity(0.6)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x14000000),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ToolColorPickerPill(
+            colors: colors,
+            selected: selectedColor,
+            onSelect: (color) {
+              toolNotifier.setToolMode(toolMode);
+              if (isPen) {
+                toolNotifier.setPenColor(color);
+              } else {
+                toolNotifier.setHighlighterColor(color);
+              }
+              uiNotifier.hidePalette();
+            },
+          ),
+          const SizedBox(height: AppSpacing.medium),
+          Wrap(
+            spacing: AppSpacing.small,
+            children: [
+              for (final width in widths)
+                _StrokeOptionChip(
+                  diameter: visualSize(width),
+                  selected: width == selectedWidth,
+                  fillColor: fillColor,
+                  showInnerBorder: toolMode == ToolMode.highlighter,
+                  onTap: () {
+                    toolNotifier.setToolMode(toolMode);
+                    if (toolMode == ToolMode.pen) {
+                      toolNotifier.setPenWidth(width);
+                    } else {
+                      toolNotifier.setHighlighterWidth(width);
+                    }
+                  },
+                ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
