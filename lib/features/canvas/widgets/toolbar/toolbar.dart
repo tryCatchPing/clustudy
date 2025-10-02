@@ -120,6 +120,10 @@ class NoteEditorDesignToolbar extends ConsumerWidget {
   }
 }
 
+/// 상단 아이콘 스트립(undo/redo + 도구 버튼)을 렌더링합니다.
+///
+/// 펜/하이라이터 더블 탭 시 팔레트 시트를 열고, 다른 도구를 고르면 팔레트를
+/// 닫도록 UI 상태를 조정합니다.
 class _NoteEditorToolbarMainRow extends ConsumerWidget {
   const _NoteEditorToolbarMainRow({
     required this.noteId,
@@ -174,6 +178,7 @@ class _NoteEditorToolbarMainRow extends ConsumerWidget {
             ),
             GestureDetector(
               onDoubleTap: () {
+                // Double tap toggles palette overlay while keeping current tool.
                 toolNotifier.setToolMode(ToolMode.pen);
                 uiNotifier.togglePalette(NoteEditorPaletteKind.pen);
               },
@@ -191,6 +196,7 @@ class _NoteEditorToolbarMainRow extends ConsumerWidget {
             const SizedBox(width: AppSpacing.small * 2),
             GestureDetector(
               onDoubleTap: () {
+                // Applies the same palette toggle behaviour for the highlighter.
                 toolNotifier.setToolMode(ToolMode.highlighter);
                 uiNotifier.togglePalette(NoteEditorPaletteKind.highlighter);
               },
@@ -354,191 +360,6 @@ class _ToolbarDivider extends StatelessWidget {
   }
 }
 
-class _NoteEditorPaletteSection extends ConsumerWidget {
-  const _NoteEditorPaletteSection({required this.noteId});
-
-  final String noteId;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final textStyle = theme.textTheme.bodyMedium?.copyWith(
-      color: AppColors.gray40,
-      fontWeight: FontWeight.w600,
-    );
-
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.large),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.gray20.withOpacity(0.6)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x14000000),
-            blurRadius: 12,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (textStyle != null)
-            Text('도구 스타일', style: textStyle)
-          else
-            const SizedBox.shrink(),
-          const SizedBox(height: AppSpacing.medium),
-          _NoteEditorPaletteRow(
-            noteId: noteId,
-            toolMode: ToolMode.pen,
-            label: '펜 색상',
-          ),
-          const SizedBox(height: AppSpacing.medium),
-          _NoteEditorPaletteRow(
-            noteId: noteId,
-            toolMode: ToolMode.highlighter,
-            label: '하이라이터 색상',
-          ),
-          const SizedBox(height: AppSpacing.medium),
-          _NoteEditorStrokeSelector(noteId: noteId),
-        ],
-      ),
-    );
-  }
-}
-
-class _NoteEditorPaletteRow extends ConsumerWidget {
-  const _NoteEditorPaletteRow({
-    required this.noteId,
-    required this.toolMode,
-    required this.label,
-  });
-
-  final String noteId;
-  final ToolMode toolMode;
-  final String label;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(toolSettingsNotifierProvider(noteId));
-    final notifier = ref.read(toolSettingsNotifierProvider(noteId).notifier);
-
-    final isPen = toolMode == ToolMode.pen;
-    final colors = CanvasColor.all
-        .map((c) => isPen ? c.color : c.highlighterColor)
-        .toList(growable: false);
-    final Color selected = isPen
-        ? settings.penColor
-        : settings.highlighterColor;
-    final bool isActive = settings.toolMode == toolMode;
-
-    final titleStyle = Theme.of(context).textTheme.labelLarge?.copyWith(
-      color: AppColors.gray40,
-      fontWeight: FontWeight.w600,
-    );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (titleStyle != null) Text(label, style: titleStyle),
-        const SizedBox(height: AppSpacing.small),
-        ToolColorPickerPill(
-          colors: colors,
-          selected: selected,
-          onSelect: (color) {
-            notifier.setToolMode(toolMode);
-            if (toolMode == ToolMode.pen) {
-              notifier.setPenColor(color);
-            } else if (toolMode == ToolMode.highlighter) {
-              notifier.setHighlighterColor(color);
-            }
-          },
-          borderColor: isActive
-              ? AppColors.primary.withOpacity(0.35)
-              : AppColors.gray50,
-          borderWidth: isActive ? 1.8 : 1.5,
-        ),
-      ],
-    );
-  }
-}
-
-class _NoteEditorStrokeSelector extends ConsumerWidget {
-  const _NoteEditorStrokeSelector({required this.noteId});
-
-  final String noteId;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(toolSettingsNotifierProvider(noteId));
-    final widths = settings.toolMode.widths;
-    if (widths.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    final minWidth = widths.reduce((a, b) => a < b ? a : b);
-    final maxWidth = widths.reduce((a, b) => a > b ? a : b);
-
-    double visualSize(double width) {
-      if ((maxWidth - minWidth).abs() < 1e-6) {
-        return 18;
-      }
-      final t = (width - minWidth) / (maxWidth - minWidth);
-      return 12 + t * 16;
-    }
-
-    final Color fillColor = settings.toolMode == ToolMode.eraser
-        ? Colors.transparent
-        : settings.currentColor;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '스트로크 굵기',
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-            color: AppColors.gray40,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.small),
-        Wrap(
-          spacing: AppSpacing.small,
-          children: [
-            for (final width in widths)
-              _StrokeOptionChip(
-                diameter: visualSize(width),
-                selected: settings.currentWidth == width,
-                fillColor: fillColor,
-                showInnerBorder: settings.toolMode == ToolMode.eraser,
-                onTap: () {
-                  final notifier = ref.read(
-                    toolSettingsNotifierProvider(noteId).notifier,
-                  );
-                  switch (settings.toolMode) {
-                    case ToolMode.pen:
-                      notifier.setPenWidth(width);
-                      break;
-                    case ToolMode.highlighter:
-                      notifier.setHighlighterWidth(width);
-                      break;
-                    case ToolMode.eraser:
-                      notifier.setEraserWidth(width);
-                      break;
-                    case ToolMode.linker:
-                      // TODO: add linker width behaviour when spec is ready.
-                      break;
-                  }
-                },
-              ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
 class _StrokeOptionChip extends StatelessWidget {
   const _StrokeOptionChip({
     required this.diameter,
@@ -598,7 +419,10 @@ class _StrokeOptionChip extends StatelessWidget {
   }
 }
 
-/// 노트 편집기에 필요한 드로잉 도구와 스타일 제어를 제공하는 툴바입니다.
+/// 노트 편집기에 필요한 드로잉 도구와 스타일 제어를 제공하는 메인 액션 바입니다.
+///
+/// 캔버스 근처에 떠 있는 secondary toolbar 패턴으로, 디자인 시스템 시각 언어와
+/// 기존 기능(도구 선택/팔레트 토글)을 연결하는 진입점입니다.
 class NoteEditorToolbar extends ConsumerWidget {
   /// [NoteEditorToolbar]의 생성자.
   ///
@@ -643,6 +467,10 @@ class NoteEditorToolbar extends ConsumerWidget {
   }
 }
 
+/// 펜/하이라이터용 팔레트 시트를 렌더링합니다.
+///
+/// 현재 선택된 도구에 맞춰 색상과 스트로크 옵션만 표시하며, 선택 후에는
+/// 자동으로 팔레트를 닫아 main row로 초점을 돌려줍니다.
 class _NoteEditorPaletteSheet extends ConsumerWidget {
   const _NoteEditorPaletteSheet({
     required this.noteId,

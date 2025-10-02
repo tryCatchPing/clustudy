@@ -284,6 +284,13 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
                   onTap: () => _scaffoldKey.currentState?.openEndDrawer(),
                   tooltip: '백링크',
                 ),
+                ToolbarAction(
+                  svgPath: AppIcons.pageManage,
+                  onTap: () {
+                    /* TODO */
+                  },
+                  tooltip: '페이지 관리',
+                ),
               ],
             ),
       endDrawer: BacklinksPanel(noteId: widget.noteId),
