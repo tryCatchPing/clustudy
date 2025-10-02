@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 enum NoteEditorDesignToolbarVariant { standard, fullscreen }
 
 /// Palette overlays that can be displayed from the toolbar.
-enum NoteEditorPaletteKind { none, pen, highlighter }
+enum NoteEditorPaletteKind { none, pen, highlighter, eraser }
 
 /// Immutable UI slice describing how the editor chrome should render.
 @immutable
