@@ -8,6 +8,7 @@ import '../../../design_system/tokens/app_spacing.dart';
 import '../../../shared/routing/route_observer.dart';
 import '../../../shared/services/sketch_persist_service.dart';
 import '../../notes/data/derived_note_providers.dart';
+import '../../notes/pages/page_controller_screen.dart';
 import '../constants/note_editor_constant.dart';
 import '../providers/note_editor_provider.dart';
 import '../providers/note_editor_ui_provider.dart';
@@ -255,9 +256,11 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
     final titleWithPage = '$noteTitle · ${currentIndex + 1}/$notePagesCount';
 
     final mediaQuery = MediaQuery.of(context);
+    // Design: standard toolbar sits flush under app bar (no extra top gap),
+    // fullscreen pill sits just below the status bar.
     final double toolbarTop = uiState.isFullscreen
         ? mediaQuery.padding.top + AppSpacing.small
-        : AppSpacing.small;
+        : 0;
 
     return Scaffold(
       key: _scaffoldKey,
@@ -286,9 +289,8 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
                 ),
                 ToolbarAction(
                   svgPath: AppIcons.pageManage,
-                  onTap: () {
-                    /* TODO */
-                  },
+                  onTap: () =>
+                      PageControllerScreen.show(context, widget.noteId),
                   tooltip: '페이지 관리',
                 ),
               ],
@@ -296,18 +298,12 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
       endDrawer: BacklinksPanel(noteId: widget.noteId),
       body: Stack(
         children: [
+          // Fill entire body area with the canvas; outer paddings removed so
+          // the drawing surface can expand edge-to-edge under the toolbar.
           Positioned.fill(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.screenPadding,
-                0,
-                AppSpacing.screenPadding,
-                AppSpacing.xl,
-              ),
-              child: NoteEditorCanvas(
-                noteId: widget.noteId,
-                routeId: widget.routeId,
-              ),
+            child: NoteEditorCanvas(
+              noteId: widget.noteId,
+              routeId: widget.routeId,
             ),
           ),
           Positioned(
@@ -346,6 +342,16 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
                     iconSize: 16,
                     tooltip: '백링크',
                     onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
+                  ),
+                  const SizedBox(height: AppSpacing.small),
+                  AppFabIcon(
+                    svgPath: AppIcons.pageManage,
+                    visualDiameter: 34,
+                    minTapTarget: 44,
+                    iconSize: 16,
+                    tooltip: '페이지 관리',
+                    onPressed: () =>
+                        PageControllerScreen.show(context, widget.noteId),
                   ),
                 ],
               ),
