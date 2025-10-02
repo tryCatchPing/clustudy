@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../design_system/components/atoms/app_fab_icon.dart';
+import '../../../design_system/tokens/app_icons.dart';
 import '../../../shared/routing/route_observer.dart';
 import '../../../shared/services/sketch_persist_service.dart';
 import '../../notes/data/derived_note_providers.dart';
 import '../providers/note_editor_provider.dart';
+import '../providers/note_editor_ui_provider.dart';
 import '../widgets/note_editor_canvas.dart';
 import '../widgets/panels/backlinks_panel.dart';
 import '../widgets/toolbar/actions_bar.dart';
@@ -239,16 +242,50 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
       );
     }
 
+    final uiState = ref.watch(noteEditorUiStateProvider(widget.noteId));
+    final uiNotifier = ref.read(
+      noteEditorUiStateProvider(widget.noteId).notifier,
+    );
+
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: AppBar(
-        title: Text(
-          '$noteTitle - Page ${currentIndex + 1}/$notePagesCount',
-        ),
-        actions: [NoteEditorActionsBar(noteId: widget.noteId)],
-      ),
+      appBar: uiState.isFullscreen
+          ? null
+          : AppBar(
+              title: Text(
+                '$noteTitle - Page ${currentIndex + 1}/$notePagesCount',
+              ),
+              actions: [
+                NoteEditorActionsBar(noteId: widget.noteId),
+                IconButton(
+                  icon: const Icon(Icons.fullscreen),
+                  tooltip: '전체 화면',
+                  onPressed: uiNotifier.enterFullscreen,
+                ),
+              ],
+            ),
       endDrawer: BacklinksPanel(noteId: widget.noteId),
-      body: NoteEditorCanvas(noteId: widget.noteId, routeId: widget.routeId),
+      body: Stack(
+        children: [
+          NoteEditorCanvas(
+            noteId: widget.noteId,
+            routeId: widget.routeId,
+          ),
+          if (uiState.isFullscreen)
+            Positioned(
+              right: 16,
+              top: MediaQuery.of(context).padding.top + 16,
+              child: AppFabIcon(
+                svgPath: AppIcons.scale,
+                visualDiameter: 34,
+                minTapTarget: 44,
+                iconSize: 16,
+                tooltip: '닫기',
+                onPressed: uiNotifier.exitFullscreen,
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

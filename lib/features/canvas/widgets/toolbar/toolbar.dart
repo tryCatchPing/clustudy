@@ -10,15 +10,12 @@ import '../../../../design_system/tokens/app_spacing.dart';
 import '../../models/canvas_color.dart';
 import '../../models/tool_mode.dart';
 import '../../providers/note_editor_provider.dart';
+import '../../providers/note_editor_ui_provider.dart';
 import '../../providers/tool_settings_provider.dart';
 import '../controls/note_editor_page_navigation.dart';
 import '../controls/note_editor_pointer_mode.dart';
 import '../controls/note_editor_pressure_toggle.dart';
 import '../controls/note_editor_viewport_info.dart';
-import 'drawing_toolbar.dart';
-
-/// Visual variants for the upcoming design-system aligned toolbar.
-enum NoteEditorDesignToolbarVariant { standard, fullscreen }
 
 extension on NoteEditorDesignToolbarVariant {
   bool get isFullscreen => this == NoteEditorDesignToolbarVariant.fullscreen;
@@ -699,38 +696,13 @@ class NoteEditorToolbar extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      child: Column(
-        children: [
-          // 상단: 기존 그리기 도구들
-          NoteEditorDrawingToolbar(noteId: noteId),
+    final uiState = ref.watch(noteEditorUiStateProvider(noteId));
 
-          // 하단: 페이지 네비게이션, 필압 토글, 캔버스 정보, 포인터 모드
-          SizedBox(
-            width: double.infinity,
-            child: Wrap(
-              crossAxisAlignment: WrapCrossAlignment.center,
-              alignment: WrapAlignment.spaceBetween,
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                NoteEditorPageNavigation(noteId: noteId),
-                // 필압 토글 컨트롤
-                // TODO(xodnd): simplify 0 으로 수정 필요
-                const NoteEditorPressureToggle(),
-                // 캔버스와 뷰포트 정보를 표시하는 위젯
-                NoteEditorViewportInfo(
-                  canvasWidth: canvasWidth,
-                  canvasHeight: canvasHeight,
-                  noteId: noteId,
-                ),
-                NoteEditorPointerMode(noteId: noteId),
-              ],
-            ),
-          ),
-        ],
-      ),
+    return NoteEditorDesignToolbar(
+      noteId: noteId,
+      canvasWidth: canvasWidth,
+      canvasHeight: canvasHeight,
+      variant: uiState.toolbarVariant,
     );
   }
 }
