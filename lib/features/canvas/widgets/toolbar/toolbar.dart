@@ -491,6 +491,7 @@ class _NoteEditorPaletteSheet extends ConsumerWidget {
     final toolNotifier = ref.read(
       toolSettingsNotifierProvider(noteId).notifier,
     );
+    final uiNotifier = ref.read(noteEditorUiStateProvider(noteId).notifier);
 
     final isPen = paletteKind == NoteEditorPaletteKind.pen;
     final isHighlighter = paletteKind == NoteEditorPaletteKind.highlighter;
@@ -570,31 +571,34 @@ class _NoteEditorPaletteSheet extends ConsumerWidget {
                       toolNotifier.setHighlighterColor(color);
                     }
                     // Keep sheet open until user taps outside or selects width.
+                    uiNotifier.hidePalette();
                   },
                 ),
               if (!isEraser) const SizedBox(height: AppSpacing.medium),
-              Wrap(
-                spacing: AppSpacing.small,
+              Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  for (final width in widths)
+                  for (int i = 0; i < widths.length; i++) ...[
                     _StrokeOptionChip(
-                      diameter: visualSize(width),
-                      selected: width == selectedWidth,
+                      diameter: visualSize(widths[i]),
+                      selected: widths[i] == selectedWidth,
                       fillColor: fillColor,
                       showInnerBorder: toolMode != ToolMode.pen,
                       onTap: () {
                         toolNotifier.setToolMode(toolMode);
                         if (toolMode == ToolMode.pen) {
-                          toolNotifier.setPenWidth(width);
+                          toolNotifier.setPenWidth(widths[i]);
                         } else if (toolMode == ToolMode.highlighter) {
-                          toolNotifier.setHighlighterWidth(width);
+                          toolNotifier.setHighlighterWidth(widths[i]);
                         } else {
-                          toolNotifier.setEraserWidth(width);
+                          toolNotifier.setEraserWidth(widths[i]);
                         }
-                        // Do not auto-close on eraser/width select; let user
-                        // tap outside to dismiss, matching design expectations.
+                        uiNotifier.hidePalette();
                       },
                     ),
+                    if (i != widths.length - 1)
+                      const SizedBox(width: AppSpacing.small),
+                  ],
                 ],
               ),
             ],
