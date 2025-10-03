@@ -36,6 +36,7 @@ class AppIcons {
   static const redo = 'assets/icons/redo.svg';
   static const pageManage = 'assets/icons/page_management.svg';
   static const scale = 'assets/icons/scale.svg';
+  static const scaleReverse ='assets/icons/scale-reverse.svg';
   static const linkList = 'assets/icons/link_list.svg';
   static const link = 'assets/icons/link.svg';
 }
