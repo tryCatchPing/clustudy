@@ -61,12 +61,13 @@ class ToolGlowIcon extends StatelessWidget {
       onTap: onTap,
       radius: size + AppSpacing.small,
       child: SizedBox(
-        width: glowSize, height: glowSize,
+        width: glowSize,
+        height: glowSize,
         child: Stack(
           alignment: Alignment.center,
           clipBehavior: Clip.none,
           children: [
-            if (glowOn) // resolved != null
+            if (glowOn)
               RepaintBoundary(
                 child: ImageFiltered(
                   imageFilter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
@@ -74,11 +75,11 @@ class ToolGlowIcon extends StatelessWidget {
                     width: glowSize,
                     height: glowSize,
                     decoration: BoxDecoration(
-                      color: resolved,   // ← 이미 알파 포함된 색을 그대로 사용
-                      shape: BoxShape.circle,
+                      color: resolved,
+                      shape: BoxShape.circle
                     ),
                   ),
-                ),
+                )
               ),
             icon,
           ],
@@ -87,5 +88,5 @@ class ToolGlowIcon extends StatelessWidget {
     );
   }
 
-  
+
 }

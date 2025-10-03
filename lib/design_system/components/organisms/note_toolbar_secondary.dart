@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 
 import '../../tokens/app_colors.dart';
 import '../../tokens/app_icons.dart';
+import '../../tokens/app_icons_path.dart';
 import '../../tokens/app_spacing.dart';
+import '../atoms/stroke_glow_icon.dart';
 import '../atoms/tool_glow_icon.dart';
 
 enum NoteToolbarSecondaryVariant { bar, pill }
@@ -84,12 +86,16 @@ class NoteToolbarSecondary extends StatelessWidget {
         GestureDetector(
           behavior: HitTestBehavior.opaque,
           onDoubleTap: onPenDoubleTap,
-          child: ToolGlowIcon(
-            svgPath: AppIcons.pen,
+          child: StrokeGlowIcon(
+            svgPathData: AppIconsPath.pen,
             onTap: onPen,
             size: iconSize,
-            accent: activePenColor,
+            svgViewBox: 32, // 원본 viewBox
+            svgStroke: 1.5,
+            color: AppColors.gray50,
             glowColor: penGlowColor,
+            glowSigma: 10,
+            glowSpread: 5,
           ),
         ),
         const SizedBox(width: 16),
@@ -97,33 +103,46 @@ class NoteToolbarSecondary extends StatelessWidget {
         GestureDetector(
           behavior: HitTestBehavior.opaque,
           onDoubleTap: onHighlighterDoubleTap,
-          child: ToolGlowIcon(
-            svgPath: AppIcons.highlighter, // ← 하이라이터
+          child: StrokeGlowIcon(
+            svgPathData: AppIconsPath.highlighter, // ← 하이라이터
             onTap: onHighlighter,
             size: iconSize,
-            accent: activeHighlighterColor,
+            svgViewBox: 32, // 원본 viewBox
+            svgStroke: 1.5,
+            color: AppColors.gray50,
             glowColor: highlighterGlowColor,
+            glowSigma: 10,
+            glowSpread: 5,
           ),
         ),
         const SizedBox(width: 16),
 
-        ToolGlowIcon(
-          svgPath: AppIcons.eraser,
+        StrokeGlowIcon(
+          svgPathData: AppIconsPath.eraser,
           onTap: onEraser,
           size: iconSize,
+          svgViewBox: 32, // 원본 viewBox
+          svgStroke: 1.5,
+          color: AppColors.gray50,
           glowColor: eraserGlowColor,
-          // glowOpacity: 0.48, // 원하면 톤 다운
+          glowSigma: 10,
+          glowSpread: 5,
         ),
         _Divider(
           height: iconSize * 0.75,
           color: isPill ? AppColors.gray50 : AppColors.gray20,
         ),
 
-        ToolGlowIcon(
-          svgPath: AppIcons.linkPen,
+        StrokeGlowIcon(
+          svgPathData: AppIconsPath.linkPen,
           onTap: onLinkPen,
           size: iconSize,
+          svgViewBox: 32, // 원본 viewBox
+          svgStroke: 1.5,
+          color: AppColors.gray50,
           glowColor: linkPenGlowColor,
+          glowSigma: 10,
+          glowSpread: 5,
         ),
         const SizedBox(width: 16),
 
