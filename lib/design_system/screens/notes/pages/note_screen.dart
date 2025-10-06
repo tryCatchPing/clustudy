@@ -219,6 +219,9 @@ class NoteScreen extends StatelessWidget {
   final String noteId;
   final String? initialTitle;
 
+  static const double _iconSize = 20.0;
+  static const double _height = 55.0;
+
   @override
   Widget build(BuildContext context) {
     // context.read<NoteStore>().init();
@@ -248,6 +251,8 @@ class NoteScreen extends StatelessWidget {
                   ? null
                   : NoteTopToolbar(
                       title: displayTitle,
+                      // iconSize: _iconSize,
+                      height: _height,
                       leftActions: [
                         ToolbarAction(
                           svgPath: AppIcons.chevronLeft,
@@ -313,6 +318,7 @@ class NoteScreen extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               NoteToolbarSecondary(
+                                // height: _height,
                                 onUndo: context.read<NoteUiState>().onUndo,
                                 onRedo: context.read<NoteUiState>().onRedo,
                                 onPen: context.read<NoteUiState>().onPen,
@@ -335,7 +341,7 @@ class NoteScreen extends StatelessWidget {
                                 isLinkPenOn: ui.linkPenOn,
                                 eraserGlowColor: ui.eraserUiGlowColor,
                                 linkPenGlowColor: ui.linkPenUiGlowColor,
-                                iconSize: 28,
+                                iconSize: _iconSize,
                                 showBottomDivider: false,
                                 variant: NoteToolbarSecondaryVariant.pill,
                                 onPenDoubleTap: () =>
@@ -380,6 +386,7 @@ class NoteScreen extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               NoteToolbarSecondary(
+                                // height: _height,
                                 onUndo: context.read<NoteUiState>().onUndo,
                                 onRedo: context.read<NoteUiState>().onRedo,
                                 onPen: context.read<NoteUiState>().onPen,
@@ -402,7 +409,7 @@ class NoteScreen extends StatelessWidget {
                                 isLinkPenOn: ui.linkPenOn,
                                 eraserGlowColor: ui.eraserUiGlowColor,
                                 linkPenGlowColor: ui.linkPenUiGlowColor,
-                                iconSize: 28,
+                                iconSize: _iconSize,
                                 showBottomDivider: true,
                                 variant: NoteToolbarSecondaryVariant.bar,
                                 onPenDoubleTap: () =>

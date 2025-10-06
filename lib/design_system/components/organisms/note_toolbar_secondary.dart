@@ -71,6 +71,8 @@ class NoteToolbarSecondary extends StatelessWidget {
   Widget build(BuildContext context) {
     final isPill = variant == NoteToolbarSecondaryVariant.pill;
 
+    const svgViewBoxSize = 32.0;
+
     final content = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -90,7 +92,7 @@ class NoteToolbarSecondary extends StatelessWidget {
             svgPathData: AppIconsPath.pen,
             onTap: onPen,
             size: iconSize,
-            svgViewBox: 32, // 원본 viewBox
+            svgViewBox: svgViewBoxSize, // 원본 viewBox
             svgStroke: 1.5,
             color: AppColors.gray50,
             glowColor: penGlowColor,
@@ -107,7 +109,7 @@ class NoteToolbarSecondary extends StatelessWidget {
             svgPathData: AppIconsPath.highlighter, // ← 하이라이터
             onTap: onHighlighter,
             size: iconSize,
-            svgViewBox: 32, // 원본 viewBox
+            svgViewBox: svgViewBoxSize, // 원본 viewBox
             svgStroke: 1.5,
             color: AppColors.gray50,
             glowColor: highlighterGlowColor,
@@ -121,7 +123,7 @@ class NoteToolbarSecondary extends StatelessWidget {
           svgPathData: AppIconsPath.eraser,
           onTap: onEraser,
           size: iconSize,
-          svgViewBox: 32, // 원본 viewBox
+          svgViewBox: svgViewBoxSize, // 원본 viewBox
           svgStroke: 1.5,
           color: AppColors.gray50,
           glowColor: eraserGlowColor,
@@ -137,7 +139,7 @@ class NoteToolbarSecondary extends StatelessWidget {
           svgPathData: AppIconsPath.linkPen,
           onTap: onLinkPen,
           size: iconSize,
-          svgViewBox: 32, // 원본 viewBox
+          svgViewBox: svgViewBoxSize, // 원본 viewBox
           svgStroke: 1.5,
           color: AppColors.gray50,
           glowColor: linkPenGlowColor,

@@ -116,6 +116,7 @@ class NoteTopToolbar extends StatelessWidget implements PreferredSizeWidget {
                       svgPath: rightActions[i].svgPath,
                       onPressed: rightActions[i].onTap,
                       tooltip: rightActions[i].tooltip,
+                      // 통일이 안되어있네..
                       size: AppIconButtonSize.md,
                       color: iconColor,
                     ),

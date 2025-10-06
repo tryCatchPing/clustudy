@@ -121,6 +121,7 @@ class _NoteEditorToolbarMainRow extends ConsumerWidget {
     );
     final uiNotifier = ref.read(noteEditorUiStateProvider(noteId).notifier);
 
+    // 하
     const svgViewBoxSize = 28.0;
 
     return ValueListenableBuilder<ScribbleState>(
