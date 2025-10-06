@@ -18,7 +18,9 @@ import '../../providers/tool_settings_provider.dart';
 extension on NoteEditorDesignToolbarVariant {
   bool get isFullscreen => this == NoteEditorDesignToolbarVariant.fullscreen;
 
-  double get _iconSize => isFullscreen ? 28 : 32;
+  // 이걸 수정하면 아이콘 사이즈가 바뀜
+  // double get _iconSize => isFullscreen ? 28 : 32;
+  double get _iconSize => 28.0;
 
   EdgeInsets get _outerPadding => switch (this) {
     // Use full screen width: no outer horizontal padding in both modes
@@ -121,8 +123,8 @@ class _NoteEditorToolbarMainRow extends ConsumerWidget {
     );
     final uiNotifier = ref.read(noteEditorUiStateProvider(noteId).notifier);
 
-    // 하
-    const svgViewBoxSize = 28.0;
+    // 이건 건드는게 아닌거같은데 - 이거 수정하면 다른건 안바뀌고 아이콘 투명도가 바뀜
+    const svgViewBoxSize = 32.0;
 
     return ValueListenableBuilder<ScribbleState>(
       valueListenable: notifier,
@@ -137,6 +139,7 @@ class _NoteEditorToolbarMainRow extends ConsumerWidget {
         final bool linkActive = toolSettings.toolMode == ToolMode.linker;
 
         final row = Row(
+          // 이쪽
           mainAxisSize: MainAxisSize.min,
           children: [
             ToolGlowIcon(
