@@ -19,9 +19,9 @@ extension on NoteEditorDesignToolbarVariant {
   bool get isFullscreen => this == NoteEditorDesignToolbarVariant.fullscreen;
 
   // 이걸 수정하면 아이콘 사이즈가 바뀜, 유라와 논의 필요
-  // TODO(xodnd): 그럼 하단에서 나오는 팔레트 사이즈도 변경해야해. 현재 상황을 모르겠다.
   // double get _iconSize => isFullscreen ? 28 : 32;
   double get _iconSize => isFullscreen ? 20 : 28;
+  double get _paletteScale => isFullscreen ? 0.85 : 1.0;
 
   EdgeInsets get _outerPadding => switch (this) {
     // Use full screen width: no outer horizontal padding in both modes
@@ -80,10 +80,11 @@ class NoteEditorDesignToolbar extends ConsumerWidget {
         variant: variant,
       ),
       if (paletteKind != NoteEditorPaletteKind.none) ...[
-        const SizedBox(height: AppSpacing.medium),
+        SizedBox(height: AppSpacing.medium * variant._paletteScale),
         _NoteEditorPaletteSheet(
           noteId: noteId,
           paletteKind: paletteKind,
+          variant: variant,
         ),
       ],
     ];
@@ -344,6 +345,7 @@ class _StrokeOptionChip extends StatelessWidget {
     required this.fillColor,
     required this.showInnerBorder,
     required this.onTap,
+    required this.outerDiameter,
   });
 
   final double diameter;
@@ -351,10 +353,11 @@ class _StrokeOptionChip extends StatelessWidget {
   final Color fillColor;
   final bool showInnerBorder;
   final VoidCallback onTap;
+  final double outerDiameter;
 
   @override
   Widget build(BuildContext context) {
-    const double outer = AppSpacing.touchTargetSm;
+    final double outer = outerDiameter;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -452,10 +455,12 @@ class _NoteEditorPaletteSheet extends ConsumerWidget {
   const _NoteEditorPaletteSheet({
     required this.noteId,
     required this.paletteKind,
+    required this.variant,
   });
 
   final String noteId;
   final NoteEditorPaletteKind paletteKind;
+  final NoteEditorDesignToolbarVariant variant;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -465,6 +470,7 @@ class _NoteEditorPaletteSheet extends ConsumerWidget {
     );
     final uiNotifier = ref.read(noteEditorUiStateProvider(noteId).notifier);
 
+    final paletteScale = variant._paletteScale;
     final isPen = paletteKind == NoteEditorPaletteKind.pen;
     final isHighlighter = paletteKind == NoteEditorPaletteKind.highlighter;
     final isEraser = paletteKind == NoteEditorPaletteKind.eraser;
@@ -494,10 +500,10 @@ class _NoteEditorPaletteSheet extends ConsumerWidget {
       final minWidth = widths.reduce((a, b) => a < b ? a : b);
       final maxWidth = widths.reduce((a, b) => a > b ? a : b);
       if ((maxWidth - minWidth).abs() < 1e-6) {
-        return 18;
+        return 18 * paletteScale;
       }
       final t = (width - minWidth) / (maxWidth - minWidth);
-      return 12 + t * 16;
+      return (12 + t * 16) * paletteScale;
     }
 
     final Color fillColor = isPen
@@ -506,24 +512,38 @@ class _NoteEditorPaletteSheet extends ConsumerWidget {
         ? settings.highlighterColor
         : Colors.transparent;
 
+    final double sheetHorizontalPadding = AppSpacing.large * paletteScale;
+    final double sheetVerticalPadding = AppSpacing.medium * paletteScale;
+    final double sheetRadius = 24 * paletteScale;
+    final double shadowBlur = 12 * paletteScale;
+    final double colorDotSize = 24 * paletteScale;
+    final double colorGap = AppSpacing.small * paletteScale;
+    final double colorHorizontalPadding = AppSpacing.medium * paletteScale;
+    final double colorVerticalPadding = 8 * paletteScale;
+    final double colorBorderWidth = 1.5 * paletteScale;
+    final double colorRadius = 30 * paletteScale;
+    final double betweenSections = AppSpacing.medium * paletteScale;
+    final double chipSpacing = AppSpacing.small * paletteScale;
+    final double chipOuterDiameter = AppSpacing.touchTargetSm * paletteScale;
+
     // Keep sheet as small as possible around its content
     return UnconstrainedBox(
       alignment: Alignment.topCenter,
       child: IntrinsicWidth(
         child: Container(
           constraints: const BoxConstraints(minWidth: 0),
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.large,
-            vertical: AppSpacing.medium,
+          padding: EdgeInsets.symmetric(
+            horizontal: sheetHorizontalPadding,
+            vertical: sheetVerticalPadding,
           ),
           decoration: BoxDecoration(
             color: AppColors.background,
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(sheetRadius),
             border: Border.all(color: AppColors.gray20.withOpacity(0.6)),
-            boxShadow: const [
+            boxShadow: [
               BoxShadow(
                 color: Color(0x14000000),
-                blurRadius: 12,
+                blurRadius: shadowBlur,
                 offset: Offset(0, 4),
               ),
             ],
@@ -545,8 +565,14 @@ class _NoteEditorPaletteSheet extends ConsumerWidget {
                     // Keep sheet open until user taps outside or selects width.
                     uiNotifier.hidePalette();
                   },
+                  dotSize: colorDotSize,
+                  gap: colorGap,
+                  horizontal: colorHorizontalPadding,
+                  vertical: colorVerticalPadding,
+                  borderWidth: colorBorderWidth,
+                  radius: colorRadius,
                 ),
-              if (!isEraser) const SizedBox(height: AppSpacing.medium),
+              if (!isEraser) SizedBox(height: betweenSections),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -567,9 +593,10 @@ class _NoteEditorPaletteSheet extends ConsumerWidget {
                         }
                         uiNotifier.hidePalette();
                       },
+                      outerDiameter: chipOuterDiameter,
                     ),
                     if (i != widths.length - 1)
-                      const SizedBox(width: AppSpacing.small),
+                      SizedBox(width: chipSpacing),
                   ],
                 ],
               ),
