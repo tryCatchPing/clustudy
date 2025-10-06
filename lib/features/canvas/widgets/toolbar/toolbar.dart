@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:scribble/scribble.dart';
 
 import '../../../../design_system/components/atoms/stroke_glow_icon.dart';
+import '../../../../design_system/components/atoms/tool_glow_icon.dart';
 import '../../../../design_system/components/molecules/tool_color_picker_pill.dart';
 import '../../../../design_system/tokens/app_colors.dart';
+import '../../../../design_system/tokens/app_icons.dart';
 import '../../../../design_system/tokens/app_icons_path.dart';
 import '../../../../design_system/tokens/app_spacing.dart';
 import '../../models/canvas_color.dart';
@@ -136,29 +138,18 @@ class _NoteEditorToolbarMainRow extends ConsumerWidget {
         final row = Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            StrokeGlowIcon(
-              svgPathData: AppIconsPath.undo,
+            ToolGlowIcon(
+              svgPath: AppIcons.undo,
               size: variant._iconSize,
-              svgViewBox: svgViewBoxSize,
-              svgStroke: 1.5,
-              color: _iconColor(enabled: canUndo),
-              glowColor: _glowFor(AppColors.primary, canUndo),
-              glowSigma: 9,
-              glowSpread: 1.2,
+              iconColor: _iconColor(enabled: canUndo),
               onTap: canUndo ? notifier.undo : null,
             ),
 
-            const SizedBox(width: AppSpacing.small * 2),
-
-            StrokeGlowIcon(
-              svgPathData: AppIconsPath.redo,
+            // const SizedBox(width: AppSpacing.small * 2),
+            ToolGlowIcon(
+              svgPath: AppIcons.redo,
               size: variant._iconSize,
-              svgViewBox: svgViewBoxSize,
-              svgStroke: 1.5,
-              color: _iconColor(enabled: canRedo),
-              glowColor: _glowFor(AppColors.primary, canRedo),
-              glowSigma: 9,
-              glowSpread: 1.2,
+              iconColor: _iconColor(enabled: canRedo),
               onTap: canRedo ? notifier.redo : null,
             ),
 
