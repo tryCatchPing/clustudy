@@ -44,7 +44,11 @@ class NoteTopToolbar extends StatelessWidget implements PreferredSizeWidget {
   final bool showBottomDivider;
 
   @override
-  Size get preferredSize => Size.fromHeight(height);
+  Size get preferredSize {
+    // Note: MediaQuery is not available here, so we use a conservative estimate.
+    // The actual height is adjusted in build().
+    return Size.fromHeight(height + 50); // Estimate for status bar
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,80 +58,82 @@ class NoteTopToolbar extends StatelessWidget implements PreferredSizeWidget {
           color: AppColors.gray50,
         ); // 스샷처럼 작고 중립 톤
 
-    return SafeArea(
-      top: false,
-      bottom: false,
-      child: Container(
-        height: height,
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.screenPadding, // 30
-          vertical: 15, // ↑↓ 15
-        ),
-        decoration: BoxDecoration(
-          color: AppColors.background,
-          border: showBottomDivider
-              ? const Border(
-                  bottom: BorderSide(color: AppColors.gray20, width: 1),
-                )
-              : null,
-        ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            // 왼쪽 아이콘 그룹
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  for (int i = 0; i < leftActions.length; i++) ...[
-                    AppIconButton(
-                      svgPath: leftActions[i].svgPath,
-                      onPressed: leftActions[i].onTap,
-                      tooltip: leftActions[i].tooltip,
-                      size: AppIconButtonSize.md, // md = 32px 프리셋
-                      color: iconColor,
-                    ),
-                    if (i != leftActions.length - 1)
-                      const SizedBox(width: AppSpacing.medium), // 16
-                  ],
-                ],
-              ),
-            ),
+    final mediaQuery = MediaQuery.of(context);
+    final topPadding = mediaQuery.padding.top + 15;
+    final totalHeight = height + mediaQuery.padding.top;
 
-            // 가운데 제목
-            IgnorePointer(
-              child: Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: ts,
-              ),
-            ),
-
-            // 오른쪽 아이콘 그룹
-            Align(
-              alignment: Alignment.centerRight,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  for (int i = 0; i < rightActions.length; i++) ...[
-                    AppIconButton(
-                      svgPath: rightActions[i].svgPath,
-                      onPressed: rightActions[i].onTap,
-                      tooltip: rightActions[i].tooltip,
-                      // 통일이 안되어있네..
-                      size: AppIconButtonSize.md,
-                      color: iconColor,
-                    ),
-                    if (i != rightActions.length - 1)
-                      const SizedBox(width: AppSpacing.medium), // 16
-                  ],
+    return Container(
+      height: totalHeight,
+      padding: EdgeInsets.only(
+        left: AppSpacing.screenPadding, // 30
+        right: AppSpacing.screenPadding, // 30
+        top: topPadding, // SafeArea top + 15
+        bottom: 15,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        border: showBottomDivider
+            ? const Border(
+                bottom: BorderSide(color: AppColors.gray20, width: 1),
+              )
+            : null,
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // 왼쪽 아이콘 그룹
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (int i = 0; i < leftActions.length; i++) ...[
+                  AppIconButton(
+                    svgPath: leftActions[i].svgPath,
+                    onPressed: leftActions[i].onTap,
+                    tooltip: leftActions[i].tooltip,
+                    size: AppIconButtonSize.md, // md = 32px 프리셋
+                    color: iconColor,
+                  ),
+                  if (i != leftActions.length - 1)
+                    const SizedBox(width: AppSpacing.medium), // 16
                 ],
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+
+          // 가운데 제목
+          IgnorePointer(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: ts,
+            ),
+          ),
+
+          // 오른쪽 아이콘 그룹
+          Align(
+            alignment: Alignment.centerRight,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (int i = 0; i < rightActions.length; i++) ...[
+                  AppIconButton(
+                    svgPath: rightActions[i].svgPath,
+                    onPressed: rightActions[i].onTap,
+                    tooltip: rightActions[i].tooltip,
+                    // 통일이 안되어있네..
+                    size: AppIconButtonSize.md,
+                    color: iconColor,
+                  ),
+                  if (i != rightActions.length - 1)
+                    const SizedBox(width: AppSpacing.medium), // 16
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

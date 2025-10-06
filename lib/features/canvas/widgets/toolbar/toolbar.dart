@@ -18,9 +18,10 @@ import '../../providers/tool_settings_provider.dart';
 extension on NoteEditorDesignToolbarVariant {
   bool get isFullscreen => this == NoteEditorDesignToolbarVariant.fullscreen;
 
-  // 이걸 수정하면 아이콘 사이즈가 바뀜
+  // 이걸 수정하면 아이콘 사이즈가 바뀜, 유라와 논의 필요
+  // TODO(xodnd): 그럼 하단에서 나오는 팔레트 사이즈도 변경해야해. 현재 상황을 모르겠다.
   // double get _iconSize => isFullscreen ? 28 : 32;
-  double get _iconSize => 28.0;
+  double get _iconSize => isFullscreen ? 20 : 28;
 
   EdgeInsets get _outerPadding => switch (this) {
     // Use full screen width: no outer horizontal padding in both modes

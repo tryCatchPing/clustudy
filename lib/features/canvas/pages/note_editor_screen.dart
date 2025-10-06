@@ -255,12 +255,10 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
 
     final titleWithPage = '$noteTitle · ${currentIndex + 1}/$notePagesCount';
 
-    final mediaQuery = MediaQuery.of(context);
     // Design: standard toolbar sits flush under app bar (no extra top gap),
     // fullscreen pill sits just below the status bar.
-    final double toolbarTop = uiState.isFullscreen
-        ? mediaQuery.padding.top + AppSpacing.small
-        : 0;
+    // SafeArea handles padding.top when fullscreen, so we only add extra spacing.
+    final double toolbarTop = uiState.isFullscreen ? AppSpacing.small : 0;
 
     return Scaffold(
       key: _scaffoldKey,
@@ -296,67 +294,70 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
               ],
             ),
       endDrawer: BacklinksPanel(noteId: widget.noteId),
-      body: Stack(
-        children: [
-          // Fill entire body area with the canvas; outer paddings removed so
-          // the drawing surface can expand edge-to-edge under the toolbar.
-          Positioned.fill(
-            child: NoteEditorCanvas(
-              noteId: widget.noteId,
-              routeId: widget.routeId,
-            ),
-          ),
-          Positioned(
-            top: toolbarTop,
-            left: 0,
-            right: 0,
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: NoteEditorToolbar(
+      body: SafeArea(
+        child: Stack(
+          children: [
+            // Fill entire body area with the canvas; outer paddings removed so
+            // the drawing surface can expand edge-to-edge under the toolbar.
+            Positioned.fill(
+              child: NoteEditorCanvas(
                 noteId: widget.noteId,
-                canvasWidth: NoteEditorConstants.canvasWidth,
-                canvasHeight: NoteEditorConstants.canvasHeight,
+                routeId: widget.routeId,
               ),
             ),
-          ),
-          if (uiState.isFullscreen)
             Positioned(
-              right: AppSpacing.screenPadding,
-              top: mediaQuery.padding.top + AppSpacing.large,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  AppFabIcon(
-                    svgPath: AppIcons.scale,
-                    visualDiameter: 34,
-                    minTapTarget: 44,
-                    iconSize: 16,
-                    tooltip: '닫기',
-                    onPressed: uiNotifier.exitFullscreen,
-                  ),
-                  const SizedBox(height: AppSpacing.small),
-                  AppFabIcon(
-                    svgPath: AppIcons.linkList,
-                    visualDiameter: 34,
-                    minTapTarget: 44,
-                    iconSize: 16,
-                    tooltip: '백링크',
-                    onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
-                  ),
-                  const SizedBox(height: AppSpacing.small),
-                  AppFabIcon(
-                    svgPath: AppIcons.pageManage,
-                    visualDiameter: 34,
-                    minTapTarget: 44,
-                    iconSize: 16,
-                    tooltip: '페이지 관리',
-                    onPressed: () =>
-                        PageControllerScreen.show(context, widget.noteId),
-                  ),
-                ],
+              top: toolbarTop,
+              left: 0,
+              right: 0,
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: NoteEditorToolbar(
+                  noteId: widget.noteId,
+                  canvasWidth: NoteEditorConstants.canvasWidth,
+                  canvasHeight: NoteEditorConstants.canvasHeight,
+                ),
               ),
             ),
-        ],
+            if (uiState.isFullscreen)
+              Positioned(
+                right: AppSpacing.screenPadding,
+                top: AppSpacing.large,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    AppFabIcon(
+                      svgPath: AppIcons.scale,
+                      visualDiameter: 34,
+                      minTapTarget: 44,
+                      iconSize: 16,
+                      tooltip: '닫기',
+                      onPressed: uiNotifier.exitFullscreen,
+                    ),
+                    const SizedBox(height: AppSpacing.small),
+                    AppFabIcon(
+                      svgPath: AppIcons.linkList,
+                      visualDiameter: 34,
+                      minTapTarget: 44,
+                      iconSize: 16,
+                      tooltip: '백링크',
+                      onPressed: () =>
+                          _scaffoldKey.currentState?.openEndDrawer(),
+                    ),
+                    const SizedBox(height: AppSpacing.small),
+                    AppFabIcon(
+                      svgPath: AppIcons.pageManage,
+                      visualDiameter: 34,
+                      minTapTarget: 44,
+                      iconSize: 16,
+                      tooltip: '페이지 관리',
+                      onPressed: () =>
+                          PageControllerScreen.show(context, widget.noteId),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
