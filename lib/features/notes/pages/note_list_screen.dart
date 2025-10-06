@@ -212,6 +212,13 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
       disabledFolderSubtreeRootId: folder.id,
     );
     if (!mounted) return;
+
+    // 취소된 경우 (초기값과 동일하거나 다이얼로그를 닫은 경우)
+    if (picked == currentFolderId) {
+      AppSnackBar.show(context, AppErrorSpec.info('이동 취소'));
+      return;
+    }
+
     final spec = await _actions.moveFolder(
       folderId: folder.id,
       newParentFolderId: picked,
@@ -250,6 +257,13 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
       initialFolderId: currentFolderId,
     );
     if (!mounted) return;
+
+    // 취소된 경우 (초기값과 동일하거나 다이얼로그를 닫은 경우)
+    if (picked == currentFolderId) {
+      AppSnackBar.show(context, AppErrorSpec.info('이동 취소'));
+      return;
+    }
+
     final spec = await _actions.moveNote(
       noteId: note.id,
       newParentFolderId: picked,

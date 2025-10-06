@@ -125,8 +125,8 @@ class _FolderPickerDialogState extends ConsumerState<FolderPickerDialog> {
                       onPressed: _selected.isEmpty
                           ? null
                           : () => Navigator.of(context).pop(
-                                _selected == _kRootId ? null : _selected,
-                              ),
+                              _selected == _kRootId ? null : _selected,
+                            ),
                     ),
                   ],
                 ),
@@ -191,15 +191,15 @@ class _FolderListItem extends StatelessWidget {
     // 색상 규칙: 선택 = gray30, 일반 = gray50, 비활성 = gray50 with opacity
     final Color textColor = disabled
         ? AppColors.gray50.withOpacity(0.45)
-        : (isSelected ? AppColors.gray30 : AppColors.gray50);
+        : (isSelected ? AppColors.penBlue : AppColors.gray50);
 
     final Color iconTint = textColor;
 
     return InkWell(
       onTap: onTap,
       child: Container(
-        height: 48,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        constraints: const BoxConstraints(minHeight: 48),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         alignment: Alignment.centerLeft,
         child: Row(
           children: [

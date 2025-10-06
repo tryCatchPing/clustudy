@@ -3,10 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:scribble/scribble.dart';
 
 import '../../../../design_system/components/atoms/stroke_glow_icon.dart';
-import '../../../../design_system/components/atoms/tool_glow_icon.dart';
 import '../../../../design_system/components/molecules/tool_color_picker_pill.dart';
 import '../../../../design_system/tokens/app_colors.dart';
-import '../../../../design_system/tokens/app_icons.dart';
 import '../../../../design_system/tokens/app_icons_path.dart';
 import '../../../../design_system/tokens/app_spacing.dart';
 import '../../models/canvas_color.dart';
@@ -121,6 +119,8 @@ class _NoteEditorToolbarMainRow extends ConsumerWidget {
     );
     final uiNotifier = ref.read(noteEditorUiStateProvider(noteId).notifier);
 
+    const svgViewBoxSize = 28.0;
+
     return ValueListenableBuilder<ScribbleState>(
       valueListenable: notifier,
       builder: (context, _, __) {
@@ -136,22 +136,30 @@ class _NoteEditorToolbarMainRow extends ConsumerWidget {
         final row = Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ToolGlowIcon(
-              svgPath: AppIcons.undo,
+            StrokeGlowIcon(
+              svgPathData: AppIconsPath.undo,
               size: variant._iconSize,
-              onTap: canUndo ? notifier.undo : null,
+              svgViewBox: svgViewBoxSize,
+              svgStroke: 1.5,
+              color: _iconColor(enabled: canUndo),
               glowColor: _glowFor(AppColors.primary, canUndo),
-              iconColor: _iconColor(enabled: canUndo),
+              glowSigma: 9,
+              glowSpread: 1.2,
+              onTap: canUndo ? notifier.undo : null,
             ),
 
             const SizedBox(width: AppSpacing.small * 2),
 
-            ToolGlowIcon(
-              svgPath: AppIcons.redo,
+            StrokeGlowIcon(
+              svgPathData: AppIconsPath.redo,
               size: variant._iconSize,
-              onTap: canRedo ? notifier.redo : null,
+              svgViewBox: svgViewBoxSize,
+              svgStroke: 1.5,
+              color: _iconColor(enabled: canRedo),
               glowColor: _glowFor(AppColors.primary, canRedo),
-              iconColor: _iconColor(enabled: canRedo),
+              glowSigma: 9,
+              glowSpread: 1.2,
+              onTap: canRedo ? notifier.redo : null,
             ),
 
             _ToolbarDivider(
@@ -162,7 +170,7 @@ class _NoteEditorToolbarMainRow extends ConsumerWidget {
             StrokeGlowIcon(
               svgPathData: AppIconsPath.pen,
               size: variant._iconSize,
-              svgViewBox: 32,
+              svgViewBox: svgViewBoxSize,
               svgStroke: 1.5,
               color: AppColors.gray50,
               glowColor: _glowFor(toolSettings.penColor, penActive),
@@ -185,7 +193,7 @@ class _NoteEditorToolbarMainRow extends ConsumerWidget {
             StrokeGlowIcon(
               svgPathData: AppIconsPath.highlighter,
               size: variant._iconSize,
-              svgViewBox: 32,
+              svgViewBox: svgViewBoxSize,
               svgStroke: 1.5,
               color: AppColors.gray50,
               glowColor: _glowFor(
@@ -209,7 +217,7 @@ class _NoteEditorToolbarMainRow extends ConsumerWidget {
             StrokeGlowIcon(
               svgPathData: AppIconsPath.eraser,
               size: variant._iconSize,
-              svgViewBox: 32,
+              svgViewBox: svgViewBoxSize,
               svgStroke: 1.5,
               color: AppColors.gray50,
               glowColor: _solidGlow(AppColors.primary, eraserActive),
@@ -230,7 +238,7 @@ class _NoteEditorToolbarMainRow extends ConsumerWidget {
             StrokeGlowIcon(
               svgPathData: AppIconsPath.linkPen,
               size: variant._iconSize,
-              svgViewBox: 32,
+              svgViewBox: svgViewBoxSize,
               svgStroke: 1.5,
               color: AppColors.gray50,
               glowColor: _solidGlow(AppColors.primary, linkActive),
