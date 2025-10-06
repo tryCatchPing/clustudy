@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:scribble/scribble.dart';
 
+import '../../../../design_system/components/atoms/stroke_glow_icon.dart';
 import '../../../../design_system/components/atoms/tool_glow_icon.dart';
 import '../../../../design_system/components/molecules/tool_color_picker_pill.dart';
 import '../../../../design_system/tokens/app_colors.dart';
 import '../../../../design_system/tokens/app_icons.dart';
+import '../../../../design_system/tokens/app_icons_path.dart';
 import '../../../../design_system/tokens/app_spacing.dart';
 import '../../models/canvas_color.dart';
 import '../../models/tool_mode.dart';
@@ -23,27 +25,6 @@ extension on NoteEditorDesignToolbarVariant {
     NoteEditorDesignToolbarVariant.standard => EdgeInsets.zero,
     NoteEditorDesignToolbarVariant.fullscreen => EdgeInsets.zero,
   };
-}
-
-ToolAccent _penAccentFor(Color color) {
-  if (color.value == AppColors.penBlack.value) return ToolAccent.black;
-  if (color.value == AppColors.penRed.value) return ToolAccent.red;
-  if (color.value == AppColors.penBlue.value) return ToolAccent.blue;
-  if (color.value == AppColors.penGreen.value) return ToolAccent.green;
-  if (color.value == AppColors.penYellow.value) return ToolAccent.yellow;
-  return ToolAccent.none;
-}
-
-ToolAccent _highlighterAccentFor(Color color) {
-  if (color.value == AppColors.highlighterBlack.value) {
-    return ToolAccent.black;
-  }
-  if (color.value == AppColors.highlighterRed.value) return ToolAccent.red;
-  if (color.value == AppColors.highlighterBlue.value) return ToolAccent.blue;
-  if (color.value == AppColors.highlighterGreen.value) return ToolAccent.green;
-  if (color.value == AppColors.highlighterYellow.value)
-    return ToolAccent.yellow;
-  return ToolAccent.none;
 }
 
 Color? _glowFor(Color color, bool isActive, {double opacity = 0.4}) {
@@ -155,9 +136,9 @@ class _NoteEditorToolbarMainRow extends ConsumerWidget {
         final row = Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _ToolbarIconButton(
+            ToolGlowIcon(
               svgPath: AppIcons.undo,
-              iconSize: variant._iconSize,
+              size: variant._iconSize,
               onTap: canUndo ? notifier.undo : null,
               glowColor: _glowFor(AppColors.primary, canUndo),
               iconColor: _iconColor(enabled: canUndo),
@@ -165,9 +146,9 @@ class _NoteEditorToolbarMainRow extends ConsumerWidget {
 
             const SizedBox(width: AppSpacing.small * 2),
 
-            _ToolbarIconButton(
+            ToolGlowIcon(
               svgPath: AppIcons.redo,
-              iconSize: variant._iconSize,
+              size: variant._iconSize,
               onTap: canRedo ? notifier.redo : null,
               glowColor: _glowFor(AppColors.primary, canRedo),
               iconColor: _iconColor(enabled: canRedo),
@@ -178,9 +159,15 @@ class _NoteEditorToolbarMainRow extends ConsumerWidget {
               iconSize: variant._iconSize,
             ),
 
-            _ToolbarIconButton(
-              svgPath: AppIcons.pen,
-              iconSize: variant._iconSize,
+            StrokeGlowIcon(
+              svgPathData: AppIconsPath.pen,
+              size: variant._iconSize,
+              svgViewBox: 32,
+              svgStroke: 1.5,
+              color: AppColors.gray50,
+              glowColor: _glowFor(toolSettings.penColor, penActive),
+              glowSigma: 9,
+              glowSpread: 1.2,
               onTap: () {
                 // If pen already active → toggle its palette. Otherwise
                 // activate pen and close other palettes.
@@ -191,15 +178,22 @@ class _NoteEditorToolbarMainRow extends ConsumerWidget {
                   uiNotifier.hidePalette();
                 }
               },
-              glowColor: _glowFor(toolSettings.penColor, penActive),
-              accent: _penAccentFor(toolSettings.penColor),
             ),
 
             const SizedBox(width: AppSpacing.small * 2),
 
-            _ToolbarIconButton(
-              svgPath: AppIcons.highlighter,
-              iconSize: variant._iconSize,
+            StrokeGlowIcon(
+              svgPathData: AppIconsPath.highlighter,
+              size: variant._iconSize,
+              svgViewBox: 32,
+              svgStroke: 1.5,
+              color: AppColors.gray50,
+              glowColor: _glowFor(
+                toolSettings.highlighterColor,
+                highlighterActive,
+              ),
+              glowSigma: 9,
+              glowSpread: 1.2,
               onTap: () {
                 if (toolSettings.toolMode == ToolMode.highlighter) {
                   uiNotifier.togglePalette(NoteEditorPaletteKind.highlighter);
@@ -208,18 +202,19 @@ class _NoteEditorToolbarMainRow extends ConsumerWidget {
                   uiNotifier.hidePalette();
                 }
               },
-              glowColor: _glowFor(
-                toolSettings.highlighterColor,
-                highlighterActive,
-              ),
-              accent: _highlighterAccentFor(toolSettings.highlighterColor),
             ),
 
             const SizedBox(width: AppSpacing.small * 2),
 
-            _ToolbarIconButton(
-              svgPath: AppIcons.eraser,
-              iconSize: variant._iconSize,
+            StrokeGlowIcon(
+              svgPathData: AppIconsPath.eraser,
+              size: variant._iconSize,
+              svgViewBox: 32,
+              svgStroke: 1.5,
+              color: AppColors.gray50,
+              glowColor: _solidGlow(AppColors.primary, eraserActive),
+              glowSigma: 9,
+              glowSpread: 1.2,
               onTap: () {
                 if (toolSettings.toolMode == ToolMode.eraser) {
                   uiNotifier.togglePalette(NoteEditorPaletteKind.eraser);
@@ -228,19 +223,23 @@ class _NoteEditorToolbarMainRow extends ConsumerWidget {
                   uiNotifier.hidePalette();
                 }
               },
-              glowColor: _solidGlow(AppColors.primary, eraserActive),
             ),
 
             const SizedBox(width: AppSpacing.small * 2),
 
-            _ToolbarIconButton(
-              svgPath: AppIcons.linkPen,
-              iconSize: variant._iconSize,
+            StrokeGlowIcon(
+              svgPathData: AppIconsPath.linkPen,
+              size: variant._iconSize,
+              svgViewBox: 32,
+              svgStroke: 1.5,
+              color: AppColors.gray50,
+              glowColor: _solidGlow(AppColors.primary, linkActive),
+              glowSigma: 9,
+              glowSpread: 1.2,
               onTap: () {
                 uiNotifier.hidePalette();
                 toolNotifier.setToolMode(ToolMode.linker);
               },
-              glowColor: _solidGlow(AppColors.primary, linkActive),
             ),
           ],
         );
@@ -305,37 +304,6 @@ class _ToolbarSurface extends StatelessWidget {
       padding: padding,
       decoration: decoration,
       child: child,
-    );
-  }
-}
-
-class _ToolbarIconButton extends StatelessWidget {
-  const _ToolbarIconButton({
-    required this.svgPath,
-    required this.iconSize,
-    this.onTap,
-    this.glowColor,
-    this.accent = ToolAccent.none,
-    this.iconColor,
-  });
-
-  final String svgPath;
-  final double iconSize;
-  final VoidCallback? onTap;
-  final Color? glowColor;
-  final ToolAccent accent;
-  final Color? iconColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final enabled = onTap != null;
-    return ToolGlowIcon(
-      svgPath: svgPath,
-      onTap: onTap,
-      size: iconSize,
-      glowColor: glowColor,
-      accent: accent,
-      iconColor: iconColor ?? _iconColor(enabled: enabled),
     );
   }
 }

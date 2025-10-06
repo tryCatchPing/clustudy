@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../design_system/components/atoms/app_button.dart';
+import '../../design_system/tokens/app_colors.dart';
+import '../../design_system/tokens/app_icons.dart';
+import '../../design_system/tokens/app_typography.dart';
 import '../services/vault_notes_service.dart';
 
 /// 라디오 항목에서 루트를 표현하기 위한 내부 식별자(반환 시 null로 변환)
@@ -86,59 +91,72 @@ class _FolderPickerDialogState extends ConsumerState<FolderPickerDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420, maxHeight: 520),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              '폴더 선택',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: _loading
-                  ? const Center(child: CircularProgressIndicator())
-                  : ListView.builder(
-                      itemCount: _rows.length,
-                      itemBuilder: (context, index) {
-                        final r = _rows[index];
-                        final disabled = _disabled.contains(r.id);
-                        return RadioListTile<String>(
-                          dense: true,
-                          value: r.id,
-                          groupValue: _selected,
-                          onChanged: disabled
-                              ? null
-                              : (v) =>
-                                    setState(() => _selected = v ?? _kRootId),
-                          title: Text(r.name),
-                          subtitle: r.path.isEmpty ? null : Text(r.path),
-                        );
-                      },
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 560, maxHeight: 620),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          color: Colors.white,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 헤더
+              Container(
+                height: 56,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                alignment: Alignment.center,
+                child: Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () => Navigator.of(context).pop(),
+                      child: Text(
+                        '취소',
+                        style: AppTypography.body2.copyWith(
+                          color: AppColors.gray50,
+                        ),
+                      ),
                     ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('취소'),
+                    const Spacer(),
+                    AppButton(
+                      text: '이동',
+                      style: AppButtonStyle.primary,
+                      size: AppButtonSize.md,
+                      borderRadius: 8,
+                      onPressed: _selected.isEmpty
+                          ? null
+                          : () => Navigator.of(context).pop(
+                                _selected == _kRootId ? null : _selected,
+                              ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: () => Navigator.of(context).pop(
-                    _selected == _kRootId ? null : _selected,
-                  ),
-                  child: const Text('선택'),
-                ),
-              ],
-            ),
-          ],
+              ),
+              const Divider(height: 1, color: Color(0x11000000)),
+              // 리스트
+              Expanded(
+                child: _loading
+                    ? const Center(child: CircularProgressIndicator())
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        itemCount: _rows.length,
+                        itemBuilder: (context, index) {
+                          final r = _rows[index];
+                          final disabled = _disabled.contains(r.id);
+                          final isSelected = r.id == _selected;
+                          return _FolderListItem(
+                            name: r.name,
+                            path: r.path,
+                            isSelected: isSelected,
+                            disabled: disabled,
+                            onTap: disabled
+                                ? null
+                                : () => setState(() => _selected = r.id),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -152,4 +170,74 @@ class _FolderRow {
   const _FolderRow({required this.id, required this.name, required this.path});
 }
 
-// No-op placeholder removed
+/// 폴더 리스트 아이템 (design_system 스타일 적용)
+class _FolderListItem extends StatelessWidget {
+  const _FolderListItem({
+    required this.name,
+    required this.path,
+    required this.isSelected,
+    required this.disabled,
+    required this.onTap,
+  });
+
+  final String name;
+  final String path;
+  final bool isSelected;
+  final bool disabled;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    // 색상 규칙: 선택 = gray30, 일반 = gray50, 비활성 = gray50 with opacity
+    final Color textColor = disabled
+        ? AppColors.gray50.withOpacity(0.45)
+        : (isSelected ? AppColors.gray30 : AppColors.gray50);
+
+    final Color iconTint = textColor;
+
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        height: 48,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        alignment: Alignment.centerLeft,
+        child: Row(
+          children: [
+            // 아이콘
+            SvgPicture.asset(
+              AppIcons.folder,
+              width: 20,
+              height: 20,
+              colorFilter: ColorFilter.mode(iconTint, BlendMode.srcIn),
+            ),
+            const SizedBox(width: 8), // 아이콘–텍스트 간격 8px
+            // 폴더명 + 경로
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.body2.copyWith(color: textColor),
+                  ),
+                  if (path.isNotEmpty)
+                    Text(
+                      path,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.caption.copyWith(
+                        color: textColor.withOpacity(0.7),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
