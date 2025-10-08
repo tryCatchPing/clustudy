@@ -19,6 +19,9 @@ import '../../vaults/widgets/vault_creation_sheet.dart';
 import '../../vaults/data/vault.dart';
 import '../../../utils/pickers/pick_pdf.dart';
 import '../../../routing/route_names.dart';
+import '../../settings/widgets/setting_side_sheet.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -93,7 +96,39 @@ class HomeScreen extends StatelessWidget {
         title: 'Clustudy',
         actions: [
           ToolbarAction(svgPath: AppIcons.search, onTap: () {}),
-          ToolbarAction(svgPath: AppIcons.settings, onTap: () {}),
+          ToolbarAction(svgPath: AppIcons.settings, onTap: ()async {
+    // 버전 문자열 생성
+    final info = await PackageInfo.fromPlatform();
+    final versionText = 'v${info.version} (${info.buildNumber})';
+
+    await showSettingsSideSheet(
+      context,
+      // 일단 기본값으로 표기만: 나중에 SettingsStore 연결 가능
+      pressureSensitivityEnabled: true,
+      appVersionText: versionText,
+
+      // 콜백: 지금은 최소 연결(필요시 나중에 스토어 연결)
+      onTogglePressureSensitivity: (v) {
+        // TODO: SettingsStore에 연결해 적용하세요.
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('필압 ${v ? "켜짐" : "꺼짐"} (연결 필요)')),
+        );
+      },
+      onShowLicenses: () => showLicensePage(
+        context: context,
+        applicationName: 'Clustudy',
+        applicationVersion: versionText,
+      ),
+      onOpenPrivacyPolicy: () =>
+          launchUrl(Uri.parse('https://example.com/privacy')),
+      onOpenTerms: () =>
+          launchUrl(Uri.parse('https://example.com/terms')),
+      onOpenContact: () =>
+          launchUrl(Uri.parse('mailto:hello@clustudy.app')),
+      onOpenGithubIssues: () =>
+          launchUrl(Uri.parse('https://github.com/your/repo/issues')),
+    );
+  },),
         ],
       ),
       body: Padding(
