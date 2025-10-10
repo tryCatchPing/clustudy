@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../design_system/components/organisms/top_toolbar.dart';
+import '../../../design_system/screens/settings/widgets/setting_side_sheet.dart';
 import '../../../design_system/tokens/app_colors.dart';
 import '../../../design_system/tokens/app_icons.dart';
 import '../../../design_system/tokens/app_spacing.dart';
@@ -369,9 +370,22 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
 
     final toolbarActions = !hasActiveVault
         ? [
+            // TODO(xodnd): 이거 함수를 밖에서 전달? 아니면 provider 인데.. 디자인 코드를 변경해야하나
             ToolbarAction(
               svgPath: AppIcons.settings,
-              onTap: () {},
+              onTap: () => showSettingsSideSheet(
+                context,
+                pressureSensitivityEnabled: true,
+                appVersionText: '1.0.0',
+                onTogglePressureSensitivity: (v) {},
+                onShowLicenses: () {},
+                onOpenPrivacyPolicy: () {},
+                onOpenContact: () {},
+                onOpenGithubIssues: () {},
+                onOpenTerms: () {},
+                onToggleStyleStrokesOnly: (v) {},
+                styleStrokesOnlyEnabled: false,
+              ),
               tooltip: '설정',
             ),
           ]

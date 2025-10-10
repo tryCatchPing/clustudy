@@ -1,27 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-import '../../../design_system/components/organisms/bottom_actions_dock_fixed.dart';
-import '../../../design_system/components/organisms/top_toolbar.dart';
-import '../../../design_system/components/organisms/folder_grid.dart';
-import '../../../design_system/components/organisms/creation_sheet.dart';
-import '../../../design_system/components/organisms/item_actions.dart';
 import '../../../design_system/components/molecules/folder_card.dart';
+import '../../../design_system/components/organisms/bottom_actions_dock_fixed.dart';
+import '../../../design_system/components/organisms/creation_sheet.dart';
+import '../../../design_system/components/organisms/folder_grid.dart';
+import '../../../design_system/components/organisms/item_actions.dart';
 import '../../../design_system/components/organisms/rename_dialog.dart';
+import '../../../design_system/components/organisms/top_toolbar.dart';
 import '../../../design_system/tokens/app_colors.dart';
 import '../../../design_system/tokens/app_icons.dart';
 import '../../../design_system/tokens/app_spacing.dart';
+import '../../../routing/route_names.dart';
+import '../../../utils/pickers/pick_pdf.dart';
 import '../../notes/state/note_store.dart';
 import '../../notes/widgets/note_creation_sheet.dart';
+import '../../settings/widgets/setting_side_sheet.dart';
+import '../../vaults/data/vault.dart';
 import '../../vaults/state/vault_store.dart';
 import '../../vaults/widgets/vault_creation_sheet.dart';
-import '../../vaults/data/vault.dart';
-import '../../../utils/pickers/pick_pdf.dart';
-import '../../../routing/route_names.dart';
-import '../../settings/widgets/setting_side_sheet.dart';
-import 'package:package_info_plus/package_info_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -96,39 +96,42 @@ class HomeScreen extends StatelessWidget {
         title: 'Clustudy',
         actions: [
           ToolbarAction(svgPath: AppIcons.search, onTap: () {}),
-          ToolbarAction(svgPath: AppIcons.settings, onTap: ()async {
-    // 버전 문자열 생성
-    final info = await PackageInfo.fromPlatform();
-    final versionText = 'v${info.version} (${info.buildNumber})';
+          ToolbarAction(
+            svgPath: AppIcons.settings,
+            onTap: () async {
+              // 버전 문자열 생성
+              final info = await PackageInfo.fromPlatform();
+              final versionText = 'v${info.version} (${info.buildNumber})';
 
-    await showSettingsSideSheet(
-      context,
-      // 일단 기본값으로 표기만: 나중에 SettingsStore 연결 가능
-      pressureSensitivityEnabled: true,
-      appVersionText: versionText,
+              await showSettingsSideSheet(
+                context,
+                // 일단 기본값으로 표기만: 나중에 SettingsStore 연결 가능
+                pressureSensitivityEnabled: true,
+                appVersionText: versionText,
 
-      // 콜백: 지금은 최소 연결(필요시 나중에 스토어 연결)
-      onTogglePressureSensitivity: (v) {
-        // TODO: SettingsStore에 연결해 적용하세요.
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('필압 ${v ? "켜짐" : "꺼짐"} (연결 필요)')),
-        );
-      },
-      onShowLicenses: () => showLicensePage(
-        context: context,
-        applicationName: 'Clustudy',
-        applicationVersion: versionText,
-      ),
-      onOpenPrivacyPolicy: () =>
-          launchUrl(Uri.parse('https://example.com/privacy')),
-      onOpenTerms: () =>
-          launchUrl(Uri.parse('https://example.com/terms')),
-      onOpenContact: () =>
-          launchUrl(Uri.parse('mailto:hello@clustudy.app')),
-      onOpenGithubIssues: () =>
-          launchUrl(Uri.parse('https://github.com/your/repo/issues')),
-    );
-  },),
+                // 콜백: 지금은 최소 연결(필요시 나중에 스토어 연결)
+                onTogglePressureSensitivity: (v) {
+                  // TODO: SettingsStore에 연결해 적용하세요.
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('필압 ${v ? "켜짐" : "꺼짐"} (연결 필요)')),
+                  );
+                },
+                onShowLicenses: () => showLicensePage(
+                  context: context,
+                  applicationName: 'Clustudy',
+                  applicationVersion: versionText,
+                ),
+                onOpenPrivacyPolicy: () =>
+                    launchUrl(Uri.parse('https://example.com/privacy')),
+                onOpenTerms: () =>
+                    launchUrl(Uri.parse('https://example.com/terms')),
+                onOpenContact: () =>
+                    launchUrl(Uri.parse('mailto:hello@clustudy.app')),
+                onOpenGithubIssues: () =>
+                    launchUrl(Uri.parse('https://github.com/your/repo/issues')),
+              );
+            },
+          ),
         ],
       ),
       body: Padding(

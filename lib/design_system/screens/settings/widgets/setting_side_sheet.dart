@@ -12,7 +12,9 @@ Future<void> showSettingsSideSheet(
   // --- 상태/표시값 ---
   required bool pressureSensitivityEnabled, // 필압 여부
   required String appVersionText, // 예) "v1.0.0 (100)"
+  required bool styleStrokesOnlyEnabled, // 스타일러스 입력만 허용 여부
   // --- 액션 콜백 (호스트에서 구현) ---
+  required ValueChanged<bool> onToggleStyleStrokesOnly, // 스타일러스 입력만 허용 여부 변경
   required ValueChanged<bool> onTogglePressureSensitivity,
   required VoidCallback onShowLicenses, // 사용한 패키지(라이선스)
   required VoidCallback onOpenPrivacyPolicy, // 개인정보 보호
@@ -35,6 +37,8 @@ Future<void> showSettingsSideSheet(
         onOpenContact: onOpenContact,
         onOpenGithubIssues: onOpenGithubIssues,
         onOpenTerms: onOpenTerms,
+        onToggleStyleStrokesOnly: onToggleStyleStrokesOnly,
+        styleStrokesOnlyEnabled: styleStrokesOnlyEnabled,
       );
     },
     transitionDuration: const Duration(milliseconds: 220),
@@ -58,6 +62,8 @@ class _SettingsSideSheet extends StatelessWidget {
     required this.onOpenContact,
     required this.onOpenGithubIssues,
     required this.onOpenTerms,
+    required this.onToggleStyleStrokesOnly,
+    required this.styleStrokesOnlyEnabled,
   });
 
   final bool pressureSensitivityEnabled;
@@ -69,6 +75,8 @@ class _SettingsSideSheet extends StatelessWidget {
   final VoidCallback onOpenContact;
   final VoidCallback onOpenGithubIssues;
   final VoidCallback onOpenTerms;
+  final ValueChanged<bool> onToggleStyleStrokesOnly;
+  final bool styleStrokesOnlyEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -142,6 +150,12 @@ class _SettingsSideSheet extends StatelessWidget {
                           subtitle: '스타일러스/터치 입력 시 필압을 적용합니다.',
                           value: pressureSensitivityEnabled,
                           onChanged: onTogglePressureSensitivity,
+                        ),
+                        _SettingsTile.switchTile(
+                          title: '스타일러스 입력만 허용',
+                          subtitle: '스타일러스 입력만 허용합니다.',
+                          value: styleStrokesOnlyEnabled,
+                          onChanged: onToggleStyleStrokesOnly,
                         ),
                       ],
                     ),
