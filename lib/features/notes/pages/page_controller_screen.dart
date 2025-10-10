@@ -334,60 +334,128 @@ class _PageControllerScreenState extends ConsumerState<PageControllerScreen> {
   /// 삭제 확인 다이얼로그를 표시합니다.
   void _showDeleteConfirmDialog(NotePageModel page) {
     final pageNumber = page.pageNumber;
-    showDialog<void>(
+    showGeneralDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('페이지 삭제'),
-        content: Text(
-          '페이지 $pageNumber을(를) 삭제하시겠습니까?\n\n'
-          '이 작업은 되돌릴 수 없습니다.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              try {
-                await ref
-                    .read(
-                      pageControllerScreenNotifierProvider(
-                        widget.noteId,
-                      ).notifier,
-                    )
-                    .deletePage(page);
+      barrierLabel: 'delete',
+      barrierDismissible: true,
+      barrierColor: Colors.black.withValues(alpha: 0.45),
+      pageBuilder: (_, __, ___) {
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: AppColors.gray50,
+                      blurRadius: 24,
+                      offset: Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      '페이지 삭제',
+                      style: AppTypography.subtitle1.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.medium),
+                    Text(
+                      '페이지 $pageNumber을(를) 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.',
+                      style: AppTypography.body3.copyWith(
+                        color: AppColors.gray50,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.large),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            if (mounted) {
+                              AppSnackBar.show(
+                                context,
+                                AppErrorSpec.info('페이지 $pageNumber 삭제를 취소했습니다'),
+                              );
+                            }
+                          },
+                          child: Text(
+                            '취소',
+                            style: AppTypography.body3.copyWith(
+                              color: AppColors.gray40,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.medium),
+                        TextButton(
+                          onPressed: () async {
+                            Navigator.of(context).pop();
+                            try {
+                              await ref
+                                  .read(
+                                    pageControllerScreenNotifierProvider(
+                                      widget.noteId,
+                                    ).notifier,
+                                  )
+                                  .deletePage(page);
 
-                // 페이지 삭제 후 썸네일 캐시 무효화
-                ref
-                    .read(
-                      pageControllerNotifierProvider(widget.noteId).notifier,
-                    )
-                    .clearThumbnailCache();
+                              // 페이지 삭제 후 썸네일 캐시 무효화
+                              ref
+                                  .read(
+                                    pageControllerNotifierProvider(
+                                      widget.noteId,
+                                    ).notifier,
+                                  )
+                                  .clearThumbnailCache();
 
-                if (mounted) {
-                  AppSnackBar.show(
-                    context,
-                    AppErrorSpec.success('페이지 $pageNumber이(가) 삭제되었습니다'),
-                  );
-                }
-              } catch (e) {
-                if (mounted) {
-                  AppSnackBar.show(
-                    context,
-                    AppErrorSpec.error('페이지 $pageNumber 삭제 실패: $e'),
-                  );
-                }
-              }
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.red,
+                              if (mounted) {
+                                AppSnackBar.show(
+                                  context,
+                                  AppErrorSpec.success(
+                                    '페이지 $pageNumber이(가) 삭제되었습니다',
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                AppSnackBar.show(
+                                  context,
+                                  AppErrorSpec.error(
+                                    '페이지 $pageNumber 삭제 실패: $e',
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                          child: Text(
+                            '삭제',
+                            style: AppTypography.body3.copyWith(
+                              color: AppColors.error,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
-            child: const Text('삭제'),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
