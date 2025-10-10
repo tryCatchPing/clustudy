@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'design_system/tokens/app_colors.dart';
 import 'features/canvas/routing/canvas_routes.dart';
 import 'features/home/routing/home_routes.dart';
 import 'features/notes/routing/notes_routes.dart';
@@ -66,6 +67,14 @@ class MyApp extends ConsumerWidget {
     debugPrint('🎯 [MyApp] Creating MaterialApp.router...');
     final app = MaterialApp.router(
       routerConfig: _router,
+      theme: ThemeData(
+        scaffoldBackgroundColor: AppColors.background,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.primary,
+          surface: AppColors.background,
+        ),
+        useMaterial3: true,
+      ),
     );
     debugPrint('🎯 [MyApp] MaterialApp.router created successfully');
 

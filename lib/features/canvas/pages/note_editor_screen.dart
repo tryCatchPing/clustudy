@@ -263,6 +263,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: Theme.of(context).colorScheme.surface,
+      // backgroundColor: AppColors.gray10,
       appBar: uiState.isFullscreen
           ? null
           : NoteTopToolbar(
