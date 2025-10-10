@@ -6,7 +6,9 @@ import '../../../design_system/tokens/app_colors.dart';
 import '../../../design_system/tokens/app_icons.dart';
 import '../../../design_system/tokens/app_spacing.dart';
 import '../../../design_system/tokens/app_typography.dart';
+import '../../../shared/errors/app_error_spec.dart';
 import '../../../shared/services/page_order_service.dart';
+import '../../../shared/widgets/app_snackbar.dart';
 import '../../canvas/providers/note_editor_provider.dart';
 import '../data/derived_note_providers.dart';
 import '../data/notes_repository_provider.dart';
@@ -423,13 +425,11 @@ class _PageThumbnailGridState extends ConsumerState<PageThumbnailGrid> {
           .read(pageControllerNotifierProvider(widget.noteId).notifier)
           .setError('페이지 순서 변경 실패: $e');
 
-      // 스낵바로 오류 표시
+      // 디자인 스낵바로 오류 표시
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('페이지 순서 변경에 실패했습니다: $e'),
-            backgroundColor: Colors.red,
-          ),
+        AppSnackBar.show(
+          context,
+          AppErrorSpec.error('페이지 순서 변경 실패: $e'),
         );
       }
     } finally {

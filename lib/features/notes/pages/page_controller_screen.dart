@@ -6,6 +6,8 @@ import '../../../design_system/tokens/app_colors.dart';
 import '../../../design_system/tokens/app_icons.dart';
 import '../../../design_system/tokens/app_spacing.dart';
 import '../../../design_system/tokens/app_typography.dart';
+import '../../../shared/errors/app_error_spec.dart';
+import '../../../shared/widgets/app_snackbar.dart';
 import '../../canvas/providers/note_editor_provider.dart';
 import '../data/derived_note_providers.dart';
 import '../models/note_model.dart';
@@ -106,12 +108,6 @@ class _PageControllerScreenState extends ConsumerState<PageControllerScreen> {
   ) {
     return Column(
       children: [
-        // 오류 메시지 표시
-        if (screenState.errorMessage != null) _buildErrorBanner(screenState),
-
-        // 로딩 인디케이터
-        if (screenState.isLoading) _buildLoadingBanner(screenState),
-
         // 페이지 정보 헤더
         _buildPageInfoHeader(note),
 
@@ -177,77 +173,7 @@ class _PageControllerScreenState extends ConsumerState<PageControllerScreen> {
     );
   }
 
-  /// 오류 배너를 빌드합니다.
-  Widget _buildErrorBanner(PageControllerScreenState screenState) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.medium),
-      color: AppColors.errorLight,
-      child: Row(
-        children: [
-          const Icon(
-            Icons.error_outline,
-            color: AppColors.errorDark,
-            size: 20,
-          ),
-          const SizedBox(width: AppSpacing.small),
-          Expanded(
-            child: Text(
-              screenState.errorMessage!,
-              style: AppTypography.body5.copyWith(
-                color: AppColors.errorDark,
-              ),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.close, size: 18),
-            onPressed: () {
-              ref
-                  .read(
-                    pageControllerScreenNotifierProvider(
-                      widget.noteId,
-                    ).notifier,
-                  )
-                  .clearError();
-            },
-            color: AppColors.errorDark,
-            constraints: const BoxConstraints(
-              minWidth: 32,
-              minHeight: 32,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 로딩 배너를 빌드합니다.
-  Widget _buildLoadingBanner(PageControllerScreenState screenState) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.medium),
-      color: Theme.of(context).colorScheme.primaryContainer,
-      child: Row(
-        children: [
-          const SizedBox(
-            width: 16,
-            height: 16,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: AppColors.primary,
-            ),
-          ),
-          const SizedBox(width: AppSpacing.medium),
-          Text(
-            screenState.operation ?? '처리 중...',
-            style: AppTypography.body5.copyWith(
-              color: Theme.of(context).colorScheme.onPrimaryContainer,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // 상단 배너는 제거하고, 이벤트 시점에 AppSnackBar를 사용합니다.
 
   // FAB는 그리드 내부 AddPageCard로 대체했습니다.
 
@@ -303,9 +229,19 @@ class _PageControllerScreenState extends ConsumerState<PageControllerScreen> {
 
   /// 페이지 추가 버튼 클릭을 처리합니다.
   void _handleAddPage() async {
-    await ref
-        .read(pageControllerScreenNotifierProvider(widget.noteId).notifier)
-        .addBlankPage();
+    try {
+      await ref
+          .read(pageControllerScreenNotifierProvider(widget.noteId).notifier)
+          .addBlankPage();
+
+      if (mounted) {
+        AppSnackBar.show(context, AppErrorSpec.info('새 페이지가 추가되었습니다'));
+      }
+    } catch (e) {
+      if (mounted) {
+        AppSnackBar.show(context, AppErrorSpec.error('페이지 추가 실패: $e'));
+      }
+    }
 
     // 페이지 추가 후 썸네일 캐시 무효화
     ref
@@ -380,12 +316,13 @@ class _PageControllerScreenState extends ConsumerState<PageControllerScreen> {
 
   /// 삭제 확인 다이얼로그를 표시합니다.
   void _showDeleteConfirmDialog(NotePageModel page) {
+    final pageNumber = page.pageNumber;
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('페이지 삭제'),
         content: Text(
-          '페이지 ${page.pageNumber}을(를) 삭제하시겠습니까?\n\n'
+          '페이지 $pageNumber을(를) 삭제하시겠습니까?\n\n'
           '이 작업은 되돌릴 수 없습니다.',
         ),
         actions: [
@@ -396,18 +333,36 @@ class _PageControllerScreenState extends ConsumerState<PageControllerScreen> {
           TextButton(
             onPressed: () async {
               Navigator.of(context).pop();
-              await ref
-                  .read(
-                    pageControllerScreenNotifierProvider(
-                      widget.noteId,
-                    ).notifier,
-                  )
-                  .deletePage(page);
+              try {
+                await ref
+                    .read(
+                      pageControllerScreenNotifierProvider(
+                        widget.noteId,
+                      ).notifier,
+                    )
+                    .deletePage(page);
 
-              // 페이지 삭제 후 썸네일 캐시 무효화
-              ref
-                  .read(pageControllerNotifierProvider(widget.noteId).notifier)
-                  .clearThumbnailCache();
+                // 페이지 삭제 후 썸네일 캐시 무효화
+                ref
+                    .read(
+                      pageControllerNotifierProvider(widget.noteId).notifier,
+                    )
+                    .clearThumbnailCache();
+
+                if (mounted) {
+                  AppSnackBar.show(
+                    context,
+                    AppErrorSpec.success('페이지 $pageNumber이(가) 삭제되었습니다'),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  AppSnackBar.show(
+                    context,
+                    AppErrorSpec.error('페이지 $pageNumber 삭제 실패: $e'),
+                  );
+                }
+              }
             },
             style: TextButton.styleFrom(
               foregroundColor: Colors.red,
