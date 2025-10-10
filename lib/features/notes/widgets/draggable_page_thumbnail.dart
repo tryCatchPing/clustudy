@@ -134,17 +134,8 @@ class _DraggablePageThumbnailState extends ConsumerState<DraggablePageThumbnail>
           ),
         );
 
-    // 삭제 버튼 애니메이션 설정
-    _deleteButtonAnimation =
-        Tween<double>(
-          begin: 0.0,
-          end: 1.0,
-        ).animate(
-          CurvedAnimation(
-            parent: _dragController,
-            curve: Curves.easeInOut,
-          ),
-        );
+    // 삭제 버튼 애니메이션: 항상 표시
+    _deleteButtonAnimation = const AlwaysStoppedAnimation(1.0);
 
     // 썸네일 자동 로딩 시작
     if (widget.autoLoadThumbnail && widget.thumbnail == null) {
@@ -174,25 +165,7 @@ class _DraggablePageThumbnailState extends ConsumerState<DraggablePageThumbnail>
     }
   }
 
-  /// 길게 누르기 시작 처리.
-  void _onLongPressStart(LongPressStartDetails details) {
-    _longPressController.forward();
-  }
-
-  /// 길게 누르기 종료 처리.
-  void _onLongPressEnd(LongPressEndDetails details) {
-    _longPressController.reverse();
-
-    if (!_isDragModeActive) {
-      _isDragModeActive = true;
-      widget.onDragStart?.call();
-    }
-  }
-
-  /// 길게 누르기 취소 처리.
-  void _onLongPressCancel() {
-    _longPressController.reverse();
-  }
+  // 길게 누르기 제스처 처리는 LongPressDraggable가 담당합니다.
 
   /// 썸네일 탭 처리.
   void _onTap() {
@@ -253,7 +226,7 @@ class _DraggablePageThumbnailState extends ConsumerState<DraggablePageThumbnail>
 
         return Transform.scale(
           scale: scale,
-          child: Draggable<NotePageModel>(
+          child: LongPressDraggable<NotePageModel>(
             data: widget.page,
             feedback: Material(
               color: Colors.transparent,
@@ -287,7 +260,7 @@ class _DraggablePageThumbnailState extends ConsumerState<DraggablePageThumbnail>
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: Colors.grey[300]!,
+                    color: AppColors.gray20,
                     width: 2,
                     style: BorderStyle.solid,
                   ),
@@ -303,9 +276,6 @@ class _DraggablePageThumbnailState extends ConsumerState<DraggablePageThumbnail>
             },
             child: GestureDetector(
               onTap: _onTap,
-              onLongPressStart: _onLongPressStart,
-              onLongPressEnd: _onLongPressEnd,
-              onLongPressCancel: _onLongPressCancel,
               child: Container(
                 width: widget.size,
                 height: widget.size,
@@ -499,32 +469,27 @@ class _DraggablePageThumbnailState extends ConsumerState<DraggablePageThumbnail>
     return Positioned(
       top: -4,
       right: -4,
-      child: AnimatedBuilder(
-        animation: _deleteButtonAnimation,
-        builder: (context, child) {
-          return Transform.scale(
-            scale: _deleteButtonAnimation.value,
-            child: Opacity(
-              opacity: _deleteButtonAnimation.value,
-              child: GestureDetector(
-                onTap: _onDeleteTap,
-                child: Container(
-                  width: 24,
-                  height: 24,
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.close,
-                    color: Colors.white,
-                    size: 16,
-                  ),
-                ),
-              ),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: _onDeleteTap,
+        child: Container(
+          width: 32,
+          height: 32,
+          padding: const EdgeInsets.all(4),
+          child: Container(
+            width: 24,
+            height: 24,
+            decoration: const BoxDecoration(
+              color: AppColors.error,
+              shape: BoxShape.circle,
             ),
-          );
-        },
+            child: const Icon(
+              Icons.close,
+              color: AppColors.white,
+              size: 16,
+            ),
+          ),
+        ),
       ),
     );
   }

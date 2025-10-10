@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../design_system/components/molecules/add_page_card.dart';
 import '../../../design_system/tokens/app_colors.dart';
+import '../../../design_system/tokens/app_icons.dart';
 import '../../../design_system/tokens/app_spacing.dart';
 import '../../../design_system/tokens/app_typography.dart';
 import '../../../shared/services/page_order_service.dart';
@@ -46,7 +48,11 @@ class PageThumbnailGrid extends ConsumerStatefulWidget {
     this.onPageDelete,
     this.onPageTap,
     this.onReorderComplete,
+    this.onPageAdd,
   });
+
+  /// 새 페이지 추가 콜백 (제공 시 마지막 셀에 AddPageCard 렌더링).
+  final VoidCallback? onPageAdd;
 
   @override
   ConsumerState<PageThumbnailGrid> createState() => _PageThumbnailGridState();
@@ -98,9 +104,11 @@ class _PageThumbnailGridState extends ConsumerState<PageThumbnailGrid> {
         // 가용 너비에 따라 동적으로 열 개수 조정
         final availableWidth = constraints.maxWidth;
         final itemWidth = widget.thumbnailSize + widget.spacing;
+        // 셀 외부의 공백을 최소화하기 위해 가용 너비에 맞춰 컬럼 수를 최대한 늘립니다.
+        // (thumbnailSize + spacing)를 기준으로 계산하고, 최소 1열 보장.
         final dynamicCrossAxisCount = (availableWidth / itemWidth)
             .floor()
-            .clamp(1, widget.crossAxisCount);
+            .clamp(1, 1000);
 
         return GridView.builder(
           padding: EdgeInsets.all(widget.spacing),
@@ -110,11 +118,23 @@ class _PageThumbnailGridState extends ConsumerState<PageThumbnailGrid> {
             mainAxisSpacing: widget.spacing,
             childAspectRatio: 1.0,
           ),
-          itemCount: pages.length,
+          itemCount: pages.length + (widget.onPageAdd != null ? 1 : 0),
           itemBuilder: (context, index) {
+            final hasAdd = widget.onPageAdd != null;
+            // 첫 번째 인덱스는 AddPageCard로 처리
+            if (hasAdd && index == 0) {
+              return Center(
+                child: AddPageCard(
+                  plusSvgPath: AppIcons.plus,
+                  onTap: widget.onPageAdd,
+                ),
+              );
+            }
+
+            final pageIndex = hasAdd ? index - 1 : index;
             return _buildGridItem(
-              pages[index],
-              index,
+              pages[pageIndex],
+              pageIndex,
               pageControllerState,
             );
           },
@@ -133,98 +153,74 @@ class _PageThumbnailGridState extends ConsumerState<PageThumbnailGrid> {
     final isDropTarget = _dragOverIndex == index && !isDragging;
     final thumbnail = pageControllerState.getThumbnail(page.pageId);
 
-    return DragTarget<NotePageModel>(
-      onWillAcceptWithDetails: (details) {
-        // 자기 자신으로의 드롭은 허용하지 않음
-        return details.data.pageId != page.pageId;
-      },
-      onAcceptWithDetails: (details) {
-        _handleDrop(details.data, index);
-      },
-      onMove: (details) {
-        if (_dragOverIndex != index) {
-          setState(() {
-            _dragOverIndex = index;
-          });
-        }
-      },
-      onLeave: (data) {
-        if (_dragOverIndex == index) {
-          setState(() {
-            _dragOverIndex = null;
-          });
-        }
-      },
-      builder: (context, candidateData, rejectedData) {
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: isDropTarget
-                ? Border.all(
-                    color: Theme.of(context).primaryColor,
-                    width: 2,
-                  )
-                : null,
-            color: isDropTarget
-                ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
-                : null,
-          ),
-          child: Stack(
-            children: [
-              // 드롭 가능한 위치 표시
-              if (isDropTarget) _buildDropIndicator(),
+    // 드롭 가능 영역을 썸네일 크기로 제한하기 위해 DragTarget을 SizedBox로 감쌉니다.
+    return Center(
+      child: SizedBox(
+        width: widget.thumbnailSize,
+        height: widget.thumbnailSize,
+        child: DragTarget<NotePageModel>(
+          onWillAcceptWithDetails: (details) {
+            // 자기 자신으로의 드롭은 허용하지 않음
+            return details.data.pageId != page.pageId;
+          },
+          onAcceptWithDetails: (details) {
+            _handleDrop(details.data, index);
+          },
+          onMove: (details) {
+            if (_dragOverIndex != index) {
+              setState(() {
+                _dragOverIndex = index;
+              });
+            }
+          },
+          onLeave: (data) {
+            if (_dragOverIndex == index) {
+              setState(() {
+                _dragOverIndex = null;
+              });
+            }
+          },
+          builder: (context, candidateData, rejectedData) {
+            return Stack(
+              children: [
+                // 드롭 가능한 위치 표시 (썸네일 영역만)
+                if (isDropTarget) _buildDropIndicator(),
 
-              // 썸네일 위젯
-              DraggablePageThumbnail(
-                key: ValueKey(page.pageId), // 고유한 Key 설정
-                page: page,
-                thumbnail: thumbnail,
-                size: widget.thumbnailSize,
-                isDragging: isDragging,
-                onDelete: widget.onPageDelete != null
-                    ? () => widget.onPageDelete!(page)
-                    : null,
-                onTap: widget.onPageTap != null
-                    ? () => widget.onPageTap!(page, index)
-                    : null,
-                onDragStart: () => _handleDragStart(index),
-                onDragEnd: () => _handleDragEnd(),
-              ),
-            ],
-          ),
-        );
-      },
+                // 썸네일 위젯
+                DraggablePageThumbnail(
+                  key: ValueKey(page.pageId), // 고유한 Key 설정
+                  page: page,
+                  thumbnail: thumbnail,
+                  size: widget.thumbnailSize,
+                  isDragging: isDragging,
+                  onDelete: widget.onPageDelete != null
+                      ? () => widget.onPageDelete!(page)
+                      : null,
+                  onTap: widget.onPageTap != null
+                      ? () => widget.onPageTap!(page, index)
+                      : null,
+                  onDragStart: () => _handleDragStart(index),
+                  onDragEnd: () => _handleDragEnd(),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 
   /// 드롭 인디케이터를 빌드합니다.
   Widget _buildDropIndicator() {
+    // 풀-필 오버레이 대신 얇은 외곽선만 유지하여 시각적 부담을 줄입니다.
     return Positioned.fill(
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppSpacing.small),
-          border: Border.all(
-            color: AppColors.primary,
-            width: 2,
-          ),
-        ),
-        child: Center(
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.medium,
-              vertical: AppSpacing.small,
-            ),
-            decoration: BoxDecoration(
+      child: IgnorePointer(
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppSpacing.small),
+            border: Border.all(
               color: AppColors.primary,
-              borderRadius: BorderRadius.circular(AppSpacing.medium),
-            ),
-            child: Text(
-              '여기에 놓기',
-              style: AppTypography.caption.copyWith(
-                color: AppColors.white,
-                fontWeight: FontWeight.bold,
-              ),
+              width: 1,
             ),
           ),
         ),
@@ -234,11 +230,20 @@ class _PageThumbnailGridState extends ConsumerState<PageThumbnailGrid> {
 
   /// 빈 상태를 빌드합니다.
   Widget _buildEmptyState() {
+    if (widget.onPageAdd != null) {
+      return Center(
+        child: AddPageCard(
+          plusSvgPath: AppIcons.plus,
+          onTap: widget.onPageAdd,
+        ),
+      );
+    }
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
+          const Icon(
             Icons.note_add,
             size: 64,
             color: AppColors.gray30,
@@ -248,13 +253,6 @@ class _PageThumbnailGridState extends ConsumerState<PageThumbnailGrid> {
             '페이지가 없습니다',
             style: AppTypography.body3.copyWith(
               color: AppColors.gray40,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.small),
-          Text(
-            '새 페이지를 추가해보세요',
-            style: AppTypography.body5.copyWith(
-              color: AppColors.gray30,
             ),
           ),
         ],
@@ -298,7 +296,7 @@ class _PageThumbnailGridState extends ConsumerState<PageThumbnailGrid> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
+          const Icon(
             Icons.error_outline,
             size: 64,
             color: AppColors.error,

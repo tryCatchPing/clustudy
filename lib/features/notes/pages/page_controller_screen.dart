@@ -74,7 +74,7 @@ class _PageControllerScreenState extends ConsumerState<PageControllerScreen> {
           loading: () => _buildLoadingState(),
           error: (error, stackTrace) => _buildErrorState(error.toString()),
         ),
-        floatingActionButton: _buildFloatingActionButton(screenState),
+        floatingActionButton: null,
       ),
     );
   }
@@ -125,6 +125,7 @@ class _PageControllerScreenState extends ConsumerState<PageControllerScreen> {
             onPageDelete: _handlePageDelete,
             onPageTap: _handlePageTap,
             onReorderComplete: _handleReorderComplete,
+            onPageAdd: _handleAddPage,
           ),
         ),
       ],
@@ -248,19 +249,7 @@ class _PageControllerScreenState extends ConsumerState<PageControllerScreen> {
     );
   }
 
-  /// 플로팅 액션 버튼을 빌드합니다.
-  Widget? _buildFloatingActionButton(PageControllerScreenState screenState) {
-    if (screenState.isLoading) {
-      return null; // 로딩 중에는 버튼 숨김
-    }
-
-    return FloatingActionButton.extended(
-      onPressed: _handleAddPage,
-      icon: const Icon(Icons.add),
-      label: const Text('페이지 추가'),
-      tooltip: '새 빈 페이지 추가',
-    );
-  }
+  // FAB는 그리드 내부 AddPageCard로 대체했습니다.
 
   /// 로딩 상태를 빌드합니다.
   Widget _buildLoadingState() {
