@@ -606,10 +606,8 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
         bottomNavigationBar: SafeArea(
           top: false,
           child: Padding(
-            padding: const EdgeInsets.only(
-              left: AppSpacing.large,
-              right: AppSpacing.large,
-              bottom: AppSpacing.large,
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.large,
             ),
             child: SizedBox(
               height: 60,
