@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../design_system/components/organisms/top_toolbar.dart';
 import '../../../design_system/screens/settings/widgets/setting_side_sheet.dart';
@@ -39,8 +41,25 @@ class NoteListScreen extends ConsumerStatefulWidget {
 }
 
 class _NoteListScreenState extends ConsumerState<NoteListScreen> {
+  String? _appVersion;
+
   NoteListController get _actions =>
       ref.read(noteListControllerProvider.notifier);
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAppVersion();
+  }
+
+  Future<void> _loadAppVersion() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    if (mounted) {
+      setState(() {
+        _appVersion = 'v${packageInfo.version} (${packageInfo.buildNumber})';
+      });
+    }
+  }
 
   void _onVaultSelected(String vaultId) {
     _actions.selectVault(vaultId);
@@ -305,6 +324,17 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
     context.pushNamed(AppRoutes.vaultGraphName);
   }
 
+  Future<void> _launchUrl(String urlString) async {
+    final uri = Uri.parse(urlString);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (!mounted) return;
+      AppSnackBar.show(
+        context,
+        AppErrorSpec.error('링크를 열 수 없어요: $urlString'),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final vaultsAsync = ref.watch(vaultsProvider);
@@ -368,39 +398,42 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
         ? TopToolbarVariant.landing
         : TopToolbarVariant.folder;
 
-    final toolbarActions = !hasActiveVault
-        ? [
-            // TODO(xodnd): 이거 함수를 밖에서 전달? 아니면 provider 인데.. 디자인 코드를 변경해야하나
-            ToolbarAction(
-              svgPath: AppIcons.settings,
-              onTap: () => showSettingsSideSheet(
-                context,
-                pressureSensitivityEnabled: true,
-                appVersionText: '1.0.0',
-                onTogglePressureSensitivity: (v) {},
-                onShowLicenses: () {},
-                onOpenPrivacyPolicy: () {},
-                onOpenContact: () {},
-                onOpenGithubIssues: () {},
-                onOpenTerms: () {},
-                onToggleStyleStrokesOnly: (v) {},
-                styleStrokesOnlyEnabled: false,
-              ),
-              tooltip: '설정',
+    final toolbarActions = [
+      if (hasActiveVault) ...[
+        ToolbarAction(
+          svgPath: AppIcons.search,
+          onTap: _goToNoteSearch,
+          tooltip: '노트 검색',
+        ),
+        ToolbarAction(
+          svgPath: AppIcons.graphView,
+          onTap: _goToVaultGraph,
+          tooltip: '그래프 보기',
+        ),
+      ],
+      ToolbarAction(
+        svgPath: AppIcons.settings,
+        onTap: () {
+          showSettingsSideSheet(
+            context,
+            appVersionText: _appVersion ?? 'v1.0.0 (1)',
+            // URL 런처 콜백들
+            onShowLicenses: () => showLicensePage(
+              context: context,
+              applicationName: 'Clustudy',
             ),
-          ]
-        : [
-            ToolbarAction(
-              svgPath: AppIcons.search,
-              onTap: _goToNoteSearch,
-              tooltip: '노트 검색',
+            onOpenPrivacyPolicy: () =>
+                _launchUrl('https://yoursite.com/privacy'),
+            onOpenContact: () => _launchUrl('mailto:taeung.contact@gmail.com'),
+            onOpenGithubIssues: () => _launchUrl(
+              'https://github.com/tryCatchPing/it-contest/issues',
             ),
-            ToolbarAction(
-              svgPath: AppIcons.graphView,
-              onTap: _goToVaultGraph,
-              tooltip: '그래프 보기',
-            ),
-          ];
+            onOpenTerms: () => _launchUrl('https://yoursite.com/terms'),
+          );
+        },
+        tooltip: '설정',
+      ),
+    ];
 
     VoidCallback? onBack;
     String? backSvgPath;

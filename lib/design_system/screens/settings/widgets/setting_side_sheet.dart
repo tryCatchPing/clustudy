@@ -1,7 +1,11 @@
 // lib/features/settings/widgets/settings_side_sheet.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:scribble/scribble.dart';
 
+import '../../../../features/canvas/providers/note_editor_provider.dart';
+import '../../../../features/canvas/providers/pointer_policy_provider.dart';
 import '../../../tokens/app_colors.dart';
 import '../../../tokens/app_icons.dart';
 import '../../../tokens/app_typography.dart';
@@ -10,12 +14,8 @@ import '../../../tokens/app_typography.dart';
 Future<void> showSettingsSideSheet(
   BuildContext context, {
   // --- 상태/표시값 ---
-  required bool pressureSensitivityEnabled, // 필압 여부
   required String appVersionText, // 예) "v1.0.0 (100)"
-  required bool styleStrokesOnlyEnabled, // 스타일러스 입력만 허용 여부
   // --- 액션 콜백 (호스트에서 구현) ---
-  required ValueChanged<bool> onToggleStyleStrokesOnly, // 스타일러스 입력만 허용 여부 변경
-  required ValueChanged<bool> onTogglePressureSensitivity,
   required VoidCallback onShowLicenses, // 사용한 패키지(라이선스)
   required VoidCallback onOpenPrivacyPolicy, // 개인정보 보호
   required VoidCallback onOpenContact, // 연락처
@@ -29,16 +29,12 @@ Future<void> showSettingsSideSheet(
     barrierLabel: 'settings',
     pageBuilder: (_, __, ___) {
       return _SettingsSideSheet(
-        pressureSensitivityEnabled: pressureSensitivityEnabled,
         appVersionText: appVersionText,
-        onTogglePressureSensitivity: onTogglePressureSensitivity,
         onShowLicenses: onShowLicenses,
         onOpenPrivacyPolicy: onOpenPrivacyPolicy,
         onOpenContact: onOpenContact,
         onOpenGithubIssues: onOpenGithubIssues,
         onOpenTerms: onOpenTerms,
-        onToggleStyleStrokesOnly: onToggleStyleStrokesOnly,
-        styleStrokesOnlyEnabled: styleStrokesOnlyEnabled,
       );
     },
     transitionDuration: const Duration(milliseconds: 220),
@@ -52,34 +48,30 @@ Future<void> showSettingsSideSheet(
   );
 }
 
-class _SettingsSideSheet extends StatelessWidget {
+class _SettingsSideSheet extends ConsumerWidget {
   const _SettingsSideSheet({
-    required this.pressureSensitivityEnabled,
     required this.appVersionText,
-    required this.onTogglePressureSensitivity,
     required this.onShowLicenses,
     required this.onOpenPrivacyPolicy,
     required this.onOpenContact,
     required this.onOpenGithubIssues,
     required this.onOpenTerms,
-    required this.onToggleStyleStrokesOnly,
-    required this.styleStrokesOnlyEnabled,
   });
 
-  final bool pressureSensitivityEnabled;
   final String appVersionText;
 
-  final ValueChanged<bool> onTogglePressureSensitivity;
   final VoidCallback onShowLicenses;
   final VoidCallback onOpenPrivacyPolicy;
   final VoidCallback onOpenContact;
   final VoidCallback onOpenGithubIssues;
   final VoidCallback onOpenTerms;
-  final ValueChanged<bool> onToggleStyleStrokesOnly;
-  final bool styleStrokesOnlyEnabled;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Provider 직접 watch (실시간 UI 업데이트)
+    final pressureSensitivityEnabled = ref.watch(simulatePressureProvider);
+    final pointerMode = ref.watch(pointerPolicyProvider);
+    final styleStrokesOnlyEnabled = pointerMode == ScribblePointerMode.penOnly;
     return Align(
       alignment: Alignment.centerRight,
       child: Material(
@@ -149,13 +141,19 @@ class _SettingsSideSheet extends StatelessWidget {
                           title: '필압 여부',
                           subtitle: '스타일러스/터치 입력 시 필압을 적용합니다.',
                           value: pressureSensitivityEnabled,
-                          onChanged: onTogglePressureSensitivity,
+                          onChanged: (v) {
+                            ref.read(simulatePressureProvider.notifier).setValue(v);
+                          },
                         ),
                         _SettingsTile.switchTile(
                           title: '스타일러스 입력만 허용',
                           subtitle: '스타일러스 입력만 허용합니다.',
                           value: styleStrokesOnlyEnabled,
-                          onChanged: onToggleStyleStrokesOnly,
+                          onChanged: (v) {
+                            ref.read(pointerPolicyProvider.notifier).state = v
+                                ? ScribblePointerMode.penOnly
+                                : ScribblePointerMode.all;
+                          },
                         ),
                       ],
                     ),
