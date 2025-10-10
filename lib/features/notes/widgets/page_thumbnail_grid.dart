@@ -147,6 +147,7 @@ class _PageThumbnailGridState extends ConsumerState<PageThumbnailGrid> {
               pages[pageIndex],
               pageIndex,
               pageControllerState,
+              pages.length, // 전체 페이지 개수 전달
             );
           },
         );
@@ -159,6 +160,7 @@ class _PageThumbnailGridState extends ConsumerState<PageThumbnailGrid> {
     NotePageModel page,
     int index,
     PageControllerState pageControllerState,
+    int totalPageCount,
   ) {
     final isDragging = _draggingIndex == index;
     final isDropTarget = _dragOverIndex == index && !isDragging;
@@ -204,7 +206,8 @@ class _PageThumbnailGridState extends ConsumerState<PageThumbnailGrid> {
                   thumbnail: thumbnail,
                   size: widget.thumbnailSize,
                   isDragging: isDragging,
-                  onDelete: widget.onPageDelete != null
+                  // 마지막 페이지는 삭제 버튼 숨김 (페이지가 1개만 남으면 삭제 불가)
+                  onDelete: (widget.onPageDelete != null && totalPageCount > 1)
                       ? () => widget.onPageDelete!(page)
                       : null,
                   onTap: widget.onPageTap != null

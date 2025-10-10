@@ -298,8 +298,9 @@ class _DraggablePageThumbnailState extends ConsumerState<DraggablePageThumbnail>
                     // 페이지 번호 오버레이
                     _buildPageNumberOverlay(),
 
-                    // 삭제 버튼 오버레이
-                    if (widget.showDeleteButton) _buildDeleteButtonOverlay(),
+                    // 삭제 버튼 오버레이 (onDelete가 null이 아닐 때만 표시)
+                    if (widget.showDeleteButton && widget.onDelete != null)
+                      _buildDeleteButtonOverlay(),
 
                     // 드래그 상태 오버레이
                     if (widget.isDragging) _buildDragOverlay(),
