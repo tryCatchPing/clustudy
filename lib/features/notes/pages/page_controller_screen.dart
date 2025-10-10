@@ -89,16 +89,13 @@ class _PageControllerScreenState extends ConsumerState<PageControllerScreen> {
     return TopToolbar(
       variant: TopToolbarVariant.folder,
       title: '페이지 관리',
-      backSvgPath: AppIcons.roundX,
-      onBack: () => _handleClose(context, screenState),
-      actions: const [],
+      onBack: () => Navigator.of(context).pop(),
+      backSvgPath: AppIcons.chevronLeft,
+      actions: const [], // 추후 actions 추가
       iconColor: AppColors.gray50,
       height: 76,
       iconSize: 32,
     );
-
-    // TODO: "변경됨" 뱃지는 TopToolbar에 trailing 파라미터 추가 후 적용
-    // if (screenState.hasUnsavedChanges) ...
   }
 
   /// 메인 바디를 빌드합니다.
@@ -131,7 +128,10 @@ class _PageControllerScreenState extends ConsumerState<PageControllerScreen> {
   /// 페이지 정보 헤더를 빌드합니다.
   Widget _buildPageInfoHeader(NoteModel note) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.medium),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.large,
+        vertical: AppSpacing.medium,
+      ),
       decoration: const BoxDecoration(
         color: AppColors.background,
         border: Border(
@@ -143,27 +143,54 @@ class _PageControllerScreenState extends ConsumerState<PageControllerScreen> {
       ),
       child: Row(
         children: [
-          const Icon(
-            Icons.description,
-            color: AppColors.primary,
+          // 노트 아이콘
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(AppSpacing.small),
+            ),
+            child: const Icon(
+              Icons.description_outlined,
+              color: AppColors.primary,
+              size: 24,
+            ),
           ),
           const SizedBox(width: AppSpacing.medium),
+
+          // 노트 정보
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // 노트 제목
                 Text(
                   note.title,
-                  style: AppTypography.subtitle1,
+                  style: AppTypography.subtitle1.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  '총 ${note.pages.length}개 페이지',
-                  style: AppTypography.body5.copyWith(
-                    color: AppColors.gray40,
-                  ),
+                const SizedBox(height: AppSpacing.xxs),
+
+                // 페이지 수 정보
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.insert_drive_file_outlined,
+                      size: 16,
+                      color: AppColors.gray40,
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    Text(
+                      '총 ${note.pages.length}개 페이지',
+                      style: AppTypography.body5.copyWith(
+                        color: AppColors.gray40,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -302,17 +329,7 @@ class _PageControllerScreenState extends ConsumerState<PageControllerScreen> {
     // 여기서는 추가 처리가 필요하지 않습니다.
   }
 
-  /// 모달 닫기를 처리합니다.
-  void _handleClose(
-    BuildContext context,
-    PageControllerScreenState screenState,
-  ) {
-    if (screenState.hasUnsavedChanges) {
-      _showUnsavedChangesDialog(context);
-    } else {
-      Navigator.of(context).pop();
-    }
-  }
+  // 모달 닫기는 AppBar에서 직접 처리합니다.
 
   /// 삭제 확인 다이얼로그를 표시합니다.
   void _showDeleteConfirmDialog(NotePageModel page) {
@@ -374,33 +391,5 @@ class _PageControllerScreenState extends ConsumerState<PageControllerScreen> {
     );
   }
 
-  /// 저장되지 않은 변경사항 다이얼로그를 표시합니다.
-  void _showUnsavedChangesDialog(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('변경사항 저장'),
-        content: const Text(
-          '변경된 내용이 있습니다.\n'
-          '저장하지 않고 나가시겠습니까?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(); // 다이얼로그 닫기
-              Navigator.of(context).pop(); // 페이지 컨트롤러 닫기
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.red,
-            ),
-            child: const Text('저장하지 않고 나가기'),
-          ),
-        ],
-      ),
-    );
-  }
+  // 저장되지 않은 변경사항 다이얼로그는 현재 사용하지 않습니다.
 }

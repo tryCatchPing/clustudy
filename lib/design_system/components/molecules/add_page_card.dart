@@ -11,7 +11,7 @@ import '../../utils/dashed_border.dart';
 class AddPageCard extends StatelessWidget {
   const AddPageCard({
     super.key,
-    required this.plusSvgPath,   // 32px SVG
+    required this.plusSvgPath, // 32px SVG
     this.onTap,
   });
 
@@ -40,28 +40,30 @@ class AddPageCard extends StatelessWidget {
                 gap: 4,
                 radius: AppSpacing.small, // 8
                 child: SizedBox(
-                  width: AppSizes.noteThumbW,   // 88
-                  height: AppSizes.noteThumbH,  // 120
+                  width: AppSizes.noteThumbW, // 88
+                  height: AppSizes.noteThumbH, // 120
                   child: Center(
                     child: SvgPicture.asset(
                       plusSvgPath,
-                      width: AppSizes.addIcon,   // 32
-                      height: AppSizes.addIcon,  // 32
+                      width: AppSizes.addIcon, // 32
+                      height: AppSizes.addIcon, // 32
                       semanticsLabel: '새 페이지 추가',
                     ),
                   ),
                 ),
               ),
 
-              const SizedBox(height: AppSpacing.small), 
+              const SizedBox(height: AppSpacing.xs),
 
               // Body/13 Semibold, Gray50
-              Text(
-                '새 페이지',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: AppTypography.body4.copyWith(color: AppColors.gray50),
+              Flexible(
+                child: Text(
+                  '새 페이지',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: AppTypography.body4.copyWith(color: AppColors.gray50),
+                ),
               ),
             ],
           ),

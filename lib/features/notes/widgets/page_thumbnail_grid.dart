@@ -125,10 +125,19 @@ class _PageThumbnailGridState extends ConsumerState<PageThumbnailGrid> {
             final hasAdd = widget.onPageAdd != null;
             // 첫 번째 인덱스는 AddPageCard로 처리
             if (hasAdd && index == 0) {
+              // AddPageCard는 라벨이 포함되어 정사각 셀보다 약간 높습니다.
+              // 셀 오버플로를 방지하기 위해 scaleDown으로 맞춥니다.
               return Center(
-                child: AddPageCard(
-                  plusSvgPath: AppIcons.plus,
-                  onTap: widget.onPageAdd,
+                child: SizedBox(
+                  width: widget.thumbnailSize,
+                  height: widget.thumbnailSize,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: AddPageCard(
+                      plusSvgPath: AppIcons.plus,
+                      onTap: widget.onPageAdd,
+                    ),
+                  ),
                 ),
               );
             }

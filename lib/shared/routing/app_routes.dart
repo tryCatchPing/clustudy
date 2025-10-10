@@ -1,6 +1,6 @@
 import 'package:go_router/go_router.dart';
 
-import '../../design_system/screens/notes/pages/note_screen.dart';
+import '../../design_system/screens/notes/pages/note_pages_screen.dart';
 
 /// 🎯 앱 전체 라우트 상수 및 네비게이션 헬퍼
 ///
@@ -89,9 +89,10 @@ class TmpRoutes {
     GoRoute(
       path: AppRoutes.tmp,
       name: AppRoutes.tmpName,
-      builder: (context, state) => const NoteScreen(
+      builder: (context, state) => const NotePagesScreen(
+        title: '노트 페이지',
+        initialPages: [],
         noteId: '1',
-        initialTitle: '노트 편집',
       ),
     ),
   ];
