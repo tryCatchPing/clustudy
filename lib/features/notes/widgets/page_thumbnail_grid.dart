@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../design_system/tokens/app_colors.dart';
+import '../../../design_system/tokens/app_spacing.dart';
+import '../../../design_system/tokens/app_typography.dart';
 import '../../../shared/services/page_order_service.dart';
 import '../../canvas/providers/note_editor_provider.dart';
 import '../data/derived_note_providers.dart';
@@ -200,24 +203,26 @@ class _PageThumbnailGridState extends ConsumerState<PageThumbnailGrid> {
     return Positioned.fill(
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppSpacing.small),
           border: Border.all(
-            color: Theme.of(context).primaryColor,
+            color: AppColors.primary,
             width: 2,
           ),
         ),
         child: Center(
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
-              borderRadius: BorderRadius.circular(16),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.medium,
+              vertical: AppSpacing.small,
             ),
-            child: const Text(
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(AppSpacing.medium),
+            ),
+            child: Text(
               '여기에 놓기',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 12,
+              style: AppTypography.caption.copyWith(
+                color: AppColors.white,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -236,22 +241,20 @@ class _PageThumbnailGridState extends ConsumerState<PageThumbnailGrid> {
           Icon(
             Icons.note_add,
             size: 64,
-            color: Colors.grey[400],
+            color: AppColors.gray30,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.medium),
           Text(
             '페이지가 없습니다',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
+            style: AppTypography.body3.copyWith(
+              color: AppColors.gray40,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.small),
           Text(
             '새 페이지를 추가해보세요',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
+            style: AppTypography.body5.copyWith(
+              color: AppColors.gray30,
             ),
           ),
         ],
@@ -280,8 +283,8 @@ class _PageThumbnailGridState extends ConsumerState<PageThumbnailGrid> {
   Widget _buildSkeletonItem() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(8),
+        color: AppColors.gray10,
+        borderRadius: BorderRadius.circular(AppSpacing.small),
       ),
       child: const Center(
         child: CircularProgressIndicator(),
@@ -298,26 +301,24 @@ class _PageThumbnailGridState extends ConsumerState<PageThumbnailGrid> {
           Icon(
             Icons.error_outline,
             size: 64,
-            color: Colors.red[400],
+            color: AppColors.error,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.medium),
           Text(
             '페이지를 불러올 수 없습니다',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.red[600],
+            style: AppTypography.body3.copyWith(
+              color: AppColors.errorDark,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.small),
           Text(
             error.toString(),
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
+            style: AppTypography.caption.copyWith(
+              color: AppColors.gray40,
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.medium),
           ElevatedButton(
             onPressed: () {
               // 새로고침

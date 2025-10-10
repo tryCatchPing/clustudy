@@ -22,5 +22,9 @@ class AppColors {
   static const Color highlighterGreen  = Color(0x80277A3E);
   static const Color highlighterYellow = Color(0x80FFFF46);
 
+  // Semantic colors for UI states
+  static const Color error = Color(0xFFC72C2C);  // penRed와 동일
+  static const Color errorLight = Color(0xFFFFEEEE);  // 연한 빨강 배경
+  static const Color errorDark = Color(0xFF9D2323);  // 어두운 빨강
 
 }

@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../design_system/components/organisms/top_toolbar.dart';
+import '../../../design_system/tokens/app_colors.dart';
+import '../../../design_system/tokens/app_icons.dart';
+import '../../../design_system/tokens/app_spacing.dart';
+import '../../../design_system/tokens/app_typography.dart';
 import '../../canvas/providers/note_editor_provider.dart';
 import '../data/derived_note_providers.dart';
 import '../models/note_model.dart';
@@ -79,39 +84,19 @@ class _PageControllerScreenState extends ConsumerState<PageControllerScreen> {
     BuildContext context,
     PageControllerScreenState screenState,
   ) {
-    return AppBar(
-      title: const Text('페이지 관리'),
-      leading: IconButton(
-        icon: const Icon(Icons.close),
-        onPressed: () => _handleClose(context, screenState),
-      ),
-      actions: [
-        if (screenState.hasUnsavedChanges)
-          Container(
-            margin: const EdgeInsets.only(right: 16),
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.orange,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Text(
-                  '변경됨',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
+    return TopToolbar(
+      variant: TopToolbarVariant.folder,
+      title: '페이지 관리',
+      backSvgPath: AppIcons.roundX,
+      onBack: () => _handleClose(context, screenState),
+      actions: const [],
+      iconColor: AppColors.gray50,
+      height: 76,
+      iconSize: 32,
     );
+
+    // TODO: "변경됨" 뱃지는 TopToolbar에 trailing 파라미터 추가 후 적용
+    // if (screenState.hasUnsavedChanges) ...
   }
 
   /// 메인 바디를 빌드합니다.
@@ -149,40 +134,38 @@ class _PageControllerScreenState extends ConsumerState<PageControllerScreen> {
   /// 페이지 정보 헤더를 빌드합니다.
   Widget _buildPageInfoHeader(NoteModel note) {
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      padding: const EdgeInsets.all(AppSpacing.medium),
+      decoration: const BoxDecoration(
+        color: AppColors.background,
         border: Border(
           bottom: BorderSide(
-            color: Theme.of(context).dividerColor,
+            color: AppColors.gray20,
             width: 1,
           ),
         ),
       ),
       child: Row(
         children: [
-          Icon(
+          const Icon(
             Icons.description,
-            color: Theme.of(context).colorScheme.primary,
+            color: AppColors.primary,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.medium),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   note.title,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: AppTypography.subtitle1,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSpacing.xs),
                 Text(
                   '총 ${note.pages.length}개 페이지',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  style: AppTypography.body5.copyWith(
+                    color: AppColors.gray40,
                   ),
                 ),
               ],
@@ -197,22 +180,21 @@ class _PageControllerScreenState extends ConsumerState<PageControllerScreen> {
   Widget _buildErrorBanner(PageControllerScreenState screenState) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      color: Colors.red[50],
+      padding: const EdgeInsets.all(AppSpacing.medium),
+      color: AppColors.errorLight,
       child: Row(
         children: [
-          Icon(
+          const Icon(
             Icons.error_outline,
-            color: Colors.red[700],
+            color: AppColors.errorDark,
             size: 20,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.small),
           Expanded(
             child: Text(
               screenState.errorMessage!,
-              style: TextStyle(
-                color: Colors.red[700],
-                fontSize: 14,
+              style: AppTypography.body5.copyWith(
+                color: AppColors.errorDark,
               ),
             ),
           ),
@@ -227,7 +209,7 @@ class _PageControllerScreenState extends ConsumerState<PageControllerScreen> {
                   )
                   .clearError();
             },
-            color: Colors.red[700],
+            color: AppColors.errorDark,
             constraints: const BoxConstraints(
               minWidth: 32,
               minHeight: 32,
@@ -242,24 +224,23 @@ class _PageControllerScreenState extends ConsumerState<PageControllerScreen> {
   Widget _buildLoadingBanner(PageControllerScreenState screenState) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.medium),
       color: Theme.of(context).colorScheme.primaryContainer,
       child: Row(
         children: [
-          SizedBox(
+          const SizedBox(
             width: 16,
             height: 16,
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              color: Theme.of(context).colorScheme.primary,
+              color: AppColors.primary,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.medium),
           Text(
             screenState.operation ?? '처리 중...',
-            style: TextStyle(
+            style: AppTypography.body5.copyWith(
               color: Theme.of(context).colorScheme.onPrimaryContainer,
-              fontSize: 14,
             ),
           ),
         ],
@@ -301,30 +282,27 @@ class _PageControllerScreenState extends ConsumerState<PageControllerScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
+          const Icon(
             Icons.error_outline,
             size: 64,
-            color: Colors.red[400],
+            color: AppColors.error,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.medium),
           Text(
             '오류가 발생했습니다',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.red[700],
+            style: AppTypography.subtitle1.copyWith(
+              color: AppColors.errorDark,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.small),
           Text(
             error,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
+            style: AppTypography.body5.copyWith(
+              color: AppColors.gray40,
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.large),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('닫기'),
