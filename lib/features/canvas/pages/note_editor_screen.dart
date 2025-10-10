@@ -48,8 +48,6 @@ class NoteEditorScreen extends ConsumerStatefulWidget {
 
 class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
     with RouteAware {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
   /// Sync the initial page index from per-route resume or lastKnown after
   /// route becomes current and note data is available.
   void _scheduleSyncInitialIndexFromResume({bool allowLastKnown = true}) {
@@ -261,7 +259,6 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
     final double toolbarTop = uiState.isFullscreen ? AppSpacing.small : 0;
 
     return Scaffold(
-      key: _scaffoldKey,
       backgroundColor: Theme.of(context).colorScheme.surface,
       // backgroundColor: AppColors.gray10,
       appBar: uiState.isFullscreen
@@ -283,7 +280,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
                 ),
                 ToolbarAction(
                   svgPath: AppIcons.linkList,
-                  onTap: () => _scaffoldKey.currentState?.openEndDrawer(),
+                  onTap: () => showBacklinksPanel(context, widget.noteId),
                   tooltip: '백링크',
                 ),
                 ToolbarAction(
@@ -294,7 +291,6 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
                 ),
               ],
             ),
-      endDrawer: BacklinksPanel(noteId: widget.noteId),
       body: SafeArea(
         child: Stack(
           children: [
@@ -341,8 +337,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
                       minTapTarget: 44,
                       iconSize: 16,
                       tooltip: '백링크',
-                      onPressed: () =>
-                          _scaffoldKey.currentState?.openEndDrawer(),
+                      onPressed: () => showBacklinksPanel(context, widget.noteId),
                     ),
                     const SizedBox(height: AppSpacing.small),
                     AppFabIcon(

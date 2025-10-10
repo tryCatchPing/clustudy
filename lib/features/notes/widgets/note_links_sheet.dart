@@ -24,7 +24,7 @@ Future<void> showNoteLinksSheet(
     barrierColor: Colors.black.withOpacity(0.25),
     barrierLabel: 'links',
     pageBuilder: (_, __, ___) {
-      return _NoteLinksSideSheet(outgoing: outgoing, backlinks: backlinks);
+      return NoteLinksSideSheet(outgoing: outgoing, backlinks: backlinks);
     },
     transitionDuration: const Duration(milliseconds: 220),
     transitionBuilder: (_, anim, __, child) {
@@ -37,8 +37,9 @@ Future<void> showNoteLinksSheet(
   );
 }
 
-class _NoteLinksSideSheet extends StatelessWidget {
-  const _NoteLinksSideSheet({
+class NoteLinksSideSheet extends StatelessWidget {
+  const NoteLinksSideSheet({
+    super.key,
     required this.outgoing,
     required this.backlinks,
   });
