@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../design_system/components/atoms/app_button.dart';
+import '../../../../design_system/components/atoms/app_textfield.dart';
+import '../../../../design_system/tokens/app_colors.dart';
+import '../../../../design_system/tokens/app_typography.dart';
 import '../../../../shared/errors/app_error_mapper.dart';
 import '../../../../shared/errors/app_error_spec.dart';
 import '../../../../shared/services/vault_notes_service.dart';
@@ -32,12 +36,19 @@ class LinkCreationDialog extends ConsumerStatefulWidget {
     BuildContext context, {
     required String sourceNoteId,
   }) {
-    return showDialog<LinkCreationResult>(
+    return showGeneralDialog<LinkCreationResult>(
       context: context,
+      barrierLabel: 'link',
       barrierDismissible: true,
-      builder: (context) => Dialog(
-        child: LinkCreationDialog(sourceNoteId: sourceNoteId),
-      ),
+      barrierColor: Colors.black.withOpacity(0.45),
+      pageBuilder: (_, __, ___) {
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: LinkCreationDialog(sourceNoteId: sourceNoteId),
+          ),
+        );
+      },
     );
   }
 
@@ -139,32 +150,41 @@ class _LinkCreationDialogState extends ConsumerState<LinkCreationDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 460),
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 400),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: const [
+            BoxShadow(
+              color: AppColors.gray50,
+              blurRadius: 24,
+              offset: Offset(0, 8),
+            ),
+          ],
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              '링크 생성',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
+            const Text('링크 생성', style: AppTypography.body2),
+            const SizedBox(height: 16),
 
             // 제목 입력
-            TextField(
+            AppTextField(
               controller: _titleCtrl,
-              decoration: const InputDecoration(
-                labelText: '대상 노트 제목',
-                hintText: '기존 노트 선택 또는 새 제목 입력',
-                border: OutlineInputBorder(),
+              style: AppTextFieldStyle.underline,
+              textStyle: AppTypography.body2.copyWith(
+                color: AppColors.gray50,
               ),
+              hintText: '기존 노트 선택 또는 새 제목 입력',
+              autofocus: true,
               onChanged: (t) => _applyFilter(t),
             ),
 
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
 
             // 제안 목록
             SizedBox(
@@ -179,10 +199,16 @@ class _LinkCreationDialogState extends ConsumerState<LinkCreationDialog> {
                           final s = _filtered[index];
                           return ListTile(
                             dense: true,
-                            title: Text(s.title),
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(s.title, style: AppTypography.body4),
                             subtitle: s.parentFolderName == null
                                 ? null
-                                : Text(s.parentFolderName!),
+                                : Text(
+                                    s.parentFolderName!,
+                                    style: AppTypography.body4.copyWith(
+                                      color: AppColors.gray40,
+                                    ),
+                                  ),
                             selected: _selectedNoteId == s.noteId,
                             onTap: () {
                               setState(() {
@@ -196,16 +222,23 @@ class _LinkCreationDialogState extends ConsumerState<LinkCreationDialog> {
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
+            // 버튼 영역
             Row(
-              mainAxisAlignment: MainAxisAlignment.end,
               children: [
+                const Spacer(),
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('취소'),
+                  child: Text(
+                    '취소',
+                    style: AppTypography.body4.copyWith(
+                      color: AppColors.gray40,
+                    ),
+                  ),
                 ),
-                const SizedBox(width: 8),
-                ElevatedButton(
+                const SizedBox(width: 16),
+                AppButton.text(
+                  text: '생성',
                   onPressed: () {
                     if (_selectedNoteId == null &&
                         _titleCtrl.text.trim().isEmpty) {
@@ -224,7 +257,8 @@ class _LinkCreationDialogState extends ConsumerState<LinkCreationDialog> {
                       ),
                     );
                   },
-                  child: const Text('생성'),
+                  style: AppButtonStyle.primary,
+                  size: AppButtonSize.md,
                 ),
               ],
             ),
