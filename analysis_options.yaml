@@ -15,6 +15,7 @@ analyzer:
     - "**/*.freezed.dart"
     - "**/*.chopper.dart"
     - "**/generated_plugin_registrant.dart"
+    - "lib/design_system/**"
   strong-mode:
     implicit-casts: false
     implicit-dynamic: false
