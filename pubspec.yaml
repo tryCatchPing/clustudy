@@ -100,6 +100,12 @@ flutter:
     - family: Pretendard
       fonts:
         - asset: assets/fonts/PretendardVariable.ttf
+    - family: Play
+      fonts:
+        - asset: fonts/Play-Regular.ttf
+          weight: 400
+        - asset: fonts/Play-Bold.ttf
+          weight: 700
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 
