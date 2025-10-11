@@ -1,7 +1,3 @@
-import 'package:go_router/go_router.dart';
-
-import '../../design_system/screens/notes/pages/note_pages_screen.dart';
-
 /// 🎯 앱 전체 라우트 상수 및 네비게이션 헬퍼
 ///
 /// 타입 안정성과 유지보수성을 위해 모든 라우트 경로를 여기서 관리합니다.
@@ -12,7 +8,7 @@ class AppRoutes {
 
   // 📍 라우트 경로 상수들
   /// 홈 화면 라우트 경로.
-  static const String home = '/';
+  static const String home = '/home';
 
   /// 노트 목록 화면 라우트 경로.
   static const String noteList = '/notes';
@@ -75,25 +71,4 @@ class AppRoutes {
   // 2. 라우트 이름 추가: static const String newFeatureName = 'newFeature';
   // 3. 헬퍼 메서드 추가: static String newFeatureRoute() => newFeature;
   // 4. 각 feature의 routing 파일에서 이 상수들 사용
-
-  // TODO(xodnd): 제거
-  static const String tmp = '/tmp';
-
-  static const String tmpName = 'tmp';
-}
-
-// TODO(xodnd): 제거
-class TmpRoutes {
-  static List<RouteBase> routes = [
-    // 노트 목록 페이지 (/notes)
-    GoRoute(
-      path: AppRoutes.tmp,
-      name: AppRoutes.tmpName,
-      builder: (context, state) => const NotePagesScreen(
-        title: '노트 페이지',
-        initialPages: [],
-        noteId: '1',
-      ),
-    ),
-  ];
 }

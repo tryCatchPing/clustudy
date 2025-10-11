@@ -73,19 +73,18 @@ class HomeScreen extends StatelessWidget {
                   },
                 ),
 
-                // TODO(xodnd): 제거
-                const SizedBox(height: 24),
+                // const SizedBox(height: 24),
 
-                NavigationCard(
-                  icon: Icons.note_alt,
-                  title: '디자인 테스트 - 노트 편집 페이지',
-                  subtitle: '노트 편집 페이지 디자인 테스트',
-                  color: const Color(0xFF4CAF50),
-                  onTap: () {
-                    debugPrint('📝 노트 편집 페이지로 이동 중...');
-                    context.pushNamed(AppRoutes.tmpName);
-                  },
-                ),
+                // NavigationCard(
+                //   icon: Icons.note_alt,
+                //   title: '디자인 테스트 - 노트 편집 페이지',
+                //   subtitle: '노트 편집 페이지 디자인 테스트',
+                //   color: const Color(0xFF4CAF50),
+                //   onTap: () {
+                //     debugPrint('📝 노트 편집 페이지로 이동 중...');
+                //     context.pushNamed(AppRoutes.tmpName);
+                //   },
+                // ),
 
                 // 프로젝트 정보 (재사용 가능한 InfoCard 사용)
                 const InfoCard.warning(

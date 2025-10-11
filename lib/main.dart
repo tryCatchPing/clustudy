@@ -7,7 +7,6 @@ import 'features/canvas/routing/canvas_routes.dart';
 import 'features/home/routing/home_routes.dart';
 import 'features/notes/routing/notes_routes.dart';
 import 'features/vaults/routing/vault_graph_routes.dart';
-import 'shared/routing/app_routes.dart';
 import 'shared/routing/route_observer.dart';
 import 'shared/services/isar_database_service.dart';
 
@@ -34,6 +33,7 @@ Future<void> main() async {
 }
 
 final _router = GoRouter(
+  initialLocation: '/notes',
   routes: [
     // 홈 관련 라우트 (홈페이지, PDF 캔버스)
     ...HomeRoutes.routes,
@@ -43,10 +43,6 @@ final _router = GoRouter(
     ...CanvasRoutes.routes,
     // Vault 그래프 관련 라우트
     ...VaultGraphRoutes.routes,
-
-    // TODO(xodnd): 제거
-    // 임시 테스트 라우트
-    ...TmpRoutes.routes,
   ],
   observers: [appRouteObserver],
   debugLogDiagnostics: true,
