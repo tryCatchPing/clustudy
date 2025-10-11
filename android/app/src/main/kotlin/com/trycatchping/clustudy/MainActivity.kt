@@ -1,4 +1,4 @@
-package com.example.it_contest
+package com.trycatchping.clustudy
 
 import io.flutter.embedding.android.FlutterActivity
 

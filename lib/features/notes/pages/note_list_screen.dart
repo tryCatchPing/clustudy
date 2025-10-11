@@ -5,6 +5,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../design_system/components/organisms/top_toolbar.dart';
+import '../../../design_system/screens/settings/widgets/legal_text_dialog.dart';
 import '../../../design_system/screens/settings/widgets/setting_side_sheet.dart';
 import '../../../design_system/tokens/app_colors.dart';
 import '../../../design_system/tokens/app_icons.dart';
@@ -422,13 +423,20 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
               context: context,
               applicationName: 'Clustudy',
             ),
-            onOpenPrivacyPolicy: () =>
-                _launchUrl('https://yoursite.com/privacy'),
+            onOpenPrivacyPolicy: () => showLegalTextDialog(
+              context: context,
+              title: '개인정보 보호 정책',
+              content: dummyPrivacyPolicyText,
+            ),
             onOpenContact: () => _launchUrl('mailto:taeung.contact@gmail.com'),
             onOpenGithubIssues: () => _launchUrl(
               'https://github.com/tryCatchPing/it-contest/issues',
             ),
-            onOpenTerms: () => _launchUrl('https://yoursite.com/terms'),
+            onOpenTerms: () => showLegalTextDialog(
+              context: context,
+              title: '이용 약관 및 조건',
+              content: dummyTermsOfServiceText,
+            ),
           );
         },
         tooltip: '설정',

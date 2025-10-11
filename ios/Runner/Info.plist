@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>It Contest</string>
+	<string>Clustudy</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -45,5 +45,15 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- 파일 접근 권한 (file_picker, pdfx 사용) -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>PDF 파일 및 이미지를 노트에 가져오기 위해 필요합니다</string>
+	<key>NSCameraUsageDescription</key>
+	<string>사진을 찍어 노트에 추가하기 위해 필요합니다</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>노트 내용을 이미지로 저장하기 위해 필요합니다</string>
+	<!-- 파일 공유 권한 (share_plus 사용) -->
+	<key>NSAppleMusicUsageDescription</key>
+	<string>파일 공유 기능을 위해 필요합니다</string>
 </dict>
 </plist>
