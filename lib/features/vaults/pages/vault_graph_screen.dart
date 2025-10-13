@@ -99,8 +99,20 @@ class _VaultGraphScreenState extends ConsumerState<VaultGraphScreen> {
             final t = vertex.tag;
             return t.isEmpty ? '${vertex.id}' : t;
           };
+          options.legendTextBuilder = (tag, i, color, position) {
+            return TextComponent(
+              text: tag,
+              position: Vector2(position.x + 40, position.y - 2),
+              textRenderer: TextPaint(
+                style: const TextStyle(
+                  fontSize: 14.0,
+                  color: Colors.black,
+                ),
+              ),
+            );
+          };
           options.backgroundBuilder = (context) => Container(
-            color: AppColors.white,
+            color: AppColors.background,
           );
           // hover 하이라이트는 패키지 기본 동작 활용 (vertexPanelBuilder 미사용)
           // 노드 색상: 앱의 pen/highlighter 색상 기반 (명확한 구분)
