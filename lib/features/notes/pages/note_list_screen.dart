@@ -531,11 +531,11 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                   //         ? NoteLocationVariant.root
                   //         : NoteLocationVariant.folder,
                   //     onTap: currentFolderId == null
-                  //         ? goToVaultsAction!
+                  //         ? goToVaultsActionr!
                   //         : goUpAction!,
                   //   ),
                   if (!hasActiveVault) ...[
-                    const SizedBox(height: AppSpacing.large),
+                    // const SizedBox(height: AppSpacing.large),
                     VaultListPanel(
                       vaultsAsync: vaultsAsync,
                       onVaultSelected: _onVaultSelected,
@@ -548,7 +548,7 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                       },
                     ),
                   ] else if (itemsAsync != null) ...[
-                    const SizedBox(height: AppSpacing.large),
+                    // const SizedBox(height: AppSpacing.large),
                     // LayoutBuilder(
                     //   builder: (context, c) {
                     //     debugPrint(
