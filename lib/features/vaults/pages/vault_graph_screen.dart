@@ -64,15 +64,19 @@ class _VaultGraphScreenState extends ConsumerState<VaultGraphScreen> {
     }
 
     final dataAsync = ref.watch(vaultGraphDataProvider(currentVaultId));
+    final vaultAsync = ref.watch(vaultByIdProvider(currentVaultId));
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: TopToolbar(
         variant: TopToolbarVariant.folder,
-        title: 'Vault 그래프',
+        title: vaultAsync.maybeWhen(
+          data: (vault) => vault?.name ?? 'Vault 그래프',
+          orElse: () => 'Vault 그래프',
+        ),
         onBack: () => context.pop(),
         backSvgPath: AppIcons.chevronLeft,
-        actions: [
+        actions: const [
           // TODO: SVG refresh 아이콘 추가 시 교체 필요
         ],
       ),
@@ -102,16 +106,16 @@ class _VaultGraphScreenState extends ConsumerState<VaultGraphScreen> {
           // 노드 색상: 앱의 pen/highlighter 색상 기반 (명확한 구분)
           options.graphStyle = (GraphStyle()
             ..tagColorByIndex = [
-              AppColors.penBlue,          // 파랑 #1A5DBA
-              AppColors.penRed,           // 빨강 #C72C2C
-              AppColors.penGreen,         // 초록 #277A3E
-              AppColors.primary,          // 네이비 #182955
-              AppColors.gray50,           // 검정 #1F1F1F
-              AppColors.penBlue.withValues(alpha: 0.6),   // 연한 파랑
-              AppColors.penRed.withValues(alpha: 0.6),    // 연한 빨강
-              AppColors.penGreen.withValues(alpha: 0.6),  // 연한 초록
-              AppColors.primary.withValues(alpha: 0.6),   // 연한 네이비
-              AppColors.gray40,           // 회색 #656565
+              AppColors.penBlue, // 파랑 #1A5DBA
+              AppColors.penRed, // 빨강 #C72C2C
+              AppColors.penGreen, // 초록 #277A3E
+              AppColors.primary, // 네이비 #182955
+              AppColors.gray50, // 검정 #1F1F1F
+              AppColors.penBlue.withValues(alpha: 0.6), // 연한 파랑
+              AppColors.penRed.withValues(alpha: 0.6), // 연한 빨강
+              AppColors.penGreen.withValues(alpha: 0.6), // 연한 초록
+              AppColors.primary.withValues(alpha: 0.6), // 연한 네이비
+              AppColors.gray40, // 회색 #656565
             ]
             ..hoverOpacity = 0.35);
           // 노드 히트율 개선: 최소 반지름 보정

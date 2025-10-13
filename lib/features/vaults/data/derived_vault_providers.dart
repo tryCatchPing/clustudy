@@ -47,6 +47,15 @@ final vaultItemsProvider = StreamProvider.family<List<VaultItem>, FolderScope>(
   },
 );
 
+/// 특정 Vault 정보를 조회합니다.
+final vaultByIdProvider = FutureProvider.family<VaultModel?, String>((
+  ref,
+  vaultId,
+) {
+  final repo = ref.watch(vaultTreeRepositoryProvider);
+  return repo.getVault(vaultId);
+});
+
 /// 특정 폴더 정보를 조회합니다.
 final folderByIdProvider = FutureProvider.family<FolderModel?, String>((
   ref,
