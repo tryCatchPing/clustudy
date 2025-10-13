@@ -20,7 +20,6 @@ import '../../vaults/data/derived_vault_providers.dart';
 import '../../vaults/models/vault_item.dart';
 import '../../vaults/models/vault_model.dart';
 import '../providers/note_list_controller.dart';
-import '../widgets/note_list_action_bar.dart';
 import '../widgets/note_list_folder_section.dart';
 import '../widgets/note_list_primary_actions.dart';
 import '../widgets/note_list_vault_panel.dart';
@@ -474,6 +473,7 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
 
     // Removed createFolderAction from toolbar (location crumb takes over minimal nav)
 
+    // ignore: unused_local_variable
     final VoidCallback? goUpAction = hasActiveVault && currentFolderId != null
         ? () {
             _goUpOneLevel(
@@ -483,6 +483,7 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
           }
         : null;
 
+    // ignore: unused_local_variable
     final VoidCallback? goToVaultsAction = hasActiveVault
         ? () {
             if (mounted) {
@@ -524,15 +525,15 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                   vertical: AppSpacing.large,
                 ),
                 children: [
-                  if (hasActiveVault)
-                    NoteListActionBar(
-                      variant: currentFolderId == null
-                          ? NoteLocationVariant.root
-                          : NoteLocationVariant.folder,
-                      onTap: currentFolderId == null
-                          ? goToVaultsAction!
-                          : goUpAction!,
-                    ),
+                  // if (hasActiveVault)
+                  //   NoteListActionBar(
+                  //     variant: currentFolderId == null
+                  //         ? NoteLocationVariant.root
+                  //         : NoteLocationVariant.folder,
+                  //     onTap: currentFolderId == null
+                  //         ? goToVaultsAction!
+                  //         : goUpAction!,
+                  //   ),
                   if (!hasActiveVault) ...[
                     const SizedBox(height: AppSpacing.large),
                     VaultListPanel(
