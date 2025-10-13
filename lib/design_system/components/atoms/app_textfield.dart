@@ -17,15 +17,15 @@ class AppTextField extends StatelessWidget {
 
   // 공통 옵션
   final String? hintText;
-  final TextStyle? textStyle;            // underline/none에서 주로 사용
+  final TextStyle? textStyle; // underline/none에서 주로 사용
   final ValueChanged<String>? onSubmitted;
   final ValueChanged<String>? onChanged;
   final bool enabled;
   final AppTextFieldSize size;
-  final double? width;                   // underline에서 고정폭이 필요할 때
-  final FocusNode? focusNode;            // NEW
-  final bool autofocus;                  // NEW
-  final TextAlign? textAlign;            // NEW
+  final double? width; // underline에서 고정폭이 필요할 때
+  final FocusNode? focusNode; // NEW
+  final bool autofocus; // NEW
+  final TextAlign? textAlign; // NEW
 
   // search 전용(아이콘)
   final String? svgPrefixIconPath;
@@ -81,9 +81,11 @@ class AppTextField extends StatelessWidget {
           style: style,
           decoration: decoration,
           cursorColor: AppColors.primary,
-          textAlign: textAlign ?? (style == AppTextFieldStyle.underline
-            ? TextAlign.center
-            : TextAlign.start),
+          textAlign:
+              textAlign ??
+              (style == AppTextFieldStyle.underline
+                  ? TextAlign.center
+                  : TextAlign.start),
           maxLines: style == AppTextFieldStyle.search ? 1 : null,
           textInputAction: style == AppTextFieldStyle.search
               ? TextInputAction.search
@@ -146,20 +148,21 @@ class AppTextField extends StatelessWidget {
 
     switch (style) {
       case AppTextFieldStyle.search:
-      const double iconSize = 20;
         return InputDecoration(
           isDense: true,
           filled: true,
           fillColor: AppColors.gray10,
           contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.small,  // 8
-          vertical: AppSpacing.medium,   // 16
+            horizontal: AppSpacing.small, // 8
+            vertical: AppSpacing.medium, // 16
           ),
           hintText: hintText,
           hintStyle: AppTypography.body3.copyWith(color: AppColors.gray40),
           prefixIcon: svgPrefixIconPath != null
               ? Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.small),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.small,
+                  ),
                   child: SvgPicture.asset(
                     svgPrefixIconPath!,
                     width: iconSize,
@@ -178,23 +181,31 @@ class AppTextField extends StatelessWidget {
 
           suffixIcon: (value.text.isNotEmpty && svgClearIconPath != null)
               ? IconButton(
-                tooltip: '지우기',
-                splashRadius: 18,
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.small), // 8
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                onPressed: controller.clear,
-                icon: SvgPicture.asset(
-                  svgClearIconPath!,
-                  width: iconSize,
-                  height: iconSize,
-                  colorFilter: const ColorFilter.mode(AppColors.gray40, BlendMode.srcIn),
-                ),
-              )
-            : null,
-              suffixIconConstraints: const BoxConstraints(
-                minWidth: 0,
-                minHeight: 0,
-              ),
+                  tooltip: '지우기',
+                  splashRadius: 18,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.small,
+                  ), // 8
+                  constraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
+                  onPressed: controller.clear,
+                  icon: SvgPicture.asset(
+                    svgClearIconPath!,
+                    width: iconSize,
+                    height: iconSize,
+                    colorFilter: const ColorFilter.mode(
+                      AppColors.gray40,
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                )
+              : null,
+          suffixIconConstraints: const BoxConstraints(
+            minWidth: 0,
+            minHeight: 0,
+          ),
 
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppSpacing.small),
