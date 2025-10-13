@@ -271,7 +271,6 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                                   anchorGlobal: anchorGlobal,
                                   displayTitle: link.label,
                                 );
-                                debugPrint('action: $action');
                                 if (!mounted || action == null) return;
                                 switch (action) {
                                   case LinkAction.navigate:
