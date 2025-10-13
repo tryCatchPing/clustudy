@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:scribble/scribble.dart';
 
 import '../../../design_system/tokens/app_colors.dart';
+import '../../../shared/dialogs/design_sheet_helpers.dart';
 import '../../../shared/errors/app_error_mapper.dart';
 import '../../../shared/errors/app_error_spec.dart';
 import '../../../shared/routing/app_routes.dart';
@@ -47,6 +48,7 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
   Timer? _debounceTimer;
   double _lastScale = 1.0;
   // 임시 드래그 상태는 LinkerGestureLayer 내부에서만 관리되므로 상태 제거
+  final GlobalKey _linkerLayerKey = GlobalKey();
 
   // 비-build 컨텍스트에서 현재 노트의 notifier 접근용
   CustomScribbleNotifier get _currentNotifier =>
@@ -211,6 +213,7 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                         // 링커 제스처 및 그리기 레이어 (항상 존재하며, 내부적으로 toolMode에 따라 드래그/탭 처리)
                         Positioned.fill(
                           child: LinkerGestureLayer(
+                            key: _linkerLayerKey,
                             toolMode: currentToolMode,
                             // Use global pointer policy
                             pointerMode:
@@ -253,10 +256,22 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                                 linkAtPointProvider(pageId, localPoint),
                               );
                               if (link != null) {
+                                // 탭 지점의 글로벌 좌표 계산
+                                Offset anchorGlobal = localPoint;
+                                final box =
+                                    _linkerLayerKey.currentContext
+                                            ?.findRenderObject()
+                                        as RenderBox?;
+                                if (box != null) {
+                                  anchorGlobal = box.localToGlobal(localPoint);
+                                }
                                 final action = await LinkActionsSheet.show(
                                   context,
                                   link,
+                                  anchorGlobal: anchorGlobal,
+                                  displayTitle: link.label,
                                 );
+                                debugPrint('action: $action');
                                 if (!mounted || action == null) return;
                                 switch (action) {
                                   case LinkAction.navigate:
@@ -304,8 +319,14 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                                           sourceNoteId: link.sourceNoteId,
                                         );
                                     if (editRes == null) break;
+
+                                    final prevLabel =
+                                        (link.label?.trim().isNotEmpty == true)
+                                        ? link.label!.trim()
+                                        : '링크';
+
                                     try {
-                                      await ref
+                                      final updatedLink = await ref
                                           .read(
                                             linkCreationControllerProvider,
                                           )
@@ -315,9 +336,20 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                                             targetTitle: editRes.targetTitle,
                                           );
                                       if (!mounted) return;
+
+                                      final newLabel =
+                                          (updatedLink.label
+                                                  ?.trim()
+                                                  .isNotEmpty ==
+                                              true)
+                                          ? updatedLink.label!.trim()
+                                          : '링크';
+
                                       AppSnackBar.show(
                                         context,
-                                        AppErrorSpec.success('링크를 수정했습니다.'),
+                                        AppErrorSpec.success(
+                                          '"$prevLabel" 링크를 "$newLabel"로 수정했습니다.',
+                                        ),
                                       );
                                     } catch (e) {
                                       if (!mounted) return;
@@ -326,35 +358,20 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                                     }
                                     break;
                                   case LinkAction.delete:
+                                    final delLabel =
+                                        (link.label?.trim().isNotEmpty == true)
+                                        ? link.label!.trim()
+                                        : '링크';
+
                                     final shouldDelete =
-                                        await showDialog<bool>(
+                                        await showDesignConfirmDialog(
                                           context: context,
-                                          builder: (ctx) => AlertDialog(
-                                            title: const Text('링크 삭제'),
-                                            content: const Text(
-                                              '이 링크를 삭제할까요?',
-                                            ),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () => Navigator.of(
-                                                  ctx,
-                                                ).pop(false),
-                                                child: const Text('취소'),
-                                              ),
-                                              ElevatedButton(
-                                                onPressed: () => Navigator.of(
-                                                  ctx,
-                                                ).pop(true),
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Colors.red,
-                                                  foregroundColor: Colors.white,
-                                                ),
-                                                child: const Text('삭제'),
-                                              ),
-                                            ],
-                                          ),
-                                        ) ??
-                                        false;
+                                          title: '링크 삭제 확인',
+                                          message:
+                                              '이 "$delLabel" 링크를 삭제할까요?\n이 작업은 되돌릴 수 없습니다.',
+                                          confirmLabel: '삭제',
+                                          destructive: true,
+                                        );
                                     if (!shouldDelete) {
                                       AppSnackBar.show(
                                         context,

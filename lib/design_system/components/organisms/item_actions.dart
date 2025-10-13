@@ -19,28 +19,62 @@ class ItemActionHandlers {
   });
 }
 
-
 Future<void> showItemActionsNear(
   BuildContext context, {
   required Offset anchorGlobal,
   required ItemActionHandlers handlers,
+  String? renameLabel,
+  String? moveLabel,
+  String? exportLabel,
+  String? duplicateLabel,
+  String? deleteLabel,
 }) {
   final actions = <CardSheetAction>[];
 
   if (handlers.onRename != null) {
-    actions.add(CardSheetAction(label: '이름 변경', svgPath: AppIcons.rename, onTap: () => handlers.onRename!()));
+    actions.add(
+      CardSheetAction(
+        label: renameLabel ?? '이름 변경',
+        svgPath: AppIcons.rename,
+        onTap: () => handlers.onRename!(),
+      ),
+    );
   }
   if (handlers.onMove != null) {
-    actions.add(CardSheetAction(label: '이동', svgPath: AppIcons.move, onTap: () => handlers.onMove!()));
+    actions.add(
+      CardSheetAction(
+        label: moveLabel ?? '이동',
+        svgPath: AppIcons.move,
+        onTap: () => handlers.onMove!(),
+      ),
+    );
   }
   if (handlers.onExport != null) {
-    actions.add(CardSheetAction(label: '내보내기', svgPath: AppIcons.export, onTap: () => handlers.onExport!()));
+    actions.add(
+      CardSheetAction(
+        label: exportLabel ?? '내보내기',
+        svgPath: AppIcons.export,
+        onTap: () => handlers.onExport!(),
+      ),
+    );
   }
   if (handlers.onDuplicate != null) {
-    actions.add(CardSheetAction(label: '복제', svgPath: AppIcons.copy, onTap: () => handlers.onDuplicate!()));
+    actions.add(
+      CardSheetAction(
+        label: duplicateLabel ?? '복제',
+        svgPath: AppIcons.copy,
+        onTap: () => handlers.onDuplicate!(),
+      ),
+    );
   }
   if (handlers.onDelete != null) {
-    actions.add(CardSheetAction(label: '삭제', svgPath: AppIcons.trash, onTap: () => handlers.onDelete!()));
+    actions.add(
+      CardSheetAction(
+        label: deleteLabel ?? '삭제',
+        svgPath: AppIcons.trash,
+        onTap: () => handlers.onDelete!(),
+      ),
+    );
   }
 
   return showCardActionSheetNear(
