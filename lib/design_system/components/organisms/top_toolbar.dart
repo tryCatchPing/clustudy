@@ -68,29 +68,29 @@ class TopToolbar extends StatelessWidget implements PreferredSizeWidget {
         color: AppColors.background,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             if (variant == TopToolbarVariant.folder &&
-                    onBack != null &&
-                    backSvgPath != null) ...[
-                  AppIconButton(
-                    svgPath: backSvgPath!,
-                    onPressed: onBack,
-                    tooltip: '이전',
-                    size: AppIconButtonSize.md,
-                    color: iconColor,
-                  ),
-                  const SizedBox(width: AppSpacing.medium),
+                onBack != null &&
+                backSvgPath != null) ...[
+              AppIconButton(
+                svgPath: backSvgPath!,
+                onPressed: onBack,
+                tooltip: '이전',
+                size: AppIconButtonSize.md,
+                color: iconColor,
+              ),
+              const SizedBox(width: AppSpacing.medium),
             ],
 
             Expanded(
-                  child: Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: titleStyle,
-                  ),
-                ),
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: titleStyle,
+              ),
+            ),
 
             Row(
               mainAxisSize: MainAxisSize.min,
