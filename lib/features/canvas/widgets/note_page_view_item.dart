@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:scribble/scribble.dart';
 
+import '../../../design_system/tokens/app_colors.dart';
 import '../../../shared/errors/app_error_mapper.dart';
 import '../../../shared/errors/app_error_spec.dart';
 import '../../../shared/routing/app_routes.dart';
@@ -187,10 +188,10 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                         // 저장된 링크 레이어 (Provider 기반)
                         SavedLinksLayer(
                           pageId: notifier.page!.pageId,
-                          fillColor: Colors.pinkAccent.withAlpha(
-                            (255 * 0.3).round(),
+                          fillColor: AppColors.linkerBlue.withAlpha(
+                            (255 * 0.15).round(),
                           ),
-                          borderColor: Colors.pinkAccent,
+                          borderColor: AppColors.linkerBlue,
                           borderWidth: 2.0,
                         ),
                         // 필기 레이어 (링커 모드가 아닐 때만 활성화)
@@ -217,13 +218,6 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                                 ? LinkerPointerMode.all
                                 : LinkerPointerMode.stylusOnly,
                             onRectCompleted: (rect) async {
-                              debugPrint(
-                                '[NotePageViewItem] onRectCompleted: '
-                                '(${rect.left.toStringAsFixed(1)},'
-                                '${rect.top.toStringAsFixed(1)},'
-                                '${rect.width.toStringAsFixed(1)}x'
-                                '${rect.height.toStringAsFixed(1)})',
-                              );
                               final res = await LinkCreationDialog.show(
                                 context,
                                 sourceNoteId: notifier.page!.noteId,
@@ -255,19 +249,10 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                             onTapAt: (localPoint) async {
                               // provider 로 수정필요
                               final pageId = notifier.page!.pageId;
-                              debugPrint(
-                                '[NotePageViewItem] onTapAt '
-                                '${localPoint.dx.toStringAsFixed(1)},'
-                                '${localPoint.dy.toStringAsFixed(1)}',
-                              );
                               final link = ref.read(
                                 linkAtPointProvider(pageId, localPoint),
                               );
                               if (link != null) {
-                                debugPrint(
-                                  '[NotePageViewItem] hit saved link: '
-                                  '${link.id}',
-                                );
                                 final action = await LinkActionsSheet.show(
                                   context,
                                   link,
@@ -275,9 +260,6 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                                 if (!mounted || action == null) return;
                                 switch (action) {
                                   case LinkAction.navigate:
-                                    debugPrint(
-                                      '[LinkNav] navigate: target=${link.targetNoteId} (RouteAware will manage session)',
-                                    );
                                     // Save current page before navigating to the target note
                                     await SketchPersistService.saveCurrentPage(
                                       ref,
@@ -313,9 +295,6 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                                         'noteId': link.targetNoteId,
                                       },
                                     );
-                                    debugPrint(
-                                      '[LinkNav] pushed to noteId=${link.targetNoteId}',
-                                    );
                                     break;
                                   case LinkAction.edit:
                                     // 링크 수정: 타깃 노트 선택(기존 생성 다이얼로그 재사용)
@@ -326,12 +305,6 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                                         );
                                     if (editRes == null) break;
                                     try {
-                                      debugPrint(
-                                        '[LinkEdit/UI] update linkId=${link.id} '
-                                        'oldTarget=${link.targetNoteId} '
-                                        'newTargetId=${editRes.targetNoteId} '
-                                        'newTitle=${editRes.targetTitle}',
-                                      );
                                       await ref
                                           .read(
                                             linkCreationControllerProvider,
@@ -342,9 +315,6 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                                             targetTitle: editRes.targetTitle,
                                           );
                                       if (!mounted) return;
-                                      debugPrint(
-                                        '[LinkEdit/UI] updated linkId=${link.id}',
-                                      );
                                       AppSnackBar.show(
                                         context,
                                         AppErrorSpec.success('링크를 수정했습니다.'),
@@ -419,10 +389,11 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                               }
                             },
                             minLinkerRectangleSize: 16.0,
-                            currentLinkerFillColor: Colors.pinkAccent.withAlpha(
-                              (255 * 0.15).round(),
-                            ),
-                            currentLinkerBorderColor: Colors.pinkAccent,
+                            currentLinkerFillColor: AppColors.linkerBlue
+                                .withAlpha(
+                                  (255 * 0.15).round(),
+                                ),
+                            currentLinkerBorderColor: AppColors.linkerBlue,
                             currentLinkerBorderWidth: 1.5,
                           ),
                         ),
