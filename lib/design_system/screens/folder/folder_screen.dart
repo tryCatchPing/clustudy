@@ -86,7 +86,7 @@ class FolderScreen extends StatelessWidget {
                 // 폴더 생성(있다면 연결 — 없으면 나중에 Store 메서드 붙이세요)
                 DockItem(
                   label: '폴더 생성',
-                  svgPath: AppIcons.folderAdd,
+                  svgPath: AppIcons.folderXLarge,
                   onTap: () async {
                     // await showCreationSheet(
                     //   context,
