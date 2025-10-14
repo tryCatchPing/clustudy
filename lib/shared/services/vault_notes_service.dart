@@ -11,6 +11,7 @@ import '../../features/vaults/models/folder_model.dart';
 import '../../features/vaults/models/note_placement.dart';
 import '../../features/vaults/models/vault_item.dart';
 import '../../features/vaults/models/vault_model.dart';
+import '../constants/vault_constants.dart';
 import '../repositories/link_repository.dart';
 import '../repositories/vault_tree_repository.dart';
 import 'db_txn_runner.dart';
@@ -60,7 +61,6 @@ class FolderCascadeImpact {
 /// - 트리의 표시명 정책을 준수하고, 콘텐츠 제목을 미러로 동기화합니다.
 class VaultNotesService {
   static const _uuid = Uuid();
-  static const String _temporaryVaultName = 'temporary vault';
   final VaultTreeRepository vaultTree;
   final NotesRepository notesRepo;
   final LinkRepository linkRepo;
@@ -836,13 +836,13 @@ class VaultNotesService {
 
     // 기존 temporary vault 찾기
     for (final vault in vaults) {
-      if (vault.name == _temporaryVaultName) {
+      if (vault.name == VaultConstants.temporaryVaultName) {
         return vault.vaultId;
       }
     }
 
     // 없으면 새로 생성
-    final vault = await createVault(_temporaryVaultName);
+    final vault = await createVault(VaultConstants.temporaryVaultName);
     return vault.vaultId;
   }
 }

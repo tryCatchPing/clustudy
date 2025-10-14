@@ -10,6 +10,7 @@ import '../../../design_system/screens/settings/widgets/setting_side_sheet.dart'
 import '../../../design_system/tokens/app_colors.dart';
 import '../../../design_system/tokens/app_icons.dart';
 import '../../../design_system/tokens/app_spacing.dart';
+import '../../../shared/constants/vault_constants.dart';
 import '../../../shared/dialogs/design_sheet_helpers.dart';
 import '../../../shared/errors/app_error_mapper.dart';
 import '../../../shared/errors/app_error_spec.dart';
@@ -398,19 +399,24 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
         ? TopToolbarVariant.landing
         : TopToolbarVariant.folder;
 
+    final bool showGraphAction =
+        hasActiveVault &&
+        activeVault != null &&
+        activeVault.name != VaultConstants.temporaryVaultName;
+
     final toolbarActions = [
-      if (hasActiveVault) ...[
+      if (hasActiveVault)
         ToolbarAction(
           svgPath: AppIcons.search,
           onTap: _goToNoteSearch,
           tooltip: '노트 검색',
         ),
+      if (showGraphAction)
         ToolbarAction(
           svgPath: AppIcons.graphView,
           onTap: _goToVaultGraph,
           tooltip: '그래프 보기',
         ),
-      ],
       ToolbarAction(
         svgPath: AppIcons.settings,
         onTap: () {
