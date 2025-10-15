@@ -10,7 +10,6 @@ import '../../../design_system/screens/settings/widgets/setting_side_sheet.dart'
 import '../../../design_system/tokens/app_colors.dart';
 import '../../../design_system/tokens/app_icons.dart';
 import '../../../design_system/tokens/app_spacing.dart';
-import '../../../shared/constants/vault_constants.dart';
 import '../../../shared/dialogs/design_sheet_helpers.dart';
 import '../../../shared/errors/app_error_mapper.dart';
 import '../../../shared/errors/app_error_spec.dart';
@@ -104,12 +103,18 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
   }
 
   Future<void> _importPdfNote() async {
+    if (!_ensureActiveVaultSelected()) {
+      return;
+    }
     final spec = await _actions.importPdfNote();
     if (!mounted) return;
     AppSnackBar.show(context, spec);
   }
 
   Future<void> _createBlankNote() async {
+    if (!_ensureActiveVaultSelected()) {
+      return;
+    }
     await showDesignNoteCreationFlow(
       context: context,
       onSubmit: (name) => _actions.createBlankNote(name: name),
@@ -203,9 +208,13 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
   }
 
   Future<void> _showCreateFolderDialog(
-    String vaultId,
+    String? vaultId,
     String? parentFolderId,
   ) async {
+    if (vaultId == null) {
+      _showVaultRequiredMessage();
+      return;
+    }
     await showDesignFolderCreationFlow(
       context: context,
       onSubmit: (name) => _actions.createFolder(
@@ -213,6 +222,23 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
         parentFolderId,
         name,
       ),
+    );
+  }
+
+  bool _ensureActiveVaultSelected() {
+    final currentVaultId = ref.read(currentVaultProvider);
+    final hasVault = currentVaultId != null;
+    if (!hasVault) {
+      _showVaultRequiredMessage();
+    }
+    return hasVault;
+  }
+
+  void _showVaultRequiredMessage() {
+    if (!mounted) return;
+    AppSnackBar.show(
+      context,
+      AppErrorSpec.info('먼저 Vault를 선택해주세요.'),
     );
   }
 
@@ -399,10 +425,7 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
         ? TopToolbarVariant.landing
         : TopToolbarVariant.folder;
 
-    final bool showGraphAction =
-        hasActiveVault &&
-        activeVault != null &&
-        activeVault.name != VaultConstants.temporaryVaultName;
+    final bool showGraphAction = hasActiveVault && activeVault != null;
 
     final toolbarActions = [
       if (hasActiveVault)
@@ -640,11 +663,12 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
                     },
                     onCreateFolder: () {
                       _showCreateFolderDialog(
-                        currentVaultId!,
+                        currentVaultId,
                         currentFolderId,
                       );
                     },
                     onCreateVault: _showCreateVaultDialog,
+                    onRequireVaultSelection: _showVaultRequiredMessage,
                   ),
                 ),
               ),

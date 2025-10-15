@@ -17,6 +17,7 @@ class NoteListPrimaryActions extends StatelessWidget {
     required this.onCreateBlankNote,
     required this.onCreateFolder,
     required this.onCreateVault,
+    required this.onRequireVaultSelection,
   });
 
   final bool hasActiveVault;
@@ -25,60 +26,66 @@ class NoteListPrimaryActions extends StatelessWidget {
   final VoidCallback onCreateBlankNote;
   final VoidCallback onCreateFolder;
   final VoidCallback onCreateVault;
+  final VoidCallback onRequireVaultSelection;
 
   @override
   Widget build(BuildContext context) {
+    List<DockItem> buildItems() {
+      if (hasActiveVault) {
+        return [
+          DockItem(
+            label: '폴더 만들기',
+            svgPath: AppIcons.folderAdd,
+            onTap: onCreateFolder,
+            tooltip: '폴더 생성',
+          ),
+          DockItem(
+            label: '노트 만들기',
+            svgPath: AppIcons.noteAdd,
+            onTap: onCreateBlankNote,
+            tooltip: '빈 노트 생성',
+          ),
+          DockItem(
+            label: 'PDF 불러오기',
+            svgPath: AppIcons.download,
+            onTap: () {
+              if (isImporting) return;
+              onImportPdf();
+            },
+            tooltip: 'PDF 파일로 노트 생성',
+            loading: isImporting,
+          ),
+        ];
+      }
+
+      const tooltip = '먼저 Vault를 선택해주세요.';
+      return [
+        DockItem(
+          label: 'vault 만들기',
+          svgPath: AppIcons.plus,
+          onTap: onCreateVault,
+          tooltip: '새 Vault 생성',
+        ),
+        DockItem(
+          label: '노트 만들기',
+          svgPath: AppIcons.noteAdd,
+          onTap: onRequireVaultSelection,
+          tooltip: tooltip,
+        ),
+        DockItem(
+          label: 'PDF 불러오기',
+          svgPath: AppIcons.download,
+          onTap: onRequireVaultSelection,
+          tooltip: tooltip,
+        ),
+      ];
+    }
+
+    final items = buildItems();
+
     return Center(
       child: BottomActionsDockFixed(
-        items: hasActiveVault
-            ? [
-                DockItem(
-                  label: '폴더 만들기',
-                  svgPath: AppIcons.folderAdd,
-                  onTap: onCreateFolder,
-                  tooltip: '폴더 생성',
-                ),
-                DockItem(
-                  label: '노트 만들기',
-                  svgPath: AppIcons.noteAdd,
-                  onTap: onCreateBlankNote,
-                  tooltip: '빈 노트 생성',
-                ),
-                DockItem(
-                  label: 'PDF 불러오기',
-                  svgPath: AppIcons.download,
-                  onTap: () {
-                    if (isImporting) return;
-                    onImportPdf();
-                  },
-                  tooltip: 'PDF 파일로 노트 생성',
-                  loading: isImporting,
-                ),
-              ]
-            : [
-                DockItem(
-                  label: 'vault 만들기',
-                  svgPath: AppIcons.plus,
-                  onTap: onCreateVault,
-                  tooltip: '새 Vault 생성',
-                ),
-                DockItem(
-                  label: '노트 만들기',
-                  svgPath: AppIcons.noteAdd,
-                  onTap: onCreateBlankNote,
-                  tooltip: '빈 노트 생성',
-                ),
-                DockItem(
-                  label: 'PDF 불러오기',
-                  svgPath: AppIcons.download,
-                  onTap: () {
-                    if (isImporting) return;
-                    onImportPdf();
-                  },
-                  tooltip: 'PDF 파일로 노트 생성',
-                  loading: isImporting,
-                ),
-              ],
+        items: items,
       ),
     );
   }

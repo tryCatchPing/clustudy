@@ -46,6 +46,8 @@ class NoteListController extends StateNotifier<NoteListState> {
   final Ref ref;
   Timer? _searchDebounce;
 
+  static const _vaultRequiredMessage = '먼저 Vault를 선택해주세요.';
+
   VaultNotesService get _service => ref.read(vaultNotesServiceProvider);
 
   @override
@@ -94,25 +96,16 @@ class NoteListController extends StateNotifier<NoteListState> {
       );
     }
 
+    final vaultId = ref.read(currentVaultProvider);
+    if (vaultId == null) {
+      return AppErrorSpec.info(_vaultRequiredMessage);
+    }
+
     state = state.copyWith(isImporting: true);
     try {
-      final vaultId = ref.read(currentVaultProvider);
-      String actualVaultId;
-      String? folderId;
-
-      if (vaultId == null) {
-        // temporary vault 확보
-        actualVaultId = await _service.ensureTemporaryVault();
-        folderId = null;
-        // vault 선택
-        ref.read(currentVaultProvider.notifier).state = actualVaultId;
-        ref.read(currentFolderProvider(actualVaultId).notifier).state = null;
-      } else {
-        actualVaultId = vaultId;
-        folderId = ref.read(currentFolderProvider(vaultId));
-      }
+      final folderId = ref.read(currentFolderProvider(vaultId));
       final pdfNote = await _service.createPdfInFolder(
-        actualVaultId,
+        vaultId,
         parentFolderId: folderId,
       );
       return AppErrorSpec.success('PDF 노트 "${pdfNote.title}"가 생성되었습니다.');
@@ -127,17 +120,7 @@ class NoteListController extends StateNotifier<NoteListState> {
     try {
       final vaultId = ref.read(currentVaultProvider);
       if (vaultId == null) {
-        // temporary vault 확보
-        final tempVaultId = await _service.ensureTemporaryVault();
-        // 해당 vault에 노트 생성
-        final blankNote = await _service.createBlankInFolder(
-          tempVaultId,
-          name: name,
-        );
-        // vault 선택
-        ref.read(currentVaultProvider.notifier).state = tempVaultId;
-        ref.read(currentFolderProvider(tempVaultId).notifier).state = null;
-        return AppErrorSpec.success('빈 노트 "${blankNote.title}"가 생성되었습니다.');
+        return AppErrorSpec.info(_vaultRequiredMessage);
       }
       final folderId = ref.read(currentFolderProvider(vaultId));
       final blankNote = await _service.createBlankInFolder(
