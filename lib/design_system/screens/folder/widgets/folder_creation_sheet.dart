@@ -72,7 +72,7 @@ class _DesignFolderCreationSheetState
           mainAxisSize: MainAxisSize.min,
           children: [
             SvgPicture.asset(
-              AppIcons.folder,
+              AppIcons.folderXLarge,
               width: 200,
               height: 184,
               colorFilter: const ColorFilter.mode(
