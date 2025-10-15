@@ -39,7 +39,7 @@ dependencies:
   # GitHub 최신 버전으로 업데이트 (압력 설정 지원)
   scribble:
     git:
-      url: https://github.com/timcreatedit/scribble.git
+      url: https://github.com/ehdnd/scribble.git
       ref: main
   go_router: ^16.0.0
   pdfx: ^2.5.0
