@@ -95,9 +95,11 @@ class _VaultGraphScreenState extends ConsumerState<VaultGraphScreen> {
           final options = Options();
           options.enableHit = true;
           options.panelDelay = const Duration(milliseconds: 200);
+
           // edgePanelBuilder가 null이면 패키지가 오버레이를 등록하지 않아 assertion이 발생하므로
           // 빈 빌더를 명시해 오버레이 등록만 수행하고 아무것도 그리지 않도록 한다.
           options.edgePanelBuilder = (_, __) => const SizedBox.shrink();
+
           options.textGetter = (vertex) {
             final t = vertex.tag;
             return t.isEmpty ? '${vertex.id}' : t;
@@ -114,30 +116,25 @@ class _VaultGraphScreenState extends ConsumerState<VaultGraphScreen> {
               ),
             );
           };
+
           options.backgroundBuilder = (context) => Container(
             color: AppColors.background,
           );
+
           // hover 하이라이트는 패키지 기본 동작 활용 (vertexPanelBuilder 미사용)
-          // 노드 색상: 앱의 pen/highlighter 색상 기반 (명확한 구분)
+          // 노드 색상: 기본은 회색 팔레트로 통일
           options.graphStyle = (GraphStyle()
+            ..defaultColor = (() => [AppColors.primary])
             ..tagColorByIndex = [
-              AppColors.penBlue, // 파랑 #1A5DBA
-              AppColors.penRed, // 빨강 #C72C2C
-              AppColors.penGreen, // 초록 #277A3E
-              AppColors.primary, // 네이비 #182955
-              AppColors.gray50, // 검정 #1F1F1F
-              AppColors.penBlue.withValues(alpha: 0.6), // 연한 파랑
-              AppColors.penRed.withValues(alpha: 0.6), // 연한 빨강
-              AppColors.penGreen.withValues(alpha: 0.6), // 연한 초록
-              AppColors.primary.withValues(alpha: 0.6), // 연한 네이비
-              AppColors.gray40, // 회색 #656565
+              AppColors.primary.withValues(alpha: 0.85),
+              AppColors.primary.withValues(alpha: 0.7),
+              AppColors.primary.withValues(alpha: 0.6),
             ]
-            ..hoverOpacity = 0.35);
+            ..hoverOpacity = 0.3);
           // 노드 히트율 개선: 최소 반지름 보정
           options.vertexShape = VertexCircleShape(
             decorators: [MinRadiusVertexDecorator(min: 14)],
           );
-
           // 노드 탭: 즉시 해당 노트로 이동
           options.onVertexTapUp = (vertex, event) {
             final ctx = vertex.cpn?.context;
