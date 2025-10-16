@@ -404,9 +404,6 @@ class VaultNotesService {
     if (vault == null) {
       throw Exception('Vault not found: $vaultId');
     }
-    if (vault.vaultId == 'default') {
-      throw const FormatException('기본 Vault는 삭제할 수 없습니다.');
-    }
 
     final noteIds = await _collectAllNoteIdsInVault(vaultId);
     for (final noteId in noteIds) {
@@ -831,6 +828,22 @@ class VaultNotesService {
     }
     return noteIds;
   }
+
+  /// Temporary vault가 없으면 생성하고, vault ID를 반환합니다.
+  // Future<String> ensureTemporaryVault() async {
+  //   final vaults = await vaultTree.watchVaults().first;
+
+  //   // 기존 temporary vault 찾기
+  //   for (final vault in vaults) {
+  //     if (vault.name == VaultConstants.temporaryVaultName) {
+  //       return vault.vaultId;
+  //     }
+  //   }
+
+  //   // 없으면 새로 생성
+  //   final vault = await createVault(VaultConstants.temporaryVaultName);
+  //   return vault.vaultId;
+  // }
 }
 
 class _FolderCtx {

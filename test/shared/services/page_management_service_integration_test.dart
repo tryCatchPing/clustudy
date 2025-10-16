@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../../lib/features/notes/data/memory_notes_repository.dart';
-import '../../../lib/features/notes/models/note_model.dart';
-import '../../../lib/features/notes/models/note_page_model.dart';
-import '../../../lib/shared/services/page_management_service.dart';
+import 'package:it_contest/features/notes/data/memory_notes_repository.dart';
+import 'package:it_contest/features/notes/models/note_model.dart';
+import 'package:it_contest/features/notes/models/note_page_model.dart';
+import 'package:it_contest/shared/services/page_management_service.dart';
 
 void main() {
   group('PageManagementService Integration Tests', () {

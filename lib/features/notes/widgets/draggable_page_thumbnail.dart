@@ -3,6 +3,9 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../design_system/tokens/app_colors.dart';
+import '../../../design_system/tokens/app_spacing.dart';
+import '../../../design_system/tokens/app_typography.dart';
 import '../../../shared/services/page_thumbnail_service.dart';
 import '../data/notes_repository_provider.dart';
 import '../models/note_page_model.dart';
@@ -131,17 +134,8 @@ class _DraggablePageThumbnailState extends ConsumerState<DraggablePageThumbnail>
           ),
         );
 
-    // 삭제 버튼 애니메이션 설정
-    _deleteButtonAnimation =
-        Tween<double>(
-          begin: 0.0,
-          end: 1.0,
-        ).animate(
-          CurvedAnimation(
-            parent: _dragController,
-            curve: Curves.easeInOut,
-          ),
-        );
+    // 삭제 버튼 애니메이션: 항상 표시
+    _deleteButtonAnimation = const AlwaysStoppedAnimation(1.0);
 
     // 썸네일 자동 로딩 시작
     if (widget.autoLoadThumbnail && widget.thumbnail == null) {
@@ -171,25 +165,7 @@ class _DraggablePageThumbnailState extends ConsumerState<DraggablePageThumbnail>
     }
   }
 
-  /// 길게 누르기 시작 처리.
-  void _onLongPressStart(LongPressStartDetails details) {
-    _longPressController.forward();
-  }
-
-  /// 길게 누르기 종료 처리.
-  void _onLongPressEnd(LongPressEndDetails details) {
-    _longPressController.reverse();
-
-    if (!_isDragModeActive) {
-      _isDragModeActive = true;
-      widget.onDragStart?.call();
-    }
-  }
-
-  /// 길게 누르기 취소 처리.
-  void _onLongPressCancel() {
-    _longPressController.reverse();
-  }
+  // 길게 누르기 제스처 처리는 LongPressDraggable가 담당합니다.
 
   /// 썸네일 탭 처리.
   void _onTap() {
@@ -250,7 +226,7 @@ class _DraggablePageThumbnailState extends ConsumerState<DraggablePageThumbnail>
 
         return Transform.scale(
           scale: scale,
-          child: Draggable<NotePageModel>(
+          child: LongPressDraggable<NotePageModel>(
             data: widget.page,
             feedback: Material(
               color: Colors.transparent,
@@ -284,7 +260,7 @@ class _DraggablePageThumbnailState extends ConsumerState<DraggablePageThumbnail>
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: Colors.grey[300]!,
+                    color: AppColors.gray20,
                     width: 2,
                     style: BorderStyle.solid,
                   ),
@@ -300,9 +276,6 @@ class _DraggablePageThumbnailState extends ConsumerState<DraggablePageThumbnail>
             },
             child: GestureDetector(
               onTap: _onTap,
-              onLongPressStart: _onLongPressStart,
-              onLongPressEnd: _onLongPressEnd,
-              onLongPressCancel: _onLongPressCancel,
               child: Container(
                 width: widget.size,
                 height: widget.size,
@@ -325,8 +298,9 @@ class _DraggablePageThumbnailState extends ConsumerState<DraggablePageThumbnail>
                     // 페이지 번호 오버레이
                     _buildPageNumberOverlay(),
 
-                    // 삭제 버튼 오버레이
-                    if (widget.showDeleteButton) _buildDeleteButtonOverlay(),
+                    // 삭제 버튼 오버레이 (onDelete가 null이 아닐 때만 표시)
+                    if (widget.showDeleteButton && widget.onDelete != null)
+                      _buildDeleteButtonOverlay(),
 
                     // 드래그 상태 오버레이
                     if (widget.isDragging) _buildDragOverlay(),
@@ -343,17 +317,17 @@ class _DraggablePageThumbnailState extends ConsumerState<DraggablePageThumbnail>
   /// 썸네일 콘텐츠를 빌드합니다.
   Widget _buildThumbnailContent() {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(AppSpacing.small),
       child: Container(
         width: widget.size,
         height: widget.size,
         decoration: BoxDecoration(
-          color: Colors.grey[100],
+          color: AppColors.gray10,
           border: Border.all(
-            color: Colors.grey[300]!,
+            color: AppColors.gray20,
             width: 1,
           ),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppSpacing.small),
         ),
         child: _buildThumbnailChild(),
       ),
@@ -417,21 +391,20 @@ class _DraggablePageThumbnailState extends ConsumerState<DraggablePageThumbnail>
     return Container(
       width: widget.size,
       height: widget.size,
-      color: Colors.red[50],
+      color: AppColors.errorLight,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
+          const Icon(
             Icons.error_outline,
             size: 32,
-            color: Colors.red[400],
+            color: AppColors.error,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           Text(
             '로드 실패',
-            style: TextStyle(
-              fontSize: 10,
-              color: Colors.red[600],
+            style: AppTypography.caption.copyWith(
+              color: AppColors.errorDark,
             ),
           ),
         ],
@@ -444,7 +417,7 @@ class _DraggablePageThumbnailState extends ConsumerState<DraggablePageThumbnail>
     return Container(
       width: widget.size,
       height: widget.size,
-      color: Colors.grey[200],
+      color: AppColors.gray10,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -453,14 +426,13 @@ class _DraggablePageThumbnailState extends ConsumerState<DraggablePageThumbnail>
                 ? Icons.picture_as_pdf
                 : Icons.note,
             size: 32,
-            color: Colors.grey[400],
+            color: AppColors.gray30,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           Text(
             '페이지 ${widget.page.pageNumber}',
-            style: TextStyle(
-              fontSize: 10,
-              color: Colors.grey[600],
+            style: AppTypography.caption.copyWith(
+              color: AppColors.gray40,
             ),
           ),
         ],
@@ -471,19 +443,21 @@ class _DraggablePageThumbnailState extends ConsumerState<DraggablePageThumbnail>
   /// 페이지 번호 오버레이를 빌드합니다.
   Widget _buildPageNumberOverlay() {
     return Positioned(
-      bottom: 4,
-      left: 4,
+      bottom: AppSpacing.xs,
+      left: AppSpacing.xs,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.small,
+          vertical: 2,
+        ),
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.7),
-          borderRadius: BorderRadius.circular(4),
+          color: AppColors.gray50.withValues(alpha: 0.8),
+          borderRadius: BorderRadius.circular(AppSpacing.xs),
         ),
         child: Text(
           '${widget.page.pageNumber}',
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 10,
+          style: AppTypography.caption.copyWith(
+            color: AppColors.white,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -496,32 +470,27 @@ class _DraggablePageThumbnailState extends ConsumerState<DraggablePageThumbnail>
     return Positioned(
       top: -4,
       right: -4,
-      child: AnimatedBuilder(
-        animation: _deleteButtonAnimation,
-        builder: (context, child) {
-          return Transform.scale(
-            scale: _deleteButtonAnimation.value,
-            child: Opacity(
-              opacity: _deleteButtonAnimation.value,
-              child: GestureDetector(
-                onTap: _onDeleteTap,
-                child: Container(
-                  width: 24,
-                  height: 24,
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.close,
-                    color: Colors.white,
-                    size: 16,
-                  ),
-                ),
-              ),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: _onDeleteTap,
+        child: Container(
+          width: 32,
+          height: 32,
+          padding: const EdgeInsets.all(4),
+          child: Container(
+            width: 24,
+            height: 24,
+            decoration: const BoxDecoration(
+              color: AppColors.error,
+              shape: BoxShape.circle,
             ),
-          );
-        },
+            child: const Icon(
+              Icons.close,
+              color: AppColors.white,
+              size: 16,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -531,16 +500,16 @@ class _DraggablePageThumbnailState extends ConsumerState<DraggablePageThumbnail>
     return Positioned.fill(
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppSpacing.small),
           border: Border.all(
-            color: Theme.of(context).primaryColor,
+            color: AppColors.primary,
             width: 2,
           ),
         ),
         child: Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(6),
-            color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(AppSpacing.small),
+            color: AppColors.primary.withValues(alpha: 0.1),
           ),
         ),
       ),

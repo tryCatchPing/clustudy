@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../design_system/components/molecules/add_page_card.dart';
+import '../../../design_system/tokens/app_colors.dart';
+import '../../../design_system/tokens/app_icons.dart';
+import '../../../design_system/tokens/app_spacing.dart';
+import '../../../design_system/tokens/app_typography.dart';
+import '../../../shared/errors/app_error_spec.dart';
 import '../../../shared/services/page_order_service.dart';
+import '../../../shared/widgets/app_snackbar.dart';
 import '../../canvas/providers/note_editor_provider.dart';
 import '../data/derived_note_providers.dart';
 import '../data/notes_repository_provider.dart';
@@ -43,7 +50,11 @@ class PageThumbnailGrid extends ConsumerStatefulWidget {
     this.onPageDelete,
     this.onPageTap,
     this.onReorderComplete,
+    this.onPageAdd,
   });
+
+  /// 새 페이지 추가 콜백 (제공 시 마지막 셀에 AddPageCard 렌더링).
+  final VoidCallback? onPageAdd;
 
   @override
   ConsumerState<PageThumbnailGrid> createState() => _PageThumbnailGridState();
@@ -95,9 +106,11 @@ class _PageThumbnailGridState extends ConsumerState<PageThumbnailGrid> {
         // 가용 너비에 따라 동적으로 열 개수 조정
         final availableWidth = constraints.maxWidth;
         final itemWidth = widget.thumbnailSize + widget.spacing;
+        // 셀 외부의 공백을 최소화하기 위해 가용 너비에 맞춰 컬럼 수를 최대한 늘립니다.
+        // (thumbnailSize + spacing)를 기준으로 계산하고, 최소 1열 보장.
         final dynamicCrossAxisCount = (availableWidth / itemWidth)
             .floor()
-            .clamp(1, widget.crossAxisCount);
+            .clamp(1, 1000);
 
         return GridView.builder(
           padding: EdgeInsets.all(widget.spacing),
@@ -107,12 +120,34 @@ class _PageThumbnailGridState extends ConsumerState<PageThumbnailGrid> {
             mainAxisSpacing: widget.spacing,
             childAspectRatio: 1.0,
           ),
-          itemCount: pages.length,
+          itemCount: pages.length + (widget.onPageAdd != null ? 1 : 0),
           itemBuilder: (context, index) {
+            final hasAdd = widget.onPageAdd != null;
+            // 첫 번째 인덱스는 AddPageCard로 처리
+            if (hasAdd && index == 0) {
+              // AddPageCard는 라벨이 포함되어 정사각 셀보다 약간 높습니다.
+              // 셀 오버플로를 방지하기 위해 scaleDown으로 맞춥니다.
+              return Center(
+                child: SizedBox(
+                  width: widget.thumbnailSize,
+                  height: widget.thumbnailSize,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: AddPageCard(
+                      plusSvgPath: AppIcons.plus,
+                      onTap: widget.onPageAdd,
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            final pageIndex = hasAdd ? index - 1 : index;
             return _buildGridItem(
-              pages[index],
-              index,
+              pages[pageIndex],
+              pageIndex,
               pageControllerState,
+              pages.length, // 전체 페이지 개수 전달
             );
           },
         );
@@ -125,101 +160,81 @@ class _PageThumbnailGridState extends ConsumerState<PageThumbnailGrid> {
     NotePageModel page,
     int index,
     PageControllerState pageControllerState,
+    int totalPageCount,
   ) {
     final isDragging = _draggingIndex == index;
     final isDropTarget = _dragOverIndex == index && !isDragging;
     final thumbnail = pageControllerState.getThumbnail(page.pageId);
 
-    return DragTarget<NotePageModel>(
-      onWillAcceptWithDetails: (details) {
-        // 자기 자신으로의 드롭은 허용하지 않음
-        return details.data.pageId != page.pageId;
-      },
-      onAcceptWithDetails: (details) {
-        _handleDrop(details.data, index);
-      },
-      onMove: (details) {
-        if (_dragOverIndex != index) {
-          setState(() {
-            _dragOverIndex = index;
-          });
-        }
-      },
-      onLeave: (data) {
-        if (_dragOverIndex == index) {
-          setState(() {
-            _dragOverIndex = null;
-          });
-        }
-      },
-      builder: (context, candidateData, rejectedData) {
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: isDropTarget
-                ? Border.all(
-                    color: Theme.of(context).primaryColor,
-                    width: 2,
-                  )
-                : null,
-            color: isDropTarget
-                ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
-                : null,
-          ),
-          child: Stack(
-            children: [
-              // 드롭 가능한 위치 표시
-              if (isDropTarget) _buildDropIndicator(),
+    // 드롭 가능 영역을 썸네일 크기로 제한하기 위해 DragTarget을 SizedBox로 감쌉니다.
+    return Center(
+      child: SizedBox(
+        width: widget.thumbnailSize,
+        height: widget.thumbnailSize,
+        child: DragTarget<NotePageModel>(
+          onWillAcceptWithDetails: (details) {
+            // 자기 자신으로의 드롭은 허용하지 않음
+            return details.data.pageId != page.pageId;
+          },
+          onAcceptWithDetails: (details) {
+            _handleDrop(details.data, index);
+          },
+          onMove: (details) {
+            if (_dragOverIndex != index) {
+              setState(() {
+                _dragOverIndex = index;
+              });
+            }
+          },
+          onLeave: (data) {
+            if (_dragOverIndex == index) {
+              setState(() {
+                _dragOverIndex = null;
+              });
+            }
+          },
+          builder: (context, candidateData, rejectedData) {
+            return Stack(
+              children: [
+                // 드롭 가능한 위치 표시 (썸네일 영역만)
+                if (isDropTarget) _buildDropIndicator(),
 
-              // 썸네일 위젯
-              DraggablePageThumbnail(
-                key: ValueKey(page.pageId), // 고유한 Key 설정
-                page: page,
-                thumbnail: thumbnail,
-                size: widget.thumbnailSize,
-                isDragging: isDragging,
-                onDelete: widget.onPageDelete != null
-                    ? () => widget.onPageDelete!(page)
-                    : null,
-                onTap: widget.onPageTap != null
-                    ? () => widget.onPageTap!(page, index)
-                    : null,
-                onDragStart: () => _handleDragStart(index),
-                onDragEnd: () => _handleDragEnd(),
-              ),
-            ],
-          ),
-        );
-      },
+                // 썸네일 위젯
+                DraggablePageThumbnail(
+                  key: ValueKey(page.pageId), // 고유한 Key 설정
+                  page: page,
+                  thumbnail: thumbnail,
+                  size: widget.thumbnailSize,
+                  isDragging: isDragging,
+                  // 마지막 페이지는 삭제 버튼 숨김 (페이지가 1개만 남으면 삭제 불가)
+                  onDelete: (widget.onPageDelete != null && totalPageCount > 1)
+                      ? () => widget.onPageDelete!(page)
+                      : null,
+                  onTap: widget.onPageTap != null
+                      ? () => widget.onPageTap!(page, index)
+                      : null,
+                  onDragStart: () => _handleDragStart(index),
+                  onDragEnd: () => _handleDragEnd(),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 
   /// 드롭 인디케이터를 빌드합니다.
   Widget _buildDropIndicator() {
+    // 풀-필 오버레이 대신 얇은 외곽선만 유지하여 시각적 부담을 줄입니다.
     return Positioned.fill(
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: Theme.of(context).primaryColor,
-            width: 2,
-          ),
-        ),
-        child: Center(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Text(
-              '여기에 놓기',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
+      child: IgnorePointer(
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppSpacing.small),
+            border: Border.all(
+              color: AppColors.primary,
+              width: 1,
             ),
           ),
         ),
@@ -229,29 +244,29 @@ class _PageThumbnailGridState extends ConsumerState<PageThumbnailGrid> {
 
   /// 빈 상태를 빌드합니다.
   Widget _buildEmptyState() {
+    if (widget.onPageAdd != null) {
+      return Center(
+        child: AddPageCard(
+          plusSvgPath: AppIcons.plus,
+          onTap: widget.onPageAdd,
+        ),
+      );
+    }
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
+          const Icon(
             Icons.note_add,
             size: 64,
-            color: Colors.grey[400],
+            color: AppColors.gray30,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.medium),
           Text(
             '페이지가 없습니다',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '새 페이지를 추가해보세요',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
+            style: AppTypography.body3.copyWith(
+              color: AppColors.gray40,
             ),
           ),
         ],
@@ -280,8 +295,8 @@ class _PageThumbnailGridState extends ConsumerState<PageThumbnailGrid> {
   Widget _buildSkeletonItem() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(8),
+        color: AppColors.gray10,
+        borderRadius: BorderRadius.circular(AppSpacing.small),
       ),
       child: const Center(
         child: CircularProgressIndicator(),
@@ -295,29 +310,27 @@ class _PageThumbnailGridState extends ConsumerState<PageThumbnailGrid> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
+          const Icon(
             Icons.error_outline,
             size: 64,
-            color: Colors.red[400],
+            color: AppColors.error,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.medium),
           Text(
             '페이지를 불러올 수 없습니다',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.red[600],
+            style: AppTypography.body3.copyWith(
+              color: AppColors.errorDark,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.small),
           Text(
             error.toString(),
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
+            style: AppTypography.caption.copyWith(
+              color: AppColors.gray40,
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.medium),
           ElevatedButton(
             onPressed: () {
               // 새로고침
@@ -424,13 +437,11 @@ class _PageThumbnailGridState extends ConsumerState<PageThumbnailGrid> {
           .read(pageControllerNotifierProvider(widget.noteId).notifier)
           .setError('페이지 순서 변경 실패: $e');
 
-      // 스낵바로 오류 표시
+      // 디자인 스낵바로 오류 표시
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('페이지 순서 변경에 실패했습니다: $e'),
-            backgroundColor: Colors.red,
-          ),
+        AppSnackBar.show(
+          context,
+          AppErrorSpec.error('페이지 순서 변경 실패: $e'),
         );
       }
     } finally {

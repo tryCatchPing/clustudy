@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:scribble/scribble.dart';
 
+import '../../../design_system/tokens/app_colors.dart';
+import '../../../shared/dialogs/design_sheet_helpers.dart';
 import '../../../shared/errors/app_error_mapper.dart';
 import '../../../shared/errors/app_error_spec.dart';
 import '../../../shared/routing/app_routes.dart';
@@ -46,6 +48,7 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
   Timer? _debounceTimer;
   double _lastScale = 1.0;
   // 임시 드래그 상태는 LinkerGestureLayer 내부에서만 관리되므로 상태 제거
+  final GlobalKey _linkerLayerKey = GlobalKey();
 
   // 비-build 컨텍스트에서 현재 노트의 notifier 접근용
   CustomScribbleNotifier get _currentNotifier =>
@@ -142,299 +145,277 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
       debugPrint('렌더링: LinkerGestureLayer (CustomPaint + GestureDetector)');
     }
 
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: Card(
-        elevation: 8,
-        shadowColor: Colors.black26,
-        surfaceTintColor: Colors.white,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(6),
-          child: InteractiveViewer(
-            transformationController: ref.watch(
-              transformationControllerProvider(widget.noteId),
-            ),
-            minScale: 0.3,
-            maxScale: 3.0,
-            constrained: false,
-            // 링커 모드에서는 패닝을 비활성화하여 제스처 레이어가 드래그를 선점하도록 함
-            panEnabled: !isLinkerMode,
-            scaleEnabled: true,
-            onInteractionEnd: (details) {
-              _debounceTimer?.cancel();
-              _updateScale();
-            },
-            child: SizedBox(
-              width: drawingWidth * NoteEditorConstants.canvasScale,
-              height: drawingHeight * NoteEditorConstants.canvasScale,
-              child: Center(
-                child: SizedBox(
-                  width: drawingWidth,
-                  height: drawingHeight,
-                  child: ValueListenableBuilder<ScribbleState>(
-                    valueListenable: notifier,
-                    builder: (context, scribbleState, child) {
-                      final currentToolMode = ref
-                          .read(toolSettingsNotifierProvider(widget.noteId))
-                          .toolMode;
-                      final pointerPolicy = ref.watch(pointerPolicyProvider);
-                      return Stack(
-                        children: [
-                          // 배경 레이어
-                          CanvasBackgroundWidget(
-                            page: notifier.page!,
-                            width: drawingWidth,
-                            height: drawingHeight,
+    return Card(
+      elevation: 8,
+      shadowColor: Colors.black26,
+      surfaceTintColor: Colors.white,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(6),
+        child: InteractiveViewer(
+          transformationController: ref.watch(
+            transformationControllerProvider(widget.noteId),
+          ),
+          minScale: 0.3,
+          maxScale: 3.0,
+          constrained: false,
+          // 링커 모드에서는 패닝을 비활성화하여 제스처 레이어가 드래그를 선점하도록 함
+          panEnabled: !isLinkerMode,
+          scaleEnabled: true,
+          onInteractionEnd: (details) {
+            _debounceTimer?.cancel();
+            _updateScale();
+          },
+          child: SizedBox(
+            width: drawingWidth * NoteEditorConstants.canvasScale,
+            height: drawingHeight * NoteEditorConstants.canvasScale,
+            child: Center(
+              child: SizedBox(
+                width: drawingWidth,
+                height: drawingHeight,
+                child: ValueListenableBuilder<ScribbleState>(
+                  valueListenable: notifier,
+                  builder: (context, scribbleState, child) {
+                    final currentToolMode = ref
+                        .read(toolSettingsNotifierProvider(widget.noteId))
+                        .toolMode;
+                    final pointerPolicy = ref.watch(pointerPolicyProvider);
+                    return Stack(
+                      children: [
+                        // 배경 레이어
+                        CanvasBackgroundWidget(
+                          page: notifier.page!,
+                          width: drawingWidth,
+                          height: drawingHeight,
+                        ),
+                        // 저장된 링크 레이어 (Provider 기반)
+                        SavedLinksLayer(
+                          pageId: notifier.page!.pageId,
+                          fillColor: AppColors.linkerBlue.withAlpha(
+                            (255 * 0.15).round(),
                           ),
-                          // 저장된 링크 레이어 (Provider 기반)
-                          SavedLinksLayer(
-                            pageId: notifier.page!.pageId,
-                            fillColor: Colors.pinkAccent.withAlpha(
-                              (255 * 0.3).round(),
-                            ),
-                            borderColor: Colors.pinkAccent,
-                            borderWidth: 2.0,
-                          ),
-                          // 필기 레이어 (링커 모드가 아닐 때만 활성화)
-                          IgnorePointer(
-                            ignoring: currentToolMode.isLinker,
-                            child: ClipRect(
-                              child: Scribble(
-                                notifier: notifier,
-                                drawPen: !currentToolMode.isLinker,
-                                simulatePressure: ref.watch(
-                                  simulatePressureProvider,
-                                ),
+                          borderColor: AppColors.linkerBlue,
+                          borderWidth: 2.0,
+                        ),
+                        // 필기 레이어 (링커 모드가 아닐 때만 활성화)
+                        IgnorePointer(
+                          ignoring: currentToolMode.isLinker,
+                          child: ClipRect(
+                            child: Scribble(
+                              notifier: notifier,
+                              drawPen: !currentToolMode.isLinker,
+                              simulatePressure: ref.watch(
+                                simulatePressureProvider,
                               ),
                             ),
                           ),
-                          // 패닝은 InteractiveViewer가 처리
-                          // 링커 제스처 및 그리기 레이어 (항상 존재하며, 내부적으로 toolMode에 따라 드래그/탭 처리)
-                          Positioned.fill(
-                            child: LinkerGestureLayer(
-                              toolMode: currentToolMode,
-                              // Use global pointer policy
-                              pointerMode:
-                                  pointerPolicy == ScribblePointerMode.all
-                                  ? LinkerPointerMode.all
-                                  : LinkerPointerMode.stylusOnly,
-                              onRectCompleted: (rect) async {
-                                debugPrint(
-                                  '[NotePageViewItem] onRectCompleted: '
-                                  '(${rect.left.toStringAsFixed(1)},'
-                                  '${rect.top.toStringAsFixed(1)},'
-                                  '${rect.width.toStringAsFixed(1)}x'
-                                  '${rect.height.toStringAsFixed(1)})',
-                                );
-                                final res = await LinkCreationDialog.show(
+                        ),
+                        // 패닝은 InteractiveViewer가 처리
+                        // 링커 제스처 및 그리기 레이어 (항상 존재하며, 내부적으로 toolMode에 따라 드래그/탭 처리)
+                        Positioned.fill(
+                          child: LinkerGestureLayer(
+                            key: _linkerLayerKey,
+                            toolMode: currentToolMode,
+                            // Use global pointer policy
+                            pointerMode:
+                                pointerPolicy == ScribblePointerMode.all
+                                ? LinkerPointerMode.all
+                                : LinkerPointerMode.stylusOnly,
+                            onRectCompleted: (rect) async {
+                              final res = await LinkCreationDialog.show(
+                                context,
+                                sourceNoteId: notifier.page!.noteId,
+                              );
+                              if (res == null) return; // 취소
+                              final page = notifier.page!;
+                              try {
+                                await ref
+                                    .read(linkCreationControllerProvider)
+                                    .createFromRect(
+                                      sourceNoteId: page.noteId,
+                                      sourcePageId: page.pageId,
+                                      rect: rect,
+                                      targetNoteId: res.targetNoteId,
+                                      targetTitle: res.targetTitle,
+                                    );
+                                if (!mounted) return;
+                                AppSnackBar.show(
                                   context,
-                                  sourceNoteId: notifier.page!.noteId,
+                                  AppErrorSpec.success('링크를 생성했습니다.'),
                                 );
-                                if (res == null) return; // 취소
-                                final page = notifier.page!;
-                                try {
-                                  await ref
-                                      .read(linkCreationControllerProvider)
-                                      .createFromRect(
-                                        sourceNoteId: page.noteId,
-                                        sourcePageId: page.pageId,
-                                        rect: rect,
-                                        targetNoteId: res.targetNoteId,
-                                        targetTitle: res.targetTitle,
-                                      );
-                                  if (!mounted) return;
-                                  AppSnackBar.show(
-                                    context,
-                                    AppErrorSpec.success('링크를 생성했습니다.'),
-                                  );
-                                } catch (e) {
-                                  if (!mounted) return;
-                                  final spec = AppErrorMapper.toSpec(e);
-                                  AppSnackBar.show(context, spec);
+                              } catch (e) {
+                                if (!mounted) return;
+                                final spec = AppErrorMapper.toSpec(e);
+                                AppSnackBar.show(context, spec);
+                              }
+                            },
+                            // 링크 찾아서 모달 표시 (링크 이동 / 링크 수정 / 링크 삭제)
+                            onTapAt: (localPoint) async {
+                              // provider 로 수정필요
+                              final pageId = notifier.page!.pageId;
+                              final link = ref.read(
+                                linkAtPointProvider(pageId, localPoint),
+                              );
+                              if (link != null) {
+                                // 탭 지점의 글로벌 좌표 계산
+                                Offset anchorGlobal = localPoint;
+                                final box =
+                                    _linkerLayerKey.currentContext
+                                            ?.findRenderObject()
+                                        as RenderBox?;
+                                if (box != null) {
+                                  anchorGlobal = box.localToGlobal(localPoint);
                                 }
-                              },
-                              // 링크 찾아서 모달 표시 (링크 이동 / 링크 수정 / 링크 삭제)
-                              onTapAt: (localPoint) async {
-                                // provider 로 수정필요
-                                final pageId = notifier.page!.pageId;
-                                debugPrint(
-                                  '[NotePageViewItem] onTapAt '
-                                  '${localPoint.dx.toStringAsFixed(1)},'
-                                  '${localPoint.dy.toStringAsFixed(1)}',
+                                final action = await LinkActionsSheet.show(
+                                  context,
+                                  link,
+                                  anchorGlobal: anchorGlobal,
+                                  displayTitle: link.label,
                                 );
-                                final link = ref.read(
-                                  linkAtPointProvider(pageId, localPoint),
-                                );
-                                if (link != null) {
-                                  debugPrint(
-                                    '[NotePageViewItem] hit saved link: '
-                                    '${link.id}',
-                                  );
-                                  final action = await LinkActionsSheet.show(
-                                    context,
-                                    link,
-                                  );
-                                  if (!mounted || action == null) return;
-                                  switch (action) {
-                                    case LinkAction.navigate:
-                                      debugPrint(
-                                        '[LinkNav] navigate: target=${link.targetNoteId} (RouteAware will manage session)',
-                                      );
-                                      // Save current page before navigating to the target note
-                                      await SketchPersistService.saveCurrentPage(
-                                        ref,
-                                        widget.noteId,
-                                      );
-                                      // Store per-route resume index for this editor instance
-                                      final idx = ref.read(
-                                        currentPageIndexProvider(widget.noteId),
-                                      );
-                                      final routeId = ref.read(
-                                        noteRouteIdProvider(widget.noteId),
-                                      );
-                                      if (routeId != null) {
-                                        ref
-                                            .read(
-                                              resumePageIndexMapProvider(
-                                                widget.noteId,
-                                              ).notifier,
-                                            )
-                                            .save(routeId, idx);
-                                      }
-                                      // Update last known index as well
+                                if (!mounted || action == null) return;
+                                switch (action) {
+                                  case LinkAction.navigate:
+                                    // Save current page before navigating to the target note
+                                    await SketchPersistService.saveCurrentPage(
+                                      ref,
+                                      widget.noteId,
+                                    );
+                                    // Store per-route resume index for this editor instance
+                                    final idx = ref.read(
+                                      currentPageIndexProvider(widget.noteId),
+                                    );
+                                    final routeId = ref.read(
+                                      noteRouteIdProvider(widget.noteId),
+                                    );
+                                    if (routeId != null) {
                                       ref
                                           .read(
-                                            lastKnownPageIndexProvider(
+                                            resumePageIndexMapProvider(
                                               widget.noteId,
                                             ).notifier,
                                           )
-                                          .setValue(idx);
-                                      context.pushNamed(
-                                        AppRoutes.noteEditName,
-                                        pathParameters: {
-                                          'noteId': link.targetNoteId,
-                                        },
-                                      );
-                                      debugPrint(
-                                        '[LinkNav] pushed to noteId=${link.targetNoteId}',
-                                      );
-                                      break;
-                                    case LinkAction.edit:
-                                      // 링크 수정: 타깃 노트 선택(기존 생성 다이얼로그 재사용)
-                                      final editRes =
-                                          await LinkCreationDialog.show(
-                                            context,
-                                            sourceNoteId: link.sourceNoteId,
+                                          .save(routeId, idx);
+                                    }
+                                    // Update last known index as well
+                                    ref
+                                        .read(
+                                          lastKnownPageIndexProvider(
+                                            widget.noteId,
+                                          ).notifier,
+                                        )
+                                        .setValue(idx);
+                                    context.pushNamed(
+                                      AppRoutes.noteEditName,
+                                      pathParameters: {
+                                        'noteId': link.targetNoteId,
+                                      },
+                                    );
+                                    break;
+                                  case LinkAction.edit:
+                                    // 링크 수정: 타깃 노트 선택(기존 생성 다이얼로그 재사용)
+                                    final editRes =
+                                        await LinkCreationDialog.show(
+                                          context,
+                                          sourceNoteId: link.sourceNoteId,
+                                        );
+                                    if (editRes == null) break;
+
+                                    final prevLabel =
+                                        (link.label?.trim().isNotEmpty == true)
+                                        ? link.label!.trim()
+                                        : '링크';
+
+                                    try {
+                                      final updatedLink = await ref
+                                          .read(
+                                            linkCreationControllerProvider,
+                                          )
+                                          .updateTargetLink(
+                                            link,
+                                            targetNoteId: editRes.targetNoteId,
+                                            targetTitle: editRes.targetTitle,
                                           );
-                                      if (editRes == null) break;
-                                      try {
-                                        debugPrint(
-                                          '[LinkEdit/UI] update linkId=${link.id} '
-                                          'oldTarget=${link.targetNoteId} '
-                                          'newTargetId=${editRes.targetNoteId} '
-                                          'newTitle=${editRes.targetTitle}',
+                                      if (!mounted) return;
+
+                                      final newLabel =
+                                          (updatedLink.label
+                                                  ?.trim()
+                                                  .isNotEmpty ==
+                                              true)
+                                          ? updatedLink.label!.trim()
+                                          : '링크';
+
+                                      AppSnackBar.show(
+                                        context,
+                                        AppErrorSpec.success(
+                                          '"$prevLabel" 링크를 "$newLabel"로 수정했습니다.',
+                                        ),
+                                      );
+                                    } catch (e) {
+                                      if (!mounted) return;
+                                      final spec = AppErrorMapper.toSpec(e);
+                                      AppSnackBar.show(context, spec);
+                                    }
+                                    break;
+                                  case LinkAction.delete:
+                                    final delLabel =
+                                        (link.label?.trim().isNotEmpty == true)
+                                        ? link.label!.trim()
+                                        : '링크';
+
+                                    final shouldDelete =
+                                        await showDesignConfirmDialog(
+                                          context: context,
+                                          title: '링크 삭제 확인',
+                                          message:
+                                              '이 "$delLabel" 링크를 삭제할까요?\n이 작업은 되돌릴 수 없습니다.',
+                                          confirmLabel: '삭제',
+                                          destructive: true,
                                         );
-                                        await ref
-                                            .read(
-                                              linkCreationControllerProvider,
-                                            )
-                                            .updateTargetLink(
-                                              link,
-                                              targetNoteId:
-                                                  editRes.targetNoteId,
-                                              targetTitle: editRes.targetTitle,
-                                            );
-                                        if (!mounted) return;
-                                        debugPrint(
-                                          '[LinkEdit/UI] updated linkId=${link.id}',
-                                        );
-                                        AppSnackBar.show(
-                                          context,
-                                          AppErrorSpec.success('링크를 수정했습니다.'),
-                                        );
-                                      } catch (e) {
-                                        if (!mounted) return;
-                                        final spec = AppErrorMapper.toSpec(e);
-                                        AppSnackBar.show(context, spec);
-                                      }
+                                    if (!shouldDelete) {
+                                      AppSnackBar.show(
+                                        context,
+                                        AppErrorSpec.info('삭제를 취소했어요.'),
+                                      );
                                       break;
-                                    case LinkAction.delete:
-                                      final shouldDelete =
-                                          await showDialog<bool>(
-                                            context: context,
-                                            builder: (ctx) => AlertDialog(
-                                              title: const Text('링크 삭제'),
-                                              content: const Text(
-                                                '이 링크를 삭제할까요?',
-                                              ),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () => Navigator.of(
-                                                    ctx,
-                                                  ).pop(false),
-                                                  child: const Text('취소'),
-                                                ),
-                                                ElevatedButton(
-                                                  onPressed: () => Navigator.of(
-                                                    ctx,
-                                                  ).pop(true),
-                                                  style:
-                                                      ElevatedButton.styleFrom(
-                                                        backgroundColor:
-                                                            Colors.red,
-                                                        foregroundColor:
-                                                            Colors.white,
-                                                      ),
-                                                  child: const Text('삭제'),
-                                                ),
-                                              ],
-                                            ),
-                                          ) ??
-                                          false;
-                                      if (!shouldDelete) {
-                                        AppSnackBar.show(
-                                          context,
-                                          AppErrorSpec.info('삭제를 취소했어요.'),
-                                        );
-                                        break;
-                                      }
-                                      try {
-                                        debugPrint(
-                                          '[LinkDelete/UI] delete linkId=${link.id} '
-                                          'src=${link.sourceNoteId}/${link.sourcePageId} '
-                                          'tgt=${link.targetNoteId}',
-                                        );
-                                        await ref
-                                            .read(linkRepositoryProvider)
-                                            .delete(link.id);
-                                        if (!mounted) return;
-                                        debugPrint(
-                                          '[LinkDelete/UI] deleted linkId=${link.id}',
-                                        );
-                                        AppSnackBar.show(
-                                          context,
-                                          AppErrorSpec.success('링크를 삭제했습니다.'),
-                                        );
-                                      } catch (e) {
-                                        if (!mounted) return;
-                                        final spec = AppErrorMapper.toSpec(e);
-                                        AppSnackBar.show(context, spec);
-                                      }
-                                      break;
-                                  }
+                                    }
+                                    try {
+                                      debugPrint(
+                                        '[LinkDelete/UI] delete linkId=${link.id} '
+                                        'src=${link.sourceNoteId}/${link.sourcePageId} '
+                                        'tgt=${link.targetNoteId}',
+                                      );
+                                      await ref
+                                          .read(linkRepositoryProvider)
+                                          .delete(link.id);
+                                      if (!mounted) return;
+                                      debugPrint(
+                                        '[LinkDelete/UI] deleted linkId=${link.id}',
+                                      );
+                                      AppSnackBar.show(
+                                        context,
+                                        AppErrorSpec.success('링크를 삭제했습니다.'),
+                                      );
+                                    } catch (e) {
+                                      if (!mounted) return;
+                                      final spec = AppErrorMapper.toSpec(e);
+                                      AppSnackBar.show(context, spec);
+                                    }
+                                    break;
                                 }
-                              },
-                              minLinkerRectangleSize: 16.0,
-                              currentLinkerFillColor: Colors.pinkAccent
-                                  .withAlpha((255 * 0.15).round()),
-                              currentLinkerBorderColor: Colors.pinkAccent,
-                              currentLinkerBorderWidth: 1.5,
-                            ),
+                              }
+                            },
+                            minLinkerRectangleSize: 16.0,
+                            currentLinkerFillColor: AppColors.linkerBlue
+                                .withAlpha(
+                                  (255 * 0.15).round(),
+                                ),
+                            currentLinkerBorderColor: AppColors.linkerBlue,
+                            currentLinkerBorderWidth: 1.5,
                           ),
-                        ],
-                      );
-                    },
-                  ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ),

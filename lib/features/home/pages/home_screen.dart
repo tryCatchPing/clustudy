@@ -73,19 +73,18 @@ class HomeScreen extends StatelessWidget {
                   },
                 ),
 
-                const SizedBox(height: 16),
+                // const SizedBox(height: 24),
 
-                // 디자인 시스템 데모 버튼
-                NavigationCard(
-                  icon: Icons.palette,
-                  title: '디자인 시스템 데모',
-                  subtitle: '컴포넌트 쇼케이스 및 Figma 디자인 재현',
-                  color: const Color(0xFF6366F1),
-                  onTap: () {
-                    debugPrint('🎨 디자인 시스템 데모로 이동 중...');
-                    context.go('/design-system/note-editor');
-                  },
-                ),
+                // NavigationCard(
+                //   icon: Icons.note_alt,
+                //   title: '디자인 테스트 - 노트 편집 페이지',
+                //   subtitle: '노트 편집 페이지 디자인 테스트',
+                //   color: const Color(0xFF4CAF50),
+                //   onTap: () {
+                //     debugPrint('📝 노트 편집 페이지로 이동 중...');
+                //     context.pushNamed(AppRoutes.tmpName);
+                //   },
+                // ),
 
                 // 프로젝트 정보 (재사용 가능한 InfoCard 사용)
                 const InfoCard.warning(

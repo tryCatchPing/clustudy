@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../design_system/tokens/app_colors.dart';
+
 /// 🏷️ 앱 브랜딩 헤더 위젯
 ///
 /// 앱의 로고, 제목, 부제목을 표시하는 재사용 가능한 위젯입니다.
@@ -32,8 +34,8 @@ class AppBrandingHeader extends StatelessWidget {
     this.title = '손글씨 노트 앱',
     this.subtitle = '4인 팀 프로젝트 - Flutter 데모',
     this.icon = Icons.edit_note,
-    this.iconColor = const Color(0xFF6750A4),
-    this.backgroundColor = Colors.white,
+    this.iconColor = AppColors.primary,
+    this.backgroundColor = AppColors.white,
   });
 
   @override

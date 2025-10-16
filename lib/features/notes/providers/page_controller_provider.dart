@@ -1,7 +1,10 @@
+import 'dart:math';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../shared/services/page_management_service.dart';
 import '../../canvas/providers/link_providers.dart';
+import '../../canvas/providers/note_editor_provider.dart';
 import '../data/notes_repository_provider.dart';
 import '../models/note_page_model.dart';
 
@@ -78,6 +81,12 @@ class PageControllerScreenNotifier extends _$PageControllerScreenNotifier {
         throw Exception('마지막 페이지는 삭제할 수 없습니다');
       }
 
+      // 삭제 전 인덱스 정보 저장
+      final deletedIndex = note.pages.indexWhere(
+        (p) => p.pageId == page.pageId,
+      );
+      final currentIndexBefore = ref.read(currentPageIndexProvider(noteId));
+
       // Repository를 통해 페이지 삭제
       await PageManagementService.deletePage(
         noteId,
@@ -85,6 +94,30 @@ class PageControllerScreenNotifier extends _$PageControllerScreenNotifier {
         repository,
         linkRepo: ref.read(linkRepositoryProvider),
       );
+
+      // 삭제 후 currentPageIndex 동기화
+      final updatedNote = await repository.getNoteById(noteId);
+      if (deletedIndex != -1 && updatedNote != null) {
+        final newPageCount = updatedNote.pages.length;
+        int newIndex = currentIndexBefore;
+
+        if (deletedIndex < currentIndexBefore) {
+          // Case 1: 현재 페이지보다 앞의 페이지 삭제 → 인덱스 -1
+          newIndex = currentIndexBefore - 1;
+        } else if (deletedIndex == currentIndexBefore) {
+          // Case 2: 현재 페이지 삭제 → 마지막 유효 인덱스로 조정
+          newIndex = min(currentIndexBefore, newPageCount - 1);
+        }
+        // Case 3: 현재 페이지보다 뒤의 페이지 삭제 → 변경 없음
+
+        // 범위 체크 (안전장치)
+        newIndex = newIndex.clamp(0, max(0, newPageCount - 1));
+
+        // Provider 업데이트
+        if (newIndex != currentIndexBefore) {
+          ref.read(currentPageIndexProvider(noteId).notifier).setPage(newIndex);
+        }
+      }
 
       state = state.copyWith(
         isLoading: false,

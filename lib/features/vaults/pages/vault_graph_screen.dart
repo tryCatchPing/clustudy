@@ -5,6 +5,9 @@ import 'package:flutter_graph_view/flutter_graph_view.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../design_system/components/organisms/top_toolbar.dart';
+import '../../../design_system/tokens/app_colors.dart';
+import '../../../design_system/tokens/app_icons.dart';
 import '../../../shared/routing/app_routes.dart';
 import '../../vaults/data/derived_vault_providers.dart';
 import '../data/vault_graph_providers.dart';
@@ -61,20 +64,31 @@ class _VaultGraphScreenState extends ConsumerState<VaultGraphScreen> {
     }
 
     final dataAsync = ref.watch(vaultGraphDataProvider(currentVaultId));
+    final vaultAsync = ref.watch(vaultByIdProvider(currentVaultId));
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Vault 그래프'),
-        actions: [
-          IconButton(
-            tooltip: '새로고침',
-            onPressed: () {
-              ref.invalidate(vaultGraphDataProvider(currentVaultId));
-              _clearVertexOverlays();
-            },
-            icon: const Icon(Icons.refresh),
-          ),
+      backgroundColor: AppColors.background,
+      appBar: TopToolbar(
+        variant: TopToolbarVariant.folder,
+        title: vaultAsync.maybeWhen(
+          data: (vault) => vault?.name ?? 'Vault 그래프',
+          orElse: () => 'Vault 그래프',
+        ),
+        onBack: () => context.pop(),
+        backSvgPath: AppIcons.chevronLeft,
+        actions: const [
+          // TODO: SVG refresh 아이콘 추가 시 교체 필요
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          ref.invalidate(vaultGraphDataProvider(currentVaultId));
+          _clearVertexOverlays();
+        },
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.white,
+        tooltip: '새로고침',
+        child: const Icon(Icons.refresh),
       ),
       body: dataAsync.when(
         data: (data) {
@@ -85,22 +99,35 @@ class _VaultGraphScreenState extends ConsumerState<VaultGraphScreen> {
             final t = vertex.tag;
             return t.isEmpty ? '${vertex.id}' : t;
           };
+          options.legendTextBuilder = (tag, i, color, position) {
+            return TextComponent(
+              text: tag,
+              position: Vector2(position.x + 40, position.y - 2),
+              textRenderer: TextPaint(
+                style: const TextStyle(
+                  fontSize: 14.0,
+                  color: Colors.black,
+                ),
+              ),
+            );
+          };
           options.backgroundBuilder = (context) => Container(
-            color: const Color.fromARGB(135, 255, 255, 255),
+            color: AppColors.background,
           );
           // hover 하이라이트는 패키지 기본 동작 활용 (vertexPanelBuilder 미사용)
+          // 노드 색상: 앱의 pen/highlighter 색상 기반 (명확한 구분)
           options.graphStyle = (GraphStyle()
             ..tagColorByIndex = [
-              Colors.redAccent.shade100,
-              Colors.orangeAccent.shade100,
-              Colors.yellowAccent.shade100,
-              Colors.greenAccent.shade100,
-              Colors.lightBlueAccent.shade100,
-              Colors.blueAccent.shade100,
-              Colors.purpleAccent.shade100,
-              Colors.pinkAccent.shade100,
-              Colors.tealAccent.shade100,
-              Colors.deepOrangeAccent.shade100,
+              AppColors.penBlue, // 파랑 #1A5DBA
+              AppColors.penRed, // 빨강 #C72C2C
+              AppColors.penGreen, // 초록 #277A3E
+              AppColors.primary, // 네이비 #182955
+              AppColors.gray50, // 검정 #1F1F1F
+              AppColors.penBlue.withValues(alpha: 0.6), // 연한 파랑
+              AppColors.penRed.withValues(alpha: 0.6), // 연한 빨강
+              AppColors.penGreen.withValues(alpha: 0.6), // 연한 초록
+              AppColors.primary.withValues(alpha: 0.6), // 연한 네이비
+              AppColors.gray40, // 회색 #656565
             ]
             ..hoverOpacity = 0.35);
           // 노드 히트율 개선: 최소 반지름 보정

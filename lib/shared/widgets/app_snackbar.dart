@@ -23,7 +23,7 @@ class AppSnackBar {
               textColor: Colors.white,
               onPressed: spec.action!.onPressed ?? () {},
             ),
-      behavior: SnackBarBehavior.floating,
+      behavior: SnackBarBehavior.fixed,
     );
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()

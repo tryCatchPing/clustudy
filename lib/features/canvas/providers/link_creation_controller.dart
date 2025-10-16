@@ -286,7 +286,7 @@ class LinkCreationController {
     // 3) 업데이트 모델 생성 (id/소스/바운딩 박스 유지, 타깃/라벨 갱신)
     final updated = link.copyWith(
       targetNoteId: targetNote.noteId,
-      label: label ?? link.label,
+      label: label ?? targetNote.title,
       updatedAt: DateTime.now(),
     );
 

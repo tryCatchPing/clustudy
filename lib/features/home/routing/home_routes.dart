@@ -9,7 +9,12 @@ import '../pages/home_screen.dart';
 class HomeRoutes {
   /// 홈 기능 관련 라우트 목록을 반환합니다.
   static List<RouteBase> routes = [
-    // 홈 페이지
+    // Root 경로 - /notes로 redirect
+    GoRoute(
+      path: '/',
+      redirect: (context, state) => AppRoutes.noteList,
+    ),
+    // 홈 페이지 (코드 보존용)
     GoRoute(
       path: AppRoutes.home,
       name: AppRoutes.homeName,
