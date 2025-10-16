@@ -95,6 +95,9 @@ class _VaultGraphScreenState extends ConsumerState<VaultGraphScreen> {
           final options = Options();
           options.enableHit = true;
           options.panelDelay = const Duration(milliseconds: 200);
+          // edgePanelBuilder가 null이면 패키지가 오버레이를 등록하지 않아 assertion이 발생하므로
+          // 빈 빌더를 명시해 오버레이 등록만 수행하고 아무것도 그리지 않도록 한다.
+          options.edgePanelBuilder = (_, __) => const SizedBox.shrink();
           options.textGetter = (vertex) {
             final t = vertex.tag;
             return t.isEmpty ? '${vertex.id}' : t;
