@@ -14,6 +14,8 @@ class AppIconButton extends StatelessWidget {
     this.semanticLabel,
     this.shape = const CircleBorder(), // 필요하면 RoundedRectangleBorder로
     this.color,
+    this.enabledMouseCursor = MouseCursor.defer,
+    this.disabledMouseCursor = MouseCursor.defer,
   });
 
   final String svgPath;
@@ -23,6 +25,8 @@ class AppIconButton extends StatelessWidget {
   final String? semanticLabel;
   final OutlinedBorder shape;
   final Color? color;
+  final MouseCursor enabledMouseCursor;
+  final MouseCursor disabledMouseCursor;
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +49,8 @@ class AppIconButton extends StatelessWidget {
         minimumSize: Size(side, side),
         padding: EdgeInsets.zero,
         shape: shape, // 기본 원형
+        enabledMouseCursor: enabledMouseCursor,
+        disabledMouseCursor: disabledMouseCursor,
         // 배경/테두리/foreground 색 계산 없음
       ),
       icon: SvgPicture.asset(
