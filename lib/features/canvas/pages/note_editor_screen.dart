@@ -323,7 +323,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     AppFabIcon(
-                      svgPath: AppIcons.scale,
+                      svgPath: AppIcons.scaleReverse,
                       visualDiameter: 34,
                       minTapTarget: 44,
                       iconSize: 16,
@@ -337,7 +337,8 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
                       minTapTarget: 44,
                       iconSize: 16,
                       tooltip: '백링크',
-                      onPressed: () => showBacklinksPanel(context, widget.noteId),
+                      onPressed: () =>
+                          showBacklinksPanel(context, widget.noteId),
                     ),
                     const SizedBox(height: AppSpacing.small),
                     AppFabIcon(
