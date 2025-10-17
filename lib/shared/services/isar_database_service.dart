@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../entities/canvas_settings_entity.dart';
 import '../entities/link_entity.dart';
 import '../entities/note_entities.dart';
 import '../entities/note_placement_entity.dart';
@@ -75,6 +76,7 @@ class IsarDatabaseService {
           NotePlacementEntitySchema,
           ThumbnailMetadataEntitySchema,
           DatabaseMetadataEntitySchema,
+          CanvasSettingsEntitySchema,
         ],
         directory: dbPath,
         name: _databaseName,
@@ -183,6 +185,7 @@ class IsarDatabaseService {
         'LinkEntity',
         'NotePlacementEntity',
         'DatabaseMetadataEntity',
+        'CanvasSettingsEntity',
       ],
     );
   }
