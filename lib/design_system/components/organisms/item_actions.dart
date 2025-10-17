@@ -31,21 +31,21 @@ Future<void> showItemActionsNear(
 }) {
   final actions = <CardSheetAction>[];
 
-  if (handlers.onRename != null) {
-    actions.add(
-      CardSheetAction(
-        label: renameLabel ?? '이름 변경',
-        svgPath: AppIcons.rename,
-        onTap: () => handlers.onRename!(),
-      ),
-    );
-  }
   if (handlers.onMove != null) {
     actions.add(
       CardSheetAction(
         label: moveLabel ?? '이동',
         svgPath: AppIcons.move,
         onTap: () => handlers.onMove!(),
+      ),
+    );
+  }
+  if (handlers.onRename != null) {
+    actions.add(
+      CardSheetAction(
+        label: renameLabel ?? '이름 변경',
+        svgPath: AppIcons.rename,
+        onTap: () => handlers.onRename!(),
       ),
     );
   }
