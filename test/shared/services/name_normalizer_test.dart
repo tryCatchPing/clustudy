@@ -1,5 +1,5 @@
+import 'package:clustudy/shared/services/name_normalizer.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:it_contest/shared/services/name_normalizer.dart';
 
 void main() {
   group('NameNormalizer.normalize', () {

@@ -1,7 +1,7 @@
+import 'package:clustudy/features/canvas/models/link_model.dart';
+import 'package:clustudy/shared/entities/link_entity.dart';
+import 'package:clustudy/shared/mappers/isar_link_mappers.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:it_contest/features/canvas/models/link_model.dart';
-import 'package:it_contest/shared/entities/link_entity.dart';
-import 'package:it_contest/shared/mappers/isar_link_mappers.dart';
 
 void main() {
   group('LinkEntityMapper', () {

@@ -1,12 +1,11 @@
+import 'package:clustudy/features/vaults/models/folder_model.dart';
+import 'package:clustudy/features/vaults/models/note_placement.dart';
+import 'package:clustudy/features/vaults/models/vault_model.dart';
+import 'package:clustudy/shared/entities/note_placement_entity.dart';
+import 'package:clustudy/shared/entities/vault_entity.dart';
+import 'package:clustudy/shared/mappers/isar_vault_mappers.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:isar/isar.dart';
-
-import 'package:it_contest/features/vaults/models/folder_model.dart';
-import 'package:it_contest/features/vaults/models/note_placement.dart';
-import 'package:it_contest/features/vaults/models/vault_model.dart';
-import 'package:it_contest/shared/entities/note_placement_entity.dart';
-import 'package:it_contest/shared/entities/vault_entity.dart';
-import 'package:it_contest/shared/mappers/isar_vault_mappers.dart';
 
 void main() {
   group('VaultEntityMapper', () {

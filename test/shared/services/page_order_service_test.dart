@@ -1,6 +1,6 @@
+import 'package:clustudy/features/notes/models/note_page_model.dart';
+import 'package:clustudy/shared/services/page_order_service.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:it_contest/features/notes/models/note_page_model.dart';
-import 'package:it_contest/shared/services/page_order_service.dart';
 
 void main() {
   group('PageOrderService', () {

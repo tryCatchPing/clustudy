@@ -1,9 +1,9 @@
 import 'dart:io';
 
+import 'package:clustudy/shared/services/db_txn_runner.dart';
+import 'package:clustudy/shared/services/isar_database_service.dart';
+import 'package:clustudy/shared/services/isar_db_txn_runner.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:it_contest/shared/services/db_txn_runner.dart';
-import 'package:it_contest/shared/services/isar_database_service.dart';
-import 'package:it_contest/shared/services/isar_db_txn_runner.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
 // Mock path provider for testing

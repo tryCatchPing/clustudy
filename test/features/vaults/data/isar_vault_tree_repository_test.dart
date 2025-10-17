@@ -1,9 +1,9 @@
 import 'package:async/async.dart';
+import 'package:clustudy/features/vaults/data/isar_vault_tree_repository.dart';
+import 'package:clustudy/features/vaults/models/vault_item.dart';
+import 'package:clustudy/features/vaults/models/vault_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:it_contest/features/vaults/data/isar_vault_tree_repository.dart';
-import 'package:it_contest/features/vaults/models/vault_item.dart';
-import 'package:it_contest/features/vaults/models/vault_model.dart';
 import '../../../shared/utils/test_isar.dart';
 
 void main() {

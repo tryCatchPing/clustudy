@@ -1,9 +1,8 @@
+import 'package:clustudy/features/notes/models/thumbnail_metadata.dart';
+import 'package:clustudy/shared/entities/thumbnail_metadata_entity.dart';
+import 'package:clustudy/shared/mappers/isar_thumbnail_mappers.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:isar/isar.dart';
-
-import 'package:it_contest/features/notes/models/thumbnail_metadata.dart';
-import 'package:it_contest/shared/entities/thumbnail_metadata_entity.dart';
-import 'package:it_contest/shared/mappers/isar_thumbnail_mappers.dart';
 
 void main() {
   group('ThumbnailMetadata mappers', () {

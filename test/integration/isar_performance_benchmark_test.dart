@@ -1,9 +1,9 @@
+import 'package:clustudy/features/canvas/data/isar_link_repository.dart';
+import 'package:clustudy/features/canvas/data/memory_link_repository.dart';
+import 'package:clustudy/features/canvas/models/link_model.dart';
+import 'package:clustudy/features/vaults/data/isar_vault_tree_repository.dart';
+import 'package:clustudy/features/vaults/data/memory_vault_tree_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:it_contest/features/canvas/data/isar_link_repository.dart';
-import 'package:it_contest/features/canvas/data/memory_link_repository.dart';
-import 'package:it_contest/features/canvas/models/link_model.dart';
-import 'package:it_contest/features/vaults/data/isar_vault_tree_repository.dart';
-import 'package:it_contest/features/vaults/data/memory_vault_tree_repository.dart';
 
 import '../shared/utils/test_isar.dart';
 

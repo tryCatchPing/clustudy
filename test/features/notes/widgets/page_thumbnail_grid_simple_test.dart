@@ -1,11 +1,11 @@
+import 'package:clustudy/features/notes/data/memory_notes_repository.dart';
+import 'package:clustudy/features/notes/data/notes_repository_provider.dart';
+import 'package:clustudy/features/notes/models/note_model.dart';
+import 'package:clustudy/features/notes/models/note_page_model.dart';
+import 'package:clustudy/features/notes/widgets/page_thumbnail_grid.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:it_contest/features/notes/data/memory_notes_repository.dart';
-import 'package:it_contest/features/notes/data/notes_repository_provider.dart';
-import 'package:it_contest/features/notes/models/note_model.dart';
-import 'package:it_contest/features/notes/models/note_page_model.dart';
-import 'package:it_contest/features/notes/widgets/page_thumbnail_grid.dart';
 
 void main() {
   group('PageThumbnailGrid - Basic Structure', () {

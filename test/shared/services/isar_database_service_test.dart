@@ -1,9 +1,9 @@
 import 'dart:io';
 
+import 'package:clustudy/shared/services/isar_database_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 // ignore: unused_import
 import 'package:isar_flutter_libs/isar_flutter_libs.dart';
-import 'package:it_contest/shared/services/isar_database_service.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
 // Mock path provider for testing
@@ -45,8 +45,8 @@ void main() {
       await IsarDatabaseService.getInstance();
       final info = await IsarDatabaseService.getDatabaseInfo();
 
-      expect(info.name, equals('it_contest_db'));
-      expect(info.path, contains('it_contest_db'));
+      expect(info.name, equals('clustudy_db'));
+      expect(info.path, contains('clustudy_db'));
       expect(info.size, isA<int>());
       expect(info.schemaVersion, equals(1));
       expect(

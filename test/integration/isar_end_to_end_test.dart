@@ -1,15 +1,15 @@
 import 'dart:io';
 
 import 'package:async/async.dart';
+import 'package:clustudy/features/canvas/data/isar_link_repository.dart';
+import 'package:clustudy/features/canvas/models/link_model.dart';
+import 'package:clustudy/features/notes/data/isar_notes_repository.dart';
+import 'package:clustudy/features/notes/models/note_model.dart';
+import 'package:clustudy/features/notes/models/note_page_model.dart';
+import 'package:clustudy/features/vaults/data/isar_vault_tree_repository.dart';
+import 'package:clustudy/features/vaults/models/vault_item.dart';
+import 'package:clustudy/shared/services/isar_database_service.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:it_contest/features/canvas/data/isar_link_repository.dart';
-import 'package:it_contest/features/canvas/models/link_model.dart';
-import 'package:it_contest/features/notes/data/isar_notes_repository.dart';
-import 'package:it_contest/features/notes/models/note_model.dart';
-import 'package:it_contest/features/notes/models/note_page_model.dart';
-import 'package:it_contest/features/vaults/data/isar_vault_tree_repository.dart';
-import 'package:it_contest/features/vaults/models/vault_item.dart';
-import 'package:it_contest/shared/services/isar_database_service.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
 class _FixedPathProvider extends PathProviderPlatform {
@@ -202,7 +202,7 @@ void main() {
         expect(metadata?.lastMigrationAt, isNotNull);
 
         final info = await IsarDatabaseService.getDatabaseInfo();
-        expect(info.name, equals('it_contest_db'));
+        expect(info.name, equals('clustudy_db'));
         expect(info.schemaVersion, equals(1));
         expect(
           info.collections,

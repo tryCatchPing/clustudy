@@ -68,7 +68,7 @@ Future<void> main() async {
             exception: error,
             stack: stackTrace,
             context: ErrorDescription('while initializing the Isar database'),
-            library: 'it_contest main',
+            library: 'clustudy main',
           ),
         );
         rethrow;
@@ -89,7 +89,7 @@ Future<void> main() async {
               context: ErrorDescription(
                 'while initializing install attribution',
               ),
-              library: 'it_contest main',
+              library: 'clustudy main',
             ),
           );
         }

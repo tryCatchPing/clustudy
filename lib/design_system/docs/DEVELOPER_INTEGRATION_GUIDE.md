@@ -7,6 +7,7 @@
 ## 🎯 개발자의 역할
 
 ### ✅ 개발자가 담당하는 것
+
 - **상태 관리**: Provider를 통한 앱 전역 상태 관리
 - **라우팅**: GoRouter를 활용한 페이지 네비게이션
 - **비즈니스 로직**: API 호출, 데이터 변환, 유효성 검사
@@ -15,6 +16,7 @@
 - **테스트**: Unit Test, Widget Test, Integration Test
 
 ### ❌ 개발자가 하지 않는 것
+
 - **UI 디자인**: 색상, 폰트, 레이아웃 등 시각적 요소 수정
 - **스타일링**: CSS 속성에 해당하는 Flutter 스타일
 - **컴포넌트 구조**: 위젯 트리 구조 변경
@@ -44,7 +46,7 @@ lib/design_system/developer_workspace/
 // 디자이너가 작성한 UI (handoff 폴더)
 class HomeScreenUI extends StatelessWidget {
   const HomeScreenUI({super.key});
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -87,25 +89,25 @@ import '../../../shared/services/note_service.dart';
 
 class NotesProvider extends ChangeNotifier {
   final NoteService _noteService = NoteService.instance;
-  
+
   List<NoteModel> _notes = [];
   bool _isLoading = false;
   String _searchQuery = '';
-  
-  List<NoteModel> get notes => _searchQuery.isEmpty 
-      ? _notes 
-      : _notes.where((note) => 
+
+  List<NoteModel> get notes => _searchQuery.isEmpty
+      ? _notes
+      : _notes.where((note) =>
           note.title.toLowerCase().contains(_searchQuery.toLowerCase())
         ).toList();
-  
+
   bool get isLoading => _isLoading;
   String get searchQuery => _searchQuery;
-  
+
   // 노트 목록 로드
   Future<void> loadNotes() async {
     _isLoading = true;
     notifyListeners();
-    
+
     try {
       _notes = await _noteService.getAllNotes();
     } catch (e) {
@@ -116,13 +118,13 @@ class NotesProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
-  
+
   // 검색어 업데이트
   void updateSearchQuery(String query) {
     _searchQuery = query;
     notifyListeners();
   }
-  
+
   // 새 노트 생성
   Future<void> createNote() async {
     try {
@@ -151,7 +153,7 @@ import '../../state_management/providers/notes_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
-  
+
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
@@ -165,7 +167,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context.read<NotesProvider>().loadNotes();
     });
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Consumer<NotesProvider>(
@@ -284,7 +286,7 @@ ElevatedButton(
   onPressed: () async {
     // 비동기 작업 처리
     await context.read<SomeProvider>().doSomething();
-    
+
     // 네비게이션
     if (mounted) {
       context.go('/next-page');
@@ -300,13 +302,13 @@ ElevatedButton(
 class _FormScreenState extends State<FormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
-  
+
   @override
   void dispose() {
     _titleController.dispose();
     super.dispose();
   }
-  
+
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
       final title = _titleController.text;
@@ -314,7 +316,7 @@ class _FormScreenState extends State<FormScreen> {
       context.go('/');
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Form(
@@ -350,26 +352,26 @@ class _FormScreenState extends State<FormScreen> {
 // test/integration/home_screen_test.dart
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import 'package:it_contest/design_system/integration/screens/home_screen.dart';
-import 'package:it_contest/design_system/state_management/providers/notes_provider.dart';
+import 'package:clustudy/design_system/integration/screens/home_screen.dart';
+import 'package:clustudy/design_system/state_management/providers/notes_provider.dart';
 
 void main() {
   testWidgets('홈 화면에서 노트 목록 표시', (WidgetTester tester) async {
     final notesProvider = NotesProvider();
-    
+
     await tester.pumpWidget(
       ChangeNotifierProvider.value(
         value: notesProvider,
         child: MaterialApp(home: HomeScreen()),
       ),
     );
-    
+
     // 로딩 인디케이터 확인
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    
+
     // 노트 로드 대기
     await tester.pumpAndSettle();
-    
+
     // 노트 카드 확인
     expect(find.byType(NoteCard), findsWidgets);
   });
@@ -403,14 +405,14 @@ Selector<NotesProvider, List<NoteModel>>(
 class _SomeScreenState extends State<SomeScreen> {
   late ScrollController _scrollController;
   late TextEditingController _textController;
-  
+
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
     _textController = TextEditingController();
   }
-  
+
   @override
   void dispose() {
     // 🔴 필수: 컨트롤러 해제
@@ -418,7 +420,7 @@ class _SomeScreenState extends State<SomeScreen> {
     _textController.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(...);
@@ -429,18 +431,21 @@ class _SomeScreenState extends State<SomeScreen> {
 ## ✅ 통합 완료 체크리스트
 
 ### 기능적 요구사항
+
 - [ ] 모든 이벤트 핸들러 연결 완료
 - [ ] 상태 관리 정상 작동
 - [ ] 라우팅 연결 완료
 - [ ] API/서비스 연동 완료
 
 ### 성능 요구사항
+
 - [ ] 불필요한 rebuild 최소화
 - [ ] 메모리 누수 없음
 - [ ] 로딩 상태 처리 완료
 - [ ] 에러 처리 구현
 
 ### 코드 품질
+
 - [ ] Provider 패턴 준수
 - [ ] GoRouter 사용
 - [ ] 테스트 코드 작성

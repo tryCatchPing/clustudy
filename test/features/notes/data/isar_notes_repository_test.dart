@@ -1,9 +1,9 @@
 import 'package:async/async.dart';
+import 'package:clustudy/features/notes/data/isar_notes_repository.dart';
+import 'package:clustudy/features/notes/models/note_model.dart';
+import 'package:clustudy/features/notes/models/note_page_model.dart';
+import 'package:clustudy/features/notes/models/thumbnail_metadata.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:it_contest/features/notes/data/isar_notes_repository.dart';
-import 'package:it_contest/features/notes/models/note_model.dart';
-import 'package:it_contest/features/notes/models/note_page_model.dart';
-import 'package:it_contest/features/notes/models/thumbnail_metadata.dart';
 
 import '../../../shared/utils/test_isar.dart';
 
