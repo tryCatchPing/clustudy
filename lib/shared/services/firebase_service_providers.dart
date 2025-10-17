@@ -1,5 +1,4 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
-import 'package:firebase_analytics/observer.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -158,6 +157,40 @@ class FirebaseAnalyticsLogger {
       name: 'graph_view_open',
       parameters: {'vault_id': vaultId},
     );
+  }
+
+  /// Records install attribution parameters captured during app bootstrap.
+  Future<void> logInstallAttribution(Map<String, String> parameters) async {
+    if (parameters.isEmpty) {
+      return;
+    }
+
+    await _analytics.logEvent(
+      name: 'install_attribution',
+      parameters: parameters,
+    );
+
+    final source = parameters['utm_source'] ?? parameters['source'];
+    final medium = parameters['utm_medium'] ?? parameters['medium'];
+    final campaign = parameters['utm_campaign'] ?? parameters['campaign'];
+
+    await Future.wait([
+      if (source != null && source.isNotEmpty)
+        _analytics.setUserProperty(
+          name: 'install_source',
+          value: source,
+        ),
+      if (medium != null && medium.isNotEmpty)
+        _analytics.setUserProperty(
+          name: 'install_medium',
+          value: medium,
+        ),
+      if (campaign != null && campaign.isNotEmpty)
+        _analytics.setUserProperty(
+          name: 'install_campaign',
+          value: campaign,
+        ),
+    ]);
   }
 
   /// Tracks interest taps on PRO-only features shown to free users.
