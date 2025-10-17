@@ -142,7 +142,9 @@ class _SettingsSideSheet extends ConsumerWidget {
                           subtitle: '스타일러스/터치 입력 시 필압을 적용합니다.',
                           value: pressureSensitivityEnabled,
                           onChanged: (v) {
-                            ref.read(simulatePressureProvider.notifier).setValue(v);
+                            ref
+                                .read(simulatePressureProvider.notifier)
+                                .setValue(v);
                           },
                         ),
                         _SettingsTile.switchTile(
@@ -150,9 +152,12 @@ class _SettingsSideSheet extends ConsumerWidget {
                           subtitle: '스타일러스 입력만 허용합니다.',
                           value: styleStrokesOnlyEnabled,
                           onChanged: (v) {
-                            ref.read(pointerPolicyProvider.notifier).state = v
+                            final mode = v
                                 ? ScribblePointerMode.penOnly
                                 : ScribblePointerMode.all;
+                            ref
+                                .read(pointerPolicyProvider.notifier)
+                                .setPolicy(mode);
                           },
                         ),
                       ],

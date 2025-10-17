@@ -3,20 +3,30 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'design_system/tokens/app_colors.dart';
+import 'features/canvas/providers/canvas_settings_bootstrap_provider.dart';
 import 'features/canvas/routing/canvas_routes.dart';
 import 'features/home/routing/home_routes.dart';
 import 'features/notes/routing/notes_routes.dart';
 import 'features/vaults/routing/vault_graph_routes.dart';
+import 'shared/data/canvas_settings_repository_provider.dart';
+import 'shared/data/isar_canvas_settings_repository.dart';
+import 'shared/models/canvas_settings.dart';
 import 'shared/routing/route_observer.dart';
 import 'shared/services/isar_database_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  late final IsarCanvasSettingsRepository settingsRepository;
+  late final CanvasSettings initialCanvasSettings;
+
   try {
     debugPrint('🗄️ [main] Initializing Isar database...');
-    await IsarDatabaseService.getInstance();
+    final isar = await IsarDatabaseService.getInstance();
     debugPrint('🗄️ [main] Isar database initialized');
+
+    settingsRepository = IsarCanvasSettingsRepository(isar: isar);
+    initialCanvasSettings = await settingsRepository.load();
   } catch (error, stackTrace) {
     FlutterError.reportError(
       FlutterErrorDetails(
@@ -29,7 +39,17 @@ Future<void> main() async {
     rethrow;
   }
 
-  runApp(const ProviderScope(child: MyApp()));
+  runApp(
+    ProviderScope(
+      overrides: [
+        canvasSettingsRepositoryProvider.overrideWithValue(settingsRepository),
+        canvasSettingsBootstrapProvider.overrideWithValue(
+          initialCanvasSettings,
+        ),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 final _router = GoRouter(

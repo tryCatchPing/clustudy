@@ -33,7 +33,7 @@ class NoteEditorPointerMode extends ConsumerWidget {
       multiSelectionEnabled: false,
       emptySelectionAllowed: false,
       onSelectionChanged: (v) =>
-          ref.read(pointerPolicyProvider.notifier).state = v.first,
+          ref.read(pointerPolicyProvider.notifier).setPolicy(v.first),
       style: ButtonStyle(
         padding: WidgetStateProperty.all(const EdgeInsets.all(4)),
       ),

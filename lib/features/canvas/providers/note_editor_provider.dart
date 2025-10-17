@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -5,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:scribble/scribble.dart';
 
+import '../../../shared/data/canvas_settings_repository_provider.dart';
 import '../../../shared/services/page_thumbnail_service.dart';
 import '../../notes/data/derived_note_providers.dart';
 import '../../notes/data/notes_repository_provider.dart';
@@ -12,6 +14,7 @@ import '../../notes/models/note_page_model.dart';
 import '../constants/note_editor_constant.dart';
 import '../models/tool_mode.dart';
 import '../notifiers/custom_scribble_notifier.dart';
+import 'canvas_settings_bootstrap_provider.dart';
 import 'pointer_policy_provider.dart';
 import 'tool_settings_provider.dart';
 
@@ -126,13 +129,33 @@ class CurrentPageIndex extends _$CurrentPageIndex {
 @Riverpod(keepAlive: true)
 class SimulatePressure extends _$SimulatePressure {
   @override
-  bool build() => false;
+  bool build() {
+    final initial = ref.watch(canvasSettingsBootstrapProvider);
+    return initial.simulatePressure;
+  }
 
   /// 필압 시뮬레이션을 토글합니다.
-  void toggle() => state = !state;
+  void toggle() => setValue(!state);
 
   /// 필압 시뮬레이션 값을 설정합니다.
-  void setValue(bool value) => state = value;
+  void setValue(bool value) {
+    if (state == value) {
+      return;
+    }
+    state = value;
+
+    final repository = ref.read(canvasSettingsRepositoryProvider);
+    unawaited(
+      repository.update(simulatePressure: value).catchError((
+        error,
+        stackTrace,
+      ) {
+        debugPrint(
+          '⚠️ [SimulatePressure] Failed to persist simulatePressure: $error',
+        );
+      }),
+    );
+  }
 }
 
 /// 세션 기반 페이지별 CustomScribbleNotifier 관리
