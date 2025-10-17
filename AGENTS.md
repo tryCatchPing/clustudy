@@ -101,3 +101,4 @@
 ## 최근 변경 요약
 
 - 2025-10-16: `pointerPolicyProvider`와 `simulatePressureProvider` 기본값을 Isar 기반 `CanvasSettingsEntity`로 영속화하고, 앱 부팅 시 `canvasSettingsBootstrapProvider`를 통해 초기값을 주입합니다. 신규 저장소(`IsarCanvasSettingsRepository`)와 부트스트랩 오버라이드를 확인하세요.
+- 2025-10-17: Google Play Install Referrer 기반 설치 경로 수집을 부트스트랩 단계에 추가하고, `FirebaseAnalyticsLogger.logInstallAttribution`으로 캠페인 정보를 기록합니다. 관련 서비스(`lib/shared/services/install_attribution_service.dart`)와 Android 메서드 채널 구현을 확인하세요.
