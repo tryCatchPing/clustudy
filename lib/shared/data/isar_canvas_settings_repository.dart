@@ -57,28 +57,28 @@ class IsarCanvasSettingsRepository implements CanvasSettingsRepository {
     }
 
     final isar = await _ensureIsar();
-    await isar
-        .writeTxn(() async {
-          final collection = isar.canvasSettingsEntitys;
-          final entity =
-              await collection.get(CanvasSettingsEntity.singletonId) ??
-              CanvasSettingsEntity();
+    try {
+      await isar.writeTxn(() async {
+        final collection = isar.canvasSettingsEntitys;
+        final entity =
+            await collection.get(CanvasSettingsEntity.singletonId) ??
+            CanvasSettingsEntity();
 
-          if (simulatePressure != null) {
-            entity.simulatePressure = simulatePressure;
-          }
-          if (pointerPolicy != null) {
-            entity.pointerPolicyIndex = pointerPolicy.index;
-          }
+        if (simulatePressure != null) {
+          entity.simulatePressure = simulatePressure;
+        }
+        if (pointerPolicy != null) {
+          entity.pointerPolicyIndex = pointerPolicy.index;
+        }
 
-          await collection.put(entity);
-        })
-        .catchError((error, stackTrace) {
-          debugPrint(
-            '⚠️ [CanvasSettingsRepository] Failed to update settings: $error',
-          );
-          throw error;
-        });
+        await collection.put(entity);
+      });
+    } on Object catch (error, stackTrace) {
+      debugPrint(
+        '⚠️ [CanvasSettingsRepository] Failed to update settings: $error',
+      );
+      Error.throwWithStackTrace(error, stackTrace);
+    }
   }
 
   @override
