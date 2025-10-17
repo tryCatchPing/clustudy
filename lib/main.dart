@@ -14,13 +14,13 @@ import 'features/canvas/routing/canvas_routes.dart';
 import 'features/home/routing/home_routes.dart';
 import 'features/notes/routing/notes_routes.dart';
 import 'features/vaults/routing/vault_graph_routes.dart';
+import 'firebase_options.dart';
 import 'shared/data/canvas_settings_repository_provider.dart';
 import 'shared/data/isar_canvas_settings_repository.dart';
 import 'shared/models/canvas_settings.dart';
 import 'shared/routing/route_observer.dart';
 import 'shared/services/firebase_service_providers.dart';
 import 'shared/services/isar_database_service.dart';
-import 'firebase_options.dart';
 
 Future<void> main() async {
   await runZonedGuarded<Future<void>>(
