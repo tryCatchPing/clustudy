@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -13,42 +17,64 @@ import 'shared/data/isar_canvas_settings_repository.dart';
 import 'shared/models/canvas_settings.dart';
 import 'shared/routing/route_observer.dart';
 import 'shared/services/isar_database_service.dart';
+import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  late final IsarCanvasSettingsRepository settingsRepository;
-  late final CanvasSettings initialCanvasSettings;
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
-  try {
-    debugPrint('🗄️ [main] Initializing Isar database...');
-    final isar = await IsarDatabaseService.getInstance();
-    debugPrint('🗄️ [main] Isar database initialized');
+  FlutterError.onError = (details) {
+    FirebaseCrashlytics.instance.recordFlutterError(details);
+  };
 
-    settingsRepository = IsarCanvasSettingsRepository(isar: isar);
-    initialCanvasSettings = await settingsRepository.load();
-  } catch (error, stackTrace) {
-    FlutterError.reportError(
-      FlutterErrorDetails(
-        exception: error,
-        stack: stackTrace,
-        context: ErrorDescription('while initializing the Isar database'),
-        library: 'it_contest main',
-      ),
-    );
-    rethrow;
-  }
+  await runZonedGuarded(
+    () async {
+      late final IsarCanvasSettingsRepository settingsRepository;
+      late final CanvasSettings initialCanvasSettings;
 
-  runApp(
-    ProviderScope(
-      overrides: [
-        canvasSettingsRepositoryProvider.overrideWithValue(settingsRepository),
-        canvasSettingsBootstrapProvider.overrideWithValue(
-          initialCanvasSettings,
+      try {
+        debugPrint('🗄️ [main] Initializing Isar database...');
+        final isar = await IsarDatabaseService.getInstance();
+        debugPrint('🗄️ [main] Isar database initialized');
+
+        settingsRepository = IsarCanvasSettingsRepository(isar: isar);
+        initialCanvasSettings = await settingsRepository.load();
+      } catch (error, stackTrace) {
+        FlutterError.reportError(
+          FlutterErrorDetails(
+            exception: error,
+            stack: stackTrace,
+            context: ErrorDescription('while initializing the Isar database'),
+            library: 'it_contest main',
+          ),
+        );
+        rethrow;
+      }
+
+      runApp(
+        ProviderScope(
+          overrides: [
+            canvasSettingsRepositoryProvider.overrideWithValue(
+              settingsRepository,
+            ),
+            canvasSettingsBootstrapProvider.overrideWithValue(
+              initialCanvasSettings,
+            ),
+          ],
+          child: const MyApp(),
         ),
-      ],
-      child: const MyApp(),
-    ),
+      );
+    },
+    (error, stackTrace) {
+      FirebaseCrashlytics.instance.recordError(
+        error,
+        stackTrace,
+        fatal: true,
+      );
+    },
   );
 }
 
