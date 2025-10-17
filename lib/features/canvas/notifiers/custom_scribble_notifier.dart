@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 import 'package:scribble/scribble.dart';
 
+import '../../../shared/services/firebase_service_providers.dart';
 import '../../notes/models/note_page_model.dart' as page_model;
 import '../models/tool_mode.dart';
 import 'tool_management_mixin.dart';
@@ -32,7 +32,9 @@ class CustomScribbleNotifier extends ScribbleNotifier with ToolManagementMixin {
     required ToolMode toolMode,
     this.page,
     required bool simulatePressure,
+    FirebaseAnalyticsLogger? analyticsLogger,
   }) : _toolMode = toolMode,
+       _analyticsLogger = analyticsLogger,
        super(
          pressureCurve: simulatePressure
              ? const _DefaultPressureCurve()
@@ -50,6 +52,7 @@ class CustomScribbleNotifier extends ScribbleNotifier with ToolManagementMixin {
 
   /// 현재 노트 페이지 모델 (초기 스케치 로딩용 스냅샷; 불변 모델 사용).
   final page_model.NotePageModel? page;
+  final FirebaseAnalyticsLogger? _analyticsLogger;
 
   /// 뷰어 스케일과 동기화하여 획 굵기 일관성을 보장합니다.
   /// [viewerScale]은 현재 뷰어의 스케일 값입니다.
@@ -107,12 +110,9 @@ class CustomScribbleNotifier extends ScribbleNotifier with ToolManagementMixin {
     if (!_firstStrokeLogged && page != null) {
       _firstStrokeLogged = true;
       unawaited(
-        FirebaseAnalytics.instance.logEvent(
-          name: 'canvas_first_draw',
-          parameters: {
-            'note_id': page!.noteId,
-            'page_id': page!.pageId,
-          },
+        _analyticsLogger?.logCanvasFirstDraw(
+          noteId: page!.noteId,
+          pageId: page!.pageId,
         ),
       );
     }

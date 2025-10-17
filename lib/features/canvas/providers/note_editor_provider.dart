@@ -7,6 +7,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:scribble/scribble.dart';
 
 import '../../../shared/data/canvas_settings_repository_provider.dart';
+import '../../../shared/services/firebase_service_providers.dart';
 import '../../../shared/services/page_thumbnail_service.dart';
 import '../../notes/data/derived_note_providers.dart';
 import '../../notes/data/notes_repository_provider.dart';
@@ -165,6 +166,8 @@ CustomScribbleNotifier canvasPageNotifier(Ref ref, String pageId) {
     debugPrint('🎨 [canvasPageNotifier] Provider called for pageId: $pageId');
   }
 
+  final analyticsLogger = ref.read(firebaseAnalyticsLoggerProvider);
+
   // 세션 확인 - 활성 노트가 없으면 에러
   final activeNoteId = ref.watch(noteSessionProvider);
   if (_kCanvasProviderVerbose) {
@@ -185,6 +188,7 @@ CustomScribbleNotifier canvasPageNotifier(Ref ref, String pageId) {
       page: null,
       simulatePressure: false,
       maxHistoryLength: NoteEditorConstants.maxHistoryLength,
+      analyticsLogger: analyticsLogger,
     );
   }
 
@@ -215,6 +219,7 @@ CustomScribbleNotifier canvasPageNotifier(Ref ref, String pageId) {
       page: null,
       simulatePressure: false,
       maxHistoryLength: NoteEditorConstants.maxHistoryLength,
+      analyticsLogger: analyticsLogger,
     );
   }
   if (_kCanvasProviderVerbose) {
@@ -234,6 +239,7 @@ CustomScribbleNotifier canvasPageNotifier(Ref ref, String pageId) {
           page: targetPage,
           simulatePressure: simulatePressure,
           maxHistoryLength: NoteEditorConstants.maxHistoryLength,
+          analyticsLogger: analyticsLogger,
         )
         ..setSimulatePressureEnabled(simulatePressure)
         ..setSketch(
@@ -352,11 +358,13 @@ CustomScribbleNotifier currentNotifier(
   if (pageIds.isEmpty || currentIndex < 0 || currentIndex >= pageIds.length) {
     final toolSettings = ref.read(toolSettingsNotifierProvider(noteId));
     final simulatePressure = ref.read(simulatePressureProvider);
+    final analyticsLogger = ref.read(firebaseAnalyticsLoggerProvider);
     return CustomScribbleNotifier(
       toolMode: toolSettings.toolMode,
       page: null,
       simulatePressure: simulatePressure,
       maxHistoryLength: NoteEditorConstants.maxHistoryLength,
+      analyticsLogger: analyticsLogger,
     );
   }
 
@@ -378,11 +386,13 @@ CustomScribbleNotifier pageNotifier(
   if (pageIndex < 0 || pageIndex >= pageIds.length) {
     final toolSettings = ref.read(toolSettingsNotifierProvider(noteId));
     final simulatePressure = ref.read(simulatePressureProvider);
+    final analyticsLogger = ref.read(firebaseAnalyticsLoggerProvider);
     return CustomScribbleNotifier(
       toolMode: toolSettings.toolMode,
       page: null,
       simulatePressure: simulatePressure,
       maxHistoryLength: NoteEditorConstants.maxHistoryLength,
+      analyticsLogger: analyticsLogger,
     );
   }
   final pageId = pageIds[pageIndex];
