@@ -6,6 +6,8 @@ import 'package:scribble/scribble.dart';
 
 import '../../../../features/canvas/providers/note_editor_provider.dart';
 import '../../../../features/canvas/providers/pointer_policy_provider.dart';
+import '../../../../shared/services/firebase_service_providers.dart';
+import '../../../components/organisms/confirm_dialog.dart';
 import '../../../tokens/app_colors.dart';
 import '../../../tokens/app_icons.dart';
 import '../../../tokens/app_typography.dart';
@@ -72,6 +74,7 @@ class _SettingsSideSheet extends ConsumerWidget {
     final pressureSensitivityEnabled = ref.watch(simulatePressureProvider);
     final pointerMode = ref.watch(pointerPolicyProvider);
     final styleStrokesOnlyEnabled = pointerMode == ScribblePointerMode.penOnly;
+    final analyticsLogger = ref.read(firebaseAnalyticsLoggerProvider);
     return Align(
       alignment: Alignment.centerRight,
       child: Material(
@@ -163,6 +166,36 @@ class _SettingsSideSheet extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: 12),
+
+                    _Section(
+                      title: 'PRO 👑',
+                      children: [
+                        _SettingsTile.disabledSwitchTile(
+                          title: '캔버스 자동 동기화',
+                          subtitle:
+                              'PRO 전용 기능으로 자동 백업과 기기간 동기화를 제공합니다.',
+                          value: false,
+                          onTap: () async {
+                            await analyticsLogger.logProFeatureInterest(
+                              featureKey: 'canvas_auto_sync',
+                              featureLabel: '캔버스 자동 동기화',
+                              surface: 'settings_side_sheet',
+                            );
+                            await showConfirmDialog(
+                              context,
+                              title: 'PRO 기능 준비 중',
+                              message:
+                                  '캔버스 자동 동기화는 PRO 기능으로 준비 중입니다.\n조금만 기다려 주세요!',
+                              confirmLabel: '확인',
+                              cancelLabel: '닫기',
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 12),
+
                     _Section(
                       title: '지원',
                       children: [
@@ -281,6 +314,26 @@ class _SettingsTile extends StatelessWidget {
         value: value,
         onChanged: onChanged,
         activeColor: AppColors.primary,
+      ),
+    );
+  }
+
+  factory _SettingsTile.disabledSwitchTile({
+    required String title,
+    String? subtitle,
+    required bool value,
+    required VoidCallback onTap,
+  }) {
+    return _SettingsTile._(
+      title: title,
+      subtitle: subtitle,
+      onTap: onTap,
+      trailing: IgnorePointer(
+        child: Switch(
+          value: value,
+          onChanged: null,
+          activeColor: AppColors.primary,
+        ),
       ),
     );
   }
