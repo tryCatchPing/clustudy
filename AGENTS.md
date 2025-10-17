@@ -97,3 +97,7 @@
 ### 대규모 코드 수정이나 기능 변경 수정 이후
 
 - 위 상황에서는 `AGENTS.md` 파일을 수정해야합니다.
+
+## 최근 변경 요약
+
+- 2025-10-16: `pointerPolicyProvider`와 `simulatePressureProvider` 기본값을 Isar 기반 `CanvasSettingsEntity`로 영속화하고, 앱 부팅 시 `canvasSettingsBootstrapProvider`를 통해 초기값을 주입합니다. 신규 저장소(`IsarCanvasSettingsRepository`)와 부트스트랩 오버라이드를 확인하세요.
