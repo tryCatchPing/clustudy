@@ -33,7 +33,7 @@ class DatabaseMetadataEntity {
 /// schema versioning, and migration support for the handwriting note app.
 class IsarDatabaseService {
   static Isar? _instance;
-  static const String _databaseName = 'it_contest_db';
+  static const String _databaseName = 'clustudy_db';
   static const int _currentSchemaVersion = 1;
   static const int _metadataCollectionId = 0;
 

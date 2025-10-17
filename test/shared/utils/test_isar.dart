@@ -1,13 +1,12 @@
 import 'dart:io';
 
+import 'package:clustudy/shared/entities/link_entity.dart';
+import 'package:clustudy/shared/entities/note_entities.dart';
+import 'package:clustudy/shared/entities/note_placement_entity.dart';
+import 'package:clustudy/shared/entities/thumbnail_metadata_entity.dart';
+import 'package:clustudy/shared/entities/vault_entity.dart';
+import 'package:clustudy/shared/services/isar_database_service.dart';
 import 'package:isar/isar.dart';
-
-import 'package:it_contest/shared/entities/link_entity.dart';
-import 'package:it_contest/shared/entities/note_entities.dart';
-import 'package:it_contest/shared/entities/note_placement_entity.dart';
-import 'package:it_contest/shared/entities/thumbnail_metadata_entity.dart';
-import 'package:it_contest/shared/entities/vault_entity.dart';
-import 'package:it_contest/shared/services/isar_database_service.dart';
 
 class TestIsarContext {
   TestIsarContext(this.isar, this._directory);

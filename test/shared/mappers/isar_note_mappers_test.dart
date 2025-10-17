@@ -1,8 +1,8 @@
+import 'package:clustudy/features/notes/models/note_model.dart';
+import 'package:clustudy/features/notes/models/note_page_model.dart';
+import 'package:clustudy/shared/entities/note_entities.dart';
+import 'package:clustudy/shared/mappers/isar_note_mappers.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:it_contest/features/notes/models/note_model.dart';
-import 'package:it_contest/features/notes/models/note_page_model.dart';
-import 'package:it_contest/shared/entities/note_entities.dart';
-import 'package:it_contest/shared/mappers/isar_note_mappers.dart';
 
 void main() {
   group('NoteEntityMapper', () {

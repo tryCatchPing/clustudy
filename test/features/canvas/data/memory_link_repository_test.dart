@@ -1,7 +1,6 @@
+import 'package:clustudy/features/canvas/data/memory_link_repository.dart';
+import 'package:clustudy/features/canvas/models/link_model.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:it_contest/features/canvas/data/memory_link_repository.dart';
-import 'package:it_contest/features/canvas/models/link_model.dart';
 
 void main() {
   group('MemoryLinkRepository', () {

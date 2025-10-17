@@ -1,10 +1,10 @@
 import 'dart:typed_data';
 
+import 'package:clustudy/features/notes/models/note_page_model.dart';
+import 'package:clustudy/features/notes/widgets/draggable_page_thumbnail.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:it_contest/features/notes/models/note_page_model.dart';
-import 'package:it_contest/features/notes/widgets/draggable_page_thumbnail.dart';
 
 void main() {
   group('DraggablePageThumbnail', () {

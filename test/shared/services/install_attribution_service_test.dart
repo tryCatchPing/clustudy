@@ -1,5 +1,5 @@
+import 'package:clustudy/shared/services/install_attribution_service.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:it_contest/shared/services/install_attribution_service.dart';
 
 void main() {
   group('InstallAttributionService', () {
