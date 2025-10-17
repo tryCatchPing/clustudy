@@ -35,7 +35,10 @@ class PointerPolicyNotifier extends StateNotifier<ScribblePointerMode> {
 
     final repository = _ref.read(canvasSettingsRepositoryProvider);
     unawaited(
-      repository.update(pointerPolicy: mode).catchError((error, stackTrace) {
+      repository.update(pointerPolicy: mode).catchError((
+        Object error,
+        StackTrace stackTrace,
+      ) {
         debugPrint(
           '⚠️ [PointerPolicyNotifier] Failed to persist pointer policy: $error',
         );

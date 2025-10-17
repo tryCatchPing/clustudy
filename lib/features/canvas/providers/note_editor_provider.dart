@@ -147,8 +147,8 @@ class SimulatePressure extends _$SimulatePressure {
     final repository = ref.read(canvasSettingsRepositoryProvider);
     unawaited(
       repository.update(simulatePressure: value).catchError((
-        error,
-        stackTrace,
+        Object error,
+        StackTrace stackTrace,
       ) {
         debugPrint(
           '⚠️ [SimulatePressure] Failed to persist simulatePressure: $error',
