@@ -42,7 +42,7 @@ class LinkActionsSheet extends ConsumerWidget {
           if (!completer.isCompleted) completer.complete(LinkAction.delete);
         },
       ),
-      moveLabel: '$name 이동',
+      moveLabel: '$name 노트로 이동',
       renameLabel: '$name 링크 수정',
       deleteLabel: '$name 링크 삭제',
     );
