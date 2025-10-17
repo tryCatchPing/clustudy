@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/routing/app_routes.dart';
+import '../../../../shared/services/firebase_service_providers.dart';
 import '../../../../shared/services/sketch_persist_service.dart';
 import '../../../notes/data/derived_note_providers.dart';
 import '../../../notes/models/note_model.dart';
@@ -18,6 +21,12 @@ Future<void> showBacklinksPanel(
   BuildContext context,
   String noteId,
 ) async {
+  final container = ProviderScope.containerOf(context);
+  unawaited(
+    container
+        .read(firebaseAnalyticsLoggerProvider)
+        .logBacklinkPanelOpen(noteId: noteId),
+  );
   await showGeneralDialog<void>(
     context: context,
     barrierDismissible: true,
@@ -137,6 +146,13 @@ class _BacklinksPanelWrapper extends ConsumerWidget {
               ref
                   .read(lastKnownPageIndexProvider(noteId).notifier)
                   .setValue(idx);
+              unawaited(
+                ref.read(firebaseAnalyticsLoggerProvider).logLinkFollow(
+                      entry: 'backlink_panel',
+                      sourceNoteId: noteId,
+                      targetNoteId: link.targetNoteId,
+                    ),
+              );
               context.pushNamed(
                 AppRoutes.noteEditName,
                 pathParameters: {'noteId': link.targetNoteId},
@@ -195,6 +211,13 @@ class _BacklinksPanelWrapper extends ConsumerWidget {
                   .read(lastKnownPageIndexProvider(noteId).notifier)
                   .setValue(idx);
               // Navigate to source note
+              unawaited(
+                ref.read(firebaseAnalyticsLoggerProvider).logLinkFollow(
+                      entry: 'backlink_panel',
+                      sourceNoteId: noteId,
+                      targetNoteId: link.sourceNoteId,
+                    ),
+              );
               context.pushNamed(
                 AppRoutes.noteEditName,
                 pathParameters: {'noteId': link.sourceNoteId},

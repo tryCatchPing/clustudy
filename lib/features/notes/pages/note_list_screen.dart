@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -16,6 +18,7 @@ import '../../../shared/errors/app_error_spec.dart';
 import '../../../shared/routing/app_routes.dart';
 import '../../../shared/widgets/app_snackbar.dart';
 import '../../../shared/widgets/folder_picker_dialog.dart';
+import '../../../shared/services/firebase_service_providers.dart';
 import '../../vaults/data/derived_vault_providers.dart';
 import '../../vaults/models/vault_item.dart';
 import '../../vaults/models/vault_model.dart';
@@ -335,6 +338,12 @@ class _NoteListScreenState extends ConsumerState<NoteListScreen> {
   }
 
   void _openNote(VaultItem note) {
+    unawaited(
+      ref.read(firebaseAnalyticsLoggerProvider).logNoteOpen(
+        noteId: note.id,
+        source: 'list',
+      ),
+    );
     context.pushNamed(
       AppRoutes.noteEditName,
       pathParameters: {

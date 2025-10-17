@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/errors/app_error_mapper.dart';
 import '../../../shared/errors/app_error_spec.dart';
+import '../../../shared/services/firebase_service_providers.dart';
 import '../../../shared/services/vault_notes_service.dart';
 import '../../vaults/data/derived_vault_providers.dart';
 
@@ -49,6 +50,8 @@ class NoteListController extends StateNotifier<NoteListState> {
   static const _vaultRequiredMessage = '먼저 Vault를 선택해주세요.';
 
   VaultNotesService get _service => ref.read(vaultNotesServiceProvider);
+  FirebaseAnalyticsLogger get _logger =>
+      ref.read(firebaseAnalyticsLoggerProvider);
 
   @override
   void dispose() {
@@ -62,11 +65,27 @@ class NoteListController extends StateNotifier<NoteListState> {
     print('🗄️ Vault selected: $vaultId');
     ref.read(currentVaultProvider.notifier).state = vaultId;
     ref.read(currentFolderProvider(vaultId).notifier).state = null;
+    unawaited(_logger.logVaultOpen(vaultId: vaultId));
+    unawaited(
+      _logger.logFolderOpen(
+        folderId: '${vaultId}_root',
+        isRoot: true,
+      ),
+    );
   }
 
   Future<void> goUpOneLevel(String vaultId, String currentFolderId) async {
     final parent = await _service.getParentFolderId(vaultId, currentFolderId);
     ref.read(currentFolderProvider(vaultId).notifier).state = parent;
+    if (parent == null) {
+      unawaited(
+        _logger.logFolderOpen(folderId: '${vaultId}_root', isRoot: true),
+      );
+    } else {
+      unawaited(
+        _logger.logFolderOpen(folderId: parent, isRoot: false),
+      );
+    }
   }
 
   void selectFolder(String vaultId, String folderId) {
@@ -74,6 +93,12 @@ class NoteListController extends StateNotifier<NoteListState> {
     // ignore: avoid_print
     print('📁 Folder selected in $vaultId -> $folderId');
     ref.read(currentFolderProvider(vaultId).notifier).state = folderId;
+    unawaited(
+      _logger.logFolderOpen(
+        folderId: folderId,
+        isRoot: false,
+      ),
+    );
   }
 
   Future<AppErrorSpec> deleteNote({

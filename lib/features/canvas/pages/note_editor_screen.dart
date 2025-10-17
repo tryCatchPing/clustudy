@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -6,6 +8,7 @@ import '../../../design_system/components/organisms/note_top_toolbar.dart';
 import '../../../design_system/tokens/app_icons.dart';
 import '../../../design_system/tokens/app_spacing.dart';
 import '../../../shared/routing/route_observer.dart';
+import '../../../shared/services/firebase_service_providers.dart';
 import '../../../shared/services/sketch_persist_service.dart';
 import '../../notes/data/derived_note_providers.dart';
 import '../../notes/pages/page_controller_screen.dart';
@@ -48,6 +51,8 @@ class NoteEditorScreen extends ConsumerStatefulWidget {
 
 class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
     with RouteAware {
+  String? _lastLoggedNoteId;
+
   /// Sync the initial page index from per-route resume or lastKnown after
   /// route becomes current and note data is available.
   void _scheduleSyncInitialIndexFromResume({bool allowLastKnown = true}) {
@@ -243,6 +248,16 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
     if (note == null || notePagesCount == 0) {
       return const Scaffold(
         body: SizedBox.shrink(),
+      );
+    }
+
+    if (_lastLoggedNoteId != note.noteId) {
+      _lastLoggedNoteId = note.noteId;
+      unawaited(
+        ref.read(firebaseAnalyticsLoggerProvider).logNoteOpen(
+              noteId: note.noteId,
+              source: 'route',
+            ),
       );
     }
 

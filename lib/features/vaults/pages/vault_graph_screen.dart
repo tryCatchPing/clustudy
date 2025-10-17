@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -9,6 +10,7 @@ import '../../../design_system/components/organisms/top_toolbar.dart';
 import '../../../design_system/tokens/app_colors.dart';
 import '../../../design_system/tokens/app_icons.dart';
 import '../../../shared/routing/app_routes.dart';
+import '../../../shared/services/firebase_service_providers.dart';
 import '../../vaults/data/derived_vault_providers.dart';
 import '../data/vault_graph_providers.dart';
 
@@ -35,6 +37,7 @@ class VaultGraphScreen extends ConsumerStatefulWidget {
 class _VaultGraphScreenState extends ConsumerState<VaultGraphScreen> {
   final GlobalKey _graphKey = GlobalKey(debugLabel: 'graphWidgetKey');
   // Rect? _overlayRect;
+  String? _lastGraphLogVaultId;
 
   void _clearVertexOverlays() {
     final state = _graphKey.currentState;
@@ -60,6 +63,15 @@ class _VaultGraphScreenState extends ConsumerState<VaultGraphScreen> {
     if (currentVaultId == null) {
       return const Scaffold(
         body: Center(child: Text('선택된 Vault가 없습니다.')),
+      );
+    }
+
+    if (_lastGraphLogVaultId != currentVaultId) {
+      _lastGraphLogVaultId = currentVaultId;
+      unawaited(
+        ref
+            .read(firebaseAnalyticsLoggerProvider)
+            .logGraphViewOpen(vaultId: currentVaultId),
       );
     }
 
@@ -139,6 +151,13 @@ class _VaultGraphScreenState extends ConsumerState<VaultGraphScreen> {
           options.onVertexTapUp = (vertex, event) {
             final ctx = vertex.cpn?.context;
             if (ctx != null) {
+              unawaited(
+                ref.read(firebaseAnalyticsLoggerProvider).logLinkFollow(
+                      entry: 'graph_view',
+                      sourceNoteId: 'graph:$currentVaultId',
+                      targetNoteId: vertex.id.toString(),
+                    ),
+              );
               GoRouter.of(ctx).pushNamed(
                 AppRoutes.noteEditName,
                 pathParameters: {'noteId': vertex.id.toString()},

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -17,6 +19,7 @@ import 'db_txn_runner.dart';
 import 'file_storage_service.dart';
 import 'name_normalizer.dart';
 import 'note_service.dart';
+import 'firebase_service_providers.dart';
 
 /// 노트 검색 결과 모델
 class NoteSearchResult {
@@ -65,12 +68,14 @@ class VaultNotesService {
   final LinkRepository linkRepo;
   final NoteService noteService;
   final DbTxnRunner dbTxn;
+  final FirebaseAnalyticsLogger analyticsLogger;
 
   VaultNotesService({
     required this.vaultTree,
     required this.notesRepo,
     required this.linkRepo,
     required this.dbTxn,
+    required this.analyticsLogger,
     NoteService? noteService,
   }) : noteService = noteService ?? NoteService.instance;
 
@@ -111,6 +116,12 @@ class VaultNotesService {
         );
         await notesRepo.upsert(materialized, session: session);
       });
+      unawaited(
+        analyticsLogger.logNoteCreated(
+          noteId: materialized.noteId,
+          source: parentFolderId == null ? 'vault_root' : 'folder',
+        ),
+      );
       return materialized;
     } catch (e) {
       // 보상: 배치/콘텐츠 정리 + 파일 정리(최소 영향)
@@ -294,6 +305,12 @@ class VaultNotesService {
         );
         await notesRepo.upsert(materialized, session: session);
       });
+      unawaited(
+        analyticsLogger.logNoteCreated(
+          noteId: materialized.noteId,
+          source: 'pdf_import',
+        ),
+      );
       return materialized;
     } catch (e) {
       // 보상: 콘텐츠/배치/파일 정리
@@ -474,6 +491,12 @@ class VaultNotesService {
 
     // 3) 파일 삭제(트랜잭션 밖)
     await FileStorageService.deleteNoteFiles(noteId);
+    unawaited(
+      analyticsLogger.logNoteDeleted(
+        noteId: noteId,
+        pageCount: pageIds.length,
+      ),
+    );
   }
 
   /// 폴더 하위(자기 포함)의 폴더/노트 영향 범위를 계산합니다.
@@ -858,10 +881,12 @@ final vaultNotesServiceProvider = Provider<VaultNotesService>((ref) {
   final notesRepo = ref.watch(notesRepositoryProvider);
   final linkRepo = ref.watch(linkRepositoryProvider);
   final dbTxn = ref.watch(dbTxnRunnerProvider);
+  final analyticsLogger = ref.watch(firebaseAnalyticsLoggerProvider);
   return VaultNotesService(
     vaultTree: vaultTree,
     notesRepo: notesRepo,
     linkRepo: linkRepo,
     dbTxn: dbTxn,
+    analyticsLogger: analyticsLogger,
   );
 });
