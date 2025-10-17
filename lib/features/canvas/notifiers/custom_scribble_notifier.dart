@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 import 'package:scribble/scribble.dart';
@@ -60,6 +63,7 @@ class CustomScribbleNotifier extends ScribbleNotifier with ToolManagementMixin {
   }
 
   double _currentViewerScale = 1.0;
+  bool _firstStrokeLogged = false;
 
   /// 런타임에서 필압 사용 여부를 토글할 수 있도록 내부 플래그를 유지합니다.
   /// 생성 시 초기값은 [simulatePressure] 파라미터로부터 전달됩니다.
@@ -97,6 +101,18 @@ class CustomScribbleNotifier extends ScribbleNotifier with ToolManagementMixin {
           color: (value as Drawing).selectedColor,
           // 🎯 핵심 수정: scaleFactor를 1.0으로 고정했으므로 원본 굵기 사용
           width: value.selectedWidth,
+        ),
+      );
+    }
+    if (!_firstStrokeLogged && page != null) {
+      _firstStrokeLogged = true;
+      unawaited(
+        FirebaseAnalytics.instance.logEvent(
+          name: 'canvas_first_draw',
+          parameters: {
+            'note_id': page!.noteId,
+            'page_id': page!.pageId,
+          },
         ),
       );
     }

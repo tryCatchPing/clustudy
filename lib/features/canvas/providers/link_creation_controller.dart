@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'dart:ui' show Rect;
 
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../shared/services/name_normalizer.dart';
 import '../../../shared/services/vault_notes_service.dart';
+import '../../../shared/services/firebase_service_providers.dart';
 import '../../notes/data/notes_repository_provider.dart';
 import '../../notes/models/note_model.dart';
 import '../../vaults/data/vault_tree_repository_provider.dart';
@@ -20,6 +22,11 @@ class LinkCreationController {
   final Ref ref;
 
   LinkCreationController(this.ref);
+
+  FirebaseAnalyticsLogger get _analytics =>
+      ref.read(firebaseAnalyticsLoggerProvider);
+  FirebaseCrashlytics get _crashlytics =>
+      ref.read(firebaseCrashlyticsProvider);
 
   /// 드래그로 생성된 영역과 타깃 정보를 받아 링크를 생성합니다.
   ///
@@ -45,6 +52,9 @@ class LinkCreationController {
     );
     // 기본 검증
     if (rect.width.abs() <= 0 || rect.height.abs() <= 0) {
+      _crashlytics.log(
+        '[LinkCreate] invalid rectangle size src=$sourceNoteId/$sourcePageId',
+      );
       throw StateError('Invalid rectangle size');
     }
 
@@ -56,6 +66,9 @@ class LinkCreationController {
     // Resolve source placement and vault context
     final srcPlacement = await service.getPlacement(sourceNoteId);
     if (srcPlacement == null) {
+      _crashlytics.log(
+        '[LinkCreate] missing source placement noteId=$sourceNoteId',
+      );
       throw StateError('Source note not found in vault tree: $sourceNoteId');
     }
 
@@ -65,9 +78,16 @@ class LinkCreationController {
       // Validate placement and cross‑vault
       final tgtPlacement = await service.getPlacement(targetNoteId);
       if (tgtPlacement == null) {
+        _crashlytics.log(
+          '[LinkCreate] missing target placement noteId=$targetNoteId',
+        );
         throw StateError('Target note not found in vault tree: $targetNoteId');
       }
       if (tgtPlacement.vaultId != srcPlacement.vaultId) {
+        _crashlytics.log(
+          '[LinkCreate] cross-vault link blocked '
+          'src=${srcPlacement.vaultId} tgt=${tgtPlacement.vaultId}',
+        );
         throw StateError('다른 vault에는 링크를 생성할 수 없습니다.');
       }
       final found = await notesRepo.getNoteById(targetNoteId);
@@ -142,6 +162,9 @@ class LinkCreationController {
       debugPrint(
         '[LinkCreate] blocked: self-link attempted to noteId=${targetNote.noteId}',
       );
+      _crashlytics.log(
+        '[LinkCreate] self link blocked noteId=${targetNote.noteId}',
+      );
       throw const FormatException('동일 노트로는 링크를 생성할 수 없습니다.');
     }
 
@@ -174,6 +197,14 @@ class LinkCreationController {
       '[LinkCreate] saved link id=${link.id} '
       'src=${link.sourceNoteId}/${link.sourcePageId} tgt=${link.targetNoteId}',
     );
+    unawaited(
+      _analytics.logLinkConfirmed(
+        linkId: link.id,
+        sourceNoteId: link.sourceNoteId,
+        targetNoteId: link.targetNoteId,
+      ),
+    );
+
     return link;
   }
 

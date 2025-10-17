@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:firebase_analytics/firebase_analytics.dart';
+
 import '../../features/notes/data/notes_repository.dart';
 import '../../features/notes/models/note_model.dart';
 import '../../features/notes/models/note_page_model.dart';
@@ -106,6 +110,15 @@ class PageManagementService {
       }
 
       print('✅ 페이지 추가 완료: ${newPage.pageId} (위치: $targetIndex)');
+      unawaited(
+        FirebaseAnalytics.instance.logEvent(
+          name: 'note_page_added',
+          parameters: {
+            'note_id': noteId,
+            'page_number': targetIndex + 1,
+          },
+        ),
+      );
     } catch (e) {
       print('❌ 페이지 추가 실패: $e');
       rethrow;

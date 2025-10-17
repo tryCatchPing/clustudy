@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:ui';
 
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
@@ -16,22 +18,30 @@ import 'shared/data/canvas_settings_repository_provider.dart';
 import 'shared/data/isar_canvas_settings_repository.dart';
 import 'shared/models/canvas_settings.dart';
 import 'shared/routing/route_observer.dart';
+import 'shared/services/firebase_service_providers.dart';
 import 'shared/services/isar_database_service.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-
-  FlutterError.onError = (details) {
-    FirebaseCrashlytics.instance.recordFlutterError(details);
-  };
-
-  await runZonedGuarded(
+  await runZonedGuarded<Future<void>>(
     () async {
+      WidgetsFlutterBinding.ensureInitialized();
+
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+      await FirebaseAnalytics.instance.logEvent(name: 'app_launch');
+
+      FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
+      PlatformDispatcher.instance.onError = (error, stackTrace) {
+        FirebaseCrashlytics.instance.recordError(
+          error,
+          stackTrace,
+          fatal: true,
+        );
+        return true;
+      };
+
       late final IsarCanvasSettingsRepository settingsRepository;
       late final CanvasSettings initialCanvasSettings;
 
@@ -78,24 +88,20 @@ Future<void> main() async {
   );
 }
 
-final _router = GoRouter(
-  initialLocation: '/notes',
-  routes: [
-    // 홈 관련 라우트 (홈페이지, PDF 캔버스)
-    ...HomeRoutes.routes,
-    // 노트 관련 라우트 (노트 목록)
-    ...NotesRoutes.routes,
-    // 캔버스 관련 라우트 (노트 편집)
-    ...CanvasRoutes.routes,
-    // Vault 그래프 관련 라우트
-    ...VaultGraphRoutes.routes,
-  ],
-  observers: [appRouteObserver],
-  debugLogDiagnostics: true,
-);
-
-/// 전역 GoRouter 인스턴스 접근용 (Provider에서 사용)
-GoRouter get globalRouter => _router;
+final goRouterProvider = Provider<GoRouter>((ref) {
+  final analyticsObserver = ref.watch(firebaseAnalyticsObserverProvider);
+  return GoRouter(
+    initialLocation: '/notes',
+    routes: [
+      ...HomeRoutes.routes,
+      ...NotesRoutes.routes,
+      ...CanvasRoutes.routes,
+      ...VaultGraphRoutes.routes,
+    ],
+    observers: [appRouteObserver, analyticsObserver],
+    debugLogDiagnostics: true,
+  );
+});
 
 /// 애플리케이션의 메인 위젯입니다.
 class MyApp extends ConsumerWidget {
@@ -105,10 +111,11 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     debugPrint('🎯 [MyApp] Building MyApp...');
+    final router = ref.watch(goRouterProvider);
 
     debugPrint('🎯 [MyApp] Creating MaterialApp.router...');
     final app = MaterialApp.router(
-      routerConfig: _router,
+      routerConfig: router,
       theme: ThemeData(
         scaffoldBackgroundColor: AppColors.background,
         colorScheme: ColorScheme.fromSeed(

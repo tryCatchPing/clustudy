@@ -10,6 +10,7 @@ import '../../../shared/dialogs/design_sheet_helpers.dart';
 import '../../../shared/errors/app_error_mapper.dart';
 import '../../../shared/errors/app_error_spec.dart';
 import '../../../shared/routing/app_routes.dart';
+import '../../../shared/services/firebase_service_providers.dart';
 import '../../../shared/services/sketch_persist_service.dart';
 import '../../../shared/widgets/app_snackbar.dart';
 import '../../canvas/providers/pointer_policy_provider.dart';
@@ -221,18 +222,26 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                                 ? LinkerPointerMode.all
                                 : LinkerPointerMode.stylusOnly,
                             onRectCompleted: (rect) async {
+                              final currentPage = notifier.page!;
+                              unawaited(
+                                ref
+                                    .read(firebaseAnalyticsLoggerProvider)
+                                    .logLinkDrawn(
+                                      sourceNoteId: currentPage.noteId,
+                                      sourcePageId: currentPage.pageId,
+                                    ),
+                              );
                               final res = await LinkCreationDialog.show(
                                 context,
-                                sourceNoteId: notifier.page!.noteId,
+                                sourceNoteId: currentPage.noteId,
                               );
                               if (res == null) return; // 취소
-                              final page = notifier.page!;
                               try {
                                 await ref
                                     .read(linkCreationControllerProvider)
                                     .createFromRect(
-                                      sourceNoteId: page.noteId,
-                                      sourcePageId: page.pageId,
+                                      sourceNoteId: currentPage.noteId,
+                                      sourcePageId: currentPage.pageId,
                                       rect: rect,
                                       targetNoteId: res.targetNoteId,
                                       targetTitle: res.targetTitle,
@@ -303,6 +312,17 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                                           ).notifier,
                                         )
                                         .setValue(idx);
+                                    unawaited(
+                                      ref
+                                          .read(
+                                            firebaseAnalyticsLoggerProvider,
+                                          )
+                                          .logLinkFollow(
+                                            entry: 'canvas_link',
+                                            sourceNoteId: link.sourceNoteId,
+                                            targetNoteId: link.targetNoteId,
+                                          ),
+                                    );
                                     context.pushNamed(
                                       AppRoutes.noteEditName,
                                       pathParameters: {
