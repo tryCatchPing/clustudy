@@ -20,6 +20,41 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set up Firebase config files
+        env:
+          FIREBASE_OPTIONS_DART: ${{ secrets.FIREBASE_OPTIONS_DART }}
+          ANDROID_GOOGLE_SERVICES_JSON: ${{ secrets.ANDROID_GOOGLE_SERVICES_JSON }}
+          IOS_GOOGLE_SERVICE_INFO_PLIST: ${{ secrets.IOS_GOOGLE_SERVICE_INFO_PLIST }}
+          MACOS_GOOGLE_SERVICE_INFO_PLIST: ${{ secrets.MACOS_GOOGLE_SERVICE_INFO_PLIST }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p lib android/app ios/Runner macos/Runner
+
+          if [ -z "$FIREBASE_OPTIONS_DART" ]; then
+            echo "❌ FIREBASE_OPTIONS_DART secret is not set." >&2
+            exit 1
+          fi
+          printf '%s' "$FIREBASE_OPTIONS_DART" | base64 --decode > lib/firebase_options.dart
+
+          if [ -z "$ANDROID_GOOGLE_SERVICES_JSON" ]; then
+            echo "❌ ANDROID_GOOGLE_SERVICES_JSON secret is not set." >&2
+            exit 1
+          fi
+          printf '%s' "$ANDROID_GOOGLE_SERVICES_JSON" | base64 --decode > android/app/google-services.json
+
+          if [ -z "$IOS_GOOGLE_SERVICE_INFO_PLIST" ]; then
+            echo "❌ IOS_GOOGLE_SERVICE_INFO_PLIST secret is not set." >&2
+            exit 1
+          fi
+          printf '%s' "$IOS_GOOGLE_SERVICE_INFO_PLIST" | base64 --decode > ios/Runner/GoogleService-Info.plist
+
+          if [ -n "$MACOS_GOOGLE_SERVICE_INFO_PLIST" ]; then
+            printf '%s' "$MACOS_GOOGLE_SERVICE_INFO_PLIST" | base64 --decode > macos/Runner/GoogleService-Info.plist
+          else
+            printf '%s' "$IOS_GOOGLE_SERVICE_INFO_PLIST" | base64 --decode > macos/Runner/GoogleService-Info.plist
+          fi
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -48,6 +83,41 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set up Firebase config files
+        env:
+          FIREBASE_OPTIONS_DART: ${{ secrets.FIREBASE_OPTIONS_DART }}
+          ANDROID_GOOGLE_SERVICES_JSON: ${{ secrets.ANDROID_GOOGLE_SERVICES_JSON }}
+          IOS_GOOGLE_SERVICE_INFO_PLIST: ${{ secrets.IOS_GOOGLE_SERVICE_INFO_PLIST }}
+          MACOS_GOOGLE_SERVICE_INFO_PLIST: ${{ secrets.MACOS_GOOGLE_SERVICE_INFO_PLIST }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p lib android/app ios/Runner macos/Runner
+
+          if [ -z "$FIREBASE_OPTIONS_DART" ]; then
+            echo "❌ FIREBASE_OPTIONS_DART secret is not set." >&2
+            exit 1
+          fi
+          printf '%s' "$FIREBASE_OPTIONS_DART" | base64 --decode > lib/firebase_options.dart
+
+          if [ -z "$ANDROID_GOOGLE_SERVICES_JSON" ]; then
+            echo "❌ ANDROID_GOOGLE_SERVICES_JSON secret is not set." >&2
+            exit 1
+          fi
+          printf '%s' "$ANDROID_GOOGLE_SERVICES_JSON" | base64 --decode > android/app/google-services.json
+
+          if [ -z "$IOS_GOOGLE_SERVICE_INFO_PLIST" ]; then
+            echo "❌ IOS_GOOGLE_SERVICE_INFO_PLIST secret is not set." >&2
+            exit 1
+          fi
+          printf '%s' "$IOS_GOOGLE_SERVICE_INFO_PLIST" | base64 --decode > ios/Runner/GoogleService-Info.plist
+
+          if [ -n "$MACOS_GOOGLE_SERVICE_INFO_PLIST" ]; then
+            printf '%s' "$MACOS_GOOGLE_SERVICE_INFO_PLIST" | base64 --decode > macos/Runner/GoogleService-Info.plist
+          else
+            printf '%s' "$IOS_GOOGLE_SERVICE_INFO_PLIST" | base64 --decode > macos/Runner/GoogleService-Info.plist
+          fi
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -106,6 +176,41 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set up Firebase config files
+        env:
+          FIREBASE_OPTIONS_DART: ${{ secrets.FIREBASE_OPTIONS_DART }}
+          ANDROID_GOOGLE_SERVICES_JSON: ${{ secrets.ANDROID_GOOGLE_SERVICES_JSON }}
+          IOS_GOOGLE_SERVICE_INFO_PLIST: ${{ secrets.IOS_GOOGLE_SERVICE_INFO_PLIST }}
+          MACOS_GOOGLE_SERVICE_INFO_PLIST: ${{ secrets.MACOS_GOOGLE_SERVICE_INFO_PLIST }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p lib android/app ios/Runner macos/Runner
+
+          if [ -z "$FIREBASE_OPTIONS_DART" ]; then
+            echo "❌ FIREBASE_OPTIONS_DART secret is not set." >&2
+            exit 1
+          fi
+          printf '%s' "$FIREBASE_OPTIONS_DART" | base64 --decode > lib/firebase_options.dart
+
+          if [ -z "$ANDROID_GOOGLE_SERVICES_JSON" ]; then
+            echo "❌ ANDROID_GOOGLE_SERVICES_JSON secret is not set." >&2
+            exit 1
+          fi
+          printf '%s' "$ANDROID_GOOGLE_SERVICES_JSON" | base64 --decode > android/app/google-services.json
+
+          if [ -z "$IOS_GOOGLE_SERVICE_INFO_PLIST" ]; then
+            echo "❌ IOS_GOOGLE_SERVICE_INFO_PLIST secret is not set." >&2
+            exit 1
+          fi
+          printf '%s' "$IOS_GOOGLE_SERVICE_INFO_PLIST" | base64 --decode > ios/Runner/GoogleService-Info.plist
+
+          if [ -n "$MACOS_GOOGLE_SERVICE_INFO_PLIST" ]; then
+            printf '%s' "$MACOS_GOOGLE_SERVICE_INFO_PLIST" | base64 --decode > macos/Runner/GoogleService-Info.plist
+          else
+            printf '%s' "$IOS_GOOGLE_SERVICE_INFO_PLIST" | base64 --decode > macos/Runner/GoogleService-Info.plist
+          fi
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
