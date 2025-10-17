@@ -62,6 +62,12 @@ dependencies:
   path_drawing: ^1.0.1
 
   provider: any
+
+  # Firebase Analytics & Crashlytics
+  firebase_core: ^2.32.0
+  firebase_analytics: ^10.10.7
+  firebase_crashlytics: ^3.5.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
