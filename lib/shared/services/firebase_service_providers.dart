@@ -1,9 +1,34 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+const _supportedAnalyticsPlatforms = <TargetPlatform>{
+  TargetPlatform.android,
+  TargetPlatform.iOS,
+  TargetPlatform.macOS,
+};
+
+bool isFirebaseAnalyticsSupportedPlatform() {
+  if (kIsWeb) {
+    return false;
+  }
+  return _supportedAnalyticsPlatforms.contains(defaultTargetPlatform);
+}
+
+bool isFirebaseAnalyticsAvailable() {
+  if (!isFirebaseAnalyticsSupportedPlatform()) {
+    return false;
+  }
+  return Firebase.apps.isNotEmpty;
+}
+
 /// Provides the singleton [FirebaseAnalytics] instance once Firebase is ready.
-final firebaseAnalyticsProvider = Provider<FirebaseAnalytics>((ref) {
+final firebaseAnalyticsProvider = Provider<FirebaseAnalytics?>((ref) {
+  if (!isFirebaseAnalyticsAvailable()) {
+    return null;
+  }
   return FirebaseAnalytics.instance;
 });
 
@@ -13,9 +38,13 @@ final firebaseCrashlyticsProvider = Provider<FirebaseCrashlytics>((ref) {
 });
 
 /// Provides a shared [FirebaseAnalyticsObserver] for router screen tracking.
-final firebaseAnalyticsObserverProvider =
-    Provider<FirebaseAnalyticsObserver>((ref) {
+final firebaseAnalyticsObserverProvider = Provider<FirebaseAnalyticsObserver?>((
+  ref,
+) {
   final analytics = ref.watch(firebaseAnalyticsProvider);
+  if (analytics == null) {
+    return null;
+  }
   return FirebaseAnalyticsObserver(analytics: analytics);
 });
 
@@ -23,13 +52,31 @@ final firebaseAnalyticsObserverProvider =
 class FirebaseAnalyticsLogger {
   FirebaseAnalyticsLogger(this._analytics);
 
-  final FirebaseAnalytics _analytics;
+  final FirebaseAnalytics? _analytics;
 
-  Future<void> logAppLaunch() => _analytics.logEvent(name: 'app_launch');
+  FirebaseAnalytics? get _analyticsOrNull {
+    if (_analytics == null || !isFirebaseAnalyticsAvailable()) {
+      return null;
+    }
+    return _analytics;
+  }
+
+  Future<void> _logEvent(
+    String name, {
+    Map<String, Object?>? parameters,
+  }) {
+    final analytics = _analyticsOrNull;
+    if (analytics == null) {
+      return Future.value();
+    }
+    return analytics.logEvent(name: name, parameters: parameters);
+  }
+
+  Future<void> logAppLaunch() => _logEvent('app_launch');
 
   Future<void> logVaultOpen({required String vaultId}) {
-    return _analytics.logEvent(
-      name: 'vault_open',
+    return _logEvent(
+      'vault_open',
       parameters: {'vault_id': vaultId},
     );
   }
@@ -38,8 +85,8 @@ class FirebaseAnalyticsLogger {
     required String folderId,
     required bool isRoot,
   }) {
-    return _analytics.logEvent(
-      name: 'folder_open',
+    return _logEvent(
+      'folder_open',
       parameters: {
         'folder_id': folderId,
         'is_root': isRoot ? 1 : 0,
@@ -51,8 +98,8 @@ class FirebaseAnalyticsLogger {
     required String noteId,
     required String source,
   }) {
-    return _analytics.logEvent(
-      name: 'note_open',
+    return _logEvent(
+      'note_open',
       parameters: {'note_id': noteId, 'source': source},
     );
   }
@@ -61,8 +108,8 @@ class FirebaseAnalyticsLogger {
     required String noteId,
     required String source,
   }) {
-    return _analytics.logEvent(
-      name: 'note_created',
+    return _logEvent(
+      'note_created',
       parameters: {'note_id': noteId, 'source': source},
     );
   }
@@ -71,8 +118,8 @@ class FirebaseAnalyticsLogger {
     required String noteId,
     int? pageCount,
   }) {
-    return _analytics.logEvent(
-      name: 'note_deleted',
+    return _logEvent(
+      'note_deleted',
       parameters: {
         'note_id': noteId,
         if (pageCount != null) 'page_count': pageCount,
@@ -84,8 +131,8 @@ class FirebaseAnalyticsLogger {
     required String noteId,
     required int pageNumber,
   }) {
-    return _analytics.logEvent(
-      name: 'note_page_added',
+    return _logEvent(
+      'note_page_added',
       parameters: {'note_id': noteId, 'page_number': pageNumber},
     );
   }
@@ -94,8 +141,8 @@ class FirebaseAnalyticsLogger {
     required String noteId,
     required String pageId,
   }) {
-    return _analytics.logEvent(
-      name: 'canvas_first_draw',
+    return _logEvent(
+      'canvas_first_draw',
       parameters: {'note_id': noteId, 'page_id': pageId},
     );
   }
@@ -105,8 +152,8 @@ class FirebaseAnalyticsLogger {
     required String sourcePageId,
     String? targetNoteId,
   }) {
-    return _analytics.logEvent(
-      name: 'link_drawn',
+    return _logEvent(
+      'link_drawn',
       parameters: {
         'source_note_id': sourceNoteId,
         'source_page_id': sourcePageId,
@@ -120,8 +167,8 @@ class FirebaseAnalyticsLogger {
     required String sourceNoteId,
     required String targetNoteId,
   }) {
-    return _analytics.logEvent(
-      name: 'link_confirmed',
+    return _logEvent(
+      'link_confirmed',
       parameters: {
         'link_id': linkId,
         'source_note_id': sourceNoteId,
@@ -135,8 +182,8 @@ class FirebaseAnalyticsLogger {
     required String sourceNoteId,
     required String targetNoteId,
   }) {
-    return _analytics.logEvent(
-      name: 'link_follow',
+    return _logEvent(
+      'link_follow',
       parameters: {
         'entry': entry,
         'source_note_id': sourceNoteId,
@@ -146,15 +193,15 @@ class FirebaseAnalyticsLogger {
   }
 
   Future<void> logBacklinkPanelOpen({required String noteId}) {
-    return _analytics.logEvent(
-      name: 'backlink_panel_open',
+    return _logEvent(
+      'backlink_panel_open',
       parameters: {'note_id': noteId},
     );
   }
 
   Future<void> logGraphViewOpen({required String vaultId}) {
-    return _analytics.logEvent(
-      name: 'graph_view_open',
+    return _logEvent(
+      'graph_view_open',
       parameters: {'vault_id': vaultId},
     );
   }
@@ -164,8 +211,12 @@ class FirebaseAnalyticsLogger {
     if (parameters.isEmpty) {
       return;
     }
+    final analytics = _analyticsOrNull;
+    if (analytics == null) {
+      return;
+    }
 
-    await _analytics.logEvent(
+    await analytics.logEvent(
       name: 'install_attribution',
       parameters: parameters,
     );
@@ -176,17 +227,17 @@ class FirebaseAnalyticsLogger {
 
     await Future.wait([
       if (source != null && source.isNotEmpty)
-        _analytics.setUserProperty(
+        analytics.setUserProperty(
           name: 'install_source',
           value: source,
         ),
       if (medium != null && medium.isNotEmpty)
-        _analytics.setUserProperty(
+        analytics.setUserProperty(
           name: 'install_medium',
           value: medium,
         ),
       if (campaign != null && campaign.isNotEmpty)
-        _analytics.setUserProperty(
+        analytics.setUserProperty(
           name: 'install_campaign',
           value: campaign,
         ),
@@ -199,8 +250,8 @@ class FirebaseAnalyticsLogger {
     required String featureLabel,
     required String surface,
   }) {
-    return _analytics.logEvent(
-      name: 'pro_feature_interest',
+    return _logEvent(
+      'pro_feature_interest',
       parameters: {
         'feature_key': featureKey,
         'feature_label': featureLabel,
@@ -210,8 +261,9 @@ class FirebaseAnalyticsLogger {
   }
 }
 
-final firebaseAnalyticsLoggerProvider =
-    Provider<FirebaseAnalyticsLogger>((ref) {
+final firebaseAnalyticsLoggerProvider = Provider<FirebaseAnalyticsLogger>((
+  ref,
+) {
   final analytics = ref.watch(firebaseAnalyticsProvider);
   return FirebaseAnalyticsLogger(analytics);
 });

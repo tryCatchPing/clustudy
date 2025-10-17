@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../shared/services/firebase_service_providers.dart';
 import '../../../shared/services/page_management_service.dart';
 import '../../canvas/providers/link_providers.dart';
 import '../../canvas/providers/note_editor_provider.dart';
@@ -44,10 +45,12 @@ class PageControllerScreenNotifier extends _$PageControllerScreenNotifier {
       }
 
       // Repository를 통해 페이지 추가
+      final analyticsLogger = ref.read(firebaseAnalyticsLoggerProvider);
       await PageManagementService.addPage(
         noteId,
         newPage,
         repository,
+        analyticsLogger: analyticsLogger,
       );
 
       state = state.copyWith(

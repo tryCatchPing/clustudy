@@ -1,11 +1,10 @@
 import 'dart:async';
 
-import 'package:firebase_analytics/firebase_analytics.dart';
-
 import '../../features/notes/data/notes_repository.dart';
 import '../../features/notes/models/note_model.dart';
 import '../../features/notes/models/note_page_model.dart';
 import '../repositories/link_repository.dart';
+import 'firebase_service_providers.dart';
 import 'note_service.dart';
 
 /// 페이지 추가/삭제 관리를 담당하는 서비스입니다.
@@ -81,6 +80,7 @@ class PageManagementService {
     NotePageModel newPage,
     NotesRepository repo, {
     int? insertIndex,
+    FirebaseAnalyticsLogger? analyticsLogger,
   }) async {
     try {
       // 현재 노트 조회
@@ -111,12 +111,9 @@ class PageManagementService {
 
       print('✅ 페이지 추가 완료: ${newPage.pageId} (위치: $targetIndex)');
       unawaited(
-        FirebaseAnalytics.instance.logEvent(
-          name: 'note_page_added',
-          parameters: {
-            'note_id': noteId,
-            'page_number': targetIndex + 1,
-          },
+        analyticsLogger?.logPageAdded(
+          noteId: noteId,
+          pageNumber: targetIndex + 1,
         ),
       );
     } catch (e) {

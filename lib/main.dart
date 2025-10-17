@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -24,24 +24,32 @@ import 'shared/services/install_attribution_service.dart';
 import 'shared/services/isar_database_service.dart';
 
 Future<void> main() async {
+  var crashlyticsEnabled = false;
   await runZonedGuarded<Future<void>>(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
 
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
-      await FirebaseAnalytics.instance.logEvent(name: 'app_launch');
-
-      FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
-      PlatformDispatcher.instance.onError = (error, stackTrace) {
-        FirebaseCrashlytics.instance.recordError(
-          error,
-          stackTrace,
-          fatal: true,
+      FirebaseAnalyticsLogger? analyticsLogger;
+      if (isFirebaseAnalyticsSupportedPlatform()) {
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
         );
-        return true;
-      };
+        analyticsLogger = FirebaseAnalyticsLogger(
+          FirebaseAnalytics.instance,
+        );
+        await analyticsLogger.logAppLaunch();
+
+        FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
+        PlatformDispatcher.instance.onError = (error, stackTrace) {
+          FirebaseCrashlytics.instance.recordError(
+            error,
+            stackTrace,
+            fatal: true,
+          );
+          return true;
+        };
+        crashlyticsEnabled = true;
+      }
 
       late final IsarCanvasSettingsRepository settingsRepository;
       late final CanvasSettings initialCanvasSettings;
@@ -66,22 +74,25 @@ Future<void> main() async {
         rethrow;
       }
 
-      try {
-        final attributionService = InstallAttributionService(
-          analyticsLogger: FirebaseAnalyticsLogger(
-            FirebaseAnalytics.instance,
-          ),
-        );
-        installAttribution = await attributionService.bootstrap();
-      } catch (error, stackTrace) {
-        FlutterError.reportError(
-          FlutterErrorDetails(
-            exception: error,
-            stack: stackTrace,
-            context: ErrorDescription('while initializing install attribution'),
-            library: 'it_contest main',
-          ),
-        );
+      if (analyticsLogger != null &&
+          defaultTargetPlatform == TargetPlatform.android) {
+        try {
+          final attributionService = InstallAttributionService(
+            analyticsLogger: analyticsLogger,
+          );
+          installAttribution = await attributionService.bootstrap();
+        } catch (error, stackTrace) {
+          FlutterError.reportError(
+            FlutterErrorDetails(
+              exception: error,
+              stack: stackTrace,
+              context: ErrorDescription(
+                'while initializing install attribution',
+              ),
+              library: 'it_contest main',
+            ),
+          );
+        }
       }
 
       runApp(
@@ -102,11 +113,13 @@ Future<void> main() async {
       );
     },
     (error, stackTrace) {
-      FirebaseCrashlytics.instance.recordError(
-        error,
-        stackTrace,
-        fatal: true,
-      );
+      if (crashlyticsEnabled) {
+        FirebaseCrashlytics.instance.recordError(
+          error,
+          stackTrace,
+          fatal: true,
+        );
+      }
     },
   );
 }
@@ -121,7 +134,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ...CanvasRoutes.routes,
       ...VaultGraphRoutes.routes,
     ],
-    observers: [appRouteObserver, analyticsObserver],
+    observers: [
+      appRouteObserver,
+      if (analyticsObserver != null) analyticsObserver,
+    ],
     debugLogDiagnostics: true,
   );
 });
