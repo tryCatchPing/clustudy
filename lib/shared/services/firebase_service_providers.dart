@@ -159,6 +159,22 @@ class FirebaseAnalyticsLogger {
       parameters: {'vault_id': vaultId},
     );
   }
+
+  /// Tracks interest taps on PRO-only features shown to free users.
+  Future<void> logProFeatureInterest({
+    required String featureKey,
+    required String featureLabel,
+    required String surface,
+  }) {
+    return _analytics.logEvent(
+      name: 'pro_feature_interest',
+      parameters: {
+        'feature_key': featureKey,
+        'feature_label': featureLabel,
+        'surface': surface,
+      },
+    );
+  }
 }
 
 final firebaseAnalyticsLoggerProvider =
