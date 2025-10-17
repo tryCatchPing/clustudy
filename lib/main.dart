@@ -20,6 +20,7 @@ import 'shared/data/isar_canvas_settings_repository.dart';
 import 'shared/models/canvas_settings.dart';
 import 'shared/routing/route_observer.dart';
 import 'shared/services/firebase_service_providers.dart';
+import 'shared/services/install_attribution_service.dart';
 import 'shared/services/isar_database_service.dart';
 
 Future<void> main() async {
@@ -44,6 +45,7 @@ Future<void> main() async {
 
       late final IsarCanvasSettingsRepository settingsRepository;
       late final CanvasSettings initialCanvasSettings;
+      InstallAttributionPayload? installAttribution;
 
       try {
         debugPrint('🗄️ [main] Initializing Isar database...');
@@ -64,9 +66,30 @@ Future<void> main() async {
         rethrow;
       }
 
+      try {
+        final attributionService = InstallAttributionService(
+          analyticsLogger: FirebaseAnalyticsLogger(
+            FirebaseAnalytics.instance,
+          ),
+        );
+        installAttribution = await attributionService.bootstrap();
+      } catch (error, stackTrace) {
+        FlutterError.reportError(
+          FlutterErrorDetails(
+            exception: error,
+            stack: stackTrace,
+            context: ErrorDescription('while initializing install attribution'),
+            library: 'it_contest main',
+          ),
+        );
+      }
+
       runApp(
         ProviderScope(
           overrides: [
+            installAttributionBootstrapProvider.overrideWithValue(
+              installAttribution,
+            ),
             canvasSettingsRepositoryProvider.overrideWithValue(
               settingsRepository,
             ),
