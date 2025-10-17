@@ -40,10 +40,30 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
 
-    if ['firebase_crashlytics', 'FirebaseCrashlytics'].include?(target.name)
+    if target.name == 'Pods-Runner' || target.name.downcase.include?('firebase_crashlytics') || target.name.include?('FirebaseCrashlytics')
       target.build_configurations.each do |config|
         config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']
+        config.build_settings['OTHER_CFLAGS'] = '$(inherited) -Wno-non-modular-include-in-framework-module'
+        if target.name.downcase.include?('firebase_crashlytics') || target.name.include?('FirebaseCrashlytics')
+          config.build_settings['DEFINES_MODULE'] = 'NO'
+        end
       end
     end
+  end
+
+  crashlytics_base = File.expand_path(File.join(__dir__, '.symlinks', 'plugins', 'firebase_crashlytics', 'ios', 'Classes'))
+  crashlytics_headers = [
+    File.join(crashlytics_base, 'Crashlytics_Platform.h'),
+    File.join(crashlytics_base, 'ExceptionModel_Platform.h'),
+  ]
+
+  crashlytics_headers.each do |path|
+    next unless File.exist?(path)
+
+    contents = File.read(path)
+    next unless contents.include?('<Firebase/Firebase.h>')
+
+    File.write(path, contents.gsub('<Firebase/Firebase.h>', '<FirebaseCrashlytics/FirebaseCrashlytics.h>'))
   end
 end
