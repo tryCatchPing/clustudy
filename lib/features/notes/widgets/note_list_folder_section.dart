@@ -66,7 +66,7 @@ class NoteListFolderSection extends StatelessWidget {
           for (final note in notes)
             NoteCard(
               key: ValueKey('note-${note.id}'),
-              iconPath: AppIcons.noteAdd,
+              iconPath: AppIcons.note,
               title: note.name,
               date: note.updatedAt,
               onTap: () => onOpenNote(note),
