@@ -27,6 +27,7 @@ class AppIcons {
   static const move = 'assets/icons/move.svg';
   static const roundX = 'assets/icons/round-X.svg';
   static const searchLarge = 'assets/icons/search_large.svg';
+  static const note = 'assets/icons/note.svg';
 
   // note Toolbar
   static const pen = 'assets/icons/pen.svg';
