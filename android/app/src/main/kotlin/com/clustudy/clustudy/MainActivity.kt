@@ -1,4 +1,4 @@
-package com.trycatchping.clustudy
+package com.clustudy.clustudy
 
 import android.os.Handler
 import android.os.Looper
@@ -10,7 +10,7 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 
 private const val INSTALL_REFERRER_CHANNEL =
-    "com.trycatchping.clustudy/install_referrer"
+    "com.clustudy.clustudy/install_referrer"
 
 class MainActivity : FlutterActivity() {
     private val mainHandler = Handler(Looper.getMainLooper())
