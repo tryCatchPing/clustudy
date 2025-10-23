@@ -21,7 +21,7 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # - 마이너(x.1.x): 호환성 유지하면서 의미 있는 기능 추가나 UX 개선이 있을 때. 기존 사용 흐름은 유지되지만 “새 기능”이라 말할 수 있는 수준
 # - 패치(x.x.1): 버그 수정, 안정화, 성능 조정처럼 기존 기능을 깨지 않고 다듬을 때. 핫픽스
 # - 빌드 번호(+n): 같은 앱 버전을 여러 번 스토어에 제출할 때
-version: 1.0.0+1
+version: 1.0.1+1
 
 environment:
   sdk: ^3.8.1
@@ -109,7 +109,12 @@ flutter:
   fonts:
     - family: Pretendard
       fonts:
-        - asset: assets/fonts/PretendardVariable.ttf
+        - asset: fonts/Pretendard-Regular.otf
+          weight: 400
+        - asset: fonts/Pretendard-SemiBold.otf
+          weight: 600
+        - asset: fonts/Pretendard-Bold.otf
+          weight: 700
     - family: Play
       fonts:
         - asset: fonts/Play-Regular.ttf
