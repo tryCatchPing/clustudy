@@ -7,7 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'firebase_service_providers.dart';
 
 const MethodChannel _installReferrerChannel = MethodChannel(
-  'com.trycatchping.clustudy/install_referrer',
+  'com.clustudy.clustudy/install_referrer',
 );
 
 /// Provides access to the install attribution payload captured at bootstrap.
