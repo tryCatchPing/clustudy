@@ -93,6 +93,13 @@ jobs:
           channel: "stable"
           cache: true
 
+      - name: Install FlutterFire CLI
+        run: |
+          dart pub global activate flutterfire_cli
+          echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
+          export PATH="$PATH:$HOME/.pub-cache/bin"
+          flutterfire --version
+
       - name: Get dependencies
         run: flutter pub get
 
@@ -280,6 +287,13 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: "stable"
           cache: true
+
+      - name: Install FlutterFire CLI
+        run: |
+          dart pub global activate flutterfire_cli
+          echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
+          export PATH="$PATH:$HOME/.pub-cache/bin"
+          flutterfire --version
 
       - name: Cache Flutter dependencies
         uses: actions/cache@v4
