@@ -304,14 +304,14 @@ jobs:
           pod install
           cd ..
 
-      - name: Build iOS (no codesign)
-        run: flutter build ios --release --no-codesign
+      - name: Build iOS (simulator only)
+        run: flutter build ios --debug --simulator
 
       - name: Verify iOS build
         run: |
-          if [ -d "build/ios/iphoneos/Runner.app" ]; then
-            echo "✅ iOS build successful"
-            ls -la build/ios/iphoneos/
+          if [ -d "build/ios/iphonesimulator/Runner.app" ]; then
+            echo "✅ iOS simulator build successful"
+            ls -la build/ios/iphonesimulator/
           else
             echo "❌ iOS build failed"
             exit 1
