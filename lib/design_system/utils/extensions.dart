@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 // import '../tokens/app_colors.dart';
 // import '../tokens/app_spacing.dart';
+import '../../shared/constants/breakpoints.dart';
 
 /// 🔧 디자인 시스템 유틸리티 확장
 ///
@@ -42,7 +43,11 @@ extension BuildContextExtensions on BuildContext {
   bool get isKeyboardOpen => MediaQuery.of(this).viewInsets.bottom > 0;
 
   /// 반응형 디자인을 위한 breakpoint 확인
-  bool get isMobile => screenWidth < 768;
-  bool get isTablet => screenWidth >= 768 && screenWidth < 1024;
-  bool get isDesktop => screenWidth >= 1024;
+  /// Breakpoints 클래스를 사용하여 600px 기준으로 통일
+  /// 모바일 화면인지 확인 (600px 미만)
+  bool get isMobile => Breakpoints.isMobile(screenWidth);
+  /// 태블릿 화면인지 확인 (600px 이상)
+  bool get isTablet => Breakpoints.isTablet(screenWidth);
+  /// 데스크톱 화면인지 확인
+  bool get isDesktop => Breakpoints.isDesktop(screenWidth);
 }
