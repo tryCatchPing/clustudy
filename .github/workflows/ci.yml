@@ -55,6 +55,37 @@ jobs:
             printf '%s' "$IOS_GOOGLE_SERVICE_INFO_PLIST" | base64 --decode > macos/Runner/GoogleService-Info.plist
           fi
 
+      - name: Verify Firebase config files
+        run: |
+          set -euo pipefail
+
+          echo "🔍 Verifying Firebase configuration files..."
+
+          # Check if google-services.json exists and is valid
+          if [ ! -f "android/app/google-services.json" ]; then
+            echo "❌ android/app/google-services.json does not exist" >&2
+            exit 1
+          fi
+
+          # Check if file is not empty
+          if [ ! -s "android/app/google-services.json" ]; then
+            echo "❌ android/app/google-services.json is empty" >&2
+            exit 1
+          fi
+
+          # Check if JSON is valid and contains the expected package name
+          if ! python3 -c "import json, sys; data = json.load(open('android/app/google-services.json')); clients = [c for c in data.get('client', []) if c.get('client_info', {}).get('android_client_info', {}).get('package_name') == 'com.clustudy.clustudy']; sys.exit(0 if clients else 1)" 2>/dev/null; then
+            echo "⚠️  Warning: google-services.json does not contain package name 'com.clustudy.clustudy'" >&2
+            echo "📄 File contents (first 500 chars):" >&2
+            head -c 500 android/app/google-services.json | cat >&2
+            echo "" >&2
+            echo "🔍 Searching for package names in file:" >&2
+            python3 -c "import json; data = json.load(open('android/app/google-services.json')); [print(f\"  - {c.get('client_info', {}).get('android_client_info', {}).get('package_name', 'N/A')}\") for c in data.get('client', [])]" 2>/dev/null || echo "  Could not parse JSON" >&2
+            exit 1
+          fi
+
+          echo "✅ android/app/google-services.json is valid and contains expected package name"
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -118,6 +149,37 @@ jobs:
           else
             printf '%s' "$IOS_GOOGLE_SERVICE_INFO_PLIST" | base64 --decode > macos/Runner/GoogleService-Info.plist
           fi
+
+      - name: Verify Firebase config files
+        run: |
+          set -euo pipefail
+
+          echo "🔍 Verifying Firebase configuration files..."
+
+          # Check if google-services.json exists and is valid
+          if [ ! -f "android/app/google-services.json" ]; then
+            echo "❌ android/app/google-services.json does not exist" >&2
+            exit 1
+          fi
+
+          # Check if file is not empty
+          if [ ! -s "android/app/google-services.json" ]; then
+            echo "❌ android/app/google-services.json is empty" >&2
+            exit 1
+          fi
+
+          # Check if JSON is valid and contains the expected package name
+          if ! python3 -c "import json, sys; data = json.load(open('android/app/google-services.json')); clients = [c for c in data.get('client', []) if c.get('client_info', {}).get('android_client_info', {}).get('package_name') == 'com.clustudy.clustudy']; sys.exit(0 if clients else 1)" 2>/dev/null; then
+            echo "⚠️  Warning: google-services.json does not contain package name 'com.clustudy.clustudy'" >&2
+            echo "📄 File contents (first 500 chars):" >&2
+            head -c 500 android/app/google-services.json | cat >&2
+            echo "" >&2
+            echo "🔍 Searching for package names in file:" >&2
+            python3 -c "import json; data = json.load(open('android/app/google-services.json')); [print(f\"  - {c.get('client_info', {}).get('android_client_info', {}).get('package_name', 'N/A')}\") for c in data.get('client', [])]" 2>/dev/null || echo "  Could not parse JSON" >&2
+            exit 1
+          fi
+
+          echo "✅ android/app/google-services.json is valid and contains expected package name"
 
       - name: Setup Java
         uses: actions/setup-java@v4
