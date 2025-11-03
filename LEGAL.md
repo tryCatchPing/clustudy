@@ -1,13 +1,6 @@
-# 법적 문서 템플릿
+# 법적 문서
 
-이 문서는 Clustudy 앱스토어 출시를 위한 개인정보 보호 정책 및 이용약관 템플릿입니다.
-
-## 사용 방법
-
-1. 아래 템플릿을 복사하여 사용하세요
-2. `[PLACEHOLDER]`로 표시된 부분을 실제 정보로 교체하세요
-3. 법적 검토가 필요한 경우 전문가와 상담하세요
-4. 최종 버전을 `lib/design_system/screens/settings/widgets/legal_text_dialog.dart`의 `dummyPrivacyPolicyText`, `dummyTermsOfServiceText` 상수에 복사하세요
+이 문서는 Clustudy 앱스토어 출시를 위한 개인정보 보호 정책 및 이용약관 입니다.
 
 ---
 
