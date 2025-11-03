@@ -73,6 +73,7 @@ app.*.map.json
 **/*.key
 **/*.pem
 **/key.properties
+.github-secrets/
 
 # iOS related
 **/ios/Flutter/App.framework
