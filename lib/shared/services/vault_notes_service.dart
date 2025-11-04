@@ -13,6 +13,7 @@ import '../../features/vaults/models/folder_model.dart';
 import '../../features/vaults/models/note_placement.dart';
 import '../../features/vaults/models/vault_item.dart';
 import '../../features/vaults/models/vault_model.dart';
+import '../errors/pdf_import_cancelled_exception.dart';
 import '../repositories/link_repository.dart';
 import '../repositories/vault_tree_repository.dart';
 import 'db_txn_runner.dart';
@@ -284,7 +285,7 @@ class VaultNotesService {
     }
     final note = await noteService.createPdfNote(title: normalizedName);
     if (note == null) {
-      throw Exception('PDF note creation was cancelled or failed');
+      throw const PdfImportCancelledException();
     }
 
     // 2) 최종 제목 확정(자동 접미사 포함)

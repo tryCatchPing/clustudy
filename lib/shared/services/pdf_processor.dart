@@ -5,6 +5,7 @@ import 'package:path/path.dart' as path;
 import 'package:pdfx/pdfx.dart';
 import 'package:uuid/uuid.dart';
 
+import '../errors/pdf_import_cancelled_exception.dart';
 import 'file_picker_service.dart';
 import 'file_storage_service.dart';
 import 'pdf_processed_data.dart';
@@ -41,7 +42,7 @@ class PdfProcessor {
       // 1. PDF 파일 선택
       final sourcePdfPath = await FilePickerService.pickPdfFile();
       if (sourcePdfPath == null) {
-        print('ℹ️ PDF 파일 선택 취소');
+        print('⚠️ PDF 파일 경로를 확인할 수 없습니다.');
         return null;
       }
 
@@ -55,6 +56,9 @@ class PdfProcessor {
         sourcePdfPath: sourcePdfPath,
         noteId: noteId,
       );
+    } on PdfImportCancelledException {
+      // 사용자가 명시적으로 선택을 취소한 경우 호출자로 전달
+      rethrow;
     } catch (e) {
       print('❌ PDF 처리 실패: $e');
       return null;
