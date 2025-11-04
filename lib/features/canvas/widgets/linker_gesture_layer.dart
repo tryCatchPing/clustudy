@@ -41,6 +41,9 @@ class LinkerGestureLayer extends StatefulWidget {
   /// 현재 드래그 중인 링커의 테두리 두께.
   final double currentLinkerBorderWidth;
 
+  /// 스타일러스 드래그/탭이 진행 중인지 외부에 알립니다.
+  final ValueChanged<bool>? onStylusInteractionChanged;
+
   const LinkerGestureLayer({
     super.key,
     required this.toolMode,
@@ -51,6 +54,7 @@ class LinkerGestureLayer extends StatefulWidget {
     this.currentLinkerFillColor = Colors.green,
     this.currentLinkerBorderColor = Colors.green,
     this.currentLinkerBorderWidth = 2.0,
+    this.onStylusInteractionChanged,
   });
 
   @override
@@ -67,6 +71,7 @@ class _LinkerGestureLayerState extends State<LinkerGestureLayer> {
   Offset? _pointerDownPosition;
   Offset? _currentPosition;
   late final Stopwatch _gestureStopwatch;
+  bool _stylusActive = false;
 
   @override
   void initState() {
@@ -92,6 +97,14 @@ class _LinkerGestureLayerState extends State<LinkerGestureLayer> {
   bool _isStylusKind(PointerDeviceKind? kind) {
     return kind == PointerDeviceKind.stylus ||
         kind == PointerDeviceKind.invertedStylus;
+  }
+
+  void _notifyStylusInteraction(bool active) {
+    if (_stylusActive == active) {
+      return;
+    }
+    _stylusActive = active;
+    widget.onStylusInteractionChanged?.call(active);
   }
 
   bool _supportsPointer(PointerDownEvent event) {
@@ -125,6 +138,7 @@ class _LinkerGestureLayerState extends State<LinkerGestureLayer> {
   }
 
   void _resetGesture() {
+    _notifyStylusInteraction(false);
     _activePointer = null;
     _activeKind = null;
     _pointerDownPosition = null;
@@ -180,6 +194,9 @@ class _LinkerGestureLayerState extends State<LinkerGestureLayer> {
     if (_isActive) {
       // 이미 다른 포인터를 추적 중이면 무시해서 InteractiveViewer가 멀티터치를 잡도록 함.
       return;
+    }
+    if (_isStylusKind(event.kind)) {
+      _notifyStylusInteraction(true);
     }
     _startGesture(event);
   }
