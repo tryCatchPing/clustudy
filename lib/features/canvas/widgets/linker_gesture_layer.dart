@@ -86,7 +86,13 @@ class _LinkerGestureLayerState extends State<LinkerGestureLayer> {
 
   bool get _allowTouchDrag => widget.pointerMode == LinkerPointerMode.all;
 
-  bool get _allowTouchTap => widget.pointerMode == LinkerPointerMode.all;
+  // 스타일러스 전용 모드에서도 손가락 탭을 허용해야 링크 액션을 열 수 있다.
+  bool get _allowTouchTap => true;
+
+  bool _isStylusKind(PointerDeviceKind? kind) {
+    return kind == PointerDeviceKind.stylus ||
+        kind == PointerDeviceKind.invertedStylus;
+  }
 
   bool _supportsPointer(PointerDownEvent event) {
     switch (event.kind) {
@@ -184,6 +190,8 @@ class _LinkerGestureLayerState extends State<LinkerGestureLayer> {
     }
     // Stylus 전용 모드에서 터치 포인터는 드래그를 만들지 않는다.
     if (!_shouldStartDrag(event)) {
+      // 드래그가 허용되지 않은 포인터라도 움직임은 기록해 탭 판정(거리)에 사용한다.
+      _currentPosition = event.localPosition;
       return;
     }
     _currentPosition = event.localPosition;
@@ -197,8 +205,11 @@ class _LinkerGestureLayerState extends State<LinkerGestureLayer> {
     }
     final upPosition = event.localPosition;
     final isTap = _isTapGesture(upPosition);
-    final isDrag = !isTap && _isRectLargeEnough();
-    if (isTap && _allowTouchTap) {
+    final canPerformDrag = _isStylusKind(_activeKind) || _allowTouchDrag;
+    final isStylusTap = isTap && _isStylusKind(_activeKind);
+    final isDrag = canPerformDrag && !isTap && _isRectLargeEnough();
+
+    if (isTap && (_allowTouchTap || isStylusTap)) {
       widget.onTapAt(upPosition);
     } else if (isDrag) {
       final rect = Rect.fromPoints(_pointerDownPosition!, upPosition);
