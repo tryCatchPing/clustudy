@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../design_system/components/atoms/app_fab_icon.dart';
@@ -51,7 +53,11 @@ class NoteEditorScreen extends ConsumerStatefulWidget {
 
 class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
     with RouteAware {
+  late final ProviderSubscription<NoteEditorUiState> _uiSubscription;
   String? _lastLoggedNoteId;
+  bool _isRouteActive = false;
+  bool _lastRequestedFullscreen = false;
+  bool? _lastAppliedFullscreen;
 
   /// Sync the initial page index from per-route resume or lastKnown after
   /// route becomes current and note data is available.
@@ -97,12 +103,34 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
   }
 
   @override
+  void initState() {
+    super.initState();
+    _uiSubscription = ref.listenManual<NoteEditorUiState>(
+      noteEditorUiStateProvider(widget.noteId),
+      (previous, next) {
+        _lastRequestedFullscreen = next.isFullscreen;
+        if (!_isRouteActive) return;
+        if (previous?.isFullscreen == next.isFullscreen &&
+            _lastAppliedFullscreen == next.isFullscreen) {
+          return;
+        }
+        _applySystemUiForEditor(fullscreen: next.isFullscreen);
+      },
+      fireImmediately: true,
+    );
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final route = ModalRoute.of(context);
     if (route != null) {
       appRouteObserver.subscribe(this, route);
       debugPrint('🧭 [RouteAware] subscribe noteId=${widget.noteId}');
+      _isRouteActive = route.isCurrent;
+      if (_isRouteActive) {
+        _scheduleApplySystemUi();
+      }
     }
   }
 
@@ -110,11 +138,15 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
   void dispose() {
     appRouteObserver.unsubscribe(this);
     debugPrint('🧭 [RouteAware] unsubscribe noteId=${widget.noteId}');
+    _restoreSystemUiIfNeeded();
+    _uiSubscription.close();
     super.dispose();
   }
 
   @override
   void didPush() {
+    _isRouteActive = true;
+    _scheduleApplySystemUi();
     debugPrint(
       '🧭 [RouteAware] didPush noteId=${widget.noteId} → schedule enter session',
     );
@@ -144,6 +176,8 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
       );
       return;
     }
+    _isRouteActive = true;
+    _scheduleApplySystemUi();
     // Ensure re-enter runs one frame AFTER didPop's exit to avoid final null.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -175,6 +209,8 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
 
   @override
   void didPushNext() {
+    _isRouteActive = false;
+    _restoreSystemUiIfNeeded();
     debugPrint(
       '🧭 [RouteAware] didPushNext noteId=${widget.noteId} (save & no-op)',
     );
@@ -186,6 +222,8 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
 
   @override
   void didPop() {
+    _isRouteActive = false;
+    _restoreSystemUiIfNeeded();
     debugPrint(
       '🧭 [RouteAware] didPop noteId=${widget.noteId} → schedule exit session',
     );
@@ -219,6 +257,10 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
       if (!mounted) return;
       final route = ModalRoute.of(context);
       final isCurrent = route?.isCurrent ?? false;
+      if (isCurrent && !_isRouteActive) {
+        _isRouteActive = true;
+        _scheduleApplySystemUi();
+      }
       final active = ref.read(noteSessionProvider);
       if (isCurrent && active != widget.noteId) {
         debugPrint(
@@ -254,7 +296,9 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
     if (_lastLoggedNoteId != note.noteId) {
       _lastLoggedNoteId = note.noteId;
       unawaited(
-        ref.read(firebaseAnalyticsLoggerProvider).logNoteOpen(
+        ref
+            .read(firebaseAnalyticsLoggerProvider)
+            .logNoteOpen(
               noteId: note.noteId,
               source: 'route',
             ),
@@ -372,5 +416,40 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen>
         ),
       ),
     );
+  }
+
+  bool get _supportsSystemUiOverrides =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+
+  void _applySystemUiForEditor({required bool fullscreen}) {
+    if (!_supportsSystemUiOverrides) return;
+    if (_lastAppliedFullscreen == fullscreen) return;
+    _lastAppliedFullscreen = fullscreen;
+    final future = fullscreen
+        ? SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky)
+        : SystemChrome.setEnabledSystemUIMode(
+            SystemUiMode.manual,
+            overlays: const [SystemUiOverlay.top],
+          );
+    unawaited(future);
+  }
+
+  void _restoreSystemUiIfNeeded() {
+    if (!_supportsSystemUiOverrides) return;
+    if (_lastAppliedFullscreen == null) return;
+    _lastAppliedFullscreen = null;
+    final future = SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual,
+      overlays: SystemUiOverlay.values,
+    );
+    unawaited(future);
+  }
+
+  void _scheduleApplySystemUi() {
+    if (!_isRouteActive) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_isRouteActive) return;
+      _applySystemUiForEditor(fullscreen: _lastRequestedFullscreen);
+    });
   }
 }
