@@ -99,12 +99,25 @@ class _LinkerGestureLayerState extends State<LinkerGestureLayer> {
         kind == PointerDeviceKind.invertedStylus;
   }
 
-  void _notifyStylusInteraction(bool active) {
+  void _notifyStylusInteraction(bool active, {bool defer = false}) {
     if (_stylusActive == active) {
       return;
     }
     _stylusActive = active;
-    widget.onStylusInteractionChanged?.call(active);
+    final callback = widget.onStylusInteractionChanged;
+    if (callback == null) {
+      return;
+    }
+    if (defer) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        callback(active);
+      });
+      return;
+    }
+    callback(active);
   }
 
   bool _supportsPointer(PointerDownEvent event) {
@@ -138,7 +151,7 @@ class _LinkerGestureLayerState extends State<LinkerGestureLayer> {
   }
 
   void _resetGesture() {
-    _notifyStylusInteraction(false);
+    _notifyStylusInteraction(false, defer: true);
     _activePointer = null;
     _activeKind = null;
     _pointerDownPosition = null;
