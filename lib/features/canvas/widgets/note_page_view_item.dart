@@ -161,8 +161,9 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
             final allowSingleFingerPan =
                 pointerPolicy == ScribblePointerMode.penOnly;
             final panEnabled =
-                !isLinkerMode &&
-                (allowSingleFingerPan || multiplePointersActive);
+                (!isLinkerMode &&
+                    (allowSingleFingerPan || multiplePointersActive)) ||
+                (isLinkerMode && pointerPolicy == ScribblePointerMode.penOnly);
 
             return InteractiveViewer(
               transformationController: ref.watch(
