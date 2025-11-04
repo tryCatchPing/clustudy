@@ -2,6 +2,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../features/notes/models/note_model.dart';
 import '../../features/notes/models/note_page_model.dart';
+import '../errors/pdf_import_cancelled_exception.dart';
 import 'pdf_processed_data.dart';
 import 'pdf_processor.dart';
 
@@ -90,7 +91,7 @@ class NoteService {
       // 1. PDF 처리 (PdfProcessor에 위임)
       final pdfData = await PdfProcessor.processFromSelection();
       if (pdfData == null) {
-        print('ℹ️ PDF 노트 생성 취소');
+        print('❌ PDF 데이터를 불러오지 못했습니다.');
         return null;
       }
 
@@ -115,6 +116,9 @@ class NoteService {
 
       print('✅ PDF 노트 생성 완료: $noteTitle (${pages.length}페이지)');
       return note;
+    } on PdfImportCancelledException {
+      print('ℹ️ PDF 노트 생성 취소');
+      rethrow;
     } catch (e) {
       print('❌ PDF 노트 생성 실패: $e');
       return null;

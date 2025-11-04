@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/errors/app_error_mapper.dart';
 import '../../../shared/errors/app_error_spec.dart';
+import '../../../shared/errors/pdf_import_cancelled_exception.dart';
 import '../../../shared/services/firebase_service_providers.dart';
 import '../../../shared/services/vault_notes_service.dart';
 import '../../vaults/data/derived_vault_providers.dart';
@@ -134,6 +135,8 @@ class NoteListController extends StateNotifier<NoteListState> {
         parentFolderId: folderId,
       );
       return AppErrorSpec.success('PDF 노트 "${pdfNote.title}"가 생성되었습니다.');
+    } on PdfImportCancelledException {
+      return AppErrorSpec.info('PDF 가져오기를 취소했어요.');
     } catch (error) {
       return AppErrorMapper.toSpec(error);
     } finally {

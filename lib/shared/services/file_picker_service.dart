@@ -1,6 +1,8 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 
+import '../errors/pdf_import_cancelled_exception.dart';
+
 /// 📁 파일 선택 서비스 (모바일 앱 전용)
 ///
 /// PDF 파일 선택 기능을 제공합니다.
@@ -34,7 +36,7 @@ class FilePickerService {
         }
       } else {
         debugPrint('ℹ️ PDF 파일 선택 취소됨.');
-        return null;
+        throw const PdfImportCancelledException();
       }
     } catch (e) {
       debugPrint('❌ 파일 선택 중 오류 발생: $e');
