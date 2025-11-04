@@ -111,3 +111,25 @@
    - 포인터 다운/업/취소 시 `_notifyStylusInteraction`으로 상태 전환 (`lib/features/canvas/widgets/linker_gesture_layer.dart`).
 2. `NotePageViewItem`에서 `_stylusLinkerActive` 상태를 추가해 콜백 값을 추적하고, 스타일러스가 활성일 동안에는 `panEnabled`를 일시적으로 꺼 InteractiveViewer가 드래그를 수락하지 않도록 함.
 3. 스타일러스가 올라가면 즉시 `panEnabled`가 다시 켜져 손가락 패닝/핀치를 계속 허용.
+
+## 9. 페이지 이탈 시 MouseTracker Assertion 문제
+
+### 증상
+
+- 스타일러스 호버 상태(커서 점이 보이는 상태)에서 노트 편집 화면을 떠나면 다음 예외가 연속 발생:
+  ```
+  'package:flutter/src/rendering/mouse_tracker.dart': Failed assertion: line 203 pos 12: '!_debugDuringDeviceUpdate': is not true.
+  A CustomScribbleNotifier was used after being disposed.
+  ```
+
+### 근본 원인
+
+- 화면이 Pop되면서 `CustomScribbleNotifier`가 `dispose()`된 뒤에도 시스템이 마지막 스타일러스 포인터에 대한 `PointerExitEvent`를 전달.
+- Scribble 패키지 기본 구현은 exit 시 `notifyListeners()`를 호출하지만, 이미 dispose된 노티파이어에서 이를 실행해 Flutter의 `ChangeNotifier` 보호 로직이 assertion을 발생시킴.
+- MouseTracker는 여전히 디바이스 업데이트 중이어서 `_debugDuringDeviceUpdate` 플래그가 켜진 상태로 재귀 호출이 일어나 추가 assertion이 이어짐.
+
+### 해결
+
+1. `CustomScribbleNotifier`에 `_isDisposed` 플래그를 도입하고 `dispose()`에서 true로 설정.
+2. `onPointerDown`, `onPointerUpdate`, `onPointerExit` 등 포인터 핸들러가 `_isDisposed`를 먼저 확인해 dispose 이후 이벤트를 무시하도록 변경.
+3. `onPointerExit`를 override해 dispose된 상태에서는 상위 구현을 호출하지 않도록 함으로써 MouseTracker 업데이트 루프에서 더 이상 dispose된 노티파이어를 참조하지 않게 함.
