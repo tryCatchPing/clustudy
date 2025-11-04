@@ -44,7 +44,7 @@ dependencies:
   scribble:
     git:
       url: https://github.com/ehdnd/scribble.git
-      ref: main
+      ref: fix/pointer-policy
   go_router: ^16.0.0
   pdfx: ^2.5.0
   file_picker: ^8.0.6
