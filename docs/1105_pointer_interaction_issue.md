@@ -92,3 +92,22 @@
    - 펜 드래그 → 링크 사각형 생성
    - 손가락 드래그/핀치 → 뷰어 이동/확대 축소
 4. 필요 시 추가 회귀 테스트(`pointerPolicy == all`)도 실행해 싱글 터치 패닝 방식이 변하지 않았는지 확인한다.
+
+## 8. Stylus-only에서 링크 생성 시 InteractiveViewer 패닝 문제
+
+### 증상
+
+- 스타일러스 모드 + 링커 모드에서 사각형을 그리면, 링크 직사각형과 함께 InteractiveViewer도 움직여 화면이 쓸려 나감.
+
+### 근본 원인
+
+- `panEnabled`를 stylus-only 모드에서도 켜둔 상태라, Flutter 제스처 아레나에서 InteractiveViewer의 `ScaleGestureRecognizer`가 스타일러스 드래그를 계속 팬(Pan)으로 인식함.
+- `LinkerGestureLayer`는 Listener 기반이라 포인터 이벤트를 모두 받고 드래그를 추적하지만, 동시에 InteractiveViewer도 제스처를 `accept`해 두 위젯이 같은 드래그 스트림을 공유하게 됨.
+- 결과적으로 스타일러스 드래그가 링커 사각형 + 뷰어 패닝을 동시에 유발.
+
+### 해결
+
+1. `LinkerGestureLayer`에 `onStylusInteractionChanged` 콜백을 추가해 스타일러스 드래그가 시작/종료될 때 상위 레이어에 알림.
+   - 포인터 다운/업/취소 시 `_notifyStylusInteraction`으로 상태 전환 (`lib/features/canvas/widgets/linker_gesture_layer.dart`).
+2. `NotePageViewItem`에서 `_stylusLinkerActive` 상태를 추가해 콜백 값을 추적하고, 스타일러스가 활성일 동안에는 `panEnabled`를 일시적으로 꺼 InteractiveViewer가 드래그를 수락하지 않도록 함.
+3. 스타일러스가 올라가면 즉시 `panEnabled`가 다시 켜져 손가락 패닝/핀치를 계속 허용.
