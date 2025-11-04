@@ -71,16 +71,22 @@ class CustomScribbleNotifier extends ScribbleNotifier with ToolManagementMixin {
   /// 런타임에서 필압 사용 여부를 토글할 수 있도록 내부 플래그를 유지합니다.
   /// 생성 시 초기값은 [simulatePressure] 파라미터로부터 전달됩니다.
   bool _simulatePressureEnabled = false;
+  bool _isDisposed = false;
 
   /// 필압 사용 여부를 런타임에서 변경합니다. 재생성 없이 즉시 적용됩니다.
   void setSimulatePressureEnabled(bool enabled) {
     _simulatePressureEnabled = enabled;
   }
 
+  bool get _isActiveNotifier => !_isDisposed;
+
   /// 포인터 다운 이벤트를 처리합니다.
   /// 링커 모드일 때는 아무것도 하지 않습니다.
   @override
   void onPointerDown(PointerDownEvent event) {
+    if (!_isActiveNotifier) {
+      return;
+    }
     if (toolMode.isLinker) return; // 링커 모드일 때는 아무것도 하지 않음
     if (!value.supportedPointerKinds.contains(event.kind)) {
       return;
@@ -125,6 +131,9 @@ class CustomScribbleNotifier extends ScribbleNotifier with ToolManagementMixin {
   /// 링커 모드일 때는 아무것도 하지 않습니다.
   @override
   void onPointerUpdate(PointerMoveEvent event) {
+    if (!_isActiveNotifier) {
+      return;
+    }
     if (toolMode.isLinker) return; // 링커 모드일 때는 아무것도 하지 않음
     if (!value.supportedPointerKinds.contains(event.kind)) {
       return;
@@ -269,6 +278,22 @@ class CustomScribbleNotifier extends ScribbleNotifier with ToolManagementMixin {
       );
     }
     return s;
+  }
+  @override
+  void onPointerExit(PointerExitEvent event) {
+    if (!_isActiveNotifier) {
+      return;
+    }
+    super.onPointerExit(event);
+  }
+
+  @override
+  void dispose() {
+    if (_isDisposed) {
+      return;
+    }
+    _isDisposed = true;
+    super.dispose();
   }
 }
 
