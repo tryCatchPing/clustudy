@@ -50,6 +50,8 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
   double _lastScale = 1.0;
   // 임시 드래그 상태는 LinkerGestureLayer 내부에서만 관리되므로 상태 제거
   final GlobalKey _linkerLayerKey = GlobalKey();
+  // 스타일러스 기반 링커 제스처가 진행 중인지 추적.
+  bool _stylusLinkerActive = false;
 
   // 비-build 컨텍스트에서 현재 노트의 notifier 접근용
   CustomScribbleNotifier get _currentNotifier =>
@@ -160,10 +162,14 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                 scribbleState.activePointerIds.length >= 2;
             final allowSingleFingerPan =
                 pointerPolicy == ScribblePointerMode.penOnly;
+            final stylusBlocksPan =
+                isLinkerMode && _stylusLinkerActive;
             final panEnabled =
                 (!isLinkerMode &&
                     (allowSingleFingerPan || multiplePointersActive)) ||
-                (isLinkerMode && pointerPolicy == ScribblePointerMode.penOnly);
+                (isLinkerMode &&
+                    pointerPolicy == ScribblePointerMode.penOnly &&
+                    !stylusBlocksPan);
 
             return InteractiveViewer(
               transformationController: ref.watch(
@@ -231,6 +237,18 @@ class _NotePageViewItemState extends ConsumerState<NotePageViewItem> {
                                     pointerPolicy == ScribblePointerMode.all
                                     ? LinkerPointerMode.all
                                     : LinkerPointerMode.stylusOnly,
+                                onStylusInteractionChanged: (active) {
+                                  if (_stylusLinkerActive == active) {
+                                    return;
+                                  }
+                                  if (!mounted) {
+                                    _stylusLinkerActive = active;
+                                    return;
+                                  }
+                                  setState(() {
+                                    _stylusLinkerActive = active;
+                                  });
+                                },
                                 onRectCompleted: (rect) async {
                                   final currentPage = notifier.page!;
                                   unawaited(
