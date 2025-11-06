@@ -24,7 +24,8 @@ val hasReleaseKeystore = if (keystorePropertiesFile.exists()) {
 android {
     namespace = "com.clustudy.clustudy"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "29.0.13599879"
+    // Target the latest stable NDK with 16 KB page support (Android 15 requirement).
+    ndkVersion = "29.0.14206865"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -43,6 +44,13 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+    }
+
+    packaging {
+        // Keep JNI libs uncompressed so Play can align them for 16 KB page sizes.
+        jniLibs {
+            useLegacyPackaging = false
+        }
     }
 
     signingConfigs {
@@ -76,4 +84,5 @@ flutter {
 
 dependencies {
     implementation("com.android.installreferrer:installreferrer:2.2")
+    implementation("androidx.core:core-ktx:1.13.1")
 }
