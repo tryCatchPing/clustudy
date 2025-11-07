@@ -1,5 +1,13 @@
 # Clustudy
 
+## 정식 출시
+
+<div align="center">
+  <a href="https://play.google.com/store/apps/details?id=com.clustudy.clustudy&pcampaignid=web_share&referrer=utm_source%3Dgithub%26utm_medium%3Dreadme%26utm_campaign%3Dproduction">
+    <img alt="Get it on Google Play" src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" height="80">
+  </a>
+</div>
+
 ## Project Overview
 
 Clustudy는 손필기 노트에 링크를 추가해 지식 네트워크를 만들어 나가는 앱입니다.
@@ -29,10 +37,9 @@ Clustudy는 손필기 노트에 링크를 추가해 지식 네트워크를 만�
 | 그래프 뷰        | 지식 네트워크 시각화.                             | `docs/screenshots/graph.png`    |
 | 로컬 DB & 동기화 | `isar` 기반 자동 저장, 추후 클라우드 동기화 계획. | TBD                             |
 
-## Demo
+## DEMO
 
-- 배포 링크: TBD
-- 시연 영상: `docs/demo/demo.mp4`
+- 시연 영상: `docs/demo/demo.mp4` (TBD)
 - 주요 시나리오: 노트 작성 → 링크 연결 → 백링크 및 그래프 확인.
 
 ## Architecture & Tech Stack
@@ -76,7 +83,18 @@ test/                # lib 구조 반영 테스트
    fvm use 3.32.5
    fvm flutter pub get
    ```
-3. **실행 & 테스트**
+3. **Firebase 설정** (필수)
+   ```bash
+   dart pub global activate flutterfire_cli
+   firebase login
+   flutterfire configure
+   ```
+   iOS/macOS 개발 시 추가:
+   ```bash
+   cd ios && pod install && cd ..
+   cd macos && pod install && cd ..
+   ```
+4. **실행 & 테스트**
    ```bash
    fvm flutter run
    fvm flutter analyze
