@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
@@ -19,42 +18,52 @@ const _kDefaultPixelRatio = 4.0;
 const _kExportLogTag = '[pdf-export-mvp]';
 const _kBlankBackgroundColor = ui.Color(0xFFFFFFFF);
 
+/// Provides the singleton [PdfExportMvpService].
 final pdfExportMvpServiceProvider = Provider<PdfExportMvpService>((_) {
   return PdfExportMvpService();
 });
 
-/// PDF 내보내기(MVP) 결과.
+/// Result returned after a PDF export completes.
 class PdfExportResult {
+  /// Creates a [PdfExportResult].
   PdfExportResult({
     required this.filePath,
     required this.pageCount,
     required this.elapsed,
   });
 
+  /// Absolute path to the generated PDF.
   final String filePath;
+
+  /// Number of note pages included.
   final int pageCount;
+
+  /// Total export duration.
   final Duration elapsed;
 }
 
-/// PDF 내보내기 중 발생한 오류.
+/// Thrown when the MVP exporter fails and the error should surface to UI.
 class PdfExportException implements Exception {
+  /// Creates an exception with the provided [message].
   PdfExportException(this.message);
 
+  /// Description of the failure.
   final String message;
 
   @override
   String toString() => 'PdfExportException($message)';
 }
 
-/// Android MVP PDF 내보내기 서비스.
+/// Android-specific PDF export implementation used for the MVP flow.
 class PdfExportMvpService {
+  /// Creates a service that writes PDF exports into an app temp directory.
   PdfExportMvpService({
-    Future<Directory> Function()? downloadsDirectoryResolver,
-  }) : _downloadsDirectoryResolver =
-           downloadsDirectoryResolver ?? _resolveDownloadsDirectory;
+    Future<Directory> Function()? tempDirectoryResolver,
+  }) : _tempDirectoryResolver = tempDirectoryResolver ?? _resolveTempDirectory;
 
-  final Future<Directory> Function() _downloadsDirectoryResolver;
+  final Future<Directory> Function() _tempDirectoryResolver;
 
+  /// Renders every page and writes the PDF into a temp directory.
   Future<PdfExportResult> exportToDownloads({
     required NoteModel note,
     required Map<String, CustomScribbleNotifier> pageNotifiers,
@@ -70,12 +79,12 @@ class PdfExportMvpService {
       throw PdfExportException('내보낼 페이지가 없습니다.');
     }
 
-    final dir = await _downloadsDirectoryResolver();
-    if (!await dir.exists()) {
-      await dir.create(recursive: true);
+    final resolvedPath = await _prepareTempPath(note.title);
+    final file = File(resolvedPath);
+    final dir = file.parent;
+    if (!dir.existsSync()) {
+      dir.createSync(recursive: true);
     }
-
-    final filePath = await _allocateFilePath(dir, note.title);
     final doc = pw.Document();
 
     for (var index = 0; index < note.pages.length; index += 1) {
@@ -116,20 +125,28 @@ class PdfExportMvpService {
     }
 
     final bytes = await doc.save();
-    final file = File(filePath);
     await file.writeAsBytes(bytes, flush: true);
 
     sw.stop();
     debugPrint(
-      '$_kExportLogTag success path=$filePath '
+      '$_kExportLogTag success path=$resolvedPath '
       'duration=${sw.elapsed.inMilliseconds}ms',
     );
 
     return PdfExportResult(
-      filePath: filePath,
+      filePath: resolvedPath,
       pageCount: note.pages.length,
       elapsed: sw.elapsed,
     );
+  }
+
+  /// Deletes a temp PDF if it still exists.
+  Future<void> deleteTempFile(String path) async {
+    final file = File(path);
+    if (file.existsSync()) {
+      file.deleteSync();
+      debugPrint('$_kExportLogTag deleted temp file $path');
+    }
   }
 
   Future<Uint8List> _renderSketch({
@@ -165,7 +182,7 @@ class PdfExportMvpService {
     }
 
     final backgroundFile = File(backgroundPath);
-    if (!await backgroundFile.exists()) {
+    if (!backgroundFile.existsSync()) {
       throw PdfExportException('배경 파일을 찾을 수 없습니다: $backgroundPath');
     }
 
@@ -225,21 +242,25 @@ class PdfExportMvpService {
     return byteData.buffer.asUint8List();
   }
 
-  Future<String> _allocateFilePath(Directory dir, String title) async {
-    final sanitized = _sanitizeTitle(title);
-    final timestamp = DateTime.now();
-    final baseName =
-        '${sanitized}_${_twoDigits(timestamp.year)}${_twoDigits(timestamp.month)}${_twoDigits(timestamp.day)}'
-        '_${_twoDigits(timestamp.hour)}${_twoDigits(timestamp.minute)}${_twoDigits(timestamp.second)}';
+  Future<String> _prepareTempPath(String title) async {
+    final baseDir = await _tempDirectoryResolver();
+    final dir = Directory(p.join(baseDir.path, 'pdf_exports'));
+    if (!dir.existsSync()) {
+      dir.createSync(recursive: true);
+    }
+    final suggestion = PdfExportMvpService.buildSuggestedFileName(title);
+    return _ensureUniquePath(dir, suggestion);
+  }
 
-    var candidate = p.join(dir.path, '$baseName.pdf');
-    if (!await File(candidate).exists()) {
+  String _ensureUniquePath(Directory dir, String baseName) {
+    final candidate = p.join(dir.path, '$baseName.pdf');
+    if (!File(candidate).existsSync()) {
       return candidate;
     }
 
     for (var i = 1; i < 1000; i += 1) {
       final path = p.join(dir.path, '${baseName}_$i.pdf');
-      if (!await File(path).exists()) {
+      if (!File(path).existsSync()) {
         return path;
       }
     }
@@ -247,25 +268,31 @@ class PdfExportMvpService {
     throw PdfExportException('파일 이름을 생성할 수 없습니다. (${dir.path})');
   }
 
-  String _sanitizeTitle(String title) {
+  /// Builds the default `<note>_yyyyMMdd_HHmmss` PDF filename.
+  static String buildSuggestedFileName(
+    String title, {
+    DateTime? timestamp,
+  }) {
+    final sanitized = _sanitizeTitle(title);
+    final now = timestamp ?? DateTime.now();
+    return '${sanitized}_${_twoDigits(now.year)}${_twoDigits(now.month)}'
+        '${_twoDigits(now.day)}_${_twoDigits(now.hour)}'
+        '${_twoDigits(now.minute)}${_twoDigits(now.second)}';
+  }
+
+  static String _sanitizeTitle(String title) {
     final replaced = title.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
     return replaced.trim().isEmpty ? 'clustudy_note' : replaced.trim();
   }
 
-  String _twoDigits(int value) => value.toString().padLeft(2, '0');
+  static String _twoDigits(int value) => value.toString().padLeft(2, '0');
 }
 
-Future<Directory> _resolveDownloadsDirectory() async {
+Future<Directory> _resolveTempDirectory() async {
   if (Platform.isAndroid) {
-    final dirs = await getExternalStorageDirectories(
-      type: StorageDirectory.downloads,
-    );
-    if (dirs != null && dirs.isNotEmpty) {
-      final first = dirs.first;
-      return Directory(p.join(first.path, 'Clustudy'));
-    }
+    final base = await getTemporaryDirectory();
+    return base;
   }
-
   final fallback = await getApplicationDocumentsDirectory();
-  return Directory(p.join(fallback.path, 'pdf_exports'));
+  return fallback;
 }

@@ -24,6 +24,7 @@ class PageControllerScreen extends ConsumerStatefulWidget {
   /// 관리할 노트의 ID
   final String noteId;
 
+  /// Creates a page controller modal for the provided [noteId].
   const PageControllerScreen({
     super.key,
     required this.noteId,
@@ -314,17 +315,22 @@ class _PageControllerScreenState extends ConsumerState<PageControllerScreen> {
         );
         WidgetsBinding.instance.addPostFrameCallback((_) {
           final rid = ref.read(noteRouteIdProvider(widget.noteId));
-          if (rid == null) return;
+          if (rid == null) {
+            return;
+          }
           final ctrl = ref.read(pageControllerProvider(widget.noteId, rid));
           if (ctrl.hasClients) {
-            debugPrint('🧭 [PageCtrlModal] jumpToPage → $index (scheduled)');
+            debugPrint(
+              '🧭 [PageCtrlModal] jumpToPage → $index (scheduled)',
+            );
             ctrl.jumpToPage(index);
           }
         });
       }
     } else {
       debugPrint(
-        '🧭 [PageCtrlModal] no active routeId; fallback to provider update only',
+        '🧭 [PageCtrlModal] no active routeId; '
+        'fallback to provider update only',
       );
     }
 
@@ -333,7 +339,10 @@ class _PageControllerScreenState extends ConsumerState<PageControllerScreen> {
 
     // 3) 모달 닫기 (다음 프레임에 닫아 점프 반영 여지 확보)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) Navigator.of(context).pop();
+      if (!mounted) {
+        return;
+      }
+      Navigator.of(context).pop();
     });
   }
 

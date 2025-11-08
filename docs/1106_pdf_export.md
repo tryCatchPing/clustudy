@@ -35,7 +35,7 @@
 - 모든 페이지 내보내기만 일단 구현 (전 범위)
 - 모든 단계 로그 추가 필요
 - 안드로이드 내보내기만 고려
-- 로컬 저장만 일단 고려
+- 로컬 저장은 지원하지 않고, 내보내기 버튼은 곧바로 공유 시트를 띄운다.
 - 실패 시 그냥 진행중 작업 삭제하고 하단 error spec 으로 실패 원인 띄우기 (자동 재시도 없음)
 - 유닛 테스트 작성이 가능할까.. 그냥 내가 실 기기로 테스트 하는게 나을듯 (로그 적어주면 그거 보고 판단)
 - pdfexportservice 는 무시하는게 좋음. 새로 아얘 새로 기획하는거.
@@ -58,28 +58,30 @@
 ### 서비스 구조
 
 - `PdfExportMvpService` (신규) 하나로 단순 구성.
-  1. `NoteModel`에서 페이지 ID·캔버스 크기·배경 타입 수집. Riverpod에서는 `notePageNotifiersProvider`(`lib/features/canvas/providers/note_editor_provider.dart`)로 각 페이지의 `CustomScribbleNotifier` 맵을 받아 서비스에 주입.
+    1. `NoteModel`에서 페이지 ID·캔버스 크기·배경 타입 수집. Riverpod에서는 `notePageNotifiersProvider`(`lib/features/canvas/providers/note_editor_provider.dart`)로 각 페이지의 `CustomScribbleNotifier` 맵을 받아 서비스에 주입.
   2. 페이지별 `renderCurrentSketchOffscreen` 호출: `size = Size(pageWidth, pageHeight)`, `pixelRatio = 4.0`, `simulatePressure`는 현재 설정, `backgroundColor`는 배경 종류에 따라 주입. 반환된 `ByteData`는 즉시 `Uint8List`로 변환.
   3. 배경:
      - 비 PDF: 배경 색을 `renderCurrentSketchOffscreen` 파라미터로 넣으면 결과 PNG에 이미 색이 깔리므로 추가 합성 없이 바로 사용.
      - PDF: 노트 생성 시 디스크에 저장된 JPG 경로를 `NotePageModel.backgroundImagePath`(실제 필드명 TBD)에서 얻고, `ui.decodeImageFromList`로 로드. 경로 없거나 파일 누락 시 즉시 실패.
   4. 합성: PDF 배경이 있을 때만 `ui.PictureRecorder`로 배경 JPG + 스케치 PNG를 합성, 없으면 2단계 결과 PNG 사용.
   5. PDF 작성: `package:pdf` 사용, 단일 프로필(A4) 고정. 픽셀(pt) 변환은 `pixels * 0.75`.
-  6. 저장: Android `Downloads/Clustudy` 폴더를 기본 경로로 사용(없으면 생성). `getDownloadsDirectory()` 미지원 시 `path_provider_android`로 `Environment.DIRECTORY_DOWNLOADS`를 직접 호출.
-  7. 결과 `ExportResult(path, pageCount, duration)` 리턴.
-- 안드로이드 공유 무시. 저장만 하고 사용자에게 경로 텍스트와 `open file` 버튼 정도 제공.
+  6. 저장: `getTemporaryDirectory()/pdf_exports/<noteTitle>_yyyyMMdd_HHmmss.pdf`에 임시 파일 작성.
+  7. 공유: `Share.shareXFiles`로 외부 공유 시트 호출. 공유 완료/취소 후 임시 파일 삭제.
+  8. 결과 `ExportResult(path, pageCount, duration)` 리턴(경로는 내부 임시 경로).
+- 공유만 허용(내장 저장소 저장 제외). 공유 시트에서 사용자가 원하는 앱·폴더로 옮긴다.
 - 렌더링은 완전 직렬(페이지 순차)로 고정. 성능 튜닝은 추후 과제로 미룬다.
 
 ### 데이터/파일 정책
 
-- 저장 경로: `Downloads/Clustudy` 고정. 동일 파일명이 이미 있으면 `_1`, `_2` 꼬리표를 붙여 충돌 회피.
+- 파일은 `getTemporaryDirectory()/pdf_exports` 등 앱 임시 디렉터리에만 저장한다. 공유 Future 완료 직후(성공/취소 불문) 즉시 삭제한다.
 - PDF 배경 페이지에서 경로가 없거나 파일이 없으면 즉시 실패 처리 후 temp 파일 삭제.
-- 공용 폴더를 쓰므로 Android 13 이하에서는 WRITE_EXTERNAL_STORAGE 권한 체크, 13+에서는 MediaStore ACTION_CREATE_DOCUMENT 없이 앱 고유 Downloads 하위 경로를 사용.
+- 외부 저장소 권한/MediaStore 접근은 사용하지 않는다.
 
 ### 에러/로그 전략
 
 - 각 페이지마다 `logger.i('[pdf-export]: page=$index render start')`, 성공/실패, 배경 로드 결과 기록.
 - 실패 정책: 첫 에러 발생 시 즉시 중단 → 이미 생성한 temp 파일 삭제 → UI에 사유(code + 메시지) 노출.
+- 공유 Future 결과(성공/취소/실패)도 로그로 남긴다.
 - 로그 태그 공통: `pdf-export-mvp`. 에러는 `logger.e`.
 - UI 에러 표시는 `AppErrorSpec`(`lib/shared/errors/app_error_spec.dart`) 규격으로 노출.
 

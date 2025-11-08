@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
+import 'package:share_plus/share_plus.dart';
 
 import '../../../design_system/components/atoms/app_button.dart';
 import '../../../design_system/components/organisms/creation_sheet.dart';
@@ -12,7 +16,9 @@ import '../../../shared/widgets/app_snackbar.dart';
 import '../../canvas/notifiers/custom_scribble_notifier.dart';
 import '../models/note_model.dart';
 
+/// Bottom sheet that drives the Android-only PDF export MVP flow.
 class PdfExportMvpSheet extends ConsumerStatefulWidget {
+  /// Creates the PDF export MVP sheet.
   const PdfExportMvpSheet({
     super.key,
     required this.note,
@@ -21,11 +27,21 @@ class PdfExportMvpSheet extends ConsumerStatefulWidget {
     required this.hostContext,
   });
 
+  /// Note to export.
   final NoteModel note;
+
+  /// Loaded page notifiers keyed by pageId.
   final Map<String, CustomScribbleNotifier> pageNotifiers;
+
+  /// Whether pressure simulation should be applied during export.
   final bool simulatePressure;
+
+  /// Context of the host screen.
+  ///
+  /// Used for surfacing snackbars after dismissing the sheet.
   final BuildContext hostContext;
 
+  /// Presents the sheet with the provided dependencies.
   static Future<void> show(
     BuildContext context, {
     required NoteModel note,
@@ -57,8 +73,13 @@ class _PdfExportMvpSheetState extends ConsumerState<PdfExportMvpSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async => !_isExporting,
+    return PopScope(
+      canPop: !_isExporting,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && !_isExporting) {
+          Navigator.of(context).pop();
+        }
+      },
       child: CreationBaseSheet(
         title: 'PDF 내보내기',
         onBack: _handleCloseTapped,
@@ -91,7 +112,7 @@ class _PdfExportMvpSheetState extends ConsumerState<PdfExportMvpSheet> {
               ),
               const SizedBox(height: AppSpacing.small),
               Text(
-                'Android · 다운로드 > Clustudy',
+                '내장 저장소 / Downloads / Clustudy 폴더에 저장돼요.',
                 style: AppTypography.body3.copyWith(
                   color: AppColors.background.withValues(alpha: 0.75),
                 ),
@@ -116,26 +137,12 @@ class _PdfExportMvpSheetState extends ConsumerState<PdfExportMvpSheet> {
                 _ErrorBanner(message: _errorMessage!),
                 const SizedBox(height: AppSpacing.medium),
               ],
-              Row(
-                children: [
-                  Expanded(
-                    child: AppButton(
-                      text: '내 기기에 저장',
-                      onPressed: _isExporting ? null : _startExport,
-                      loading: _isExporting,
-                      borderRadius: 16,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.medium),
-                  const Expanded(
-                    child: AppButton(
-                      text: '공유 (준비 중)',
-                      onPressed: null,
-                      borderRadius: 16,
-                      style: AppButtonStyle.secondary,
-                    ),
-                  ),
-                ],
+              AppButton(
+                text: 'PDF 공유하기',
+                onPressed: _isExporting ? null : _startExport,
+                loading: _isExporting,
+                borderRadius: 16,
+                fullWidth: true,
               ),
             ],
           ),
@@ -201,14 +208,18 @@ class _PdfExportMvpSheetState extends ConsumerState<PdfExportMvpSheet> {
   }
 
   Future<void> _startExport() async {
-    if (_isExporting) return;
+    if (_isExporting) {
+      return;
+    }
+
     setState(() {
       _isExporting = true;
       _errorMessage = null;
     });
 
+    PdfExportResult? result;
     try {
-      final result = await ref
+      result = await ref
           .read(pdfExportMvpServiceProvider)
           .exportToDownloads(
             note: widget.note,
@@ -216,23 +227,48 @@ class _PdfExportMvpSheetState extends ConsumerState<PdfExportMvpSheet> {
             simulatePressure: widget.simulatePressure,
           );
 
-      if (!mounted) return;
+      final shareFiles = [
+        XFile(
+          result.filePath,
+          mimeType: 'application/pdf',
+          name: p.basename(result.filePath),
+        ),
+      ];
+      await Share.shareXFiles(
+        shareFiles,
+        sharePositionOrigin: _shareOriginRect(),
+      );
+
+      if (!mounted) {
+        return;
+      }
       Navigator.of(context).pop();
+      if (!widget.hostContext.mounted) {
+        return;
+      }
       AppSnackBar.show(
         widget.hostContext,
         AppErrorSpec.success(
-          'PDF를 저장했어요.\n${result.filePath}',
+          'PDF를 공유했어요.',
         ),
       );
     } on PdfExportException catch (error) {
       _handleError(error.message);
     } catch (error) {
       _handleError('예상치 못한 오류가 발생했습니다. $error');
+    } finally {
+      if (result != null) {
+        unawaited(
+          ref.read(pdfExportMvpServiceProvider).deleteTempFile(result.filePath),
+        );
+      }
     }
   }
 
   void _handleError(String message) {
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
     setState(() {
       _isExporting = false;
       _errorMessage = message;
@@ -240,8 +276,19 @@ class _PdfExportMvpSheetState extends ConsumerState<PdfExportMvpSheet> {
   }
 
   void _handleCloseTapped() {
-    if (_isExporting) return;
+    if (_isExporting) {
+      return;
+    }
     Navigator.of(context).pop();
+  }
+
+  Rect? _shareOriginRect() {
+    final renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox == null || !renderBox.hasSize) {
+      return null;
+    }
+    final origin = renderBox.localToGlobal(Offset.zero);
+    return origin & renderBox.size;
   }
 }
 

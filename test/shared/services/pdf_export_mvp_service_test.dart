@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:clustudy/features/canvas/models/tool_mode.dart';
@@ -21,7 +21,7 @@ void main() {
     setUp(() async {
       tempDir = await Directory.systemTemp.createTemp('pdf_export_test');
       service = PdfExportMvpService(
-        downloadsDirectoryResolver: () async => tempDir,
+        tempDirectoryResolver: () async => tempDir,
       );
     });
 
@@ -42,7 +42,10 @@ void main() {
       );
 
       expect(result.pageCount, 1);
-      expect(File(result.filePath).existsSync(), isTrue);
+      final file = File(result.filePath);
+      expect(file.existsSync(), isTrue);
+      await service.deleteTempFile(result.filePath);
+      expect(file.existsSync(), isFalse);
     });
 
     test('throws when pdf background path missing', () async {
@@ -86,7 +89,7 @@ class _FakeScribbleNotifier extends CustomScribbleNotifier {
 
   @override
   Future<ByteData> renderCurrentSketchOffscreen({
-    required Size size,
+    required ui.Size size,
     double? scaleFactor,
     bool simulatePressure = true,
     EdgeInsets padding = EdgeInsets.zero,
@@ -95,10 +98,10 @@ class _FakeScribbleNotifier extends CustomScribbleNotifier {
     ui.ImageByteFormat format = ui.ImageByteFormat.png,
   }) async {
     final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder);
-    final paint = Paint()..color = backgroundColor;
+    final canvas = ui.Canvas(recorder);
+    final paint = ui.Paint()..color = backgroundColor;
     canvas.drawRect(
-      Rect.fromLTWH(0, 0, size.width, size.height),
+      ui.Rect.fromLTWH(0, 0, size.width, size.height),
       paint,
     );
     final picture = recorder.endRecording();
