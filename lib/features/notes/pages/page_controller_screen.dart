@@ -14,6 +14,7 @@ import '../models/note_model.dart';
 import '../models/note_page_model.dart';
 import '../providers/page_controller_provider.dart';
 import '../widgets/page_thumbnail_grid.dart';
+import '../widgets/pdf_export_mvp_sheet.dart';
 
 /// 페이지 컨트롤러 모달 화면입니다.
 ///
@@ -23,6 +24,7 @@ class PageControllerScreen extends ConsumerStatefulWidget {
   /// 관리할 노트의 ID
   final String noteId;
 
+  /// Creates a page controller modal for the provided [noteId].
   const PageControllerScreen({
     super.key,
     required this.noteId,
@@ -62,10 +64,11 @@ class _PageControllerScreenState extends ConsumerState<PageControllerScreen> {
     final screenState = ref.watch(
       pageControllerScreenNotifierProvider(widget.noteId),
     );
+    final noteValue = noteAsync.asData?.value;
 
     return Dialog.fullscreen(
       child: Scaffold(
-        appBar: _buildAppBar(context, screenState),
+        appBar: _buildAppBar(context, screenState, noteValue),
         body: noteAsync.when(
           data: (note) {
             if (note == null) {
@@ -85,13 +88,25 @@ class _PageControllerScreenState extends ConsumerState<PageControllerScreen> {
   PreferredSizeWidget _buildAppBar(
     BuildContext context,
     PageControllerScreenState screenState,
+    NoteModel? note,
   ) {
+    final actions = <ToolbarAction>[];
+    if (note != null) {
+      actions.add(
+        ToolbarAction(
+          svgPath: AppIcons.export,
+          tooltip: 'PDF 내보내기',
+          onTap: () => _openPdfExport(note),
+        ),
+      );
+    }
+
     return TopToolbar(
       variant: TopToolbarVariant.folder,
       title: '페이지 관리',
       onBack: () => Navigator.of(context).pop(),
       backSvgPath: AppIcons.chevronLeft,
-      actions: const [], // 추후 actions 추가
+      actions: actions,
       iconColor: AppColors.gray50,
       height: 76,
       iconSize: 32,
@@ -300,17 +315,22 @@ class _PageControllerScreenState extends ConsumerState<PageControllerScreen> {
         );
         WidgetsBinding.instance.addPostFrameCallback((_) {
           final rid = ref.read(noteRouteIdProvider(widget.noteId));
-          if (rid == null) return;
+          if (rid == null) {
+            return;
+          }
           final ctrl = ref.read(pageControllerProvider(widget.noteId, rid));
           if (ctrl.hasClients) {
-            debugPrint('🧭 [PageCtrlModal] jumpToPage → $index (scheduled)');
+            debugPrint(
+              '🧭 [PageCtrlModal] jumpToPage → $index (scheduled)',
+            );
             ctrl.jumpToPage(index);
           }
         });
       }
     } else {
       debugPrint(
-        '🧭 [PageCtrlModal] no active routeId; fallback to provider update only',
+        '🧭 [PageCtrlModal] no active routeId; '
+        'fallback to provider update only',
       );
     }
 
@@ -319,7 +339,10 @@ class _PageControllerScreenState extends ConsumerState<PageControllerScreen> {
 
     // 3) 모달 닫기 (다음 프레임에 닫아 점프 반영 여지 확보)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) Navigator.of(context).pop();
+      if (!mounted) {
+        return;
+      }
+      Navigator.of(context).pop();
     });
   }
 
@@ -327,6 +350,17 @@ class _PageControllerScreenState extends ConsumerState<PageControllerScreen> {
   void _handleReorderComplete(List<NotePageModel> reorderedPages) {
     // 순서 변경은 PageThumbnailGrid에서 자동으로 저장되므로
     // 여기서는 추가 처리가 필요하지 않습니다.
+  }
+
+  Future<void> _openPdfExport(NoteModel note) {
+    final notifiers = ref.read(notePageNotifiersProvider(widget.noteId));
+    final simulatePressure = ref.read(simulatePressureProvider);
+    return PdfExportMvpSheet.show(
+      context,
+      note: note,
+      pageNotifiers: notifiers,
+      simulatePressure: simulatePressure,
+    );
   }
 
   // 모달 닫기는 AppBar에서 직접 처리합니다.

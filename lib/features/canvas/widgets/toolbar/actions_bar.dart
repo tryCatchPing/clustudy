@@ -22,9 +22,6 @@ class NoteEditorActionsBar extends ConsumerWidget {
     }
 
     final notifier = ref.watch(currentNotifierProvider(noteId));
-    // final note = ref.watch(noteProvider(noteId)).value;
-    // final currentPageIndex = ref.watch(currentPageIndexProvider(noteId));
-
     return Row(
       children: [
         ValueListenableBuilder(
@@ -50,36 +47,11 @@ class NoteEditorActionsBar extends ConsumerWidget {
           tooltip: 'Clear',
           onPressed: notifier.clear,
         ),
-        // IconButton(
-        //   icon: const Icon(Icons.image),
-        //   tooltip: 'Show PNG Image',
-        //   onPressed: () => notifier.showImage(context),
-        // ),
-        // IconButton(
-        //   icon: const Icon(Icons.data_object),
-        //   tooltip: 'Show JSON',
-        //   onPressed: () => notifier.showJson(context),
-        // ),
-        // IconButton(
-        //   icon: const Icon(Icons.save),
-        //   tooltip: 'Save',
-        //   onPressed: () async {
-        //     await SketchPersistService.saveCurrentPage(ref, noteId);
-        //     ScaffoldMessenger.of(context).showSnackBar(
-        //       const SnackBar(content: Text('페이지를 저장했습니다.')),
-        //     );
-        //   },
-        // ),
         IconButton(
           icon: const Icon(Icons.view_agenda),
           tooltip: '페이지 설정',
           onPressed: () => PageControllerScreen.show(context, noteId),
         ),
-        // const IconButton(
-        //   icon: Icon(Icons.picture_as_pdf),
-        //   tooltip: 'PDF 내보내기',
-        //   onPressed: note == null ? null : () => _onPdfExport(context, ref),
-        // ),
         IconButton(
           icon: const Icon(Icons.link),
           tooltip: 'Links panel',
@@ -88,30 +60,4 @@ class NoteEditorActionsBar extends ConsumerWidget {
       ],
     );
   }
-
-  // /// PDF 내보내기 모달을 표시합니다.
-  // void _onPdfExport(BuildContext context, WidgetRef ref) async {
-  //   final note = ref.read(noteProvider(noteId)).value;
-  //   if (note == null) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(
-  //         content: Text('노트를 불러올 수 없습니다.'),
-  //         backgroundColor: Colors.red,
-  //       ),
-  //     );
-  //     return;
-  //   }
-
-  //   // 모든 페이지의 ScribbleNotifier 수집
-  //   final allNotifiers = ref.read(customScribbleNotifiersProvider(noteId));
-  //   final currentPageIndex = ref.read(currentPageIndexProvider(noteId));
-
-  //   // PDF 내보내기 모달 표시
-  //   await PdfExportModal.show(
-  //     context,
-  //     note: note,
-  //     pageNotifiers: allNotifiers,
-  //     currentPageIndex: currentPageIndex,
-  //   );
-  // }
 }
