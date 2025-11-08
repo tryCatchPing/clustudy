@@ -7,6 +7,7 @@ import '../../../shared/services/sketch_persist_service.dart';
 import '../providers/note_editor_provider.dart';
 import '../providers/pointer_snapshot_provider.dart';
 import 'note_page_view_item.dart';
+import 'snappy_page_scroll_physics.dart';
 
 /// 📱 캔버스 영역을 담당하는 위젯
 ///
@@ -42,7 +43,7 @@ class NoteEditorCanvas extends ConsumerWidget {
     final lockScroll = ref.watch(pageScrollLockProvider(noteId));
     final scrollPhysics = lockScroll
         ? const NeverScrollableScrollPhysics()
-        : const PageScrollPhysics();
+        : const SnappyPageScrollPhysics(velocityFactor: 0.05);
 
     return PageView.builder(
       controller: pageController,

@@ -3,9 +3,6 @@ import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:scribble/scribble.dart';
-
-import 'pointer_policy_provider.dart';
 
 /// 포인터 상태 스냅샷.
 @immutable
@@ -145,33 +142,14 @@ final pointerSnapshotProvider = StateNotifierProvider.autoDispose
       },
     );
 
-bool computePageScrollLock(
-  PointerSnapshot snapshot,
-  ScribblePointerMode policy,
-) {
+bool computePageScrollLock(PointerSnapshot snapshot) {
   if (snapshot.linkerStylusActive) {
     return true;
   }
-  switch (policy) {
-    case ScribblePointerMode.all:
-      return snapshot.totalPointers == 1;
-    case ScribblePointerMode.penOnly:
-      return snapshot.totalPointers == 1 && snapshot.stylusPointers == 1;
-    case ScribblePointerMode.mouseOnly:
-      final mouseLikePointers =
-          snapshot.mousePointers + snapshot.trackpadPointers;
-      return snapshot.totalPointers == 1 && mouseLikePointers == 1;
-    case ScribblePointerMode.mouseAndPen:
-      final drawingPointers =
-          snapshot.stylusPointers +
-          snapshot.mousePointers +
-          snapshot.trackpadPointers;
-      return snapshot.totalPointers == 1 && drawingPointers == 1;
-  }
+  return snapshot.totalPointers == 1;
 }
 
 final pageScrollLockProvider = Provider.family<bool, String>((ref, noteId) {
   final snapshot = ref.watch(pointerSnapshotProvider(noteId));
-  final policy = ref.watch(pointerPolicyProvider);
-  return computePageScrollLock(snapshot, policy);
+  return computePageScrollLock(snapshot);
 });
