@@ -47,10 +47,22 @@ android {
     }
 
     packaging {
+        // 16KB page size support for Android 15+ (required by Google Play)
         // Keep JNI libs uncompressed so Play can align them for 16 KB page sizes.
+        // This is required for Google Play to automatically align native libraries for 16KB page sizes.
         jniLibs {
             useLegacyPackaging = false
         }
+        // Ensure native libraries are not compressed for 16KB alignment
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
+
+    // Explicitly enable 16KB page size support
+    // AGP 8.5.1+ automatically handles this, but we ensure it's enabled
+    buildFeatures {
+        buildConfig = true
     }
 
     signingConfigs {

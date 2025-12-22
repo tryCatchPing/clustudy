@@ -133,3 +133,45 @@
 1. `CustomScribbleNotifier`에 `_isDisposed` 플래그를 도입하고 `dispose()`에서 true로 설정.
 2. `onPointerDown`, `onPointerUpdate`, `onPointerExit` 등 포인터 핸들러가 `_isDisposed`를 먼저 확인해 dispose 이후 이벤트를 무시하도록 변경.
 3. `onPointerExit`를 override해 dispose된 상태에서는 상위 구현을 호출하지 않도록 함으로써 MouseTracker 업데이트 루프에서 더 이상 dispose된 노티파이어를 참조하지 않게 함.
+
+## 10. 기존 정책 한계와 회귀
+
+- 싱글 포인터 제어는 `ScribbleState.activePointerIds`에 의존했는데, penOnly 모드에서는 Scribble이 **손가락 이벤트를 아예 추적하지 않아** 손가락 1개 여부를 알 수 없었다.
+- PageView는 여전히 상위에서 가로 드래그를 수락해, `pointerPolicy == all` 상태에서도 **한 손가락 좌우 드래그가 페이지 이동과 필기를 동시에 일으키는 회귀**가 재발했다.
+- Linker가 Listener 기반으로 모든 포인터를 잡는 특성 때문에, `PageView`와 `InteractiveViewer`가 제스처 아레나에서 계속 경쟁하면서 “필기 ↔ 페이지 스와이프”가 상황에 따라 달라지는 비일관성이 남았다.
+
+## 11. Pointer Snapshot Provider 도입
+
+- **파일:** `lib/features/canvas/providers/pointer_snapshot_provider.dart`
+- **구성 요소**
+  - `PointerSnapshotNotifier`: noteId별로 포인터 다운/업/취소 이벤트를 관리하고, 손가락/스타일러스/마우스/트랙패드 개수를 모두 카운트.
+  - `PointerSnapshot`: 현재 입력 상태를 불변 스냅샷으로 노출(`totalPointers`, `stylusPointers`, `hasMultiplePointers` 등).
+  - `pageScrollLockProvider`: Linker 활성 여부 + `totalPointers == 1` 조건으로 PageView 잠금 여부를 계산.
+- **주요 특징**
+  - `NotePageViewItem` 루트에 Listener를 추가해 모든 포인터 이벤트를 트래커에 보고 → Scribble 모드·포인터 종류와 상관없이 동일한 데이터를 확보.
+  - Linker가 stylus 드래그를 시작/종료할 때 `setLinkerStylusActive`를 호출해, 드래그 중에는 포인터 수와 무관하게 PageView를 강제 잠금.
+
+## 12. PageView/InteractiveViewer 연동 방식 변경
+
+- `NoteEditorCanvas`
+  - `pageScrollLockProvider`를 구독해 잠금 시 `NeverScrollableScrollPhysics`를, 해제 시 커스텀 `SnappyPageScrollPhysics`를 적용해 관성도 짧게 유지.
+  - 싱글 포인터가 눌린 동안에는 PageView가 제스처 아레나에 참여하지 않으므로, 필기·링커 입력과 충돌하지 않는다.
+- `NotePageViewItem`
+  - 포인터 스냅샷을 사용해 `InteractiveViewer.panEnabled`와 `LinkerGestureLayer` 조건을 동일한 규칙으로 계산.
+  - penOnly 모드에서도 손가락/스타일러스 카운트를 정확하게 구분할 수 있어, 손가락 1개 팬과 펜 필기/링커 드래그가 안정적으로 공존.
+  - `LinkerGestureLayer`의 스타일러스 상태를 전파해 stylus-only 드래그 중에는 항상 PageView와 InteractiveViewer 팬이 비활성화된다.
+
+## 13. 최종 포인터 정책 (2025-11-05)
+
+| 포인터 수              | 입력 종류                | 허용 동작                                                                                                                                           |
+| ---------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0                      | -                        | 페이지 잠금 해제 상태 유지                                                                                                                          |
+| 1                      | 손가락/스타일러스/마우스 | **항상 현재 페이지 조작 전용**<br>- Scribble 필기, 링커 드래그/탭<br>- penOnly 모드에선 손가락 싱글 팬만 허용<br>- PageView 스와이프/관성 전부 차단 |
+| ≥2                     | 조합 무관                | PageView와 InteractiveViewer가 제스처를 나눠 사용<br>- 두 손가락 수평 스와이프 → 페이지 이동<br>- 핀치/회전 → InteractiveViewer가 우선              |
+| stylus 드래그 (Linker) | -                        | `linkerStylusActive`가 true인 동안엔 포인터 수와 상관없이 PageView 완전 잠금                                                                        |
+
+**결과**
+
+- 한 손가락 좌/우 드래그는 더 이상 페이지 이동을 트리거하지 않고, Scribble/Linker/InteractiveViewer 중 해당 모드의 “현재 페이지 조작”에만 사용된다.
+- 두 손가락 이상일 때만 PageView가 아레나에 참여하므로, “페이지 넘김 의도”가 명확해지고 우발적인 전환이 사라졌다.
+- 포인터 정책 변화가 `pointer_snapshot_provider.dart` 한 곳에서 계산되기 때문에, 향후 모드가 추가되어도 동일 규칙을 손쉽게 확장할 수 있다.
