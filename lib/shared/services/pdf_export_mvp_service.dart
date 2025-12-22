@@ -8,6 +8,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:scribble/scribble.dart';
 
 import '../../features/canvas/notifiers/custom_scribble_notifier.dart';
 import '../../features/notes/models/note_model.dart';
@@ -17,6 +18,7 @@ const _kPixelToPoint = 0.75; // PDF 포맷 환산 상수 (px -> pt)
 const _kDefaultPixelRatio = 4.0;
 const _kExportLogTag = '[pdf-export-mvp]';
 const _kBlankBackgroundColor = ui.Color(0xFFFFFFFF);
+const bool _kEnableExportDiagnostics = true;
 
 /// Provides the singleton [PdfExportMvpService].
 final pdfExportMvpServiceProvider = Provider<PdfExportMvpService>((_) {
@@ -98,6 +100,7 @@ class PdfExportMvpService {
       if (notifier == null) {
         throw PdfExportException('페이지 ${page.pageNumber}의 필기 정보가 없습니다.');
       }
+      _logSketchSummary(notifier, page, index);
 
       final sketchBytes = await _renderSketch(
         notifier: notifier,
@@ -105,20 +108,41 @@ class PdfExportMvpService {
         blankBackgroundColor: blankBackgroundColor,
         simulatePressure: simulatePressure,
       );
+      await _logImageMetrics(sketchBytes, page, index, label: 'scribble-only');
       final composedBytes = await _maybeCompositeWithBackground(
         page: page,
         sketchBytes: sketchBytes,
+      );
+      await _logImageMetrics(composedBytes, page, index, label: 'composed');
+      final pdfBitmap = await _prepareBitmapForPdf(
+        bytes: composedBytes,
+        page: page,
+        pageIndex: index,
       );
 
       final widthPt = page.drawingAreaWidth * _kPixelToPoint;
       final heightPt = page.drawingAreaHeight * _kPixelToPoint;
       final pageFormat = PdfPageFormat(widthPt, heightPt);
+      if (_kEnableExportDiagnostics) {
+        debugPrint(
+          '$_kExportLogTag page=${page.pageNumber} '
+          'format=${widthPt.toStringAsFixed(2)}pt x '
+          '${heightPt.toStringAsFixed(2)}pt '
+          '(logical=${page.drawingAreaWidth}x${page.drawingAreaHeight}, '
+          'pixelRatio=$_kDefaultPixelRatio)',
+        );
+      }
       doc.addPage(
         pw.Page(
           pageFormat: pageFormat,
           build: (_) => pw.FullPage(
             ignoreMargins: true,
-            child: pw.Image(pw.MemoryImage(composedBytes)),
+            child: pw.Image(
+              pw.MemoryImage(
+                pdfBitmap.bytes,
+                dpi: _computeImageDpi(pdfBitmap.pixelRatio),
+              ),
+            ),
           ),
         ),
       );
@@ -156,6 +180,9 @@ class PdfExportMvpService {
     required bool simulatePressure,
   }) async {
     final size = ui.Size(page.drawingAreaWidth, page.drawingAreaHeight);
+
+    debugPrint('📐$_kExportLogTag renderSketch size=$size');
+
     notifier.setSimulatePressureEnabled(simulatePressure);
     final data = await notifier.renderCurrentSketchOffscreen(
       size: size,
@@ -286,6 +313,192 @@ class PdfExportMvpService {
   }
 
   static String _twoDigits(int value) => value.toString().padLeft(2, '0');
+
+  static double _computeImageDpi(double pixelRatio) {
+    return pixelRatio * PdfPageFormat.inch / _kPixelToPoint;
+  }
+
+  /// Exposes the DPI calculation for unit tests.
+  @visibleForTesting
+  static double computeImageDpiForTest({double? pixelRatio}) {
+    return _computeImageDpi(pixelRatio ?? _kDefaultPixelRatio);
+  }
+
+  void _logSketchSummary(
+    CustomScribbleNotifier notifier,
+    NotePageModel page,
+    int pageIndex,
+  ) {
+    if (!_kEnableExportDiagnostics) {
+      return;
+    }
+    final sketch = notifier.value.sketch;
+    if (sketch.lines.isEmpty) {
+      debugPrint(
+        '$_kExportLogTag page=${page.pageNumber} lines=0 '
+        'drawingArea=${page.drawingAreaWidth}x${page.drawingAreaHeight}',
+      );
+      return;
+    }
+    final bounds = _computeSketchBounds(sketch);
+    debugPrint(
+      '$_kExportLogTag page=${page.pageNumber} '
+      'lines=${sketch.lines.length} '
+      'bounds=(${bounds.minX.toStringAsFixed(1)},'
+      '${bounds.minY.toStringAsFixed(1)})→'
+      '(${bounds.maxX.toStringAsFixed(1)},'
+      '${bounds.maxY.toStringAsFixed(1)}) '
+      'drawingArea=${page.drawingAreaWidth}x${page.drawingAreaHeight} '
+      'index=$pageIndex',
+    );
+  }
+
+  Future<void> _logImageMetrics(
+    Uint8List bytes,
+    NotePageModel page,
+    int pageIndex, {
+    required String label,
+  }) async {
+    if (!_kEnableExportDiagnostics) {
+      return;
+    }
+    try {
+      final codec = await ui.instantiateImageCodec(bytes);
+      final frame = await codec.getNextFrame();
+      final image = frame.image;
+      debugPrint(
+        '$_kExportLogTag page=${page.pageNumber} [$label] '
+        'bitmap=${image.width}x${image.height} '
+        'pageLogical=${page.drawingAreaWidth}x${page.drawingAreaHeight} '
+        'index=$pageIndex',
+      );
+      image.dispose();
+      codec.dispose();
+    } catch (error) {
+      debugPrint(
+        '$_kExportLogTag failed to decode $label bitmap for page '
+        '${page.pageNumber}: $error',
+      );
+    }
+  }
+
+  _SketchBounds _computeSketchBounds(Sketch sketch) {
+    var minX = double.infinity;
+    var minY = double.infinity;
+    var maxX = -double.infinity;
+    var maxY = -double.infinity;
+    for (final line in sketch.lines) {
+      for (final point in line.points) {
+        if (point.x < minX) minX = point.x;
+        if (point.y < minY) minY = point.y;
+        if (point.x > maxX) maxX = point.x;
+        if (point.y > maxY) maxY = point.y;
+      }
+    }
+    if (minX == double.infinity) {
+      minX = minY = maxX = maxY = 0;
+    }
+    return _SketchBounds(
+      minX: minX,
+      minY: minY,
+      maxX: maxX,
+      maxY: maxY,
+    );
+  }
+
+  Future<_PdfBitmap> _prepareBitmapForPdf({
+    required Uint8List bytes,
+    required NotePageModel page,
+    required int pageIndex,
+  }) async {
+    final logicalWidth = page.drawingAreaWidth;
+    final logicalHeight = page.drawingAreaHeight;
+    if (logicalWidth <= 0 || logicalHeight <= 0) {
+      return _PdfBitmap(bytes: bytes, pixelRatio: 1.0);
+    }
+    var targetWidth = (logicalWidth * _kPixelToPoint).round();
+    var targetHeight = (logicalHeight * _kPixelToPoint).round();
+    if (targetWidth <= 0) {
+      targetWidth = 1;
+    }
+    if (targetHeight <= 0) {
+      targetHeight = 1;
+    }
+    ui.Codec? codec;
+    ui.Image? image;
+    ui.Image? scaledImage;
+    try {
+      codec = await ui.instantiateImageCodec(bytes);
+      final frame = await codec.getNextFrame();
+      image = frame.image;
+      final originalWidth = image.width;
+      final originalHeight = image.height;
+      final originalRatio =
+          targetWidth == 0 ? 1.0 : originalWidth / targetWidth;
+
+      if (originalWidth == targetWidth && originalHeight == targetHeight) {
+        if (_kEnableExportDiagnostics) {
+          debugPrint(
+            '$_kExportLogTag page=${page.pageNumber} [pdf-ready] '
+            'bitmap=${originalWidth}x$originalHeight (no scale) '
+            'target=${targetWidth}x${targetHeight} index=$pageIndex',
+          );
+        }
+        return _PdfBitmap(bytes: bytes, pixelRatio: originalRatio);
+      }
+
+      final recorder = ui.PictureRecorder();
+      final canvas = ui.Canvas(recorder);
+      canvas.drawImageRect(
+        image,
+        ui.Rect.fromLTWH(
+          0,
+          0,
+          originalWidth.toDouble(),
+          originalHeight.toDouble(),
+        ),
+        ui.Rect.fromLTWH(
+          0,
+          0,
+          targetWidth.toDouble(),
+          targetHeight.toDouble(),
+        ),
+        ui.Paint(),
+      );
+
+      scaledImage = await recorder.endRecording().toImage(
+        targetWidth,
+        targetHeight,
+      );
+      final byteData = await scaledImage.toByteData(
+        format: ui.ImageByteFormat.png,
+      );
+      if (byteData == null) {
+        return _PdfBitmap(bytes: bytes, pixelRatio: originalRatio);
+      }
+      if (_kEnableExportDiagnostics) {
+        debugPrint(
+          '$_kExportLogTag page=${page.pageNumber} [pdf-ready] '
+          'bitmap=${scaledImage.width}x${scaledImage.height} '
+          'target=${targetWidth}x${targetHeight} index=$pageIndex',
+        );
+      }
+      return _PdfBitmap(
+        bytes: byteData.buffer.asUint8List(),
+        pixelRatio: 1.0,
+      );
+    } catch (error, stackTrace) {
+      debugPrint(
+        '$_kExportLogTag failed to scale bitmap for page ${page.pageNumber}: '
+        '$error\n$stackTrace',
+      );
+      return _PdfBitmap(bytes: bytes, pixelRatio: _kDefaultPixelRatio);
+    } finally {
+      image?.dispose();
+      scaledImage?.dispose();
+      codec?.dispose();
+    }
+  }
 }
 
 Future<Directory> _resolveTempDirectory() async {
@@ -295,4 +508,28 @@ Future<Directory> _resolveTempDirectory() async {
   }
   final fallback = await getApplicationDocumentsDirectory();
   return fallback;
+}
+
+class _SketchBounds {
+  const _SketchBounds({
+    required this.minX,
+    required this.minY,
+    required this.maxX,
+    required this.maxY,
+  });
+
+  final double minX;
+  final double minY;
+  final double maxX;
+  final double maxY;
+}
+
+class _PdfBitmap {
+  const _PdfBitmap({
+    required this.bytes,
+    required this.pixelRatio,
+  });
+
+  final Uint8List bytes;
+  final double pixelRatio;
 }

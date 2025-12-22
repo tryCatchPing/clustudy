@@ -103,20 +103,6 @@ class _PdfExportMvpSheetState extends ConsumerState<PdfExportMvpSheet> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                '저장 위치',
-                style: AppTypography.subtitle1.copyWith(
-                  color: AppColors.background,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.small),
-              Text(
-                '내장 저장소 / Downloads / Clustudy 폴더에 저장돼요.',
-                style: AppTypography.body3.copyWith(
-                  color: AppColors.background.withValues(alpha: 0.75),
-                ),
-              ),
               const SizedBox(height: AppSpacing.large),
               Text(
                 '범위',
@@ -132,6 +118,22 @@ class _PdfExportMvpSheetState extends ConsumerState<PdfExportMvpSheet> {
                   color: AppColors.background.withValues(alpha: 0.75),
                 ),
               ),
+              const SizedBox(height: AppSpacing.large),
+              Text(
+                '화질',
+                style: AppTypography.subtitle1.copyWith(
+                  color: AppColors.background,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.small),
+              Text(
+                '고화질 (4x)',
+                style: AppTypography.body3.copyWith(
+                  color: AppColors.background.withValues(alpha: 0.75),
+                ),
+              ),
+
               const Spacer(),
               if (_errorMessage != null) ...[
                 _ErrorBanner(message: _errorMessage!),
@@ -194,13 +196,6 @@ class _PdfExportMvpSheetState extends ConsumerState<PdfExportMvpSheet> {
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: AppSpacing.small),
-          Text(
-            '총 ${widget.note.pages.length}개 페이지 / 고화질(4x)',
-            style: AppTypography.body4.copyWith(
-              color: AppColors.gray40,
-            ),
           ),
         ],
       ),

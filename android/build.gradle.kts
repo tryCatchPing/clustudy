@@ -29,7 +29,14 @@ subprojects {
 
         afterEvaluate {
             (extensions.findByName("android") as? LibraryExtension)?.apply {
-                compileSdk = 34
+                // Use compileSdk 35 for 16KB page size support (Android 15 requirement)
+                compileSdk = 35
+                // Ensure 16KB page size support for native libraries
+                packaging {
+                    jniLibs {
+                        useLegacyPackaging = false
+                    }
+                }
             }
         }
     }

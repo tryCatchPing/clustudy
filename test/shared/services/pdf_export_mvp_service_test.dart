@@ -60,6 +60,12 @@ void main() {
         throwsA(isA<PdfExportException>()),
       );
     });
+
+    test('computes image dpi to match logical canvas size', () {
+      final dpi =
+          PdfExportMvpService.computeImageDpiForTest(pixelRatio: 4.0);
+      expect(dpi, closeTo(384.0, 0.001));
+    });
   });
 }
 
