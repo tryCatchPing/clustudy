@@ -6,7 +6,7 @@
   <img alt="Get it on Google Play" src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" height="80">
 </a>
 
-<!-- 데모 영상: GitHub에 업로드한 user-attachments URL을 아래 줄에 붙여 넣으면 README에서 바로 재생됩니다. -->
+https://github.com/user-attachments/assets/e3af64dc-90bb-4d8f-a6ae-b68d94c27dd9
 
 원본 영상 파일: [`docs/demo/demo.mp4`](docs/demo/demo.mp4)
 
