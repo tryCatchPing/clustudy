@@ -47,22 +47,17 @@ android {
     }
 
     packaging {
-        // 16KB page size support for Android 15+ (required by Google Play)
         // Keep JNI libs uncompressed so Play can align them for 16 KB page sizes.
-        // This is required for Google Play to automatically align native libraries for 16KB page sizes.
+        // This is necessary but not sufficient: each bundled .so must itself be
+        // built with 16 KB alignment. libisar.so from isar_flutter_libs 3.1.0+1
+        // is 4 KB aligned, so the app does not yet meet the 16 KB requirement.
         jniLibs {
             useLegacyPackaging = false
         }
-        // Ensure native libraries are not compressed for 16KB alignment
+        // Drop duplicate license files bundled by dependencies.
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
-    }
-
-    // Explicitly enable 16KB page size support
-    // AGP 8.5.1+ automatically handles this, but we ensure it's enabled
-    buildFeatures {
-        buildConfig = true
     }
 
     signingConfigs {
