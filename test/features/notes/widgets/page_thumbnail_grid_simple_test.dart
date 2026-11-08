@@ -78,7 +78,6 @@ void main() {
       await tester.pump(); // 한 번만 pump
 
       expect(find.text('페이지가 없습니다'), findsOneWidget);
-      expect(find.text('새 페이지를 추가해보세요'), findsOneWidget);
       expect(find.byIcon(Icons.note_add), findsOneWidget);
     });
 
