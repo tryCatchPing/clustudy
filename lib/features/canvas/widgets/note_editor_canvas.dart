@@ -5,7 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/services/sketch_persist_service.dart';
 import '../providers/note_editor_provider.dart';
+import '../providers/pointer_snapshot_provider.dart';
 import 'note_page_view_item.dart';
+import 'snappy_page_scroll_physics.dart';
 
 /// 📱 캔버스 영역을 담당하는 위젯
 ///
@@ -38,9 +40,14 @@ class NoteEditorCanvas extends ConsumerWidget {
     // Provider에서 상태 읽기
     final pageController = ref.watch(pageControllerProvider(noteId, routeId));
     final notePagesCount = ref.watch(notePagesCountProvider(noteId));
+    final lockScroll = ref.watch(pageScrollLockProvider(noteId));
+    final scrollPhysics = lockScroll
+        ? const NeverScrollableScrollPhysics()
+        : const SnappyPageScrollPhysics(velocityFactor: 0.05);
 
     return PageView.builder(
       controller: pageController,
+      physics: scrollPhysics,
       itemCount: notePagesCount,
       onPageChanged: (index) {
         // Page change contract:

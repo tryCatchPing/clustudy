@@ -48,8 +48,15 @@ android {
 
     packaging {
         // Keep JNI libs uncompressed so Play can align them for 16 KB page sizes.
+        // This is necessary but not sufficient: each bundled .so must itself be
+        // built with 16 KB alignment. libisar.so from isar_flutter_libs 3.1.0+1
+        // is 4 KB aligned, so the app does not yet meet the 16 KB requirement.
         jniLibs {
             useLegacyPackaging = false
+        }
+        // Drop duplicate license files bundled by dependencies.
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
 
