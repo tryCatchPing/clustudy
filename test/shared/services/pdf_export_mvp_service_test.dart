@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -47,6 +48,50 @@ void main() {
       await service.deleteTempFile(result.filePath);
       expect(file.existsSync(), isFalse);
     });
+
+    test(
+      'merges every page into one PDF with each page at canvas size',
+      () async {
+        final backgroundPath = await _writeBackgroundImage(tempDir, 300, 400);
+        NotePageModel blankPage(String id, int number) => NotePageModel(
+          noteId: 'note-1',
+          pageId: id,
+          pageNumber: number,
+          jsonData: '{"lines":[]}',
+        );
+        final pages = [
+          blankPage('page-1', 1),
+          NotePageModel(
+            noteId: 'note-1',
+            pageId: 'page-2',
+            pageNumber: 2,
+            jsonData: '{"lines":[]}',
+            backgroundType: PageBackgroundType.pdf,
+            backgroundWidth: 300,
+            backgroundHeight: 400,
+            preRenderedImagePath: backgroundPath,
+          ),
+          blankPage('page-3', 3),
+        ];
+        final note = NoteModel(noteId: 'note-1', title: '여러 페이지', pages: pages);
+
+        final result = await service.exportToDownloads(
+          note: note,
+          pageNotifiers: {
+            for (final p in pages) p.pageId: _FakeScribbleNotifier(),
+          },
+        );
+
+        expect(result.pageCount, 3);
+        final pdf = latin1.decode(await File(result.filePath).readAsBytes());
+        expect(RegExp(r'/Type\s*/Page[^s]').allMatches(pdf).length, 3);
+        final mediaBoxes = RegExp(
+          r'/MediaBox\s*\[([^\]]*)\]',
+        ).allMatches(pdf).map((m) => m.group(1)!.trim()).toList();
+        // 캔버스 논리 크기 * 0.75pt, 페이지 순서대로.
+        expect(mediaBoxes, ['0 0 1500 1500', '0 0 225 300', '0 0 1500 1500']);
+      },
+    );
 
     test('throws when pdf background path missing', () async {
       final note = _buildNote(withPdfBackground: true);
@@ -170,4 +215,21 @@ Future<int> _pixel(ui.Image image, int x, int y) async {
   final b = data.getUint8(offset + 2);
   final a = data.getUint8(offset + 3);
   return (a << 24) | (r << 16) | (g << 8) | b;
+}
+
+Future<String> _writeBackgroundImage(
+  Directory dir,
+  int width,
+  int height,
+) async {
+  final recorder = ui.PictureRecorder();
+  ui.Canvas(recorder).drawRect(
+    ui.Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble()),
+    ui.Paint()..color = const ui.Color(0xFFEEEEEE),
+  );
+  final image = await recorder.endRecording().toImage(width, height);
+  final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+  final path = '${dir.path}/background.png';
+  await File(path).writeAsBytes(bytes!.buffer.asUint8List());
+  return path;
 }
