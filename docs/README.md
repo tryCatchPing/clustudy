@@ -83,3 +83,5 @@ Clustudy 구현 과정에서 남긴 설계·문제 해결·작업 기록입니�
 - 최종 문서로 대체된 중간 기록: `1104_pointerPolicy_problem.md`, `1104_pointerPolicy_scribble_fix_plan.md`, `prev-page-save.md`, `session_problem_solved.md`, `pdf_file_system_history.md`
 - 이전 README: `README_prev.md`
 - `ai-sessions/`: Claude Code / Cursor 대화 로그와 예전 CLAUDE.md 백업
+- `AGENTS.md`: 개발 기간에 AI 코딩 도구에 제공하던 저장소 가이드
+- `kiro/`: Kiro로 작성한 스펙(isar-db-migration, page-controller)과 steering 문서
