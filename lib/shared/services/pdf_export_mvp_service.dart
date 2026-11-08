@@ -18,7 +18,8 @@ const _kPixelToPoint = 0.75; // PDF 포맷 환산 상수 (px -> pt)
 const _kDefaultPixelRatio = 4.0;
 const _kExportLogTag = '[pdf-export-mvp]';
 const _kBlankBackgroundColor = ui.Color(0xFFFFFFFF);
-const bool _kEnableExportDiagnostics = true;
+// 내보내기 결과 진단용 로그. 릴리스 빌드에서는 출력하지 않는다.
+const bool _kEnableExportDiagnostics = kDebugMode;
 
 /// Provides the singleton [PdfExportMvpService].
 final pdfExportMvpServiceProvider = Provider<PdfExportMvpService>((_) {
@@ -181,7 +182,9 @@ class PdfExportMvpService {
   }) async {
     final size = ui.Size(page.drawingAreaWidth, page.drawingAreaHeight);
 
-    debugPrint('📐$_kExportLogTag renderSketch size=$size');
+    if (_kEnableExportDiagnostics) {
+      debugPrint('$_kExportLogTag renderSketch size=$size');
+    }
 
     notifier.setSimulatePressureEnabled(simulatePressure);
     final data = await notifier.renderCurrentSketchOffscreen(
