@@ -29,7 +29,8 @@ subprojects {
 
         afterEvaluate {
             (extensions.findByName("android") as? LibraryExtension)?.apply {
-                compileSdk = 34
+                // The plugin's own compileSdk is too old for current AGP builds.
+                compileSdk = 35
             }
         }
     }
