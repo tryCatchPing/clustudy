@@ -266,7 +266,7 @@ Common Pitfalls To Avoid
 
 Where To Look
 
-- Data flow and policies: docs/per-route-resume-navigation.md
+- Data flow and policies: docs/troubleshooting/per-route-resume-navigation.md
 - Providers and controller:
   - lib/features/canvas/providers/note_editor_provider.dart
 - Editor lifecycle with resume:

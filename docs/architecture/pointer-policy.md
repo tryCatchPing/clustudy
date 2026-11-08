@@ -1,6 +1,6 @@
 # pointer 정책 확정
 
-1104_pointerPolicy_problem.md 문서와 관련해 정책을 정리합니다
+`../archive/1104_pointerPolicy_problem.md` 문서와 관련해 정책을 정리합니다
 
 ## 목표: 사용자 기대 동작
 
