@@ -41,10 +41,11 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  # 앱 전용 수정이 들어간 포크. ehdnd/scribble의 clustudy 브랜치 커밋으로 고정한다.
   scribble:
     git:
       url: https://github.com/ehdnd/scribble.git
-      ref: fix/pointer-policy
+      ref: 2d3e0c818ea5c750dc4e7cbaccd116b15162d53f
   go_router: ^16.0.0
   # 2.10.0 이상은 Flutter 3.35+ API(Matrix4.translateByDouble)와 iOS 13+를 요구해
   # Flutter 3.32.5에서 빌드되지 않는다.
