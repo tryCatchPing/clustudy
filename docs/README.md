@@ -34,17 +34,17 @@ Clustudy 구현 과정에서 남긴 설계·문제 해결·작업 기록입니�
 
 - [pdf-processor.md](architecture/pdf-processor.md): PDF 처리 서비스 구조 정리 과정
 - [pdf-recovery-service.md](architecture/pdf-recovery-service.md): PDF 손상 감지와 복구 시스템
-- [pdf-export.md](architecture/pdf-export.md): 현재 PDF 내보내기 (캔버스 비율 유지, 저장/공유 분리)
+- [pdf-export.md](architecture/pdf-export.md): PDF 내보내기 MVP (오프스크린 렌더링, PDF 배경 합성, 공유)
 
 **캔버스 입력**
 
-- [pointer-policy.md](architecture/pointer-policy.md): 손가락/스타일러스 입력 정책 (all / stylus only, 링커 모드)
+- 최종 입력 정책(포인터 수에 따른 필기, 확대, 페이지 넘김)은 [troubleshooting/pointer-gesture-issues.md](troubleshooting/pointer-gesture-issues.md)의 "최종 포인터 정책" 절에 있습니다.
 
 ## troubleshooting — 문제 해결 기록
 
 - [isar-nested-transaction.md](troubleshooting/isar-nested-transaction.md): 중첩 `writeTxn`으로 인한 Isar 트랜잭션 실패 → `DbWriteSession` 도입
 - [note-list-invisible-layout.md](troubleshooting/note-list-invisible-layout.md): vault 선택 후 노트 목록이 안 보이던 문제 (스트림 초기값 + 레이아웃 0 높이)
-- [pointer-gesture-issues.md](troubleshooting/pointer-gesture-issues.md): Scribble 포크와 제스처 아레나 충돌, 멀티터치 패닝, dispose 후 포인터 이벤트
+- [pointer-gesture-issues.md](troubleshooting/pointer-gesture-issues.md): Scribble 포크와 제스처 아레나 충돌, 페이지 넘김 충돌, 포인터 추적 provider 도입과 최종 포인터 정책
 - [undo-redo-history-loss.md](troubleshooting/undo-redo-history-loss.md): 도구 변경·페이지 추가 시 undo/redo 기록 유실
 - [note-session-race-condition.md](troubleshooting/note-session-race-condition.md): "No note session" 에러와 수동 캐시 → Riverpod 생명주기 전환
 - [editor-navigation-and-autosave.md](troubleshooting/editor-navigation-and-autosave.md): 백링크 패널 이후 GlobalKey 충돌, 자동저장 크래시, 페이지 이동 저장 누락
@@ -67,7 +67,6 @@ Clustudy 구현 과정에서 남긴 설계·문제 해결·작업 기록입니�
 
 ## plans — 미구현 과제
 
-- [pdf-export-offscreen.md](plans/pdf-export-offscreen.md): 오프스크린 렌더링 기반 PDF 내보내기 재설계
 - [service-to-db.md](plans/service-to-db.md): VaultNotesService의 이름 충돌·트리 탐색 로직을 저장소 계층으로 이전
 
 ## guides
@@ -80,7 +79,8 @@ Clustudy 구현 과정에서 남긴 설계·문제 해결·작업 기록입니�
 
 - 끝난 작업 계획/상태: `todo.md`, `current_status_summary.md`, `vault-delete-plan.md`, `vault-notes-service-implementation.md`, `riverpod_migration_plan.md`, `riverpod_migration_phases.md`, `2025-09-13-initial-release-iteration.md`
 - 디자인 시스템 적용 작업: `design_flow.md`, `design_cleanup_runbook.md`, `design_canvas_pre_info.md`, `design_canvas_implementation_plan.md`
-- 최종 문서로 대체된 중간 기록: `1104_pointerPolicy_problem.md`, `1104_pointerPolicy_scribble_fix_plan.md`, `prev-page-save.md`, `session_problem_solved.md`, `pdf_file_system_history.md`
+- 최종 문서로 대체된 중간 기록: `1104_pointerPolicy.md`, `1104_pointerPolicy_problem.md`, `1104_pointerPolicy_scribble_fix_plan.md`, `prev-page-save.md`, `session_problem_solved.md`, `pdf_file_system_history.md`
+- 이전 PDF 내보내기: `pdf-export-fix-scale-save.md`(v1.0.4까지의 구현), `pdf_export_offscreen_scribble.md`(MVP 이전 재설계안)
 - 이전 README: `README_prev.md`
 - `ai-sessions/`: Claude Code / Cursor 대화 로그와 예전 CLAUDE.md 백업
 - `AGENTS.md`: 개발 기간에 AI 코딩 도구에 제공하던 저장소 가이드
