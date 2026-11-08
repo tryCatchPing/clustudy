@@ -147,7 +147,7 @@ docs/               설계와 문제 해결 기록
 **요구 사항**
 
 - Flutter 3.32.5 (FVM 사용 권장, 버전은 `.fvmrc`에 고정)
-- Android Studio 또는 Xcode
+- Android Studio
 
 **설치와 실행**
 
@@ -195,13 +195,11 @@ fvm dart run build_runner build --delete-conflicting-outputs
 - 2025.06 ~ 07: 문제 정의, 페르소나 조사, UX 프로토타입 제작
 - 2025.08 ~ 09: Flutter MVP 구현 (필기 캔버스, 노트 링크, 그래프)
 - 2025.10 ~ 11: 세부 기능 구현, 테스트 사용자 온보딩, 출시 준비
-<!-- TODO: 공모전 정식 명칭 확인 후 수정 -->
-- 결과: Google Play 출시, [공모전 이름] 대상(1위) 수상
+- 결과: Google Play 출시, 제3회 2025 IT프로젝트 비기너 리그 대상(1위) 수상
 
 ## 한계
 
 - 공모전 제출용 1차 MVP 범위로 개발했습니다.
-- 모든 데이터는 기기에만 저장되며 클라우드 동기화나 백업 기능은 없습니다.
 - PDF 내보내기는 현재 화면에 보이지 않는 페이지를 이미지로 렌더링하지 못하는 문제가 있어 앱에서 비활성화했습니다. 재설계안은 [`docs/plans/pdf-export-offscreen.md`](docs/plans/pdf-export-offscreen.md)에 있습니다.
 - iOS 출시 여부는 정해지지 않았습니다.
 
