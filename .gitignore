@@ -157,3 +157,6 @@ lcov.info
 
 # FVM Version Cache
 .fvm/
+
+# Isar native library copied to project root for macOS flutter test
+libisar.dylib
