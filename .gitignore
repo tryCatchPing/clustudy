@@ -156,3 +156,9 @@ lcov.info
 
 # FVM Version Cache
 .fvm/
+
+# Isar native libraries copied to project root for host flutter test
+# (macOS: libisar.dylib, Windows: isar.dll, Linux: libisar.so)
+libisar.dylib
+isar.dll
+libisar.so

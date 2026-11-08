@@ -132,7 +132,7 @@ Global Pointer Policy (Scribble + Linker)
 
 Cleanup
 
-- Removed deprecated `canvasSessionProvider` alias; added a small note to `docs/histories/session_problem_solving.md` clarifying `noteSessionProvider` is the canonical name.
+- Removed deprecated `canvasSessionProvider` alias; added a small note to `docs/troubleshooting/note-session-race-condition.md` clarifying `noteSessionProvider` is the canonical name.
 
 ---
 
