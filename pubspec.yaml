@@ -46,7 +46,9 @@ dependencies:
       url: https://github.com/ehdnd/scribble.git
       ref: fix/pointer-policy
   go_router: ^16.0.0
-  pdfx: ^2.5.0
+  # 2.10.0 이상은 Flutter 3.35+ API(Matrix4.translateByDouble)와 iOS 13+를 요구해
+  # Flutter 3.32.5에서 빌드되지 않는다.
+  pdfx: ">=2.5.0 <2.10.0"
   file_picker: ^8.0.6
   path_provider: ^2.1.4
   path: ^1.9.0
