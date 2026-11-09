@@ -346,31 +346,40 @@ jobs:
             exit 1
           fi
 
-  # 테스트 job (미래 사용을 위해 준비)
-  # test:
-  #   name: Run Tests
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 15
-  #   needs: analyze
-  #
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
-  #
-  #     - name: Setup Flutter
-  #       uses: subosito/flutter-action@v2
-  #       with:
-  #         flutter-version: ${{ env.FLUTTER_VERSION }}
-  #         channel: "stable"
-  #         cache: true
-  #
-  #     - name: Get dependencies
-  #       run: flutter pub get
-  #
-  #     - name: Run tests
-  #       run: flutter test --coverage
-  #
-  #     - name: Upload coverage to Codecov
-  #       uses: codecov/codecov-action@v3
-  #       with:
-  #         file: coverage/lcov.info
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: "stable"
+          cache: true
+
+      # pub은 캐시된 git 저장소 사본에 lock의 커밋이 없으면 git 의존성의 하위 의존성을
+      # 빼고 계산한다. git 의존성(scribble 포크)만 매번 새로 받도록 캐시에서 지운다.
+      - name: Drop cached git dependencies
+        run: rm -rf "${PUB_CACHE:-$HOME/.pub-cache}/git"
+
+      - name: Get dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Generate code (build_runner)
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      # Isar 저장소 테스트는 호스트에서 실행될 때 프로젝트 루트의 네이티브 라이브러리를 읽는다.
+      - name: Provide Isar native library for host tests
+        run: |
+          set -euo pipefail
+          lib=$(ls "${PUB_CACHE:-$HOME/.pub-cache}"/hosted/pub.dev/isar_flutter_libs-*/linux/libisar.so | head -n 1)
+          cp "$lib" .
+          echo "Using $lib"
+
+      - name: Run tests
+        run: flutter test --exclude-tags benchmark

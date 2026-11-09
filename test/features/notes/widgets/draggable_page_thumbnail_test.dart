@@ -123,6 +123,7 @@ void main() {
                 page: testPage,
                 showDeleteButton: true,
                 isDragging: true, // Delete button is visible during drag
+                onDelete: () {},
               ),
             ),
           ),
@@ -132,6 +133,29 @@ void main() {
       await tester.pump(); // Allow animations to complete
 
       expect(find.byIcon(Icons.close), findsOneWidget);
+    });
+
+    testWidgets('hides delete button when onDelete is not provided', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: DraggablePageThumbnail(
+                page: testPage,
+                showDeleteButton: true,
+                isDragging: true,
+                autoLoadThumbnail: false,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      expect(find.byIcon(Icons.close), findsNothing);
     });
 
     testWidgets('calls onTap when tapped', (WidgetTester tester) async {
@@ -169,6 +193,7 @@ void main() {
                 showDeleteButton: true,
                 isDragging: true, // Delete button is visible during drag
                 autoLoadThumbnail: false, // Disable auto loading for test
+                onDelete: () {},
               ),
             ),
           ),

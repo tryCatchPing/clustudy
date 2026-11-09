@@ -28,24 +28,33 @@ void main() {
     test('watchVaults emits sorted updates when vaults change', () async {
       final queue = StreamQueue<List<VaultModel>>(repository.watchVaults());
 
+      // 저장소는 처음 열릴 때 기본 Vault를 만든다.
       final initial = await queue.next.timeout(const Duration(seconds: 5));
-      expect(initial, isEmpty);
+      expect(initial.map((v) => v.name), ['Default Vault']);
 
       final beta = await repository.createVault(' beta ');
       final afterFirst = await queue.next.timeout(const Duration(seconds: 5));
-      expect(afterFirst.map((v) => v.name), ['beta']);
+      expect(afterFirst.map((v) => v.name), ['beta', 'Default Vault']);
 
       final alpha = await repository.createVault('Alpha');
       final afterSecond = await queue.next.timeout(const Duration(seconds: 5));
-      expect(afterSecond.map((v) => v.name), ['Alpha', 'beta']);
+      expect(afterSecond.map((v) => v.name), [
+        'Alpha',
+        'beta',
+        'Default Vault',
+      ]);
 
       await repository.renameVault(beta.vaultId, 'zeta');
       final afterRename = await queue.next.timeout(const Duration(seconds: 5));
-      expect(afterRename.map((v) => v.name), ['Alpha', 'zeta']);
+      expect(afterRename.map((v) => v.name), [
+        'Alpha',
+        'Default Vault',
+        'zeta',
+      ]);
 
       await repository.deleteVault(alpha.vaultId);
       final afterDelete = await queue.next.timeout(const Duration(seconds: 5));
-      expect(afterDelete.map((v) => v.name), ['zeta']);
+      expect(afterDelete.map((v) => v.name), ['Default Vault', 'zeta']);
 
       await queue.cancel();
     });
