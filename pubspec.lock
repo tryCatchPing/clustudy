@@ -940,8 +940,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "fix/pointer-policy"
-      resolved-ref: "89708a97c7f223d00646f055255740e2d7232138"
+      ref: "2d3e0c818ea5c750dc4e7cbaccd116b15162d53f"
+      resolved-ref: "2d3e0c818ea5c750dc4e7cbaccd116b15162d53f"
       url: "https://github.com/ehdnd/scribble.git"
     source: git
     version: "0.10.0+1"

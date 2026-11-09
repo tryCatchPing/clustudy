@@ -128,7 +128,7 @@ class _PdfExportMvpSheetState extends ConsumerState<PdfExportMvpSheet> {
               ),
               const SizedBox(height: AppSpacing.small),
               Text(
-                '고화질 (4x)',
+                '고화질 (2x)',
                 style: AppTypography.body3.copyWith(
                   color: AppColors.background.withValues(alpha: 0.75),
                 ),
