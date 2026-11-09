@@ -75,23 +75,29 @@ void main() {
     test('watchNotes emits updates when notes change', () async {
       final expectation = expectLater(
         repository.watchNotes(),
+        // Isar 감시자는 한 번의 쓰기에도 같은 상태를 여러 번 보낼 수 있어
+        // 정확한 횟수 대신 각 상태에 순서대로 도달하는지 검사한다.
         emitsInOrder(<Matcher>[
           isEmpty,
-          predicate<List<NoteModel>>(
-            (notes) =>
-                notes.length == 1 &&
-                notes.first.noteId == 'note-1' &&
-                notes.first.pages.length == 2,
+          emitsThrough(
+            predicate<List<NoteModel>>(
+              (notes) =>
+                  notes.length == 1 &&
+                  notes.first.noteId == 'note-1' &&
+                  notes.first.pages.length == 2,
+            ),
           ),
-          predicate<List<NoteModel>>(
-            (notes) =>
-                notes.length == 1 &&
-                notes.first.noteId == 'note-1' &&
-                notes.first.pages.any(
-                  (page) =>
-                      page.pageId == 'page-0' &&
-                      page.jsonData == '{"strokes":42}',
-                ),
+          emitsThrough(
+            predicate<List<NoteModel>>(
+              (notes) =>
+                  notes.length == 1 &&
+                  notes.first.noteId == 'note-1' &&
+                  notes.first.pages.any(
+                    (page) =>
+                        page.pageId == 'page-0' &&
+                        page.jsonData == '{"strokes":42}',
+                  ),
+            ),
           ),
         ]),
       );

@@ -1,3 +1,8 @@
+// 실행 시간을 직접 재는 벤치마크. 실행 환경에 따라 결과가 달라져 CI에서는 제외한다.
+// 로컬 실행: flutter test --tags benchmark
+@Tags(['benchmark'])
+library;
+
 import 'package:clustudy/features/canvas/data/isar_link_repository.dart';
 import 'package:clustudy/features/canvas/data/memory_link_repository.dart';
 import 'package:clustudy/features/canvas/models/link_model.dart';

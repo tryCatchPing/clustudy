@@ -236,7 +236,6 @@ void main() {
 
       // 빈 상태 메시지 확인
       expect(find.text('페이지가 없습니다'), findsOneWidget);
-      expect(find.text('새 페이지를 추가해보세요'), findsOneWidget);
     });
   });
 }

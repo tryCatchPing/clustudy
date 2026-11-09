@@ -179,6 +179,11 @@ fvm flutter test
 fvm dart run build_runner build --delete-conflicting-outputs
 ```
 
+**테스트 참고**
+
+- Isar 저장소 테스트는 OS별 Isar 네이티브 라이브러리가 프로젝트 루트에 있어야 합니다. `isar_flutter_libs` 패키지(pub 캐시)에서 macOS는 `macos/libisar.dylib`, Linux는 `linux/libisar.so`를 루트로 복사하세요. 이 파일들은 커밋되지 않습니다.
+- 실행 시간을 재는 벤치마크는 `benchmark` 태그가 붙어 있고 CI에서는 제외됩니다. 따로 실행하려면 `fvm flutter test --tags benchmark`를 사용하세요.
+
 ## 문서
 
 구현 과정의 설계 문서와 문제 해결 기록은 [`docs/`](docs/README.md)에 정리되어 있습니다.
