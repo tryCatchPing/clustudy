@@ -9,7 +9,7 @@ Clustudy 구현 과정에서 남긴 설계·문제 해결·작업 기록입니�
 | [`troubleshooting/`](troubleshooting) | 실제로 겪은 버그와 원인 분석, 해결 과정 |
 | [`isar-migration/`](isar-migration) | 메모리 저장소 → Isar DB 전환 작업 기록 (task 순서대로) |
 | [`plans/`](plans) | 설계만 하고 아직 구현하지 않은 향후 과제 |
-| [`guides/`](guides) | 운영 가이드 |
+| [`guides/`](guides) | 운영, 개발 환경, 실기기 테스트 가이드 |
 | [`screenshots/`](screenshots) | 스토어 스크린샷, 그래픽 이미지 |
 | [`archive/`](archive) | 끝난 작업 계획, 중간 분석, 오래된 상태 문서, AI 세션 로그 |
 
@@ -72,6 +72,7 @@ Clustudy 구현 과정에서 남긴 설계·문제 해결·작업 기록입니�
 ## guides
 
 - [install-attribution.md](guides/install-attribution.md): Play 스토어 UTM 링크 생성과 Firebase 설치 경로 추적
+- [galaxy-tab-device-test.md](guides/galaxy-tab-device-test.md): 새 PC에서 개발 환경 구성, 갤럭시 탭 연결, PDF 내보내기(#59) 실기기 테스트
 
 ## archive
 
